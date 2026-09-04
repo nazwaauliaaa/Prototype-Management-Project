@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Creative Office — Portal Manajemen Proyek Sampulkreativ Technology</title>
+  <meta name="description" content="Portal manajemen proyek modern, aman, dan modular untuk Sampulkreativ Technology dengan dukungan Monday style table, Kanban, kalender multi-skala, dan pengesahan dokumen legalitas." />
+  
+  <!-- Brand Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+
+  <!-- Fonts: Google Fonts Inter & Material Symbols Outlined -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#3525cd",
+            "on-primary": "#ffffff",
+            "primary-container": "#4f46e5",
+            "on-primary-container": "#dad7ff",
+            "secondary": "#565e74",
+            "secondary-container": "#dae2fd",
+            "tertiary": "#571ac0",
+            "tertiary-container": "#6f3dd9",
+            "tertiary-fixed": "#e9ddff",
+            "primary-fixed": "#e2dfff",
+            "on-primary-fixed": "#0f0069",
+            "brand-accent": "#6366F1",
+            "brand-subdued": "#EEF2FF",
+            "surface": "#f8f9ff",
+            "surface-dim": "#cbdbf5",
+            "surface-bright": "#f8f9ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e5eeff",
+            "surface-container-high": "#dce9ff",
+            "surface-container-highest": "#d3e4fe",
+            "surface-border": "#E4E7EB",
+            "surface-tint": "#F0F2F5",
+            "canvas-bg": "#F8F9FA",
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#464555",
+            "on-background": "#0b1c30",
+            "text-primary": "#1E293B",
+            "text-secondary": "#475569",
+            "text-muted": "#94A3B8",
+            "status-success": "#10B981",
+            "status-progress": "#3B82F6",
+            "status-warning": "#F59E0B",
+            "status-urgent": "#EF4444",
+            "status-planning": "#EC4899",
+            "status-asset": "#8B5CF6",
+            "error": "#ba1a1a",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a"
+          },
+          spacing: {
+            "topbar-height": "48px",
+            "sidebar-width": "240px",
+            "spacing-2xs": "2px",
+            "spacing-xs": "4px",
+            "spacing-sm": "8px",
+            "spacing-md": "12px",
+            "spacing-lg": "16px",
+            "spacing-xl": "20px",
+            "spacing-2xl": "24px",
+            "spacing-3xl": "32px"
+          },
+          fontFamily: {
+            "sans": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Core App Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="bg-canvas-bg font-sans text-on-surface antialiased">
+  
+  <!-- Global Application Shell -->
+  <div id="app-root" class="relative min-h-screen flex flex-col">
+    <!-- Top Navigation Header Container -->
+    <div id="app-header"></div>
+
+    <!-- Navigation Sidebar Container -->
+    <div id="app-sidebar"></div>
+
+    <!-- Main Dynamic Content Container -->
+    <div id="app-shell-layout" class="pl-sidebar-width pt-topbar-height min-h-screen bg-canvas-bg flex flex-col transition-all duration-300">
+      <main id="app-content" class="flex-1 w-full"></main>
+    </div>
+  </div>
+
+  <!-- Main ES6 Modules Application Entry -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

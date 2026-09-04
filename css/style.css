@@ -1,0 +1,149 @@
+/* Creative Office - Modern Project Management Design System */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Color Tokens */
+  --color-primary: #3525cd;
+  --color-primary-container: #4f46e5;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #dad7ff;
+  --color-brand-accent: #6366f1;
+  --color-brand-subdued: #eef2ff;
+
+  --color-canvas-bg: #f8f9fa;
+  --color-surface: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-border: #e4e7eb;
+
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-progress: #3b82f6;
+  --status-warning: #f59e0b;
+  --status-urgent: #ef4444;
+  --status-planning: #ec4899;
+  --status-asset: #8b5cf6;
+
+  /* Layout dimensions */
+  --topbar-height: 48px;
+  --sidebar-width: 240px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas-bg);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material Symbols Styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Laser Scanner Animation */
+@keyframes laserSweep {
+  0% {
+    top: 10%;
+    opacity: 0.3;
+  }
+  50% {
+    top: 85%;
+    opacity: 1;
+  }
+  100% {
+    top: 10%;
+    opacity: 0.3;
+  }
+}
+
+.laser-scanner-beam {
+  animation: laserSweep 2.8s ease-in-out infinite;
+}
+
+/* Smooth view transition */
+.view-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Transitions */
+.modal-backdrop {
+  transition: opacity 0.2s ease-in-out;
+}
+.modal-content-box {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-in-out;
+}
+
+/* Gantt Chart Custom Styles */
+.gantt-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(228, 231, 235, 0.4) 1px, transparent 1px);
+}
+
+/* Print Styles for PDF modal */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #pdf-printable-area, #pdf-printable-area * {
+    visibility: visible;
+  }
+  #pdf-printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+}
