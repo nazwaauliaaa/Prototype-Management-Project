@@ -224,7 +224,13 @@ class CreativeOfficeApp {
 }
 
 // Bootstrap on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
+const initApp = () => {
   const app = new CreativeOfficeApp();
   app.init();
-});
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}

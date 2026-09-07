@@ -12,6 +12,16 @@ export class Sidebar {
     this.currentRoute = 'dashboard';
     this.currentWorkspace = 'ruangkreasi';
     this.element = null;
+    this.hostElement = null;
+
+    // Listen for navigation changes once
+    this.eventBus.on('route:changed', ({ route, workspace }) => {
+      this.currentRoute = route;
+      if (workspace) this.currentWorkspace = workspace;
+      if (this.hostElement) {
+        this.renderToDOM();
+      }
+    });
   }
 
   render() {
@@ -195,17 +205,16 @@ export class Sidebar {
     `;
   }
 
-  mount(hostElement) {
-    hostElement.innerHTML = this.render();
-    this.element = hostElement;
+  renderToDOM() {
+    if (!this.hostElement) return;
+    this.hostElement.innerHTML = this.render();
+    this.element = this.hostElement;
     this.bindEvents();
+  }
 
-    // Listen for navigation changes
-    this.eventBus.on('route:changed', ({ route, workspace }) => {
-      this.currentRoute = route;
-      if (workspace) this.currentWorkspace = workspace;
-      this.mount(hostElement);
-    });
+  mount(hostElement) {
+    this.hostElement = hostElement;
+    this.renderToDOM();
   }
 
   isActiveRoute(route) {
