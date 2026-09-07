@@ -43,7 +43,8 @@ export class EventBus {
    */
   emit(eventName, data) {
     if (this.events.has(eventName)) {
-      this.events.get(eventName).forEach((callback) => {
+      const subscribers = Array.from(this.events.get(eventName));
+      subscribers.forEach((callback) => {
         try {
           callback(data);
         } catch (error) {

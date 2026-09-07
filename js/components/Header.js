@@ -12,6 +12,14 @@ export class Header {
     this.authService = container.resolve('AuthService');
     this.modalManager = container.resolve('ModalManager');
     this.element = null;
+    this.hostElement = null;
+
+    // Listen for auth state changes once to re-render header profile
+    this.eventBus.on('auth:login', () => {
+      if (this.hostElement) {
+        this.renderToDOM();
+      }
+    });
   }
 
   render() {
@@ -131,13 +139,16 @@ export class Header {
     `;
   }
 
-  mount(hostElement) {
-    hostElement.innerHTML = this.render();
-    this.element = hostElement;
+  renderToDOM() {
+    if (!this.hostElement) return;
+    this.hostElement.innerHTML = this.render();
+    this.element = this.hostElement;
     this.bindEvents();
+  }
 
-    // Listen for auth state changes to re-render header profile
-    this.eventBus.on('auth:login', () => this.mount(hostElement));
+  mount(hostElement) {
+    this.hostElement = hostElement;
+    this.renderToDOM();
   }
 
   bindEvents() {
