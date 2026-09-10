@@ -105,48 +105,6 @@ export class Sidebar {
             </a>
           </nav>
 
-          <!-- Papan Berbintang -->
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center justify-between px-spacing-sm py-1">
-              <span class="font-badge-micro text-[10px] text-text-muted uppercase font-bold tracking-wider">
-                Papan Berbintang
-              </span>
-              <span class="material-symbols-outlined text-[14px] text-text-muted">star</span>
-            </div>
-
-            <nav class="flex flex-col gap-0.5">
-              <a 
-                class="board-link flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-[13px] text-text-secondary hover:bg-surface-container hover:text-on-surface" 
-                data-view="project-table"
-                data-board="kampanye-q3" 
-                href="#/board/kampanye-q3"
-              >
-                <span class="material-symbols-outlined text-[16px] text-status-warning">star</span>
-                <span class="truncate">Kampanye Q3 (Monday)</span>
-              </a>
-
-              <a 
-                class="board-link flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-[13px] text-text-secondary hover:bg-surface-container hover:text-on-surface" 
-                data-view="kanban"
-                data-board="kampanye-q3" 
-                href="#/board/kanban"
-              >
-                <span class="material-symbols-outlined text-[16px] text-status-warning">star</span>
-                <span class="truncate">Creative Hub (Kanban)</span>
-              </a>
-
-              <a 
-                class="board-link flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-[13px] text-text-secondary hover:bg-surface-container hover:text-on-surface" 
-                data-view="project-table"
-                data-board="ui-redesign-v2-4" 
-                href="#/board/ui-redesign"
-              >
-                <span class="material-symbols-outlined text-[16px] text-status-warning">star</span>
-                <span class="truncate">UI Redesign v2.4</span>
-              </a>
-            </nav>
-          </div>
-
         </div>
 
         <!-- Cloud Sync Footer -->
