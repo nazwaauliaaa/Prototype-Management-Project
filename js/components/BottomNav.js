@@ -13,9 +13,9 @@ export class BottomNav {
     this.activeTab = 'dashboard';
     this.hostElement = null;
 
-    // Sinkronkan tab aktif jika route sistem berubah ke dashboard, calendar/jadwal, kanban, atau dokumen
+    // Sinkronkan tab aktif jika route sistem berubah ke dashboard, calendar/jadwal, kanban, dokumen, atau ruang kerja
     this.eventBus.on('route:changed', ({ route }) => {
-      if (route === 'dashboard') {
+      if (route === 'dashboard' || route === 'beranda') {
         this.activeTab = 'dashboard';
         this._updateActiveState();
       } else if (route === 'calendar' || route === 'jadwal-global' || route === 'kalender' || route === 'jadwal') {
@@ -26,6 +26,9 @@ export class BottomNav {
         this._updateActiveState();
       } else if (route === 'docs-sheets' || route === 'dokumen-dan-sop' || route === 'dokumen') {
         this.activeTab = 'dokumen';
+        this._updateActiveState();
+      } else if (route === 'workspaces' || route === 'ruang-kerja') {
+        this.activeTab = 'ruang-kerja';
         this._updateActiveState();
       }
     });
@@ -123,6 +126,9 @@ export class BottomNav {
         } else if (route === 'dokumen' || route === 'docs-sheets') {
           // Hubungkan tombol dokumen ke halaman Dokumen SOP
           this.eventBus.emit('navigate', { view: 'docs-sheets' });
+        } else if (route === 'ruang-kerja') {
+          // Hubungkan tombol ruang kerja ke halaman workspaces
+          this.eventBus.emit('navigate', { view: 'workspaces' });
         } else {
           // Tombol lainnya tetap dummy
           console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);

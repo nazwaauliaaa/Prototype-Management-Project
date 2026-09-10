@@ -27,6 +27,7 @@ import { CalendarView } from './views/CalendarView.js';
 import { GanttTimelineView } from './views/GanttTimelineView.js';
 import { ProjectListView } from './views/ProjectListView.js';
 import { ProjectService } from './services/ProjectService.js';
+import { WorkspacesView } from './views/WorkspacesView.js';
 
 /**
  * CreativeOfficeApp - Bootstrap & Dependency Injection Root
@@ -202,15 +203,24 @@ class CreativeOfficeApp {
     const bottomNavHost2 = document.getElementById('app-bottom-nav');
     if (bottomNavHost2) bottomNavHost2.classList.remove('hidden');
 
-    // Show workspace tab bar and adjust content padding
+    // Show/hide workspace tab bar: hidden on dashboard and workspaces view
+    const isNoWorkspaceBar = viewName === 'dashboard' || viewName === 'beranda' || viewName === 'workspaces' || viewName === 'ruang-kerja';
     if (this.workspaceTabBar) {
-      this.workspaceTabBar.show();
+      if (isNoWorkspaceBar) {
+        this.workspaceTabBar.hide();
+      } else {
+        this.workspaceTabBar.show();
+      }
     }
 
     if (shellLayout) {
       shellLayout.classList.add('md:pl-sidebar-width');
-      // Account for topbar (48px) + workspace tab bar (42px approx)
-      shellLayout.style.paddingTop = 'calc(var(--topbar-height) + 42px)';
+      if (isNoWorkspaceBar) {
+        shellLayout.style.paddingTop = 'var(--topbar-height)';
+      } else {
+        // Account for topbar (48px) + workspace tab bar (42px approx)
+        shellLayout.style.paddingTop = 'calc(var(--topbar-height) + 42px)';
+      }
     }
 
     // Unmount previous view
@@ -252,6 +262,10 @@ class CreativeOfficeApp {
       case 'project-list':
       case 'daftar-proyek':
         this.currentView = new ProjectListView(this.container);
+        break;
+      case 'workspaces':
+      case 'ruang-kerja':
+        this.currentView = new WorkspacesView(this.container);
         break;
       default:
         this.currentView = new DashboardView(this.container);
