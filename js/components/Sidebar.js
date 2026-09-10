@@ -78,6 +78,15 @@ export class Sidebar {
             </a>
 
             <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('projects') || this.isActiveRoute('project-list') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="projects" 
+              href="#/projects"
+            >
+              <span class="material-symbols-outlined text-[18px]">assignment</span>
+              <span>Daftar Proyek</span>
+            </a>
+
+            <a 
               class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('docs-sheets') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
               data-route="docs-sheets" 
               href="#/docs-sheets"

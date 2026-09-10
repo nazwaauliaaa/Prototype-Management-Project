@@ -25,6 +25,8 @@ import { KanbanBoardView } from './views/KanbanBoardView.js';
 import { DocsSheetsView } from './views/DocsSheetsView.js';
 import { CalendarView } from './views/CalendarView.js';
 import { GanttTimelineView } from './views/GanttTimelineView.js';
+import { ProjectListView } from './views/ProjectListView.js';
+import { ProjectService } from './services/ProjectService.js';
 
 /**
  * CreativeOfficeApp - Bootstrap & Dependency Injection Root
@@ -71,6 +73,10 @@ class CreativeOfficeApp {
     // DocumentService (SRP)
     const documentService = new DocumentService(eventBus, notificationService);
     this.container.register('DocumentService', documentService);
+
+    // ProjectService (SRP / DIP)
+    const projectService = new ProjectService(eventBus, notificationService);
+    this.container.register('ProjectService', projectService);
 
     // ModalManager (SRP / OCP)
     const modalManager = new ModalManager(eventBus);
@@ -238,6 +244,11 @@ class CreativeOfficeApp {
       case 'gantt':
       case 'timeline':
         this.currentView = new GanttTimelineView(this.container);
+        break;
+      case 'projects':
+      case 'project-list':
+      case 'daftar-proyek':
+        this.currentView = new ProjectListView(this.container);
         break;
       default:
         this.currentView = new DashboardView(this.container);
