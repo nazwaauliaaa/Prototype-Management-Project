@@ -59,37 +59,6 @@ export class DocsSheetsView extends BaseView {
           </div>
         </div>
 
-        <!-- View Switcher Bar -->
-        <div class="flex items-center justify-between border-b border-surface-border mb-6">
-          <div class="flex items-center gap-0 sm:gap-1 -mb-px overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none">
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="kanban" title="Kanban View">
-              <span class="material-symbols-outlined text-[18px]">dashboard</span>
-              <span class="hidden sm:inline">Kanban</span>
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="project-table" title="Tabel Monday Style">
-              <span class="material-symbols-outlined text-[18px]">table_chart</span>
-              <span class="hidden sm:inline">Tabel</span>
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg shrink-0" data-view="docs-sheets" title="Docs & Sheets">
-              <span class="material-symbols-outlined text-[18px] text-primary">description</span>
-              <span class="hidden sm:inline">Docs</span>
-              <span class="hidden lg:inline text-[11px] opacity-70">&amp; Sheets</span>
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="calendar" title="Kalender & Jadwal">
-              <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-              <span class="hidden sm:inline">Jadwal</span>
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="gantt" title="Timeline & Gantt">
-              <span class="material-symbols-outlined text-[18px]">waterfall_chart</span>
-              <span class="hidden sm:inline">Gantt</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Main Workspace Area -->
         ${this.activeSubTab === 'docs' ? this.renderDocsView() : this.renderSheetsView()}
 
@@ -232,14 +201,6 @@ export class DocsSheetsView extends BaseView {
       btn.addEventListener('click', () => {
         this.activeSubTab = btn.getAttribute('data-subtab');
         this.mount(this.element);
-      });
-    });
-
-    const viewTabs = this.element.querySelectorAll('.view-switch-tab');
-    viewTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const view = tab.getAttribute('data-view');
-        this.eventBus.emit('navigate', { view });
       });
     });
 
