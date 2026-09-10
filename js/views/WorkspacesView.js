@@ -285,9 +285,18 @@ export class WorkspacesView extends BaseView {
               Ruang kerja tidak ditemukan
             </div>
 
-            <!-- Controls: Search Input Bar & Tambah Proyek Button -->
-            <div class="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
-              <div class="relative flex-1 w-full flex items-center">
+            <!-- Controls: Tambah Proyek Button & Search Input Bar -->
+            <div class="flex flex-col gap-2.5 pt-2">
+              <button
+                id="btn-add-new-project-card"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[13px] shadow-lg shadow-purple-600/25 transition-all cursor-pointer border border-purple-400/30 shrink-0 active:scale-95"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                <span>Tambah Proyek</span>
+              </button>
+
+              <div class="relative w-full flex items-center">
                 <input 
                   type="text" 
                   id="search-ws-input" 
@@ -296,15 +305,6 @@ export class WorkspacesView extends BaseView {
                 />
                 <span class="material-symbols-outlined absolute right-3.5 text-slate-500 text-[18px] pointer-events-none">search</span>
               </div>
-
-              <button
-                id="btn-add-new-project-card"
-                class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[13px] shadow-lg shadow-purple-600/25 transition-all cursor-pointer border border-purple-400/30 shrink-0 active:scale-95"
-                type="button"
-              >
-                <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                <span>Tambah Proyek</span>
-              </button>
             </div>
 
           </div>
