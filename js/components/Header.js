@@ -190,8 +190,7 @@ export class Header {
     const mobileSearchBtn = this.element.querySelector('#btn-mobile-search');
     if (mobileSearchBtn) {
       mobileSearchBtn.addEventListener('click', () => {
-        const notifService = this.container.resolve('NotificationService');
-        notifService.info('Fitur pencarian mobile akan segera hadir.');
+        this.modalManager.open('search');
       });
     }
 
@@ -239,12 +238,23 @@ export class Header {
       });
     }
 
-    // Keyboard shortcut ⌘K / Ctrl+K
+    // Global Search Desktop & Keyboard shortcut ⌘K / Ctrl+K
     const searchInput = this.element.querySelector('#global-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('focus', () => {
+        this.modalManager.open('search', { query: searchInput.value });
+        searchInput.blur();
+      });
+      searchInput.addEventListener('click', () => {
+        this.modalManager.open('search', { query: searchInput.value });
+        searchInput.blur();
+      });
+    }
+
     window.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        if (searchInput) searchInput.focus();
+        this.modalManager.open('search');
       }
     });
   }
