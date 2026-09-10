@@ -10,6 +10,7 @@ import { DocumentService } from './services/DocumentService.js';
 import { Header } from './components/Header.js';
 import { Sidebar } from './components/Sidebar.js';
 import { BottomNav } from './components/BottomNav.js';
+import { WorkspaceTabBar } from './components/WorkspaceTabBar.js';
 import { ModalManager } from './components/ModalManager.js';
 
 import { TaskDetailModal } from './components/modals/TaskDetailModal.js';
@@ -36,6 +37,7 @@ class CreativeOfficeApp {
     this.header = null;
     this.sidebar = null;
     this.bottomNav = null;
+    this.workspaceTabBar = null;
   }
 
   init() {
@@ -90,14 +92,17 @@ class CreativeOfficeApp {
     this.header = new Header(this.container);
     this.sidebar = new Sidebar(this.container);
     this.bottomNav = new BottomNav(this.container);
+    this.workspaceTabBar = new WorkspaceTabBar(this.container);
 
     const headerHost = document.getElementById('app-header');
     const sidebarHost = document.getElementById('app-sidebar');
     const bottomNavHost = document.getElementById('app-bottom-nav');
+    const workspaceBarHost = document.getElementById('app-workspace-bar');
 
     if (headerHost) this.header.mount(headerHost);
     if (sidebarHost) this.sidebar.mount(sidebarHost);
     if (bottomNavHost) this.bottomNav.mount(bottomNavHost);
+    if (workspaceBarHost) this.workspaceTabBar.mount(workspaceBarHost);
 
     // Listen to global navigation events
     eventBus.on('navigate', ({ view, workspace, board }) => {
@@ -164,14 +169,16 @@ class CreativeOfficeApp {
     }
 
     if (viewName === 'auth') {
-      // Hide header, sidebar, and bottom nav in auth gate
+      // Hide header, sidebar, workspace bar, and bottom nav in auth gate
       if (headerHost) headerHost.classList.add('hidden');
       if (sidebarHost) sidebarHost.classList.add('hidden');
       const bottomNavHost = document.getElementById('app-bottom-nav');
       if (bottomNavHost) bottomNavHost.classList.add('hidden');
+      if (this.workspaceTabBar) this.workspaceTabBar.hide();
       if (shellLayout) {
         shellLayout.classList.remove('pl-sidebar-width');
         shellLayout.classList.remove('pt-topbar-height');
+        shellLayout.style.paddingTop = '';
       }
 
       // Unmount previous view before mounting auth
@@ -183,15 +190,21 @@ class CreativeOfficeApp {
       return;
     }
 
-    // Authenticated views: show header, sidebar, and bottom nav
+    // Authenticated views: show header, sidebar, workspace bar, and bottom nav
     if (headerHost) headerHost.classList.remove('hidden');
     if (sidebarHost) sidebarHost.classList.remove('hidden');
     const bottomNavHost2 = document.getElementById('app-bottom-nav');
     if (bottomNavHost2) bottomNavHost2.classList.remove('hidden');
 
+    // Show workspace tab bar and adjust content padding
+    if (this.workspaceTabBar) {
+      this.workspaceTabBar.show();
+    }
+
     if (shellLayout) {
       shellLayout.classList.add('md:pl-sidebar-width');
-      shellLayout.classList.add('pt-topbar-height');
+      // Account for topbar (48px) + workspace tab bar (42px approx)
+      shellLayout.style.paddingTop = 'calc(var(--topbar-height) + 42px)';
     }
 
     // Unmount previous view

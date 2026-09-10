@@ -305,6 +305,32 @@ body {
   }
 }
 
+/* ── Workspace Tab Bar ── */
+#workspace-tab-bar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#workspace-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.workspace-tab-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.workspace-tab-btn:active {
+  transform: scale(0.96);
+}
+
+/* Desktop: workspace tab bar respects sidebar width */
+@media (min-width: 768px) {
+  #workspace-tab-bar {
+    padding-left: calc(var(--sidebar-width) + 16px);
+  }
+}
+
+
 /* ── Mobile Kanban: horizontal scroll ── */
 @media (max-width: 767px) {
   .kanban-board-container {
