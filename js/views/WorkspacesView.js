@@ -21,7 +21,7 @@ export class WorkspacesView extends BaseView {
     this.isModalOpen = false;
     this.hostElement = null;
 
-    this.workspaces = [
+    this.defaultWorkspaces = [
       {
         id: 'layarbaca',
         title: 'LayarBaca',
@@ -111,6 +111,19 @@ export class WorkspacesView extends BaseView {
         `
       }
     ];
+
+    this.workspaces = [];
+    this.loadWorkspaces();
+  }
+
+  loadWorkspaces() {
+    let custom = [];
+    try {
+      custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+    } catch (e) {
+      custom = [];
+    }
+    this.workspaces = [...custom, ...this.defaultWorkspaces];
   }
 
   mount(hostElement) {
@@ -202,6 +215,11 @@ export class WorkspacesView extends BaseView {
                         <div class="flex flex-col min-w-0">
                           <div class="flex items-center gap-2">
                             <span class="ws-title font-bold text-white text-[15px] sm:text-[16px] tracking-wide transition-colors truncate">${ws.title}</span>
+                            ${ws.isCustom ? `
+                              <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-badge-micro text-[10px] font-bold">
+                                Baru
+                              </span>
+                            ` : ''}
                             ${isActive ? `
                               <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-badge-micro text-[10px] font-bold">
                                 Aktif
@@ -293,7 +311,7 @@ export class WorkspacesView extends BaseView {
 
         </div>
 
-        <!-- MODAL TAMBAH PROYEK -->
+        <!-- MODAL TAMBAH PROYEK (OTOMATIS MEMBUAT RUANG KERJA BARU) -->
         <div 
           id="modal-create-project" 
           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-200 ${this.isModalOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}"
@@ -310,7 +328,7 @@ export class WorkspacesView extends BaseView {
                 </div>
                 <div>
                   <h3 class="text-base font-bold text-white">Tambah Proyek Baru</h3>
-                  <p class="text-[11px] text-slate-400">Tambahkan proyek ke ruang kerja pilihan Anda</p>
+                  <p class="text-[11px] text-slate-400">Otomatis membuat ruang kerja baru untuk proyek Anda</p>
                 </div>
               </div>
               <button id="btn-close-create-project" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer" type="button">
@@ -331,21 +349,41 @@ export class WorkspacesView extends BaseView {
                 />
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-200 mb-1">Ruang Kerja / Workspace</label>
-                  <select
-                    id="select-ws-project-workspace"
-                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
-                  >
-                    <option value="ruangkreasi" ${this.activeWorkspaceId === 'ruangkreasi' ? 'selected' : ''}>RuangKreasi (Dev)</option>
-                    <option value="layarbaca" ${this.activeWorkspaceId === 'layarbaca' ? 'selected' : ''}>LayarBaca (Produk)</option>
-                    <option value="aikreativ" ${this.activeWorkspaceId === 'aikreativ' ? 'selected' : ''}>AIKreativ (Studio)</option>
-                    <option value="panen-kunci" ${this.activeWorkspaceId === 'panen-kunci' ? 'selected' : ''}>Panen Kunci (SaaS)</option>
-                    <option value="sharinginaja" ${this.activeWorkspaceId === 'sharinginaja' ? 'selected' : ''}>Sharinginaja (Cloud)</option>
-                  </select>
+                  <label class="block text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                    <span>Ruang Kerja Baru *</span>
+                    <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Otomatis Baru
+                    </span>
+                  </label>
+                  <input
+                    id="input-ws-new-workspace-name"
+                    type="text"
+                    required
+                    placeholder="Nama ruang kerja baru..."
+                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                  />
                 </div>
 
+                <div>
+                  <label class="block text-xs font-semibold text-slate-200 mb-1">Kategori / Divisi</label>
+                  <select
+                    id="select-ws-new-workspace-tag"
+                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
+                  >
+                    <option value="Dev / Creative Hub" selected>Dev / Creative Hub</option>
+                    <option value="Produk / Inovasi">Produk / Inovasi</option>
+                    <option value="Studio / Digital & AI">Studio / Digital & AI</option>
+                    <option value="SaaS / Security & Core">SaaS / Security & Core</option>
+                    <option value="Cloud / Infrastruktur">Cloud / Infrastruktur</option>
+                    <option value="Marketing / Kampanye">Marketing / Kampanye</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-200 mb-1">Prioritas</label>
                   <select
@@ -358,9 +396,7 @@ export class WorkspacesView extends BaseView {
                     <option value="Low">Low</option>
                   </select>
                 </div>
-              </div>
 
-              <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-200 mb-1">Target Deadline</label>
                   <input
@@ -371,17 +407,17 @@ export class WorkspacesView extends BaseView {
                     class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label class="block text-xs font-semibold text-slate-200 mb-1">Estimasi Budget</label>
-                  <input
-                    id="input-ws-project-budget"
-                    type="text"
-                    placeholder="Contoh: Rp 75.000.000"
-                    value="Rp 85.000.000"
-                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
-                  />
-                </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1">Estimasi Budget</label>
+                <input
+                  id="input-ws-project-budget"
+                  type="text"
+                  placeholder="Contoh: Rp 75.000.000"
+                  value="Rp 85.000.000"
+                  class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                />
               </div>
 
               <div>
@@ -409,7 +445,7 @@ export class WorkspacesView extends BaseView {
                   class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
                 >
                   <span class="material-symbols-outlined text-[16px]">save</span>
-                  <span>Simpan Proyek</span>
+                  <span>Simpan & Buat Ruang Kerja</span>
                 </button>
               </div>
             </form>
@@ -523,24 +559,82 @@ export class WorkspacesView extends BaseView {
       });
     }
 
-    // Submit Tambah Proyek Form
+    // Auto-fill new workspace name based on project name if not manually modified
+    const projectNameInput = this.element.querySelector('#input-ws-project-name');
+    const wsNameInput = this.element.querySelector('#input-ws-new-workspace-name');
+    let wsNameManuallyEdited = false;
+
+    if (wsNameInput) {
+      wsNameInput.addEventListener('input', () => {
+        wsNameManuallyEdited = true;
+      });
+    }
+
+    if (projectNameInput && wsNameInput) {
+      projectNameInput.addEventListener('input', (e) => {
+        if (!wsNameManuallyEdited) {
+          const val = e.target.value.trim();
+          wsNameInput.value = val ? `${val} Hub` : '';
+        }
+      });
+    }
+
+    // Submit Tambah Proyek Form (Otomatis Buat Ruang Kerja Baru)
     const form = this.element.querySelector('#form-create-project');
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const name = this.element.querySelector('#input-ws-project-name')?.value.trim();
-        const workspace = this.element.querySelector('#select-ws-project-workspace')?.value || 'ruangkreasi';
+        let wsTitle = this.element.querySelector('#input-ws-new-workspace-name')?.value.trim();
+        const wsTag = this.element.querySelector('#select-ws-new-workspace-tag')?.value || 'Dev / Creative Hub';
         const priority = this.element.querySelector('#select-ws-project-priority')?.value || 'High';
         const dueDate = this.element.querySelector('#input-ws-project-due')?.value || 'Des 2026';
         const budget = this.element.querySelector('#input-ws-project-budget')?.value || 'Rp 85.000.000';
-        const description = this.element.querySelector('#input-ws-project-desc')?.value.trim() || 'Proyek strategis baru ditambahkan ke dalam ruang kerja.';
+        const description = this.element.querySelector('#input-ws-project-desc')?.value.trim() || `Ruang kerja dan deliverable proyek ${name}.`;
 
         if (!name) return;
+        if (!wsTitle) wsTitle = `${name} Hub`;
 
-        // Tambahkan proyek melalui ProjectService
-        const newProject = this.projectService.addProject({
+        // Generate unique workspace ID
+        const slugBase = wsTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ws-baru';
+        const newWorkspaceId = `${slugBase}-${Date.now().toString().slice(-4)}`;
+
+        // Color & SVG icon for new workspace
+        const palette = ['#8b5cf6', '#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6', '#f43f5e'];
+        const chosenColor = palette[Math.floor(Math.random() * palette.length)];
+
+        const newWorkspace = {
+          id: newWorkspaceId,
+          title: wsTitle,
+          tag: wsTag,
+          description: description,
+          color: chosenColor,
+          isCustom: true,
+          iconSvg: `
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              <line x1="12" y1="11" x2="12" y2="17"></line>
+              <line x1="9" y1="14" x2="15" y2="14"></line>
+            </svg>
+          `
+        };
+
+        // Persist to localStorage
+        try {
+          const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+          custom.unshift(newWorkspace);
+          localStorage.setItem('custom_workspaces', JSON.stringify(custom));
+        } catch (err) {
+          console.error('Error saving custom workspace:', err);
+        }
+
+        // Reload workspaces array so the new workspace appears at the top
+        this.loadWorkspaces();
+
+        // Add the project associated with this new workspace
+        this.projectService.addProject({
           name,
-          workspace,
+          workspace: newWorkspaceId,
           priority,
           dueDate,
           budget,
@@ -549,15 +643,52 @@ export class WorkspacesView extends BaseView {
           status: 'active'
         });
 
-        const targetWs = this.workspaces.find(w => w.id === workspace);
-        const wsTitle = targetWs ? targetWs.title : workspace;
+        // Initialize starter tasks for this new workspace in TaskService
+        if (this.taskService) {
+          const prefix = wsTitle.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'PRJ';
+          this.taskService.addTask({
+            code: `#${prefix}-101`,
+            title: `Kickoff & Ruang Lingkup Proyek: ${name}`,
+            description: description,
+            workspace: newWorkspaceId,
+            board: 'sprint-1',
+            status: 'in-progress',
+            priority: priority,
+            pic: { name: 'Tim Inti Proyek', initials: 'TP', role: 'Project Owner' },
+            timeline: `${dueDate} (Fase Inisiasi)`,
+            hours: 16,
+            qaProgress: { passed: 1, total: 3 },
+            tags: ['Inisiasi', 'Baru']
+          });
 
-        this.notificationService.success(`Proyek "${name}" berhasil ditambahkan ke Ruang Kerja ${wsTitle}!`);
-        this.activeWorkspaceId = workspace;
-        localStorage.setItem('active_workspace', workspace);
+          this.taskService.addTask({
+            code: `#${prefix}-102`,
+            title: `Penyusunan Rencana Kerja & Kebutuhan Ruang Kerja ${wsTitle}`,
+            description: 'Setup kebutuhan kolaborasi, pembagian tugas anggota, dan milestone utama.',
+            workspace: newWorkspaceId,
+            board: 'sprint-1',
+            status: 'backlog',
+            priority: 'Medium',
+            pic: { name: 'Tim Inti Proyek', initials: 'TP', role: 'Project Owner' },
+            timeline: dueDate,
+            hours: 12,
+            qaProgress: { passed: 0, total: 2 },
+            tags: ['Perencanaan']
+          });
+        }
+
+        // Set as active workspace
+        this.activeWorkspaceId = newWorkspaceId;
+        localStorage.setItem('active_workspace', newWorkspaceId);
+
+        // Emit global workspace selection
+        this.eventBus.emit('workspace:selected', { workspace: newWorkspaceId });
+
+        // Notification
+        this.notificationService.success(`Ruang Kerja baru "${wsTitle}" dan Proyek "${name}" berhasil dibuat!`);
         this.isModalOpen = false;
 
-        // Re-render agar counter proyek di kartu langsung terupdate
+        // Re-render
         this.renderToDOM();
       });
     }

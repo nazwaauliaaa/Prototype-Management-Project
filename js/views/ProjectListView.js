@@ -28,13 +28,26 @@ export class ProjectListView extends BaseView {
 
   /** Workspace visual styling dictionary */
   get workspaceMap() {
-    return {
+    const defaultMap = {
       'ruangkreasi':  { label: 'RuangKreasi',  color: '#ec4899', bg: 'bg-pink-500/10 text-pink-400 border-pink-500/20' },
       'layarbaca':    { label: 'LayarBaca',    color: '#3b82f6', bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
       'aikreativ':    { label: 'AIKreativ',    color: '#8b5cf6', bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
       'panen-kunci':  { label: 'Panen Kunci',  color: '#f59e0b', bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
       'sharinginaja': { label: 'Sharinginaja', color: '#10b981', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
     };
+    try {
+      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      custom.forEach(ws => {
+        if (ws && ws.id && !defaultMap[ws.id]) {
+          defaultMap[ws.id] = {
+            label: ws.title || ws.id,
+            color: ws.color || '#8b5cf6',
+            bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+          };
+        }
+      });
+    } catch (e) {}
+    return defaultMap;
   }
 
   getFilteredProjects() {

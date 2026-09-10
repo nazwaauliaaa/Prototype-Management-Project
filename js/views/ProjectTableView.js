@@ -66,7 +66,26 @@ export class ProjectTableView extends BaseView {
         assets: '0 Aset'
       }
     };
-    return configs[wsKey] || {
+
+    if (configs[wsKey]) return configs[wsKey];
+
+    try {
+      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      const found = custom.find(w => w.id === wsKey);
+      if (found) {
+        return {
+          name: found.title,
+          title: `Papan Proyek ${found.title}`,
+          subtitle: found.description || `Ruang kerja dan deliverable untuk ${found.title}.`,
+          badge: found.tag ? found.tag.split('/')[0].trim() : 'Ruang Baru',
+          color: 'bg-brand-accent',
+          hours: '28 Jam',
+          assets: '2 Aset'
+        };
+      }
+    } catch (e) {}
+
+    return {
       name: wsKey,
       title: `Papan Proyek ${wsKey}`,
       subtitle: `Deliverable dan tugas operasional pilar ${wsKey}.`,
