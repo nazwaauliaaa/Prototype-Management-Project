@@ -16,14 +16,6 @@ export class DocsSheetsView extends BaseView {
         
         <!-- Header -->
         <div class="flex flex-col gap-2 mb-4">
-          <div class="flex items-center gap-2 text-[12px] text-text-muted">
-            <span class="hover:text-primary cursor-pointer transition-colors" id="btn-crumb-docs">Workspaces</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-text-primary font-medium">RuangKreasi</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-primary font-semibold">Docs & Sheets Hub</span>
-          </div>
-
           <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             <div class="min-w-0">
               <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
@@ -203,12 +195,5 @@ export class DocsSheetsView extends BaseView {
         this.mount(this.element);
       });
     });
-
-    const crumb = this.element.querySelector('#btn-crumb-docs');
-    if (crumb) {
-      crumb.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'dashboard' });
-      });
-    }
   }
 }
