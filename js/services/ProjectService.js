@@ -186,6 +186,16 @@ export class ProjectService {
   }
 
   /**
+   * Mengambil proyek berdasarkan workspace
+   * @param {string} [workspace]
+   * @returns {Project[]}
+   */
+  getProjectsByWorkspace(workspace = null) {
+    if (!workspace || workspace === 'all') return [...this.projects];
+    return this.projects.filter(p => (p.workspace || '').toLowerCase() === workspace.toLowerCase());
+  }
+
+  /**
    * Mengambil proyek yang sudah ada (Existing)
    * @returns {Project[]}
    */

@@ -2,8 +2,9 @@ import { BaseView } from '../core/BaseView.js';
 
 /**
  * WorkspacesView - Single Responsibility Principle (SRP)
- * Renders the dedicated "Pilih Ruang Kerja" view featuring 5 interactive dummy cards:
+ * Renders the dedicated "Pilih Ruang Kerja" view featuring 5 interactive workspaces:
  * LayarBaca, AIKreativ, Panen Kunci, RuangKreasi, and Sharinginaja.
+ * Menghubungkan pilihan ruang kerja ke Kanban Board, Tabel Proyek, dan seluruh data dinamis.
  */
 export class WorkspacesView extends BaseView {
   /**
@@ -11,14 +12,19 @@ export class WorkspacesView extends BaseView {
    */
   constructor(container) {
     super(container);
+    this.taskService = container.resolve('TaskService');
+    this.projectService = container.resolve('ProjectService');
     this.notificationService = container.resolve('NotificationService');
-    this.activeWorkspaceId = null; // None active by default until clicked
+    this.eventBus = container.resolve('EventBus');
+
+    this.activeWorkspaceId = localStorage.getItem('active_workspace') || 'ruangkreasi';
 
     this.workspaces = [
       {
         id: 'layarbaca',
         title: 'LayarBaca',
         tag: 'Produk / E-Book & Reader',
+        description: 'Modernisasi sistem pembaca konten interaktif, optimasi typography engine, dan offline mode.',
         color: '#3b82f6',
         iconSvg: `
           <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -33,6 +39,7 @@ export class WorkspacesView extends BaseView {
         id: 'aikreativ',
         title: 'AIKreativ',
         tag: 'Studio / Generative AI',
+        description: 'Pipeline pembuatan storyboard dan animasi dinamis otomatis menggunakan generative assets.',
         color: '#8b5cf6',
         iconSvg: `
           <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -53,6 +60,7 @@ export class WorkspacesView extends BaseView {
         id: 'panen-kunci',
         title: 'Panen Kunci',
         tag: 'SaaS / Auth & Security',
+        description: 'Sistem Single Sign-On korporat, enkripsi token terdistribusi, dan arsitektur Zero-Trust.',
         color: '#f59e0b',
         iconSvg: `
           <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -72,6 +80,7 @@ export class WorkspacesView extends BaseView {
         id: 'ruangkreasi',
         title: 'RuangKreasi',
         tag: 'Dev / UI & Creative Hub',
+        description: 'Audit Safe-Zone LED Bundaran HI & Flyover Antasari, kalibrasi pixel mapping Novastar.',
         color: '#ec4899',
         iconSvg: `
           <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -88,6 +97,7 @@ export class WorkspacesView extends BaseView {
         id: 'sharinginaja',
         title: 'Sharinginaja',
         tag: 'Cloud / Assets & Drive',
+        description: 'Infrastruktur sinkronisasi multi-region S3, media assets delivery, dan high-throughput storage.',
         color: '#10b981',
         iconSvg: `
           <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -116,8 +126,9 @@ export class WorkspacesView extends BaseView {
               <span class="material-symbols-outlined text-[18px]">arrow_back</span>
               <span>Beranda</span>
             </button>
-            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-medium">
-              Mode Dummy
+            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Workspace Aktif
             </span>
           </div>
 
@@ -142,31 +153,83 @@ export class WorkspacesView extends BaseView {
               </div>
             </div>
 
-            <!-- 5 Interactive Dummy Workspace Cards -->
+            <!-- Interactive Workspace Cards -->
             <div class="flex flex-col gap-3" id="workspaces-list-container">
               ${this.workspaces.map(ws => {
+                const tasks = this.taskService ? this.taskService.getTasks(ws.id) : [];
+                const projects = this.projectService ? this.projectService.getProjectsByWorkspace(ws.id) : [];
+                const activeTasks = tasks.filter(t => t.status !== 'done').length;
                 const isActive = this.activeWorkspaceId === ws.id;
+
                 return `
                   <div
-                    class="workspace-select-card ${isActive ? 'active-neon' : ''} p-3.5 sm:p-4 rounded-2xl cursor-pointer flex items-center justify-between gap-3.5 group shadow-sm transition-all"
+                    class="workspace-select-card ${isActive ? 'active-neon border-purple-500/60 bg-purple-950/20' : 'border-[#221c38] bg-[#120f24]/70'} p-4 rounded-2xl cursor-pointer flex flex-col gap-3 group shadow-sm transition-all border hover:border-purple-500/40 hover:bg-[#16122d]"
                     data-workspace="${ws.id}"
                     data-title="${ws.title}"
                     role="button"
                     tabindex="0"
                   >
-                    <div class="flex items-center gap-3.5 min-w-0">
-                      <div class="ws-icon-box w-11 h-11 rounded-xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-center p-2.5 shrink-0 transition-transform">
-                        ${ws.iconSvg}
+                    <div class="flex items-center justify-between gap-3.5">
+                      <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="ws-icon-box w-11 h-11 rounded-xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-center p-2.5 shrink-0 transition-transform group-hover:scale-105">
+                          ${ws.iconSvg}
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                          <div class="flex items-center gap-2">
+                            <span class="ws-title font-bold text-white text-[15px] sm:text-[16px] tracking-wide transition-colors truncate">${ws.title}</span>
+                            ${isActive ? `
+                              <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-badge-micro text-[10px] font-bold">
+                                Aktif
+                              </span>
+                            ` : ''}
+                          </div>
+                          <span class="text-[11px] text-slate-400 truncate">${ws.tag}</span>
+                        </div>
                       </div>
-                      <div class="flex flex-col min-w-0">
-                        <span class="ws-title font-bold text-white text-[15px] sm:text-[16px] tracking-wide transition-colors truncate">${ws.title}</span>
-                        <span class="text-[11px] text-slate-400 truncate">${ws.tag}</span>
+
+                      <div class="flex items-center gap-2 shrink-0">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background: ${ws.color};" title="Status Indicator"></span>
+                        <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[20px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
                       </div>
                     </div>
 
-                    <div class="flex items-center gap-2 shrink-0">
-                      <span class="w-2.5 h-2.5 rounded-full" style="background: ${ws.color};" title="Status Indicator"></span>
-                      <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
+                    <!-- Dynamic Workspace Stats & Quick Action Bar -->
+                    <div class="pt-2 border-t border-purple-500/10 flex items-center justify-between gap-2 text-[11px]">
+                      <div class="flex items-center gap-2 text-slate-400">
+                        <span class="flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[14px] text-purple-400">task_alt</span>
+                          <span>${tasks.length} Tugas (${activeTasks} aktif)</span>
+                        </span>
+                        <span>•</span>
+                        <span class="flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[14px] text-blue-400">folder</span>
+                          <span>${projects.length} Proyek</span>
+                        </span>
+                      </div>
+
+                      <!-- Action Buttons -->
+                      <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+                        <button
+                          class="btn-open-ws-kanban px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white transition-colors text-[11px] font-semibold flex items-center gap-1 border border-purple-500/30"
+                          data-workspace="${ws.id}"
+                          data-title="${ws.title}"
+                          type="button"
+                          title="Buka Papan Kanban"
+                        >
+                          <span class="material-symbols-outlined text-[13px]">view_kanban</span>
+                          <span>Kanban</span>
+                        </button>
+                        <button
+                          class="btn-open-ws-table px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-[11px] font-semibold flex items-center gap-1 border border-slate-700"
+                          data-workspace="${ws.id}"
+                          data-title="${ws.title}"
+                          type="button"
+                          title="Buka Tabel Proyek"
+                        >
+                          <span class="material-symbols-outlined text-[13px]">table_rows</span>
+                          <span>Tabel</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 `;
@@ -206,20 +269,30 @@ export class WorkspacesView extends BaseView {
       });
     }
 
-    // Interactive Dummy Selection for the 5 Workspace Cards
+    // Function to activate workspace and navigate
+    const activateAndNavigate = (wsId, title, targetView = 'kanban') => {
+      this.activeWorkspaceId = wsId;
+      localStorage.setItem('active_workspace', wsId);
+
+      // Emit global events
+      this.eventBus.emit('workspace:selected', { workspace: wsId });
+      this.eventBus.emit('route:changed', { route: targetView, workspace: wsId });
+
+      this.notificationService.success(`Ruang Kerja "${title}" aktif. Membuka ${targetView === 'kanban' ? 'Papan Kanban' : 'Tabel Proyek'}...`);
+
+      // Smooth transition to target view
+      setTimeout(() => {
+        this.eventBus.emit('navigate', { view: targetView, workspace: wsId });
+      }, 200);
+    };
+
+    // Workspace card click
     const cards = this.element.querySelectorAll('.workspace-select-card');
     cards.forEach(card => {
       const handleSelect = () => {
         const wsId = card.getAttribute('data-workspace');
         const title = card.getAttribute('data-title');
-
-        // Toggle active-neon visual highlight
-        cards.forEach(c => c.classList.remove('active-neon'));
-        card.classList.add('active-neon');
-        this.activeWorkspaceId = wsId;
-
-        // Visual feedback notification (Dummy behavior)
-        this.notificationService.info(`Ruang Kerja "${title}" aktif (Mode Dummy)`);
+        activateAndNavigate(wsId, title, 'kanban');
       };
 
       card.addEventListener('click', handleSelect);
@@ -228,6 +301,28 @@ export class WorkspacesView extends BaseView {
           e.preventDefault();
           handleSelect();
         }
+      });
+    });
+
+    // Quick action buttons: Kanban
+    const kanbanBtns = this.element.querySelectorAll('.btn-open-ws-kanban');
+    kanbanBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wsId = btn.getAttribute('data-workspace');
+        const title = btn.getAttribute('data-title');
+        activateAndNavigate(wsId, title, 'kanban');
+      });
+    });
+
+    // Quick action buttons: Tabel
+    const tableBtns = this.element.querySelectorAll('.btn-open-ws-table');
+    tableBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wsId = btn.getAttribute('data-workspace');
+        const title = btn.getAttribute('data-title');
+        activateAndNavigate(wsId, title, 'project-table');
       });
     });
 

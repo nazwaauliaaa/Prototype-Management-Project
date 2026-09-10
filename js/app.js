@@ -118,6 +118,12 @@ class CreativeOfficeApp {
       this.navigateTo(view, { workspace, board });
     });
 
+    // Listen to workspace selection events
+    eventBus.on('workspace:selected', ({ workspace }) => {
+      this.activeWorkspace = workspace;
+      localStorage.setItem('active_workspace', workspace);
+    });
+
     // Listen to auth events
     eventBus.on('auth:logout', () => {
       this.navigateTo('auth');
@@ -229,11 +235,13 @@ class CreativeOfficeApp {
       case 'project-table':
       case 'tabel':
         this.currentView = new ProjectTableView(this.container);
-        if (params.workspace) this.currentView.setWorkspace(params.workspace, params.board);
+        const wsTable = params.workspace || this.activeWorkspace;
+        if (wsTable) this.currentView.setWorkspace(wsTable, params.board);
         break;
       case 'kanban':
         this.currentView = new KanbanBoardView(this.container);
-        if (params.workspace) this.currentView.setWorkspace(params.workspace);
+        const wsKanban = params.workspace || this.activeWorkspace;
+        if (wsKanban) this.currentView.setWorkspace(wsKanban);
         break;
       case 'docs-sheets':
       case 'dokumen-dan-sop':
