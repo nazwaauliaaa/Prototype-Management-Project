@@ -13,7 +13,7 @@ export class KanbanBoardView extends BaseView {
     this.notificationService = container.resolve('NotificationService');
     this.currentWorkspace = null; // Show all workspaces by default
     this.columns = [
-      { id: 'backlog',      title: 'Backlog',              color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-600' },
+      { id: 'backlog',      title: 'Daftar Pekerjaan',     color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-600' },
       { id: 'in-progress',  title: 'Sedang Berjalan',      color: 'border-blue-400',   dot: 'bg-blue-400',     badge: 'bg-blue-100 text-blue-700' },
       { id: 'review-qa',    title: 'Review QA Lapangan',   color: 'border-rose-400',   dot: 'bg-rose-400',     badge: 'bg-rose-100 text-rose-700' },
       { id: 'ready-launch', title: 'Siap Launching',       color: 'border-purple-400', dot: 'bg-purple-500',   badge: 'bg-purple-100 text-purple-700' },
