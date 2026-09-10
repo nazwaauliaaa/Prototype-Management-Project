@@ -43,10 +43,6 @@ export class CalendarView extends BaseView {
 
             <!-- View Switcher Tabs -->
             <div class="flex items-center gap-0 sm:gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-border self-start md:self-auto overflow-x-auto max-w-full" style="scrollbar-width:none;-ms-overflow-style:none">
-              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="kanban" title="Kanban View">
-                <span class="material-symbols-outlined text-[16px]">view_kanban</span>
-                <span class="hidden sm:inline">Kanban</span>
-              </button>
               <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="project-table" title="Tabel">
                 <span class="material-symbols-outlined text-[16px]">table_rows</span>
                 <span class="hidden sm:inline">Tabel</span>
