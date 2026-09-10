@@ -23,14 +23,6 @@ export class CalendarView extends BaseView {
         
         <!-- Context Header -->
         <div class="flex flex-col gap-2 mb-4">
-          <div class="flex items-center gap-2 text-[12px] text-text-muted">
-            <span class="hover:text-primary cursor-pointer transition-colors" id="btn-crumb-cal">Workspaces</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-text-primary font-medium">Jadwal Global</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-primary font-semibold">Agenda Eksekutif 19 – 25 Agustus 2024</span>
-          </div>
-
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 class="font-headline-lg text-[20px] text-on-surface font-bold tracking-tight">
@@ -274,13 +266,6 @@ export class CalendarView extends BaseView {
     if (addEventBtn) {
       addEventBtn.addEventListener('click', () => {
         this.modalManager.open('new-task');
-      });
-    }
-
-    const crumb = this.element.querySelector('#btn-crumb-cal');
-    if (crumb) {
-      crumb.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }
   }
