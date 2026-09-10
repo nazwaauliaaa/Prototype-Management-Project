@@ -5,22 +5,38 @@ export class User {
   constructor({ id, name, role, title, avatar, email, workspaceAccess }) {
     this.id = id;
     this.name = name;
-    this.role = role; // 'eksekutif' | 'kreatif' | 'teknis'
+    this.role = role; // 'admin' | 'manajement-project' | 'qa' | 'user' (alias: 'eksekutif' | 'kreatif' | 'teknis')
     this.title = title;
     this.avatar = avatar;
     this.email = email;
     this.workspaceAccess = workspaceAccess || [];
   }
 
+  isAdmin() {
+    return this.role === 'admin' || this.role === 'eksekutif';
+  }
+
+  isProjectManager() {
+    return this.role === 'manajement-project' || this.role === 'kreatif';
+  }
+
+  isQA() {
+    return this.role === 'qa' || this.role === 'teknis';
+  }
+
+  isUser() {
+    return this.role === 'user';
+  }
+
   isExecutive() {
-    return this.role === 'eksekutif';
+    return this.isAdmin();
   }
 
   isCreative() {
-    return this.role === 'kreatif';
+    return this.isProjectManager();
   }
 
   isTechnical() {
-    return this.role === 'teknis';
+    return this.isQA();
   }
 }

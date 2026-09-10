@@ -135,17 +135,21 @@ export class Header {
                   <span class="font-badge-micro text-[10px] text-text-muted uppercase font-bold tracking-wider">Peran Saat Ini</span>
                   <p class="font-body-medium text-[13px] font-bold text-primary mt-0.5 capitalize">${user.role}</p>
                 </div>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="eksekutif">
-                  <span>Eksekutif (Executive)</span>
-                  <span class="material-symbols-outlined text-[16px] text-tertiary">query_stats</span>
+                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="admin">
+                  <span>Admin</span>
+                  <span class="material-symbols-outlined text-[16px] text-tertiary">admin_panel_settings</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="kreatif">
-                  <span>Tim Kreatif (Lead)</span>
-                  <span class="material-symbols-outlined text-[16px] text-primary">palette</span>
+                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="manajement-project">
+                  <span>Manajement Project</span>
+                  <span class="material-symbols-outlined text-[16px] text-primary">assignment</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="teknis">
-                  <span>Tim Teknis (QA & Field)</span>
-                  <span class="material-symbols-outlined text-[16px] text-status-success">terminal</span>
+                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="qa">
+                  <span>QA (Quality Assurance)</span>
+                  <span class="material-symbols-outlined text-[16px] text-status-success">fact_check</span>
+                </button>
+                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="user">
+                  <span>User</span>
+                  <span class="material-symbols-outlined text-[16px] text-blue-500">person</span>
                 </button>
                 <div class="border-t border-surface-border my-1"></div>
                 <button id="btn-header-logout" class="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium">

@@ -127,43 +127,57 @@ export class AuthView extends BaseView {
               </div>
 
               <div class="space-y-2">
-                <!-- Role 1: Eksekutif -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="eksekutif" type="button">
+                <!-- Role 1: Admin -->
+                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="admin" type="button">
                   <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-lg bg-tertiary-fixed flex items-center justify-center shrink-0 text-tertiary">
-                      <span class="material-symbols-outlined text-[20px]">query_stats</span>
+                      <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
                     </div>
                     <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Eksekutif</div>
+                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Admin</div>
                       <div class="font-caption-meta text-[11px] text-text-secondary truncate">Akses Penuh & Executive Dashboard</div>
                     </div>
                   </div>
                   <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
                 </button>
 
-                <!-- Role 2: Tim Kreatif -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="kreatif" type="button">
+                <!-- Role 2: Manajement Project -->
+                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="manajement-project" type="button">
                   <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center shrink-0 text-primary-container">
-                      <span class="material-symbols-outlined text-[20px]">palette</span>
+                      <span class="material-symbols-outlined text-[20px]">assignment</span>
                     </div>
                     <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Tim Kreatif</div>
+                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Manajement Project</div>
                       <div class="font-caption-meta text-[11px] text-text-secondary truncate">Workspace & Creative Hub (RuangKreasi, LayarBaca)</div>
                     </div>
                   </div>
                   <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
                 </button>
 
-                <!-- Role 3: Tim Teknis -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="teknis" type="button">
+                <!-- Role 3: QA (Quality Assurance) -->
+                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="qa" type="button">
                   <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-text-primary">
-                      <span class="material-symbols-outlined text-[20px]">terminal</span>
+                      <span class="material-symbols-outlined text-[20px]">fact_check</span>
                     </div>
                     <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Tim Teknis</div>
+                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">QA (Quality Assurance)</div>
                       <div class="font-caption-meta text-[11px] text-text-secondary truncate">Sprint, Code & QA Checklist (Panen Kunci, AIKreativ)</div>
+                    </div>
+                  </div>
+                  <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
+                </button>
+
+                <!-- Role 4: User -->
+                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="user" type="button">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 text-blue-600">
+                      <span class="material-symbols-outlined text-[20px]">person</span>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">User</div>
+                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Akses Anggota Tim & Kolaborasi Ruang Kerja</div>
                     </div>
                   </div>
                   <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
@@ -434,7 +448,7 @@ export class AuthView extends BaseView {
           feedback.innerHTML = `<span class="text-primary font-semibold animate-pulse">Menghubungkan ke Gateway OAuth2 Sampulkreativ...</span>`;
         }
         setTimeout(() => {
-          handleRoleSelect('eksekutif');
+          handleRoleSelect('admin');
         }, 800);
       });
     }
