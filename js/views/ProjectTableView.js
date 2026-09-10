@@ -210,50 +210,6 @@ export class ProjectTableView extends BaseView {
           </div>
         </div>
 
-        <!-- Monday.com Top View Switcher Tabs -->
-        <div class="flex items-center justify-between border-b border-surface-border mb-3">
-          <div class="flex items-center gap-0 sm:gap-1 -mb-px overflow-x-auto pb-0" style="scrollbar-width:none;-ms-overflow-style:none">
-            <!-- Kanban View Tab -->
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="kanban" title="Kanban View">
-              <span class="material-symbols-outlined text-[18px]">dashboard</span>
-              <span class="hidden sm:inline">Kanban</span>
-              <span class="hidden lg:inline text-text-muted/70 text-[11px]">View</span>
-              <span class="px-1.5 rounded-full bg-surface-container text-text-muted text-[10px] font-bold hidden sm:inline">${kanbanTasks.length}</span>
-            </button>
-
-            <!-- Active Monday Table Tab -->
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg shrink-0" data-view="project-table" title="Tabel Monday Style">
-              <span class="material-symbols-outlined text-[18px] text-primary">table_chart</span>
-              <span class="hidden sm:inline">Tabel</span>
-              <span class="hidden lg:inline text-[11px] opacity-70">(Monday)</span>
-              ${activeProcesses > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-primary text-on-primary font-badge-micro text-[10px] font-bold hidden sm:inline">Live</span>` : ''}
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="docs-sheets" title="Docs & Sheets">
-              <span class="material-symbols-outlined text-[18px]">description</span>
-              <span class="hidden sm:inline">Docs</span>
-              <span class="hidden lg:inline text-text-muted/70 text-[11px]">&amp; Sheets</span>
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="calendar" title="Kalender & Jadwal">
-              <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-              <span class="hidden sm:inline">Jadwal</span>
-            </button>
-
-            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="gantt" title="Timeline & Gantt">
-              <span class="material-symbols-outlined text-[18px]">waterfall_chart</span>
-              <span class="hidden sm:inline">Gantt</span>
-            </button>
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0 pl-2">
-            <button id="btn-add-table-task" class="flex items-center gap-1 text-[12px] font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors cursor-pointer" type="button">
-              <span class="material-symbols-outlined text-[16px]">add</span>
-              <span class="hidden sm:inline">Tambah Tugas</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Monday.com Secondary Action Toolbar: Add Task, Add Person, Filter, Search, Export -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-4 bg-surface-container-lowest p-2.5 rounded-2xl border border-surface-border shadow-xs">
           <!-- Left Action Buttons Group: Tambah Tugas, Tambah Orang -->
@@ -521,15 +477,6 @@ export class ProjectTableView extends BaseView {
       });
       this._memberListenerBound = true;
     }
-
-    // View switcher tabs
-    const tabs = this.element.querySelectorAll('.view-switch-tab');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const view = tab.getAttribute('data-view');
-        this.eventBus.emit('navigate', { view, workspace: this.currentWorkspace });
-      });
-    });
 
     // Row click opens Super Card modal
     const rows = this.element.querySelectorAll('tbody tr[data-task-id]');
