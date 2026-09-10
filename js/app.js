@@ -235,6 +235,7 @@ class CreativeOfficeApp {
         break;
       case 'docs-sheets':
       case 'dokumen-dan-sop':
+      case 'dokumen':
         this.currentView = new DocsSheetsView(this.container);
         break;
       case 'calendar':

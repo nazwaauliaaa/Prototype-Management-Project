@@ -13,7 +13,7 @@ export class BottomNav {
     this.activeTab = 'dashboard';
     this.hostElement = null;
 
-    // Sinkronkan tab aktif jika route sistem berubah ke dashboard, calendar/jadwal, atau kanban
+    // Sinkronkan tab aktif jika route sistem berubah ke dashboard, calendar/jadwal, kanban, atau dokumen
     this.eventBus.on('route:changed', ({ route }) => {
       if (route === 'dashboard') {
         this.activeTab = 'dashboard';
@@ -23,6 +23,9 @@ export class BottomNav {
         this._updateActiveState();
       } else if (route === 'kanban') {
         this.activeTab = 'kanban';
+        this._updateActiveState();
+      } else if (route === 'docs-sheets' || route === 'dokumen-dan-sop' || route === 'dokumen') {
+        this.activeTab = 'dokumen';
         this._updateActiveState();
       }
     });
@@ -86,7 +89,11 @@ export class BottomNav {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
       const route = btn.getAttribute('data-route');
-      if (route === this.activeTab || (this.activeTab === 'calendar' && (route === 'calendar' || route === 'kalender'))) {
+      if (
+        route === this.activeTab || 
+        (this.activeTab === 'calendar' && (route === 'calendar' || route === 'kalender')) ||
+        (this.activeTab === 'dokumen' && (route === 'dokumen' || route === 'docs-sheets'))
+      ) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
@@ -94,7 +101,7 @@ export class BottomNav {
     });
   }
 
-  /** Event listener: Dashboard, Jadwal, dan Kanban terhubung ke view aplikasi, tombol lainnya dummy */
+  /** Event listener: Dashboard, Jadwal, Kanban, dan Dokumen terhubung ke view aplikasi, tombol lainnya dummy */
   _bindEvents() {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
@@ -113,6 +120,9 @@ export class BottomNav {
         } else if (route === 'kanban') {
           // Hubungkan tombol kanban ke halaman Kanban Board
           this.eventBus.emit('navigate', { view: 'kanban' });
+        } else if (route === 'dokumen' || route === 'docs-sheets') {
+          // Hubungkan tombol dokumen ke halaman Dokumen SOP
+          this.eventBus.emit('navigate', { view: 'docs-sheets' });
         } else {
           // Tombol lainnya tetap dummy
           console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);
