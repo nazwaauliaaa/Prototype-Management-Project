@@ -185,3 +185,192 @@ body {
     margin: 0;
   }
 }
+
+/* ========================================
+   MOBILE-FIRST RESPONSIVE STYLES
+   Applies on screens < 768px (md breakpoint)
+   ======================================== */
+
+/* ── Mobile Sidebar Drawer ── */
+#app-sidebar aside {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 767px) {
+  #app-sidebar aside {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  #app-sidebar.sidebar-open aside {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.15);
+  }
+
+  #sidebar-overlay {
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  #sidebar-overlay.overlay-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ── Mobile Bottom Navigation Bar ── */
+#app-bottom-nav nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #app-bottom-nav nav {
+    display: flex;
+  }
+}
+
+/* Bottom nav item base styles */
+.bottom-nav-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  min-width: 52px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.bottom-nav-btn .material-symbols-outlined {
+  font-size: 22px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-nav-btn:hover {
+  color: var(--color-primary);
+}
+
+.bottom-nav-btn.active {
+  color: var(--color-primary);
+}
+
+.bottom-nav-btn.active .material-symbols-outlined {
+  transform: translateY(-2px);
+}
+
+.bottom-nav-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 32px;
+  background: var(--color-brand-subdued);
+  border-radius: 10px;
+  z-index: -1;
+}
+
+/* ── Mobile Header Adjustments ── */
+@media (max-width: 767px) {
+  #global-search-input,
+  #global-search-input + div {
+    display: none;
+  }
+
+  #btn-header-new-task span:last-child {
+    display: none;
+  }
+
+  #btn-header-new-task {
+    padding: 6px;
+    min-width: 32px;
+    justify-content: center;
+  }
+
+  /* Hide HTTPS badge on mobile */
+  .header-https-badge {
+    display: none;
+  }
+}
+
+/* ── Mobile Kanban: horizontal scroll ── */
+@media (max-width: 767px) {
+  .kanban-board-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  .kanban-column {
+    scroll-snap-align: start;
+    min-width: 280px;
+  }
+}
+
+/* ── Mobile Touch Drag-and-Drop ── */
+
+/* Columns ready to receive a drop during touch drag */
+.kanban-column.touch-drop-ready {
+  outline: 2px dashed rgba(79, 70, 229, 0.25);
+  outline-offset: -2px;
+  border-radius: 16px;
+}
+
+/* Column highlighted as active drop target */
+.kanban-column.drag-over {
+  background-color: rgba(79, 70, 229, 0.06);
+  box-shadow: 0 0 0 2px #4f46e5, inset 0 0 0 2px rgba(79, 70, 229, 0.1);
+  outline: none;
+}
+
+/* Show drag hint label permanently on mobile (always visible, not just on hover) */
+@media (max-width: 767px) {
+  .kanban-card .drag-mobile-hint {
+    display: flex !important;
+    opacity: 0.6;
+  }
+
+  /* Card being dragged on touch */
+  .kanban-card.is-dragging {
+    opacity: 0.3;
+    transform: scale(0.96);
+    pointer-events: none;
+  }
+
+  /* Touch ghost entry animation */
+  #touch-drag-ghost {
+    animation: touchGhostAppear 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes touchGhostAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.85) rotate(-1.5deg);
+    }
+    to {
+      opacity: 0.96;
+      transform: scale(1.04) rotate(-1.5deg);
+    }
+  }
+}
+
+
+/* ── Mobile Table: horizontal scroll ── */
+@media (max-width: 767px) {
+  .project-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

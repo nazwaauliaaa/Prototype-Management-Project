@@ -9,6 +9,7 @@ import { DocumentService } from './services/DocumentService.js';
 
 import { Header } from './components/Header.js';
 import { Sidebar } from './components/Sidebar.js';
+import { BottomNav } from './components/BottomNav.js';
 import { ModalManager } from './components/ModalManager.js';
 
 import { TaskDetailModal } from './components/modals/TaskDetailModal.js';
@@ -34,6 +35,7 @@ class CreativeOfficeApp {
     this.currentView = null;
     this.header = null;
     this.sidebar = null;
+    this.bottomNav = null;
   }
 
   init() {
@@ -87,12 +89,15 @@ class CreativeOfficeApp {
 
     this.header = new Header(this.container);
     this.sidebar = new Sidebar(this.container);
+    this.bottomNav = new BottomNav(this.container);
 
     const headerHost = document.getElementById('app-header');
     const sidebarHost = document.getElementById('app-sidebar');
+    const bottomNavHost = document.getElementById('app-bottom-nav');
 
     if (headerHost) this.header.mount(headerHost);
     if (sidebarHost) this.sidebar.mount(sidebarHost);
+    if (bottomNavHost) this.bottomNav.mount(bottomNavHost);
 
     // Listen to global navigation events
     eventBus.on('navigate', ({ view, workspace, board }) => {
@@ -107,24 +112,6 @@ class CreativeOfficeApp {
     eventBus.on('auth:login', () => {
       this.navigateTo('dashboard');
     });
-
-    // Handle mobile bottom navigation bar clicks
-    const bottomNav = document.getElementById('mobile-bottom-nav');
-    if (bottomNav) {
-      bottomNav.querySelectorAll('.mobile-nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const route = btn.getAttribute('data-route');
-          if (route === 'profile') {
-            const authService = this.container.resolve('AuthService');
-            const user = authService.getCurrentUser();
-            const notificationService = this.container.resolve('NotificationService');
-            notificationService.info(`Akun Aktif: ${user ? user.name : 'Tamu'} (${user ? user.role : 'Member'})`);
-          } else if (route) {
-            this.navigateTo(route);
-          }
-        });
-      });
-    }
   }
 
   setupRouter() {
@@ -176,18 +163,14 @@ class CreativeOfficeApp {
       history.replaceState(null, '', `#${targetHash}`);
     }
 
-    const bottomNav = document.getElementById('mobile-bottom-nav');
-
     if (viewName === 'auth') {
-      // Hide header, sidebar, and mobile bottom nav in auth gate
+      // Hide header, sidebar, and bottom nav in auth gate
       if (headerHost) headerHost.classList.add('hidden');
       if (sidebarHost) sidebarHost.classList.add('hidden');
-      if (bottomNav) {
-        bottomNav.classList.add('hidden');
-        bottomNav.classList.remove('flex');
-      }
+      const bottomNavHost = document.getElementById('app-bottom-nav');
+      if (bottomNavHost) bottomNavHost.classList.add('hidden');
       if (shellLayout) {
-        shellLayout.classList.remove('lg:pl-sidebar-width', 'pl-sidebar-width');
+        shellLayout.classList.remove('pl-sidebar-width');
         shellLayout.classList.remove('pt-topbar-height');
       }
 
@@ -200,37 +183,14 @@ class CreativeOfficeApp {
       return;
     }
 
-    // Authenticated views: show header, sidebar, and mobile bottom nav
+    // Authenticated views: show header, sidebar, and bottom nav
     if (headerHost) headerHost.classList.remove('hidden');
     if (sidebarHost) sidebarHost.classList.remove('hidden');
-    if (bottomNav) {
-      bottomNav.classList.remove('hidden');
-      bottomNav.classList.add('flex');
-      
-      // Update active highlight on mobile bottom nav
-      bottomNav.querySelectorAll('.mobile-nav-btn').forEach(b => {
-        const route = b.getAttribute('data-route');
-        const isActive = (route === 'dashboard' && (viewName === 'dashboard' || viewName === 'beranda')) ||
-                         (route === 'kanban' && viewName === 'kanban') ||
-                         (route === 'project-table' && (viewName === 'project-table' || viewName === 'tabel'));
-        if (isActive) {
-          b.className = 'mobile-nav-btn flex flex-col items-center gap-0.5 text-purple-400';
-          if (!b.querySelector('.active-indicator')) {
-            const ind = document.createElement('span');
-            ind.className = 'active-indicator w-4 h-0.5 bg-purple-500 rounded-full mt-0.5';
-            b.appendChild(ind);
-          }
-        } else {
-          b.className = 'mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition-colors';
-          const ind = b.querySelector('.active-indicator');
-          if (ind) ind.remove();
-        }
-      });
-    }
+    const bottomNavHost2 = document.getElementById('app-bottom-nav');
+    if (bottomNavHost2) bottomNavHost2.classList.remove('hidden');
 
     if (shellLayout) {
-      shellLayout.classList.remove('pl-sidebar-width');
-      shellLayout.classList.add('lg:pl-sidebar-width');
+      shellLayout.classList.add('md:pl-sidebar-width');
       shellLayout.classList.add('pt-topbar-height');
     }
 

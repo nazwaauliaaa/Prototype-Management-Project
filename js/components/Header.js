@@ -33,13 +33,19 @@ export class Header {
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 border-b border-surface-border">
         <div class="w-full h-topbar-height px-spacing-lg flex items-center justify-between gap-spacing-md">
+
+          <!-- Hamburger Menu (mobile only) -->
+          <button
+            id="btn-hamburger-menu"
+            aria-label="Buka menu navigasi"
+            class="md:hidden w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors flex-shrink-0"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[22px]">menu</span>
+          </button>
+
           <!-- Logo & Branding -->
           <div class="flex items-center gap-spacing-md">
-            <!-- Mobile Menu Toggle -->
-            <button id="btn-mobile-menu" class="lg:hidden flex items-center justify-center p-1.5 rounded-lg text-text-secondary hover:bg-surface-container transition-colors">
-              <span class="material-symbols-outlined text-[24px]">menu</span>
-            </button>
-            
             <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
               <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
               <div class="flex flex-col">
@@ -47,20 +53,20 @@ export class Header {
                 <span class="font-badge-micro text-[10px] text-text-muted leading-none mt-1">by Sampulkreativ Technology</span>
               </div>
             </div>
-            <div class="hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low text-status-success font-caption-meta text-caption-meta">
+            <div class="header-https-badge hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low text-status-success font-caption-meta text-caption-meta">
               <span class="w-1.5 h-1.5 rounded-full bg-status-success inline-block animate-pulse"></span>
               <span class="text-text-secondary text-[11px] font-medium">creativeoffice.app • HTTPS Secure</span>
             </div>
           </div>
 
-          <!-- Search Bar -->
-          <div class="hidden sm:flex flex-1 max-w-md mx-2 md:mx-spacing-md">
-            <div class="relative flex items-center w-full">
+          <!-- Search Bar (hidden on mobile via CSS, shown md+) -->
+          <div class="flex-1 max-w-md mx-spacing-md hidden md:block">
+            <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[18px] pointer-events-none">search</span>
-              <input 
+              <input
                 id="global-search-input"
-                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-xl font-body-default text-body-default text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary text-[13px] border border-transparent focus:border-primary transition-all" 
-                placeholder="Cari tugas, papan, SOP, atau perizinan..." 
+                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-xl font-body-default text-body-default text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary text-[13px] border border-transparent focus:border-primary transition-all"
+                placeholder="Cari tugas, papan, SOP, atau perizinan..."
                 type="text"
               />
               <div class="absolute right-2 flex items-center pointer-events-none">
@@ -69,23 +75,32 @@ export class Header {
             </div>
           </div>
 
+          <!-- Mobile Search Icon (mobile only) -->
+          <button
+            id="btn-mobile-search"
+            aria-label="Cari"
+            class="md:hidden w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container transition-colors"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[20px]">search</span>
+          </button>
+
           <!-- Actions & User Profile -->
-          <div class="flex items-center gap-2 sm:gap-spacing-md">
-            <button 
-              id="btn-header-new-task" 
-              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-body-medium text-[12px] sm:text-[13px] hover:bg-brand-accent transition-colors shadow-sm font-semibold"
+          <div class="flex items-center gap-spacing-md">
+            <button
+              id="btn-header-new-task"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-body-medium text-[13px] hover:bg-brand-accent transition-colors shadow-sm font-semibold"
               type="button"
-              title="Buat Tugas Baru"
             >
               <span class="material-symbols-outlined text-[16px]">add</span>
-              <span class="hidden sm:inline">Tugas Baru</span>
+              <span>Tugas Baru</span>
             </button>
 
             <!-- Notifications Button -->
-            <button 
-              id="btn-header-notif" 
-              aria-label="Notifikasi" 
-              class="w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative" 
+            <button
+              id="btn-header-notif"
+              aria-label="Notifikasi"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative"
               type="button"
             >
               <span class="material-symbols-outlined text-[20px]">notifications</span>
@@ -94,14 +109,14 @@ export class Header {
 
             <!-- User Profile Dropdown / Switcher -->
             <div class="relative">
-              <button 
-                id="btn-user-profile" 
+              <button
+                id="btn-user-profile"
                 class="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl hover:bg-surface-container transition-colors group text-left"
                 type="button"
               >
-                <img 
-                  alt="Profile" 
-                  class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" 
+                <img
+                  alt="Profile"
+                  class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
                   src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
                 />
                 <div class="hidden lg:flex flex-col">
@@ -112,8 +127,8 @@ export class Header {
               </button>
 
               <!-- Role Switcher Menu Popup -->
-              <div 
-                id="user-profile-menu" 
+              <div
+                id="user-profile-menu"
                 class="hidden absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-2 z-50 flex flex-col gap-1"
               >
                 <div class="px-3 py-2 border-b border-surface-border mb-1">
@@ -165,10 +180,18 @@ export class Header {
       });
     }
 
-    const mobileMenuBtn = this.element.querySelector('#btn-mobile-menu');
-    if (mobileMenuBtn) {
-      mobileMenuBtn.addEventListener('click', () => {
+    const hamburgerBtn = this.element.querySelector('#btn-hamburger-menu');
+    if (hamburgerBtn) {
+      hamburgerBtn.addEventListener('click', () => {
         this.eventBus.emit('sidebar:toggle');
+      });
+    }
+
+    const mobileSearchBtn = this.element.querySelector('#btn-mobile-search');
+    if (mobileSearchBtn) {
+      mobileSearchBtn.addEventListener('click', () => {
+        const notifService = this.container.resolve('NotificationService');
+        notifService.info('Fitur pencarian mobile akan segera hadir.');
       });
     }
 

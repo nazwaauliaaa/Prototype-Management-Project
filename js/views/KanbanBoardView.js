@@ -221,11 +221,13 @@ export class KanbanBoardView extends BaseView {
                         </span>
                       </div>
 
-                      <!-- Drag indicator pill -->
-                      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <!-- Drag indicator pill (hover on desktop, always visible on mobile) -->
+                      <div class="drag-mobile-hint flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span class="material-symbols-outlined text-text-muted" style="font-size:13px">drag_indicator</span>
-                        <span class="text-[10px] text-text-muted font-medium">Geser untuk pindah kolom</span>
+                        <span class="text-[10px] text-text-muted font-medium hidden md:inline">Geser untuk pindah kolom</span>
+                        <span class="text-[10px] text-text-muted font-medium md:hidden">Tahan lalu geser untuk pindah</span>
                       </div>
+
 
                       <!-- Title -->
                       <h4 class="font-body-medium text-[13px] font-semibold text-text-primary group-hover:text-primary transition-colors leading-snug">
@@ -291,9 +293,18 @@ export class KanbanBoardView extends BaseView {
   }
 
   /**
-   * Set up HTML5 Drag-and-Drop across all Kanban columns.
+   * Set up both HTML5 DnD (desktop) and Touch DnD (mobile).
    */
   _setupDragAndDrop() {
+    this._setupDesktopDragAndDrop();
+    this._setupTouchDragAndDrop();
+  }
+
+  /**
+   * HTML5 Drag-and-Drop — Desktop only.
+   * (Touch devices ignore drag events, so this is safe.)
+   */
+  _setupDesktopDragAndDrop() {
     const ghost = this.element.querySelector('#kanban-drag-ghost');
     const ghostLabel = this.element.querySelector('#kanban-drag-ghost-label');
 
@@ -363,31 +374,262 @@ export class KanbanBoardView extends BaseView {
         const taskId = e.dataTransfer.getData('text/plain') || this._draggedTaskId;
         if (!taskId) return;
 
-        const task = this.taskService.getTask(taskId);
-        if (!task || task.status === colId) return;
-
-        const fromColIndex = columnOrder.indexOf(task.status);
-        const toColIndex   = columnOrder.indexOf(colId);
-        const fromColTitle = this.columns[fromColIndex]?.title ?? task.status;
-        const toColTitle   = this.columns[toColIndex]?.title   ?? colId;
-
-        // Update task status in service
-        this.taskService.updateTaskStatus(taskId, colId);
-
-        // Re-render the board
-        this.mount(this.element);
-
-        // Flash snap animation on newly placed card
-        requestAnimationFrame(() => {
-          const newCard = this.element.querySelector(`.kanban-card[data-task-id="${taskId}"]`);
-          if (newCard) {
-            newCard.classList.add('drop-snap');
-            newCard.addEventListener('animationend', () => newCard.classList.remove('drop-snap'), { once: true });
-          }
-        });
+        this._dropTaskInColumn(taskId, colId);
       });
     });
   }
+
+  /**
+   * Touch Drag-and-Drop — Mobile support.
+   * Uses touchstart/touchmove/touchend with a floating ghost clone
+   * that follows the user's finger, and elementFromPoint to detect the target column.
+   */
+  _setupTouchDragAndDrop() {
+    const cards = this.element.querySelectorAll('.kanban-card[draggable]');
+    const boardEl = this.element.querySelector('#kanban-board');
+    const columnOrder = this.columns.map(c => c.id);
+
+    // Shared touch drag state
+    let touchDragState = null; // { taskId, fromCol, ghostEl, startX, startY, scrollStart }
+
+    const LONG_PRESS_MS = 350; // hold duration to activate drag
+    const DRAG_THRESHOLD = 8;  // px movement to confirm drag intent
+
+    cards.forEach(card => {
+      let pressTimer = null;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isDragActive = false;
+
+      card.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        isDragActive = false;
+
+        // Long-press timer to activate drag
+        pressTimer = setTimeout(() => {
+          isDragActive = true;
+          this._activateTouchDrag(card, touch, touchDragState);
+          // Reassign state reference after activation
+          touchDragState = this._touchDragState;
+          // Vibrate for haptic feedback (supported on Android)
+          if (navigator.vibrate) navigator.vibrate(40);
+        }, LONG_PRESS_MS);
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - touchStartX);
+        const dy = Math.abs(touch.clientY - touchStartY);
+
+        // Cancel long-press if finger moved too much before activation
+        if (!isDragActive && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+
+        if (isDragActive && this._touchDragState) {
+          e.preventDefault(); // Prevent scroll while dragging
+          this._onTouchDragMove(e.touches[0]);
+        }
+      }, { passive: false });
+
+      card.addEventListener('touchend', (e) => {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+
+        if (isDragActive && this._touchDragState) {
+          e.preventDefault();
+          this._onTouchDragEnd(e.changedTouches[0]);
+          isDragActive = false;
+        }
+      });
+
+      card.addEventListener('touchcancel', () => {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        if (isDragActive && this._touchDragState) {
+          this._cancelTouchDrag();
+          isDragActive = false;
+        }
+      });
+    });
+  }
+
+  /** Activate touch drag: create ghost, mark card as dragging */
+  _activateTouchDrag(card, touch, existingState) {
+    const taskId = card.getAttribute('data-task-id');
+    const fromCol = card.getAttribute('data-task-status');
+    const task = this.taskService.getTask(taskId);
+    if (!task) return;
+
+    // Build floating ghost element
+    const ghost = document.createElement('div');
+    ghost.id = 'touch-drag-ghost';
+    ghost.style.cssText = `
+      position: fixed;
+      z-index: 99999;
+      pointer-events: none;
+      left: ${touch.clientX - 134}px;
+      top: ${touch.clientY - 40}px;
+      width: 268px;
+      background: #4f46e5;
+      color: #fff;
+      border-radius: 14px;
+      padding: 10px 14px;
+      box-shadow: 0 12px 40px rgba(79,70,229,0.45), 0 2px 8px rgba(0,0,0,0.2);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: scale(1.04) rotate(-1.5deg);
+      transition: transform 0.15s ease;
+      opacity: 0.96;
+      max-width: 80vw;
+    `;
+    ghost.innerHTML = `
+      <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0">drag_indicator</span>
+      <div style="min-width:0">
+        <div style="font-size:10px;opacity:0.8;font-weight:600;letter-spacing:0.5px">${task.code} · ${fromCol}</div>
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${task.title}</div>
+      </div>
+    `;
+    document.body.appendChild(ghost);
+
+    // Mark source card
+    card.classList.add('is-dragging');
+
+    // Mark all column drop zones as potential targets
+    this.element.querySelectorAll('.kanban-column').forEach(col => {
+      col.classList.add('touch-drop-ready');
+    });
+
+    this._touchDragState = {
+      taskId,
+      fromCol,
+      ghost,
+      sourceCard: card,
+      currentOverCol: null,
+    };
+  }
+
+  /** Update ghost position and highlight target column */
+  _onTouchDragMove(touch) {
+    const state = this._touchDragState;
+    if (!state) return;
+
+    const x = touch.clientX;
+    const y = touch.clientY;
+
+    // Move ghost to follow finger
+    state.ghost.style.left = `${x - 134}px`;
+    state.ghost.style.top  = `${y - 40}px`;
+
+    // Hide ghost temporarily to detect element underneath
+    state.ghost.style.display = 'none';
+    const elUnder = document.elementFromPoint(x, y);
+    state.ghost.style.display = '';
+
+    // Find nearest kanban-column ancestor
+    const targetCol = elUnder?.closest('.kanban-column');
+    const targetColId = targetCol?.getAttribute('data-column-id') ?? null;
+
+    // Update column highlight
+    if (targetColId !== state.currentOverCol) {
+      // Clear previous
+      this.element.querySelectorAll('.kanban-column.drag-over').forEach(c => c.classList.remove('drag-over'));
+      // Set new highlight (only if different from source)
+      if (targetColId && targetColId !== state.fromCol) {
+        targetCol.classList.add('drag-over');
+      }
+      state.currentOverCol = targetColId;
+    }
+  }
+
+  /** Handle finger lift: drop the card in target column */
+  _onTouchDragEnd(touch) {
+    const state = this._touchDragState;
+    if (!state) return;
+
+    const x = touch.clientX;
+    const y = touch.clientY;
+
+    // Final column detection
+    state.ghost.style.display = 'none';
+    const elUnder = document.elementFromPoint(x, y);
+    const targetCol = elUnder?.closest('.kanban-column');
+    const targetColId = targetCol?.getAttribute('data-column-id') ?? null;
+
+    // Cleanup ghost and state
+    this._cleanupTouchDrag();
+
+    // Perform the drop if valid target
+    if (targetColId && targetColId !== state.fromCol) {
+      this._dropTaskInColumn(state.taskId, targetColId);
+    } else {
+      // Animate card back (restore opacity without re-render)
+      state.sourceCard.classList.remove('is-dragging');
+    }
+  }
+
+  /** Cancel ongoing touch drag (no drop) */
+  _cancelTouchDrag() {
+    const state = this._touchDragState;
+    if (!state) return;
+    this._cleanupTouchDrag();
+    state.sourceCard.classList.remove('is-dragging');
+  }
+
+  /** Remove ghost element and reset all column states */
+  _cleanupTouchDrag() {
+    const state = this._touchDragState;
+    if (!state) return;
+
+    if (state.ghost && state.ghost.parentNode) {
+      state.ghost.parentNode.removeChild(state.ghost);
+    }
+
+    this.element.querySelectorAll('.kanban-column').forEach(col => {
+      col.classList.remove('drag-over', 'touch-drop-ready');
+    });
+
+    this._touchDragState = null;
+  }
+
+  /**
+   * Shared drop logic — used by both desktop and touch DnD.
+   * @param {string} taskId
+   * @param {string} colId  - target column id
+   */
+  _dropTaskInColumn(taskId, colId) {
+    const columnOrder = this.columns.map(c => c.id);
+    const task = this.taskService.getTask(taskId);
+    if (!task || task.status === colId) return;
+
+    const fromColIndex = columnOrder.indexOf(task.status);
+    const toColIndex   = columnOrder.indexOf(colId);
+    const toColTitle   = this.columns[toColIndex]?.title ?? colId;
+
+    // Update task status in service
+    this.taskService.updateTaskStatus(taskId, colId);
+
+    // Re-render the board
+    this.mount(this.element);
+
+    // Flash snap animation on newly placed card
+    requestAnimationFrame(() => {
+      const newCard = this.element.querySelector(`.kanban-card[data-task-id="${taskId}"]`);
+      if (newCard) {
+        newCard.classList.add('drop-snap');
+        newCard.addEventListener('animationend', () => newCard.classList.remove('drop-snap'), { once: true });
+      }
+    });
+  }
+
 
   bindEvents() {
     // View tabs

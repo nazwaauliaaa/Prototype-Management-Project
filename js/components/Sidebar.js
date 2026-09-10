@@ -19,27 +19,27 @@ export class Sidebar {
     this.eventBus.on('route:changed', ({ route, workspace }) => {
       this.currentRoute = route;
       if (workspace) this.currentWorkspace = workspace;
-      this.isOpenOnMobile = false; // Auto close on navigate
+      this.closeMobileDrawer();
       if (this.hostElement) {
         this.renderToDOM();
       }
     });
 
+    // Listen for mobile hamburger toggle (CSS class toggle, no re-render)
     this.eventBus.on('sidebar:toggle', () => {
-      this.isOpenOnMobile = !this.isOpenOnMobile;
-      if (this.hostElement) {
-        this.renderToDOM();
+      const isOpen = this.hostElement && this.hostElement.classList.contains('sidebar-open');
+      if (isOpen) {
+        this.closeMobileDrawer();
+      } else {
+        this.openMobileDrawer();
       }
     });
   }
 
   render() {
     return `
-      <!-- Mobile Backdrop Overlay -->
-      <div id="sidebar-backdrop" class="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${this.isOpenOnMobile ? 'opacity-100' : 'opacity-0 pointer-events-none'}"></div>
-      
       <!-- Sidebar Panel -->
-      <aside class="fixed left-0 top-0 bottom-0 w-sidebar-width bg-surface-container-lowest pt-topbar-height flex flex-col z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-border transition-transform duration-300 ease-in-out ${this.isOpenOnMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}">
+      <aside class="fixed left-0 top-0 bottom-0 w-sidebar-width bg-surface-container-lowest pt-topbar-height flex flex-col z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-border">
         <div class="flex-1 overflow-y-auto px-spacing-sm py-spacing-md flex flex-col gap-spacing-lg">
           
           <!-- Branding Logo in Sidebar -->
@@ -241,6 +241,20 @@ export class Sidebar {
     this.renderToDOM();
   }
 
+  openMobileDrawer() {
+    if (!this.hostElement) return;
+    this.hostElement.classList.add('sidebar-open');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) overlay.classList.add('overlay-visible');
+  }
+
+  closeMobileDrawer() {
+    if (!this.hostElement) return;
+    this.hostElement.classList.remove('sidebar-open');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) overlay.classList.remove('overlay-visible');
+  }
+
   isActiveRoute(route) {
     return this.currentRoute === route;
   }
@@ -286,10 +300,11 @@ export class Sidebar {
       });
     }
 
-    const backdrop = this.element.querySelector('#sidebar-backdrop');
-    if (backdrop) {
-      backdrop.addEventListener('click', () => {
-        this.eventBus.emit('sidebar:toggle');
+    // Close drawer when clicking outside (via overlay in index.html)
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        this.closeMobileDrawer();
       });
     }
   }
