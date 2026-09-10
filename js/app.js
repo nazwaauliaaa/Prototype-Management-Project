@@ -18,6 +18,7 @@ import { PdfViewerModal } from './components/modals/PdfViewerModal.js';
 import { RescheduleModal } from './components/modals/RescheduleModal.js';
 import { NewTaskModal } from './components/modals/NewTaskModal.js';
 import { SearchModal } from './components/modals/SearchModal.js';
+import { AddMemberModal } from './components/modals/AddMemberModal.js';
 
 import { AuthView } from './views/AuthView.js';
 import { DashboardView } from './views/DashboardView.js';
@@ -92,6 +93,7 @@ class CreativeOfficeApp {
     modalManager.register('reschedule', new RescheduleModal(this.container));
     modalManager.register('new-task', new NewTaskModal(this.container));
     modalManager.register('search', new SearchModal(this.container));
+    modalManager.register('add-member', new AddMemberModal(this.container));
   }
 
   initShell() {

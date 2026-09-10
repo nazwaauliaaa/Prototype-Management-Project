@@ -12,9 +12,48 @@ export class NewTaskModal extends BaseModal {
     this.modalManager = container.resolve('ModalManager');
   }
 
-  render() {
+  getRegisteredMembers() {
+    const defaultMembers = [
+      { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+      { name: 'Bagas Wicaksono', initials: 'BW', role: 'Graphic Specialist' },
+      { name: 'Farhan Maulana', initials: 'FM', role: 'AI Researcher' },
+      { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+      { name: 'Dina Lestari', initials: 'DL', role: 'UI Specialist' },
+      { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+      { name: 'Dimas Anggara', initials: 'DA', role: 'Creative Specialist' }
+    ];
+    try {
+      const custom = JSON.parse(localStorage.getItem('team_members') || '[]');
+      return [...custom, ...defaultMembers];
+    } catch (e) {
+      return defaultMembers;
+    }
+  }
+
+  getWorkspacesList() {
+    const defaultWs = [
+      { id: 'ruangkreasi', title: 'RuangKreasi (Studio Dev)' },
+      { id: 'layarbaca', title: 'LayarBaca (Produk)' },
+      { id: 'aikreativ', title: 'AIKreativ (Studio)' },
+      { id: 'panen-kunci', title: 'Panen Kunci (SaaS)' },
+      { id: 'sharinginaja', title: 'Sharinginaja (Cloud)' }
+    ];
+    try {
+      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      const formatted = custom.map(c => ({ id: c.id, title: `${c.title} (Baru)` }));
+      return [...formatted, ...defaultWs];
+    } catch (e) {
+      return defaultWs;
+    }
+  }
+
+  render(data = {}) {
+    const activeWs = data?.workspace || 'ruangkreasi';
+    const workspaces = this.getWorkspacesList();
+    const members = this.getRegisteredMembers();
+
     return `
-      <div class="relative w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col modal-content-box">
+      <div class="relative w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col modal-content-box animate-in fade-in zoom-in duration-200">
         <!-- Header -->
         <div class="p-spacing-md bg-surface-container-low border-b border-surface-border flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -34,7 +73,7 @@ export class NewTaskModal extends BaseModal {
         <!-- Form -->
         <form id="form-new-task" class="p-spacing-lg flex flex-col gap-3.5 text-[13px]">
           <div>
-            <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Judul Tugas</label>
+            <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Judul Tugas *</label>
             <input 
               id="new-task-title" 
               class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium" 
@@ -46,25 +85,33 @@ export class NewTaskModal extends BaseModal {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Pilar Workspace</label>
-              <select id="new-task-workspace" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium">
-                <option value="ruangkreasi" selected>RuangKreasi (Studio Dev)</option>
-                <option value="layarbaca">LayarBaca (Produk)</option>
-                <option value="aikreativ">AIKreativ (Studio)</option>
-                <option value="panen-kunci">Panen Kunci (SaaS)</option>
-                <option value="sharinginaja">Sharinginaja (Cloud)</option>
+              <select id="new-task-workspace" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
+                ${workspaces.map(w => `
+                  <option value="${w.id}" ${w.id === activeWs ? 'selected' : ''}>${w.title}</option>
+                `).join('')}
               </select>
             </div>
 
             <div>
+              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Penanggung Jawab (PIC)</label>
+              <select id="new-task-pic" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
+                ${members.map(m => `
+                  <option value="${m.name}|${m.initials}|${m.role}">${m.name} (${m.role})</option>
+                `).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Prioritas</label>
-              <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium">
+              <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
                 <option value="Medium">Sedang (Medium)</option>
-                <option value="High">Tinggi (High)</option>
+                <option value="High" selected>Tinggi (High)</option>
                 <option value="Critical">Kritis (Critical)</option>
                 <option value="Low">Rendah (Low)</option>
               </select>
             </div>
-          </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -180,6 +227,9 @@ export class NewTaskModal extends BaseModal {
 
         const timelineStr = `${formatDayMonth(startDate)} – ${formatDayMonth(endDate)}`;
 
+        const picVal = modalRoot.querySelector('#new-task-pic')?.value || 'Sari Rahmawati|SR|Creative Lead';
+        const [picName, picInitials, picRole] = picVal.split('|');
+
         const createdTask = this.taskService.addTask({
           title,
           workspace,
@@ -191,7 +241,7 @@ export class NewTaskModal extends BaseModal {
           endDate,
           deadline: endDate,
           timeline: timelineStr,
-          pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+          pic: { name: picName, initials: picInitials || 'PIC', role: picRole || 'Specialist' },
           qaProgress: { passed: 0, total: 3 }
         });
 
