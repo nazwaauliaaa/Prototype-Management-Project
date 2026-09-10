@@ -203,24 +203,14 @@ class CreativeOfficeApp {
     const bottomNavHost2 = document.getElementById('app-bottom-nav');
     if (bottomNavHost2) bottomNavHost2.classList.remove('hidden');
 
-    // Show/hide workspace tab bar: hidden on dashboard and workspaces view
-    const isNoWorkspaceBar = viewName === 'dashboard' || viewName === 'beranda' || viewName === 'workspaces' || viewName === 'ruang-kerja';
+    // Workspace tab bar is disabled/removed
     if (this.workspaceTabBar) {
-      if (isNoWorkspaceBar) {
-        this.workspaceTabBar.hide();
-      } else {
-        this.workspaceTabBar.show();
-      }
+      this.workspaceTabBar.hide();
     }
 
     if (shellLayout) {
       shellLayout.classList.add('md:pl-sidebar-width');
-      if (isNoWorkspaceBar) {
-        shellLayout.style.paddingTop = 'var(--topbar-height)';
-      } else {
-        // Account for topbar (48px) + workspace tab bar (42px approx)
-        shellLayout.style.paddingTop = 'calc(var(--topbar-height) + 42px)';
-      }
+      shellLayout.style.paddingTop = 'var(--topbar-height)';
     }
 
     // Unmount previous view
