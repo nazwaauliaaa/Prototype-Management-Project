@@ -1,7 +1,7 @@
 /**
- * BottomNav Component - Mobile Bottom Tab Bar
+ * BottomNav Component - Mobile Bottom Tab Bar (Dummy)
  * Renders a fixed bottom navigation bar for mobile devices only (hidden via CSS on desktop ≥768px).
- * Follows Single Responsibility Principle (SRP).
+ * Seluruh fungsi tombol bersifat dummy (visual active toggle saja).
  */
 export class BottomNav {
   /**
@@ -9,31 +9,24 @@ export class BottomNav {
    */
   constructor(container) {
     this.container = container;
-    this.eventBus = container.resolve('EventBus');
-    this.currentRoute = 'dashboard';
+    this.activeTab = 'dashboard';
     this.hostElement = null;
-
-    // Update active tab on route change
-    this.eventBus.on('route:changed', ({ route }) => {
-      this.currentRoute = route;
-      this._updateActiveState();
-    });
   }
 
-  /** Nav tab definitions */
+  /** Nav tab dummy definitions */
   get tabs() {
     return [
-      { id: 'dashboard',     icon: 'home',              label: 'Beranda'  },
-      { id: 'calendar',      icon: 'calendar_today',    label: 'Jadwal'   },
-      { id: 'kanban',        icon: 'view_kanban',       label: 'Kanban'   },
-      { id: 'docs-sheets',   icon: 'description',       label: 'Dokumen'  },
-      { id: 'project-table', icon: 'table_chart',       label: 'Proyek'   },
+      { id: 'dashboard',   icon: 'space_dashboard', label: 'Dashboard'   },
+      { id: 'kalender',    icon: 'calendar_month',  label: 'Kalender'    },
+      { id: 'ruang-kerja', icon: 'workspaces',      label: 'Ruang Kerja' },
+      { id: 'kanban',      icon: 'view_kanban',     label: 'Kanban'      },
+      { id: 'dokumen',     icon: 'description',     label: 'Dokumen'     },
     ];
   }
 
   render() {
     const tabsHTML = this.tabs.map(tab => {
-      const isActive = this.currentRoute === tab.id;
+      const isActive = this.activeTab === tab.id;
       return `
         <button
           class="bottom-nav-btn ${isActive ? 'active' : ''}"
@@ -72,13 +65,13 @@ export class BottomNav {
     this.renderToDOM();
   }
 
-  /** Update active class without full re-render (perf optimization) */
+  /** Update active class secara visual (dummy state) */
   _updateActiveState() {
     if (!this.hostElement) return;
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
       const route = btn.getAttribute('data-route');
-      if (route === this.currentRoute) {
+      if (route === this.activeTab) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
@@ -86,12 +79,16 @@ export class BottomNav {
     });
   }
 
+  /** Event listener dummy: hanya ubah state aktif tanpa mengubah routing aplikasi */
   _bindEvents() {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const route = btn.getAttribute('data-route');
-        this.eventBus.emit('navigate', { view: route });
+        this.activeTab = route;
+        this._updateActiveState();
+        console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);
       });
     });
   }
