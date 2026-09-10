@@ -40,26 +40,6 @@ export class CalendarView extends BaseView {
                 Pusat sinkronisasi timeline, pengujian multi-layar, dan persiapan Grand Launch Jabodetabek.
               </p>
             </div>
-
-            <!-- View Switcher Tabs -->
-            <div class="flex items-center gap-0 sm:gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-border self-start md:self-auto overflow-x-auto max-w-full" style="scrollbar-width:none;-ms-overflow-style:none">
-              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="project-table" title="Tabel">
-                <span class="material-symbols-outlined text-[16px]">table_rows</span>
-                <span class="hidden sm:inline">Tabel</span>
-              </button>
-              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-bold text-[12px] shadow-sm transition-all shrink-0" data-view="calendar" title="Kalender">
-                <span class="material-symbols-outlined text-[16px]">calendar_month</span>
-                <span class="hidden sm:inline">Kalender</span>
-              </button>
-              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="docs-sheets" title="Docs & Sheets">
-                <span class="material-symbols-outlined text-[16px]">description</span>
-                <span class="hidden sm:inline">Docs</span>
-              </button>
-              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="gantt" title="Timeline & Gantt">
-                <span class="material-symbols-outlined text-[16px]">timeline</span>
-                <span class="hidden sm:inline">Gantt</span>
-              </button>
-            </div>
           </div>
 
           <!-- Calendar Action Sub-bar -->
@@ -263,15 +243,6 @@ export class CalendarView extends BaseView {
   }
 
   bindEvents() {
-    // View tabs
-    const tabs = this.element.querySelectorAll('.view-switch-tab');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const view = tab.getAttribute('data-view');
-        this.eventBus.emit('navigate', { view });
-      });
-    });
-
     // Granularity switcher
     const granBtns = this.element.querySelectorAll('.cal-gran-btn');
     granBtns.forEach(btn => {
