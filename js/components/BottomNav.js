@@ -1,6 +1,6 @@
-/**
+﻿/**
  * BottomNav Component - Mobile Bottom Tab Bar (Dummy)
- * Renders a fixed bottom navigation bar for mobile devices only (hidden via CSS on desktop ≥768px).
+ * Renders a fixed bottom navigation bar for mobile devices only (hidden via CSS on desktop >=768px).
  * Seluruh fungsi tombol bersifat dummy (visual active toggle saja).
  */
 export class BottomNav {
@@ -93,7 +93,7 @@ export class BottomNav {
     buttons.forEach(btn => {
       const route = btn.getAttribute('data-route');
       if (
-        route === this.activeTab || 
+        route === this.activeTab ||
         (this.activeTab === 'calendar' && (route === 'calendar' || route === 'kalender')) ||
         (this.activeTab === 'dokumen' && (route === 'dokumen' || route === 'docs-sheets'))
       ) {
@@ -104,7 +104,7 @@ export class BottomNav {
     });
   }
 
-  /** Event listener: Dashboard, Jadwal, Kanban, dan Dokumen terhubung ke view aplikasi, tombol lainnya dummy */
+  /** Event listener: semua tombol terhubung ke view */
   _bindEvents() {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
@@ -115,22 +115,16 @@ export class BottomNav {
         this._updateActiveState();
 
         if (route === 'dashboard') {
-          // Hubungkan tombol dashboard ke halaman dashboard aplikasi
           this.eventBus.emit('navigate', { view: 'dashboard' });
         } else if (route === 'calendar' || route === 'kalender') {
-          // Hubungkan tombol jadwal ke halaman Jadwal Global
           this.eventBus.emit('navigate', { view: 'calendar' });
         } else if (route === 'kanban') {
-          // Hubungkan tombol kanban ke halaman Kanban Board
           this.eventBus.emit('navigate', { view: 'kanban' });
         } else if (route === 'dokumen' || route === 'docs-sheets') {
-          // Hubungkan tombol dokumen ke halaman Dokumen SOP
           this.eventBus.emit('navigate', { view: 'docs-sheets' });
         } else if (route === 'ruang-kerja') {
-          // Hubungkan tombol ruang kerja ke halaman workspaces
           this.eventBus.emit('navigate', { view: 'workspaces' });
         } else {
-          // Tombol lainnya tetap dummy
           console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);
         }
       });
