@@ -13,10 +13,13 @@ export class BottomNav {
     this.activeTab = 'dashboard';
     this.hostElement = null;
 
-    // Sinkronkan tab aktif jika route sistem berubah ke dashboard
+    // Sinkronkan tab aktif jika route sistem berubah ke dashboard atau calendar/jadwal
     this.eventBus.on('route:changed', ({ route }) => {
       if (route === 'dashboard') {
         this.activeTab = 'dashboard';
+        this._updateActiveState();
+      } else if (route === 'calendar' || route === 'jadwal-global' || route === 'kalender' || route === 'jadwal') {
+        this.activeTab = 'calendar';
         this._updateActiveState();
       }
     });
@@ -26,7 +29,7 @@ export class BottomNav {
   get tabs() {
     return [
       { id: 'dashboard',   icon: 'space_dashboard', label: 'Dashboard'   },
-      { id: 'kalender',    icon: 'calendar_month',  label: 'Kalender'    },
+      { id: 'calendar',    icon: 'calendar_today',  label: 'Jadwal'      },
       { id: 'ruang-kerja', icon: 'workspaces',      label: 'Ruang Kerja' },
       { id: 'kanban',      icon: 'view_kanban',     label: 'Kanban'      },
       { id: 'dokumen',     icon: 'description',     label: 'Dokumen'     },
@@ -80,7 +83,7 @@ export class BottomNav {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
       const route = btn.getAttribute('data-route');
-      if (route === this.activeTab) {
+      if (route === this.activeTab || (this.activeTab === 'calendar' && (route === 'calendar' || route === 'kalender'))) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
@@ -88,7 +91,7 @@ export class BottomNav {
     });
   }
 
-  /** Event listener: Dashboard terhubung ke halaman dashboard, tombol lainnya dummy */
+  /** Event listener: Dashboard & Jadwal terhubung ke view aplikasi, tombol lainnya dummy */
   _bindEvents() {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
@@ -101,6 +104,9 @@ export class BottomNav {
         if (route === 'dashboard') {
           // Hubungkan tombol dashboard ke halaman dashboard aplikasi
           this.eventBus.emit('navigate', { view: 'dashboard' });
+        } else if (route === 'calendar' || route === 'kalender') {
+          // Hubungkan tombol jadwal ke halaman Jadwal Global
+          this.eventBus.emit('navigate', { view: 'calendar' });
         } else {
           // Tombol lainnya tetap dummy
           console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);

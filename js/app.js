@@ -239,6 +239,8 @@ class CreativeOfficeApp {
         break;
       case 'calendar':
       case 'jadwal-global':
+      case 'kalender':
+      case 'jadwal':
         this.currentView = new CalendarView(this.container);
         break;
       case 'gantt':
