@@ -112,27 +112,23 @@ export class KanbanBoardView extends BaseView {
 
       <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
-        <!-- Breadcrumbs & Workspace Subheader -->
-        <div class="flex flex-col gap-2 mb-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
-            <div class="min-w-0">
-              <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
-                Creative Hub Kanban Board
-              </h1>
-              <p class="font-caption-meta text-[11px] text-text-secondary flex items-center gap-1.5 mt-0.5">
-                <span class="material-symbols-outlined text-[13px] text-brand-accent">drag_indicator</span>
-                Drag & drop kartu antar kolom untuk ubah status
-              </p>
-            </div>
-
-            <button id="btn-add-kanban-task" class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm shrink-0">
-              <span class="material-symbols-outlined text-[16px]">add</span>
-              <span class="hidden sm:inline">Tambah Kartu</span>
-              <span class="sm:hidden">Tambah</span>
-            </button>
+        <!-- Workspace Subheader -->
+        <div class="flex flex-col items-start gap-3 mb-4">
+          <div class="min-w-0">
+            <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
+              Creative Hub Kanban Board
+            </h1>
+            <p class="font-caption-meta text-[11px] text-text-secondary flex items-center gap-1.5 mt-0.5">
+              <span class="material-symbols-outlined text-[13px] text-brand-accent">drag_indicator</span>
+              Drag & drop kartu antar kolom untuk ubah status
+            </p>
           </div>
-        </div>
 
+          <button id="btn-add-kanban-task" class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm shrink-0">
+            <span class="material-symbols-outlined text-[16px]">add</span>
+            <span class="hidden sm:inline">Tambah Kartu</span>
+            <span class="sm:hidden">Tambah</span>
+          </button>
         </div>
 
         <!-- Kanban Board Columns Stream (swipeable on mobile) -->
