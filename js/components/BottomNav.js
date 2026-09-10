@@ -13,13 +13,16 @@ export class BottomNav {
     this.activeTab = 'dashboard';
     this.hostElement = null;
 
-    // Sinkronkan tab aktif jika route sistem berubah ke dashboard atau calendar/jadwal
+    // Sinkronkan tab aktif jika route sistem berubah ke dashboard, calendar/jadwal, atau kanban
     this.eventBus.on('route:changed', ({ route }) => {
       if (route === 'dashboard') {
         this.activeTab = 'dashboard';
         this._updateActiveState();
       } else if (route === 'calendar' || route === 'jadwal-global' || route === 'kalender' || route === 'jadwal') {
         this.activeTab = 'calendar';
+        this._updateActiveState();
+      } else if (route === 'kanban') {
+        this.activeTab = 'kanban';
         this._updateActiveState();
       }
     });
@@ -91,7 +94,7 @@ export class BottomNav {
     });
   }
 
-  /** Event listener: Dashboard & Jadwal terhubung ke view aplikasi, tombol lainnya dummy */
+  /** Event listener: Dashboard, Jadwal, dan Kanban terhubung ke view aplikasi, tombol lainnya dummy */
   _bindEvents() {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
@@ -107,6 +110,9 @@ export class BottomNav {
         } else if (route === 'calendar' || route === 'kalender') {
           // Hubungkan tombol jadwal ke halaman Jadwal Global
           this.eventBus.emit('navigate', { view: 'calendar' });
+        } else if (route === 'kanban') {
+          // Hubungkan tombol kanban ke halaman Kanban Board
+          this.eventBus.emit('navigate', { view: 'kanban' });
         } else {
           // Tombol lainnya tetap dummy
           console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);

@@ -87,6 +87,15 @@ export class Sidebar {
             </a>
 
             <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('kanban') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="kanban" 
+              href="#/kanban"
+            >
+              <span class="material-symbols-outlined text-[18px]">view_kanban</span>
+              <span>Papan Kanban</span>
+            </a>
+
+            <a 
               class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('docs-sheets') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
               data-route="docs-sheets" 
               href="#/docs-sheets"
