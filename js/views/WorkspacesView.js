@@ -4,7 +4,7 @@ import { BaseView } from '../core/BaseView.js';
  * WorkspacesView - Single Responsibility Principle (SRP)
  * Renders the dedicated "Pilih Ruang Kerja" view featuring 5 interactive workspaces:
  * LayarBaca, AIKreativ, Panen Kunci, RuangKreasi, and Sharinginaja.
- * Menghubungkan pilihan ruang kerja ke Kanban Board, Tabel Proyek, dan seluruh data dinamis.
+ * Dilengkapi tombol dan dialog modal untuk menambah proyek baru secara interaktif.
  */
 export class WorkspacesView extends BaseView {
   /**
@@ -18,6 +18,8 @@ export class WorkspacesView extends BaseView {
     this.eventBus = container.resolve('EventBus');
 
     this.activeWorkspaceId = localStorage.getItem('active_workspace') || 'ruangkreasi';
+    this.isModalOpen = false;
+    this.hostElement = null;
 
     this.workspaces = [
       {
@@ -111,12 +113,23 @@ export class WorkspacesView extends BaseView {
     ];
   }
 
+  mount(hostElement) {
+    this.hostElement = hostElement;
+    super.mount(hostElement);
+  }
+
+  renderToDOM() {
+    if (this.hostElement) {
+      this.mount(this.hostElement);
+    }
+  }
+
   render() {
     return `
-      <div class="workspaces-page min-h-[calc(100vh-var(--topbar-height))] bg-[#080612] text-slate-100 pb-28 pt-4 sm:pt-6 px-4 sm:px-8 flex justify-center">
+      <div class="workspaces-page min-h-[calc(100vh-var(--topbar-height))] bg-[#080612] text-slate-100 pb-28 pt-4 sm:pt-6 px-4 sm:px-8 flex justify-center relative">
         <div class="w-full max-w-2xl space-y-5">
 
-          <!-- Top Navigation Header & Back Button -->
+          <!-- Top Navigation Header: Back Button & Add Project Action -->
           <div class="flex items-center justify-between gap-3">
             <button
               id="btn-workspaces-back"
@@ -126,10 +139,22 @@ export class WorkspacesView extends BaseView {
               <span class="material-symbols-outlined text-[18px]">arrow_back</span>
               <span>Beranda</span>
             </button>
-            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Workspace Aktif
-            </span>
+
+            <div class="flex items-center gap-2">
+              <button
+                id="btn-open-create-project"
+                class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white transition-all text-xs font-bold cursor-pointer shadow-md shadow-purple-600/25 active:scale-95 border border-purple-400/40"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>+ Tambah Proyek</span>
+              </button>
+
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Workspace Aktif
+              </span>
+            </div>
           </div>
 
           <!-- Main Container Card (PILIH RUANG KERJA) -->
@@ -242,20 +267,156 @@ export class WorkspacesView extends BaseView {
               Ruang kerja tidak ditemukan
             </div>
 
-            <!-- Search Input Bar -->
-            <div class="relative flex items-center pt-2">
-              <input 
-                type="text" 
-                id="search-ws-input" 
-                placeholder="Cari Ruang Kerja..." 
-                class="w-full bg-[#090814] border border-[#28213e] focus:border-purple-500 rounded-full px-4 py-2.5 text-[13px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500/50 pr-10 transition-colors shadow-inner"
-              />
-              <span class="material-symbols-outlined absolute right-3.5 text-slate-500 text-[18px] pointer-events-none">search</span>
+            <!-- Controls: Search Input Bar & Tambah Proyek Button -->
+            <div class="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+              <div class="relative flex-1 w-full flex items-center">
+                <input 
+                  type="text" 
+                  id="search-ws-input" 
+                  placeholder="Cari Ruang Kerja..." 
+                  class="w-full bg-[#090814] border border-[#28213e] focus:border-purple-500 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500/50 pr-10 transition-colors shadow-inner"
+                />
+                <span class="material-symbols-outlined absolute right-3.5 text-slate-500 text-[18px] pointer-events-none">search</span>
+              </div>
+
+              <button
+                id="btn-add-new-project-card"
+                class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[13px] shadow-lg shadow-purple-600/25 transition-all cursor-pointer border border-purple-400/30 shrink-0 active:scale-95"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                <span>Tambah Proyek</span>
+              </button>
             </div>
 
           </div>
 
         </div>
+
+        <!-- MODAL TAMBAH PROYEK -->
+        <div 
+          id="modal-create-project" 
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-200 ${this.isModalOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div class="relative w-full max-w-lg bg-[#120f24] border border-[#2b244c] rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 ${this.isModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-purple-500/20">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[20px]">create_new_folder</span>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-white">Tambah Proyek Baru</h3>
+                  <p class="text-[11px] text-slate-400">Tambahkan proyek ke ruang kerja pilihan Anda</p>
+                </div>
+              </div>
+              <button id="btn-close-create-project" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer" type="button">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="form-create-project" class="flex flex-col gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1">Nama Proyek *</label>
+                <input
+                  id="input-ws-project-name"
+                  type="text"
+                  required
+                  placeholder="Contoh: Kampanye LED Brand Launch Q4"
+                  class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-200 mb-1">Ruang Kerja / Workspace</label>
+                  <select
+                    id="select-ws-project-workspace"
+                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
+                  >
+                    <option value="ruangkreasi" ${this.activeWorkspaceId === 'ruangkreasi' ? 'selected' : ''}>RuangKreasi (Dev)</option>
+                    <option value="layarbaca" ${this.activeWorkspaceId === 'layarbaca' ? 'selected' : ''}>LayarBaca (Produk)</option>
+                    <option value="aikreativ" ${this.activeWorkspaceId === 'aikreativ' ? 'selected' : ''}>AIKreativ (Studio)</option>
+                    <option value="panen-kunci" ${this.activeWorkspaceId === 'panen-kunci' ? 'selected' : ''}>Panen Kunci (SaaS)</option>
+                    <option value="sharinginaja" ${this.activeWorkspaceId === 'sharinginaja' ? 'selected' : ''}>Sharinginaja (Cloud)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-200 mb-1">Prioritas</label>
+                  <select
+                    id="select-ws-project-priority"
+                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
+                  >
+                    <option value="Critical">Critical</option>
+                    <option value="High" selected>High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-200 mb-1">Target Deadline</label>
+                  <input
+                    id="input-ws-project-due"
+                    type="text"
+                    placeholder="Contoh: Nov 2026"
+                    value="Des 2026"
+                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-200 mb-1">Estimasi Budget</label>
+                  <input
+                    id="input-ws-project-budget"
+                    type="text"
+                    placeholder="Contoh: Rp 75.000.000"
+                    value="Rp 85.000.000"
+                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1">Deskripsi Proyek</label>
+                <textarea
+                  id="input-ws-project-desc"
+                  rows="2"
+                  placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..."
+                  class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all resize-none"
+                ></textarea>
+              </div>
+
+              <!-- Modal Footer Actions -->
+              <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-purple-500/20">
+                <button
+                  id="btn-cancel-create-project"
+                  type="button"
+                  class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  id="btn-submit-create-project"
+                  type="submit"
+                  class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
+                >
+                  <span class="material-symbols-outlined text-[16px]">save</span>
+                  <span>Simpan Proyek</span>
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+
       </div>
     `;
   }
@@ -325,6 +486,81 @@ export class WorkspacesView extends BaseView {
         activateAndNavigate(wsId, title, 'project-table');
       });
     });
+
+    // Open Modal Tambah Proyek
+    const openModalBtn = this.element.querySelector('#btn-open-create-project');
+    const openModalBtnCard = this.element.querySelector('#btn-add-new-project-card');
+
+    const handleOpenModal = () => {
+      this.isModalOpen = true;
+      this.renderToDOM();
+      setTimeout(() => {
+        const nameInput = this.element.querySelector('#input-ws-project-name');
+        if (nameInput) nameInput.focus();
+      }, 50);
+    };
+
+    if (openModalBtn) openModalBtn.addEventListener('click', handleOpenModal);
+    if (openModalBtnCard) openModalBtnCard.addEventListener('click', handleOpenModal);
+
+    // Close Modal
+    const closeModalBtn = this.element.querySelector('#btn-close-create-project');
+    const cancelModalBtn = this.element.querySelector('#btn-cancel-create-project');
+    const modalBackdrop = this.element.querySelector('#modal-create-project');
+
+    const handleCloseModal = () => {
+      this.isModalOpen = false;
+      this.renderToDOM();
+    };
+
+    if (closeModalBtn) closeModalBtn.addEventListener('click', handleCloseModal);
+    if (cancelModalBtn) cancelModalBtn.addEventListener('click', handleCloseModal);
+    if (modalBackdrop) {
+      modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) {
+          handleCloseModal();
+        }
+      });
+    }
+
+    // Submit Tambah Proyek Form
+    const form = this.element.querySelector('#form-create-project');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = this.element.querySelector('#input-ws-project-name')?.value.trim();
+        const workspace = this.element.querySelector('#select-ws-project-workspace')?.value || 'ruangkreasi';
+        const priority = this.element.querySelector('#select-ws-project-priority')?.value || 'High';
+        const dueDate = this.element.querySelector('#input-ws-project-due')?.value || 'Des 2026';
+        const budget = this.element.querySelector('#input-ws-project-budget')?.value || 'Rp 85.000.000';
+        const description = this.element.querySelector('#input-ws-project-desc')?.value.trim() || 'Proyek strategis baru ditambahkan ke dalam ruang kerja.';
+
+        if (!name) return;
+
+        // Tambahkan proyek melalui ProjectService
+        const newProject = this.projectService.addProject({
+          name,
+          workspace,
+          priority,
+          dueDate,
+          budget,
+          description,
+          type: 'existing',
+          status: 'active'
+        });
+
+        const targetWs = this.workspaces.find(w => w.id === workspace);
+        const wsTitle = targetWs ? targetWs.title : workspace;
+
+        this.notificationService.success(`Proyek "${name}" berhasil ditambahkan ke Ruang Kerja ${wsTitle}!`);
+        this.activeWorkspaceId = workspace;
+        localStorage.setItem('active_workspace', workspace);
+        this.isModalOpen = false;
+
+        // Re-render agar counter proyek di kartu langsung terupdate
+        this.renderToDOM();
+      });
+    }
 
     // Real-time search filter
     const searchInput = this.element.querySelector('#search-ws-input');

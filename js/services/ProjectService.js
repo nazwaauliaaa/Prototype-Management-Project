@@ -225,6 +225,15 @@ export class ProjectService {
   }
 
   /**
+   * Menambahkan proyek baru
+   * @param {Object} data
+   * @returns {Project}
+   */
+  addProject(data = {}) {
+    return this.addDummyProject(data);
+  }
+
+  /**
    * Menambahkan proyek baru (Dummy function)
    * Mengikuti SRP: memvalidasi, membuat entitas, menyimpan, dan memicu notifikasi & event.
    * @param {Object} data
