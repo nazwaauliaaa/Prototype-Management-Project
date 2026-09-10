@@ -105,39 +105,6 @@ export class Sidebar {
             </a>
           </nav>
 
-          <!-- Workspaces Inti — pindah ke tab bar di atas (lihat navbar workspace) -->
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center justify-between px-spacing-sm py-1">
-              <span class="font-badge-micro text-[10px] text-text-muted uppercase font-bold tracking-wider">
-                Workspaces Inti
-              </span>
-              <span class="material-symbols-outlined text-[14px] text-text-muted">layers</span>
-            </div>
-
-            <!-- Quick-access workspace pills in sidebar (desktop reference) -->
-            <nav class="flex flex-col gap-0.5">
-              ${[
-                { id: 'ruangkreasi',  label: 'RuangKreasi',  tag: 'Dev',    dot: 'bg-status-planning' },
-                { id: 'layarbaca',    label: 'LayarBaca',     tag: 'Produk', dot: 'bg-status-progress' },
-                { id: 'aikreativ',    label: 'AIKreativ',     tag: 'Studio', dot: 'bg-status-asset' },
-                { id: 'panen-kunci',  label: 'Panen Kunci',   tag: 'SaaS',   dot: 'bg-status-warning' },
-                { id: 'sharinginaja', label: 'Sharinginaja',  tag: 'Cloud',  dot: 'bg-status-success' },
-              ].map(ws => `
-                <a
-                  class="workspace-link flex items-center justify-between px-3 py-1.5 rounded-xl transition-all text-[13px] ${this.isActiveWorkspace(ws.id) ? 'bg-surface-container font-bold text-primary' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}"
-                  data-workspace="${ws.id}"
-                  href="#/workspace/${ws.id}"
-                >
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full ${ws.dot}"></span>
-                    <span>${ws.label}</span>
-                  </div>
-                  <span class="font-caption-meta text-[11px] text-text-muted">${ws.tag}</span>
-                </a>
-              `).join('')}
-            </nav>
-          </div>
-
           <!-- Papan Berbintang -->
           <div class="flex flex-col gap-1">
             <div class="flex items-center justify-between px-spacing-sm py-1">
