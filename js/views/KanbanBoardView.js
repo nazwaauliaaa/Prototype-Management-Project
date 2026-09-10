@@ -114,17 +114,6 @@ export class KanbanBoardView extends BaseView {
         
         <!-- Breadcrumbs & Workspace Subheader -->
         <div class="flex flex-col gap-2 mb-4">
-          <div class="flex items-center gap-2 text-[12px] text-text-muted">
-            <span class="hover:text-primary cursor-pointer transition-colors" id="btn-crumb-kanban">Workspaces</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <div class="flex items-center gap-1.5 text-text-primary font-medium">
-              <span class="w-2 h-2 rounded-full ${this.currentWorkspace ? 'bg-status-planning' : 'bg-brand-accent'} inline-block"></span>
-              <span class="capitalize">${this.currentWorkspace || 'Semua Workspace'}</span>
-            </div>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-primary font-semibold">Papan Kanban Creative Hub</span>
-          </div>
-
           <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             <div class="min-w-0">
               <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
@@ -638,14 +627,6 @@ export class KanbanBoardView extends BaseView {
     if (addTaskBtn) {
       addTaskBtn.addEventListener('click', () => {
         this.modalManager.open('new-task');
-      });
-    }
-
-    // Breadcrumb
-    const crumbBtn = this.element.querySelector('#btn-crumb-kanban');
-    if (crumbBtn) {
-      crumbBtn.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }
 
