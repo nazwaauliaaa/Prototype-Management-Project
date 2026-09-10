@@ -9,11 +9,20 @@ export class BottomNav {
    */
   constructor(container) {
     this.container = container;
+    this.eventBus = container.resolve('EventBus');
     this.activeTab = 'dashboard';
     this.hostElement = null;
+
+    // Sinkronkan tab aktif jika route sistem berubah ke dashboard
+    this.eventBus.on('route:changed', ({ route }) => {
+      if (route === 'dashboard') {
+        this.activeTab = 'dashboard';
+        this._updateActiveState();
+      }
+    });
   }
 
-  /** Nav tab dummy definitions */
+  /** Nav tab definitions */
   get tabs() {
     return [
       { id: 'dashboard',   icon: 'space_dashboard', label: 'Dashboard'   },
@@ -65,7 +74,7 @@ export class BottomNav {
     this.renderToDOM();
   }
 
-  /** Update active class secara visual (dummy state) */
+  /** Update active class secara visual */
   _updateActiveState() {
     if (!this.hostElement) return;
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
@@ -79,7 +88,7 @@ export class BottomNav {
     });
   }
 
-  /** Event listener dummy: hanya ubah state aktif tanpa mengubah routing aplikasi */
+  /** Event listener: Dashboard terhubung ke halaman dashboard, tombol lainnya dummy */
   _bindEvents() {
     const buttons = this.hostElement.querySelectorAll('.bottom-nav-btn');
     buttons.forEach(btn => {
@@ -88,7 +97,14 @@ export class BottomNav {
         const route = btn.getAttribute('data-route');
         this.activeTab = route;
         this._updateActiveState();
-        console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);
+
+        if (route === 'dashboard') {
+          // Hubungkan tombol dashboard ke halaman dashboard aplikasi
+          this.eventBus.emit('navigate', { view: 'dashboard' });
+        } else {
+          // Tombol lainnya tetap dummy
+          console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);
+        }
       });
     });
   }
