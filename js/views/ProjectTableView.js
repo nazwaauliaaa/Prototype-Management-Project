@@ -10,19 +10,82 @@ export class ProjectTableView extends BaseView {
     this.taskService = container.resolve('TaskService');
     this.modalManager = container.resolve('ModalManager');
     this.currentWorkspace = 'ruangkreasi';
-    this.currentBoard = 'kampanye-q3';
+    this.currentBoard = null;
   }
 
-  setWorkspace(workspace, board = 'kampanye-q3') {
+  setWorkspace(workspace, board = null) {
     this.currentWorkspace = workspace || 'ruangkreasi';
     this.currentBoard = board;
   }
 
+  getWorkspaceMeta(wsKey) {
+    const configs = {
+      ruangkreasi: {
+        name: 'RuangKreasi',
+        title: 'Kampanye Brand Kreatif Q3',
+        subtitle: 'Pusat koordinasi peluncuran media, materi visual LED, dan digital branding RuangKreasi Studio.',
+        badge: 'Studio Dev',
+        color: 'bg-status-planning',
+        hours: '142 Jam',
+        assets: '18 Aset JPG'
+      },
+      layarbaca: {
+        name: 'LayarBaca',
+        title: 'Papan Reader & Typography v2.4',
+        subtitle: 'Optimasi typography engine, text readability, dan rendering dark mode mobile.',
+        badge: 'Produk',
+        color: 'bg-status-progress',
+        hours: '16 Jam',
+        assets: '4 Mockup UI'
+      },
+      aikreativ: {
+        name: 'AIKreativ',
+        title: 'Studio Generatif & Inpainting AI',
+        subtitle: 'Pengembangan neural pipeline, checkpoint diffusion v3, dan inpainting generator.',
+        badge: 'Studio AI',
+        color: 'bg-status-asset',
+        hours: '28 Jam',
+        assets: '6 Model CKPT'
+      },
+      'panen-kunci': {
+        name: 'Panen Kunci',
+        title: 'Security Ops & OAuth Microservice',
+        subtitle: 'Autentikasi terdistribusi, session token cluster, dan audit keamanan ISO.',
+        badge: 'SaaS',
+        color: 'bg-status-warning',
+        hours: '22 Jam',
+        assets: '2 Dokumen Spec'
+      },
+      sharinginaja: {
+        name: 'Sharinginaja',
+        title: 'Cloud Storage & CDN Engine',
+        subtitle: 'Infrastruktur sinkronisasi multi-region, storage failover, dan CDN caching.',
+        badge: 'Cloud',
+        color: 'bg-status-success',
+        hours: '0 Jam',
+        assets: '0 Aset'
+      }
+    };
+    return configs[wsKey] || {
+      name: wsKey,
+      title: `Papan Proyek ${wsKey}`,
+      subtitle: `Deliverable dan tugas operasional pilar ${wsKey}.`,
+      badge: 'Workspace',
+      color: 'bg-brand-accent',
+      hours: '0 Jam',
+      assets: '0 Aset'
+    };
+  }
+
   render() {
     const tasks = this.taskService.getTasks(this.currentWorkspace, this.currentBoard);
+    const wsMeta = this.getWorkspaceMeta(this.currentWorkspace);
+    const kanbanTasks = this.taskService.getTasks(this.currentWorkspace);
+    const activeProcesses = tasks.filter(t => t.status === 'in-progress' || t.status === 'review-qa' || t.status === 'ready-launch').length;
+    const totalHours = tasks.reduce((acc, t) => acc + (t.hours || 0), 0);
 
     return `
-      <div class="flex flex-col w-full px-spacing-2xl pt-4 pb-spacing-3xl">
+      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
         <!-- Breadcrumbs & Workspace Subheader -->
         <div class="flex flex-col gap-2 mb-4">
@@ -30,17 +93,23 @@ export class ProjectTableView extends BaseView {
             <span class="hover:text-primary cursor-pointer transition-colors" id="btn-crumb-workspaces">Workspaces</span>
             <span class="material-symbols-outlined text-[14px]">chevron_right</span>
             <div class="flex items-center gap-1.5 text-text-primary font-medium">
-              <span class="w-2 h-2 rounded-full bg-status-planning inline-block"></span>
-              <span class="capitalize">${this.currentWorkspace}</span>
+              <span class="w-2 h-2 rounded-full ${wsMeta.color} inline-block"></span>
+              <span>${wsMeta.name}</span>
             </div>
             <span class="material-symbols-outlined text-[14px]">chevron_right</span>
             <span class="text-primary font-semibold flex items-center gap-1">
               <span class="material-symbols-outlined text-status-warning text-[14px]">star</span>
-              Papan Kampanye Brand Kreatif Q3
+              ${wsMeta.title}
             </span>
-            <span class="ml-2 px-2 py-0.5 rounded-full bg-status-success/15 text-status-success font-badge-micro text-[10px] font-bold uppercase">
-              Sprint Aktif
-            </span>
+            ${activeProcesses > 0 ? `
+              <span class="ml-2 px-2 py-0.5 rounded-full bg-status-success/15 text-status-success font-badge-micro text-[10px] font-bold uppercase">
+                Sprint Aktif
+              </span>
+            ` : `
+              <span class="ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-badge-micro text-[10px] font-bold uppercase">
+                Tanpa Proses Aktif
+              </span>
+            `}
           </div>
 
           <!-- Board Identity & Quick Stats Bar -->
@@ -52,7 +121,7 @@ export class ProjectTableView extends BaseView {
               <div class="flex flex-col">
                 <div class="flex items-center gap-2">
                   <h1 class="font-headline-lg text-[20px] text-on-surface font-bold tracking-tight">
-                    Kampanye Brand Kreatif Q3
+                    ${wsMeta.title}
                   </h1>
                   <button class="text-status-warning hover:scale-110 transition-transform" title="Papan Berbintang">
                     <span class="material-symbols-outlined text-[20px]">star</span>
@@ -60,7 +129,7 @@ export class ProjectTableView extends BaseView {
                   <span class="px-2 py-0.5 rounded-full bg-surface-container text-text-secondary font-badge-micro text-[10px]">Q3-2024</span>
                 </div>
                 <p class="font-caption-meta text-[11px] text-text-secondary">
-                  Pusat koordinasi peluncuran media, materi visual LED, dan digital branding RuangKreasi Studio.
+                  ${wsMeta.subtitle}
                 </p>
               </div>
             </div>
@@ -71,7 +140,7 @@ export class ProjectTableView extends BaseView {
                 <span class="material-symbols-outlined text-primary text-[18px]">timelapse</span>
                 <div class="flex flex-col">
                   <span class="font-badge-micro text-[9px] text-text-muted uppercase">TOTAL BEBAN</span>
-                  <span class="font-body-medium text-[13px] text-on-surface font-bold">142 Jam</span>
+                  <span class="font-body-medium text-[13px] text-on-surface font-bold">${totalHours > 0 ? `${totalHours} Jam` : wsMeta.hours}</span>
                 </div>
               </div>
               <div class="w-px h-6 bg-surface-border"></div>
@@ -79,7 +148,7 @@ export class ProjectTableView extends BaseView {
                 <span class="material-symbols-outlined text-status-success text-[18px]">verified</span>
                 <div class="flex flex-col">
                   <span class="font-badge-micro text-[9px] text-text-muted uppercase">ASET TERUJI</span>
-                  <span class="font-body-medium text-[13px] text-status-success font-bold">18 Aset JPG</span>
+                  <span class="font-body-medium text-[13px] text-status-success font-bold">${wsMeta.assets}</span>
                 </div>
               </div>
             </div>
@@ -88,37 +157,41 @@ export class ProjectTableView extends BaseView {
 
         <!-- Monday.com Top View Switcher Tabs -->
         <div class="flex items-center justify-between border-b border-surface-border mb-4">
-          <div class="flex items-center gap-1 -mb-px overflow-x-auto">
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="kanban">
+          <div class="flex items-center gap-0 sm:gap-1 -mb-px overflow-x-auto pb-0" style="scrollbar-width:none;-ms-overflow-style:none">
+            <!-- Kanban View Tab -->
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="kanban" title="Kanban View">
               <span class="material-symbols-outlined text-[18px]">dashboard</span>
-              <span>Kanban View</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted text-[10px] font-bold">21</span>
+              <span class="hidden sm:inline">Kanban</span>
+              <span class="hidden lg:inline text-text-muted/70 text-[11px]">View</span>
+              <span class="px-1.5 rounded-full bg-surface-container text-text-muted text-[10px] font-bold hidden sm:inline">${kanbanTasks.length}</span>
             </button>
 
             <!-- Active Monday Table Tab -->
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg" data-view="project-table">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg shrink-0" data-view="project-table" title="Tabel Monday Style">
               <span class="material-symbols-outlined text-[18px] text-primary">table_chart</span>
-              <span>Tabel (Monday Style)</span>
-              <span class="px-1.5 py-0.5 rounded-full bg-primary text-on-primary font-badge-micro text-[10px] font-bold">Live</span>
+              <span class="hidden sm:inline">Tabel</span>
+              <span class="hidden lg:inline text-[11px] opacity-70">(Monday)</span>
+              ${activeProcesses > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-primary text-on-primary font-badge-micro text-[10px] font-bold hidden sm:inline">Live</span>` : ''}
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="docs-sheets">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="docs-sheets" title="Docs & Sheets">
               <span class="material-symbols-outlined text-[18px]">description</span>
-              <span>Docs & Sheets</span>
+              <span class="hidden sm:inline">Docs</span>
+              <span class="hidden lg:inline text-text-muted/70 text-[11px]">&amp; Sheets</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="calendar">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="calendar" title="Kalender & Jadwal">
               <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-              <span>Kalender & Jadwal</span>
+              <span class="hidden sm:inline">Jadwal</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="gantt">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="gantt" title="Timeline & Gantt">
               <span class="material-symbols-outlined text-[18px]">waterfall_chart</span>
-              <span>Timeline & Gantt</span>
+              <span class="hidden sm:inline">Gantt</span>
             </button>
           </div>
 
-          <div class="hidden lg:flex items-center gap-2">
+          <div class="hidden lg:flex items-center gap-2 shrink-0 pl-2">
             <button id="btn-add-table-task" class="flex items-center gap-1 text-[12px] font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors">
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Tambah Tugas</span>
@@ -146,7 +219,25 @@ export class ProjectTableView extends BaseView {
 
               <!-- Table Body -->
               <tbody class="divide-y divide-surface-border">
-                ${tasks.map((task, idx) => `
+                ${tasks.length === 0 ? `
+                  <tr>
+                    <td colspan="7" class="py-14 px-4 text-center">
+                      <div class="flex flex-col items-center justify-center gap-2.5 text-text-muted">
+                        <div class="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center text-text-muted">
+                          <span class="material-symbols-outlined text-[28px]">inventory_2</span>
+                        </div>
+                        <div>
+                          <p class="font-body-medium text-[14px] font-semibold text-text-secondary">Tidak ada deliverable tercatat pada pilar ${wsMeta.name}</p>
+                          <p class="font-caption-meta text-[12px] text-text-muted mt-0.5">Workspace ini saat ini tidak memiliki sprint atau proses berjalan.</p>
+                        </div>
+                        <button id="btn-empty-add-task" class="mt-2 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm" type="button">
+                          <span class="material-symbols-outlined text-[16px]">add</span>
+                          <span>Tambah Tugas Pertama</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ` : tasks.map((task, idx) => `
                   <tr 
                     class="hover:bg-surface-container-low/60 transition-colors group cursor-pointer"
                     data-task-id="${task.id}"
@@ -230,10 +321,10 @@ export class ProjectTableView extends BaseView {
           </div>
 
           <!-- Table Summary Footer -->
-          <div class="p-3 bg-surface-container-low border-t border-surface-border flex items-center justify-between text-[11px] text-text-secondary">
-            <span class="font-medium">${tasks.length} Deliverable tercatat pada pilar ${this.currentWorkspace}</span>
+          <div class="p-3 bg-surface-container-low border-t border-surface-border flex flex-wrap items-center justify-between gap-2 text-[11px] text-text-secondary">
+            <span class="font-medium">${tasks.length} Deliverable tercatat pada pilar ${wsMeta.name}</span>
             <div class="flex items-center gap-4">
-              <span>Total Beban: <strong class="text-text-primary">${tasks.reduce((acc, t) => acc + (t.hours || 0), 0)} Jam</strong></span>
+              <span>Total Beban: <strong class="text-text-primary">${totalHours} Jam</strong></span>
               <span>Format: Monday Hybrid Board</span>
             </div>
           </div>
@@ -304,6 +395,13 @@ export class ProjectTableView extends BaseView {
     const addTaskBtn = this.element.querySelector('#btn-add-table-task');
     if (addTaskBtn) {
       addTaskBtn.addEventListener('click', () => {
+        this.modalManager.open('new-task');
+      });
+    }
+
+    const emptyAddBtn = this.element.querySelector('#btn-empty-add-task');
+    if (emptyAddBtn) {
+      emptyAddBtn.addEventListener('click', () => {
         this.modalManager.open('new-task');
       });
     }

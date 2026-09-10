@@ -187,6 +187,31 @@ export class CalendarService {
   }
 
   /**
+   * Add a new calendar event
+   * @param {Object} eventData
+   * @returns {CalendarEvent}
+   */
+  addEvent(eventData) {
+    const newEvent = new CalendarEvent({
+      id: 'evt-' + Date.now(),
+      title: eventData.title || 'Deliverable Baru',
+      description: eventData.description || '',
+      pillar: eventData.pillar || 'ruangkreasi',
+      date: eventData.date || '2024-08-20',
+      dayName: 'Selasa',
+      time: eventData.time || '09:00 - 17:00 WIB',
+      pic: eventData.pic || 'Tim Terkait',
+      location: 'Workspace Central',
+      status: eventData.status || 'in-progress',
+      badge: eventData.badge || 'Tugas Baru',
+      taskRef: eventData.taskRef || ''
+    });
+    this.events.unshift(newEvent);
+    this.eventBus.emit('calendar:updated', this.events);
+    return newEvent;
+  }
+
+  /**
    * Get workload stats by member
    */
   getWorkloadStats() {

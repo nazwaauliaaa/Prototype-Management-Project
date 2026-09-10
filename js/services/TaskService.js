@@ -263,6 +263,8 @@ export class TaskService {
     const completed = this.tasks.filter(t => t.status === 'done').length;
     const onTrackCount = this.tasks.filter(t => t.status === 'in-progress' || t.status === 'ready-launch').length;
     const qaReviews = this.tasks.filter(t => t.status === 'review-qa').length;
+    const totalTasks = this.tasks.length || 1;
+    const completionPercent = Math.round((completed / totalTasks) * 100);
     const totalHours = this.tasks.reduce((sum, t) => sum + (t.hours || 0), 0);
 
     return {
@@ -272,7 +274,9 @@ export class TaskService {
       qaReviews,
       totalHours,
       qaPassRate: '98%',
-      sprintProgress: 78
+      sprintProgress: 78,
+      completionRate: `${completionPercent}%`,
+      errorRate: '2.1%'
     };
   }
 }

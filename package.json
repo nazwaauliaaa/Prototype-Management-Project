@@ -1,16 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "stitch_document_design_generator",
-  "version": "1.0.0",
-  "description": "Creative Office — Portal Manajemen Proyek Sampulkreativ Technology",
-  "scripts": {
-    "dev": "npx serve . -p 3000",
-    "start": "npx serve . -p 3000"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "serve": "^14.2.4"
-=======
   "name": "creative-office-portal",
   "version": "1.0.0",
   "private": true,
@@ -22,6 +10,5 @@
   },
   "devDependencies": {
     "vite": "^6.2.0"
->>>>>>> b56ba56d5bfd33a0192e868a4c4d15c27d12d6f8
   }
 }

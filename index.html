@@ -98,9 +98,26 @@
     <div id="app-sidebar"></div>
 
     <!-- Main Dynamic Content Container -->
-    <div id="app-shell-layout" class="pl-sidebar-width pt-topbar-height min-h-screen bg-canvas-bg flex flex-col transition-all duration-300">
+    <div id="app-shell-layout" class="lg:pl-sidebar-width pt-topbar-height min-h-screen bg-canvas-bg flex flex-col transition-all duration-300 pb-16 lg:pb-0">
       <main id="app-content" class="flex-1 w-full"></main>
     </div>
+
+    <!-- Mobile Bottom Navigation Bar (Matches user mobile screenshot) -->
+    <nav id="mobile-bottom-nav" class="hidden lg:hidden fixed bottom-0 inset-x-0 bg-[#12121c]/95 backdrop-blur-xl border-t border-[#262638] px-6 py-2.5 flex items-center justify-around z-40 text-slate-400 shadow-2xl">
+      <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-purple-400" data-route="dashboard" type="button" title="Beranda">
+        <span class="material-symbols-outlined text-[24px]">home</span>
+        <span class="w-4 h-0.5 bg-purple-500 rounded-full mt-0.5"></span>
+      </button>
+      <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition-colors" data-route="kanban" type="button" title="Tugas">
+        <span class="material-symbols-outlined text-[24px]">checklist</span>
+      </button>
+      <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition-colors" data-route="project-table" type="button" title="Papan">
+        <span class="material-symbols-outlined text-[24px]">dashboard_customize</span>
+      </button>
+      <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition-colors" data-route="profile" type="button" title="Akun">
+        <span class="material-symbols-outlined text-[24px]">person</span>
+      </button>
+    </nav>
   </div>
 
   <!-- Main ES6 Modules Application Entry -->

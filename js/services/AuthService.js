@@ -44,9 +44,9 @@ export class AuthService {
       })
     };
 
-    // Default logged in user (start as Sari Rahmawati / Kreatif)
-    this.currentUser = this.roleProfiles.kreatif;
-    this.isAuthenticated = true;
+    // Start logged out — user must authenticate via QR, role select, or SSO
+    this.currentUser = null;
+    this.isAuthenticated = false;
   }
 
   getCurrentUser() {

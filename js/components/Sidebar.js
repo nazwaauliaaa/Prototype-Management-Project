@@ -13,11 +13,20 @@ export class Sidebar {
     this.currentWorkspace = 'ruangkreasi';
     this.element = null;
     this.hostElement = null;
+    this.isOpenOnMobile = false;
 
     // Listen for navigation changes once
     this.eventBus.on('route:changed', ({ route, workspace }) => {
       this.currentRoute = route;
       if (workspace) this.currentWorkspace = workspace;
+      this.isOpenOnMobile = false; // Auto close on navigate
+      if (this.hostElement) {
+        this.renderToDOM();
+      }
+    });
+
+    this.eventBus.on('sidebar:toggle', () => {
+      this.isOpenOnMobile = !this.isOpenOnMobile;
       if (this.hostElement) {
         this.renderToDOM();
       }
@@ -26,9 +35,24 @@ export class Sidebar {
 
   render() {
     return `
-      <aside class="fixed left-0 top-0 bottom-0 w-sidebar-width bg-surface-container-lowest pt-topbar-height flex flex-col z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-border">
+      <!-- Mobile Backdrop Overlay -->
+      <div id="sidebar-backdrop" class="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${this.isOpenOnMobile ? 'opacity-100' : 'opacity-0 pointer-events-none'}"></div>
+      
+      <!-- Sidebar Panel -->
+      <aside class="fixed left-0 top-0 bottom-0 w-sidebar-width bg-surface-container-lowest pt-topbar-height flex flex-col z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-border transition-transform duration-300 ease-in-out ${this.isOpenOnMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}">
         <div class="flex-1 overflow-y-auto px-spacing-sm py-spacing-md flex flex-col gap-spacing-lg">
           
+          <!-- Branding Logo in Sidebar -->
+          <div class="flex items-center gap-spacing-sm px-2 cursor-pointer mb-2" id="sidebar-brand-logo">
+            <div class="w-8 h-8 rounded-lg bg-primary-container p-1 flex items-center justify-center">
+              <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-md" src="assets/logo.svg" />
+            </div>
+            <div class="flex flex-col">
+              <span class="font-headline-md text-[15px] font-bold text-on-surface leading-none tracking-tight">Creative Office</span>
+              <span class="font-badge-micro text-[10px] text-text-muted leading-none mt-1">Portal Manajemen</span>
+            </div>
+          </div>
+
           <!-- Navigasi Utama -->
           <nav class="flex flex-col gap-1">
             <span class="px-spacing-sm py-1 font-badge-micro text-[10px] text-text-muted uppercase font-bold tracking-wider">
@@ -254,5 +278,19 @@ export class Sidebar {
         this.eventBus.emit('navigate', { view, board });
       });
     });
+
+    const sidebarBrand = this.element.querySelector('#sidebar-brand-logo');
+    if (sidebarBrand) {
+      sidebarBrand.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'dashboard' });
+      });
+    }
+
+    const backdrop = this.element.querySelector('#sidebar-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => {
+        this.eventBus.emit('sidebar:toggle');
+      });
+    }
   }
 }

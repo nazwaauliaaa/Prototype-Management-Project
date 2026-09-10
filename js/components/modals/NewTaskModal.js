@@ -89,6 +89,39 @@ export class NewTaskModal extends BaseModal {
             </div>
           </div>
 
+          <!-- Rentang Tanggal & Deadline (Timeline & Gantt) -->
+          <div class="p-3 bg-surface-container-low rounded-xl border border-surface-border flex flex-col gap-2">
+            <span class="font-caption-meta text-[11px] text-text-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[15px] text-brand-accent">date_range</span>
+              <span>Jadwal & Deadline (Timeline & Gantt)</span>
+            </span>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="font-caption-meta text-[10px] text-text-muted font-semibold uppercase block mb-1">Tanggal Mulai</label>
+                <input 
+                  id="new-task-start-date" 
+                  type="date" 
+                  value="2024-08-20"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary text-[12px] font-medium"
+                  required
+                />
+              </div>
+              <div>
+                <label class="font-caption-meta text-[10px] text-text-muted font-semibold uppercase block mb-1">Tanggal Deadline</label>
+                <input 
+                  id="new-task-end-date" 
+                  type="date" 
+                  value="2024-08-24"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary text-[12px] font-medium"
+                  required
+                />
+              </div>
+            </div>
+            <p class="font-caption-meta text-[10px] text-text-muted">
+              Menentukan rentang durasi tugas pada diagram Gantt dan jadwal kalender global.
+            </p>
+          </div>
+
           <div>
             <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Deskripsi Singkat</label>
             <textarea 
@@ -129,18 +162,58 @@ export class NewTaskModal extends BaseModal {
         const hours = parseInt(modalRoot.querySelector('#new-task-hours').value, 10) || 8;
         const status = modalRoot.querySelector('#new-task-status').value;
         const description = modalRoot.querySelector('#new-task-desc').value;
+        const startDate = modalRoot.querySelector('#new-task-start-date').value || '2024-08-20';
+        const endDate = modalRoot.querySelector('#new-task-end-date').value || '2024-08-24';
 
-        this.taskService.addTask({
+        // Format timeline string for Monday table & Gantt display (e.g. "20 - 24 Ags")
+        const formatDayMonth = (dateStr) => {
+          if (!dateStr) return '';
+          const parts = dateStr.split('-');
+          if (parts.length >= 3) {
+            const day = parseInt(parts[2], 10);
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const monthIndex = parseInt(parts[1], 10) - 1;
+            return `${day} ${monthNames[monthIndex] || 'Ags'}`;
+          }
+          return dateStr;
+        };
+
+        const timelineStr = `${formatDayMonth(startDate)} – ${formatDayMonth(endDate)}`;
+
+        const createdTask = this.taskService.addTask({
           title,
           workspace,
           priority,
           hours,
           status,
           description,
+          startDate,
+          endDate,
+          deadline: endDate,
+          timeline: timelineStr,
           pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
-          timeline: 'Hari Ini',
           qaProgress: { passed: 0, total: 3 }
         });
+
+        // Also add to CalendarService if available
+        try {
+          const calService = this.container.resolve('CalendarService');
+          if (calService && calService.addEvent) {
+            calService.addEvent({
+              title,
+              description,
+              pillar: workspace,
+              date: startDate,
+              time: '09:00 - 17:00 WIB',
+              pic: 'Sari Rahmawati',
+              status,
+              badge: `${formatDayMonth(endDate)} Deadline`,
+              taskRef: createdTask.code
+            });
+          }
+        } catch (calErr) {
+          console.warn('Calendar sync notice:', calErr);
+        }
 
         this.modalManager.close(this.modalId);
       });

@@ -11,7 +11,7 @@ export class KanbanBoardView extends BaseView {
     this.taskService = container.resolve('TaskService');
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
-    this.currentWorkspace = 'ruangkreasi';
+    this.currentWorkspace = null; // Show all workspaces by default
     this.columns = [
       { id: 'backlog',      title: 'Backlog',              color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-600' },
       { id: 'in-progress',  title: 'Sedang Berjalan',      color: 'border-blue-400',   dot: 'bg-blue-400',     badge: 'bg-blue-100 text-blue-700' },
@@ -110,7 +110,7 @@ export class KanbanBoardView extends BaseView {
         <span id="kanban-drag-ghost-label">Tugas</span>
       </div>
 
-      <div class="flex flex-col w-full px-spacing-2xl pt-4 pb-spacing-3xl">
+      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
         <!-- Breadcrumbs & Workspace Subheader -->
         <div class="flex flex-col gap-2 mb-4">
@@ -118,64 +118,65 @@ export class KanbanBoardView extends BaseView {
             <span class="hover:text-primary cursor-pointer transition-colors" id="btn-crumb-kanban">Workspaces</span>
             <span class="material-symbols-outlined text-[14px]">chevron_right</span>
             <div class="flex items-center gap-1.5 text-text-primary font-medium">
-              <span class="w-2 h-2 rounded-full bg-status-planning inline-block"></span>
-              <span class="capitalize">${this.currentWorkspace}</span>
+              <span class="w-2 h-2 rounded-full ${this.currentWorkspace ? 'bg-status-planning' : 'bg-brand-accent'} inline-block"></span>
+              <span class="capitalize">${this.currentWorkspace || 'Semua Workspace'}</span>
             </div>
             <span class="material-symbols-outlined text-[14px]">chevron_right</span>
             <span class="text-primary font-semibold">Papan Kanban Creative Hub</span>
           </div>
 
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 class="font-headline-lg text-[20px] text-on-surface font-bold tracking-tight">
+          <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+            <div class="min-w-0">
+              <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
                 Creative Hub Kanban Board
               </h1>
               <p class="font-caption-meta text-[11px] text-text-secondary flex items-center gap-1.5 mt-0.5">
                 <span class="material-symbols-outlined text-[13px] text-brand-accent">drag_indicator</span>
-                Drag & drop kartu antar kolom untuk mengubah status • Klik kartu untuk detail lengkap
+                Drag & drop kartu antar kolom untuk ubah status
               </p>
             </div>
 
-            <button id="btn-add-kanban-task" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm">
+            <button id="btn-add-kanban-task" class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm shrink-0">
               <span class="material-symbols-outlined text-[16px]">add</span>
-              <span>Tambah Kartu Tugas</span>
+              <span class="hidden sm:inline">Tambah Kartu</span>
+              <span class="sm:hidden">Tambah</span>
             </button>
           </div>
         </div>
 
         <!-- View Switcher Bar -->
         <div class="flex items-center justify-between border-b border-surface-border mb-6">
-          <div class="flex items-center gap-1 -mb-px overflow-x-auto">
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg" data-view="kanban">
+          <div class="flex items-center gap-0 sm:gap-1 -mb-px overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg shrink-0" data-view="kanban" title="Kanban View">
               <span class="material-symbols-outlined text-[18px]">dashboard</span>
-              <span>Kanban View</span>
+              <span class="hidden sm:inline">Kanban</span>
               <span class="px-1.5 py-0.5 rounded-full bg-primary text-on-primary font-badge-micro text-[10px] font-bold">${allTasks.length}</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="project-table">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="project-table" title="Tabel Monday Style">
               <span class="material-symbols-outlined text-[18px]">table_chart</span>
-              <span>Tabel (Monday Style)</span>
+              <span class="hidden sm:inline">Tabel</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="docs-sheets">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="docs-sheets" title="Docs & Sheets">
               <span class="material-symbols-outlined text-[18px]">description</span>
-              <span>Docs &amp; Sheets</span>
+              <span class="hidden sm:inline">Docs</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="calendar">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="calendar" title="Kalender & Jadwal">
               <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-              <span>Kalender &amp; Jadwal</span>
+              <span class="hidden sm:inline">Jadwal</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="gantt">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="gantt" title="Timeline & Gantt">
               <span class="material-symbols-outlined text-[18px]">waterfall_chart</span>
-              <span>Timeline &amp; Gantt</span>
+              <span class="hidden sm:inline">Gantt</span>
             </button>
           </div>
         </div>
 
-        <!-- Kanban Board Columns Stream -->
-        <div class="flex gap-4 items-start overflow-x-auto pb-6" id="kanban-board">
+        <!-- Kanban Board Columns Stream (swipeable on mobile) -->
+        <div class="flex gap-4 items-start overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0" id="kanban-board">
           ${this.columns.map(col => {
             const colTasks = allTasks.filter(t => t.status === col.id);
             return `

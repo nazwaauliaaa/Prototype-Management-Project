@@ -107,6 +107,24 @@ class CreativeOfficeApp {
     eventBus.on('auth:login', () => {
       this.navigateTo('dashboard');
     });
+
+    // Handle mobile bottom navigation bar clicks
+    const bottomNav = document.getElementById('mobile-bottom-nav');
+    if (bottomNav) {
+      bottomNav.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const route = btn.getAttribute('data-route');
+          if (route === 'profile') {
+            const authService = this.container.resolve('AuthService');
+            const user = authService.getCurrentUser();
+            const notificationService = this.container.resolve('NotificationService');
+            notificationService.info(`Akun Aktif: ${user ? user.name : 'Tamu'} (${user ? user.role : 'Member'})`);
+          } else if (route) {
+            this.navigateTo(route);
+          }
+        });
+      });
+    }
   }
 
   setupRouter() {
@@ -158,25 +176,61 @@ class CreativeOfficeApp {
       history.replaceState(null, '', `#${targetHash}`);
     }
 
+    const bottomNav = document.getElementById('mobile-bottom-nav');
+
     if (viewName === 'auth') {
-      // Hide header and sidebar in auth gate
+      // Hide header, sidebar, and mobile bottom nav in auth gate
       if (headerHost) headerHost.classList.add('hidden');
       if (sidebarHost) sidebarHost.classList.add('hidden');
+      if (bottomNav) {
+        bottomNav.classList.add('hidden');
+        bottomNav.classList.remove('flex');
+      }
       if (shellLayout) {
-        shellLayout.classList.remove('pl-sidebar-width');
+        shellLayout.classList.remove('lg:pl-sidebar-width', 'pl-sidebar-width');
         shellLayout.classList.remove('pt-topbar-height');
       }
 
+      // Unmount previous view before mounting auth
+      if (this.currentView) {
+        this.currentView.unmount();
+      }
       this.currentView = new AuthView(this.container);
       this.currentView.mount(mainHost);
       return;
     }
 
-    // Authenticated views: show header and sidebar
+    // Authenticated views: show header, sidebar, and mobile bottom nav
     if (headerHost) headerHost.classList.remove('hidden');
     if (sidebarHost) sidebarHost.classList.remove('hidden');
+    if (bottomNav) {
+      bottomNav.classList.remove('hidden');
+      bottomNav.classList.add('flex');
+      
+      // Update active highlight on mobile bottom nav
+      bottomNav.querySelectorAll('.mobile-nav-btn').forEach(b => {
+        const route = b.getAttribute('data-route');
+        const isActive = (route === 'dashboard' && (viewName === 'dashboard' || viewName === 'beranda')) ||
+                         (route === 'kanban' && viewName === 'kanban') ||
+                         (route === 'project-table' && (viewName === 'project-table' || viewName === 'tabel'));
+        if (isActive) {
+          b.className = 'mobile-nav-btn flex flex-col items-center gap-0.5 text-purple-400';
+          if (!b.querySelector('.active-indicator')) {
+            const ind = document.createElement('span');
+            ind.className = 'active-indicator w-4 h-0.5 bg-purple-500 rounded-full mt-0.5';
+            b.appendChild(ind);
+          }
+        } else {
+          b.className = 'mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition-colors';
+          const ind = b.querySelector('.active-indicator');
+          if (ind) ind.remove();
+        }
+      });
+    }
+
     if (shellLayout) {
-      shellLayout.classList.add('pl-sidebar-width');
+      shellLayout.classList.remove('pl-sidebar-width');
+      shellLayout.classList.add('lg:pl-sidebar-width');
       shellLayout.classList.add('pt-topbar-height');
     }
 

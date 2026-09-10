@@ -19,7 +19,7 @@ export class CalendarView extends BaseView {
     const workload = this.calendarService.getWorkloadStats();
 
     return `
-      <div class="flex flex-col w-full px-spacing-2xl pt-4 pb-spacing-3xl">
+      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
         <!-- Context Header -->
         <div class="flex flex-col gap-2 mb-4">
@@ -42,26 +42,26 @@ export class CalendarView extends BaseView {
             </div>
 
             <!-- View Switcher Tabs -->
-            <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-border self-start md:self-auto overflow-x-auto">
-              <button class="view-switch-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors" data-view="kanban">
+            <div class="flex items-center gap-0 sm:gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-border self-start md:self-auto overflow-x-auto max-w-full" style="scrollbar-width:none;-ms-overflow-style:none">
+              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="kanban" title="Kanban View">
                 <span class="material-symbols-outlined text-[16px]">view_kanban</span>
-                <span>Kanban View</span>
+                <span class="hidden sm:inline">Kanban</span>
               </button>
-              <button class="view-switch-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors" data-view="project-table">
+              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="project-table" title="Tabel">
                 <span class="material-symbols-outlined text-[16px]">table_rows</span>
-                <span>Tabel</span>
+                <span class="hidden sm:inline">Tabel</span>
               </button>
-              <button class="view-switch-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-bold text-[12px] shadow-sm transition-all" data-view="calendar">
+              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-bold text-[12px] shadow-sm transition-all shrink-0" data-view="calendar" title="Kalender">
                 <span class="material-symbols-outlined text-[16px]">calendar_month</span>
-                <span>Kalender</span>
+                <span class="hidden sm:inline">Kalender</span>
               </button>
-              <button class="view-switch-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors" data-view="docs-sheets">
+              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="docs-sheets" title="Docs & Sheets">
                 <span class="material-symbols-outlined text-[16px]">description</span>
-                <span>Docs & Sheets</span>
+                <span class="hidden sm:inline">Docs</span>
               </button>
-              <button class="view-switch-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors" data-view="gantt">
+              <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-body-default text-[12px] transition-colors shrink-0" data-view="gantt" title="Timeline & Gantt">
                 <span class="material-symbols-outlined text-[16px]">timeline</span>
-                <span>Timeline & Gantt</span>
+                <span class="hidden sm:inline">Gantt</span>
               </button>
             </div>
           </div>
@@ -105,212 +105,136 @@ export class CalendarView extends BaseView {
         <!-- Main Grid: Agenda Stream (8 cols) + Intelligence Sidebar (4 cols) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-spacing-lg">
           
-          <!-- Left: Agenda Stream -->
-          <section class="lg:col-span-8 flex flex-col gap-4">
+          <!-- Left: Agenda Stream / Calendar Grid -->
+          <section class="lg:col-span-8 flex flex-col gap-spacing-lg">
             
-            <!-- Selasa 20 Agustus Section Header -->
-            <div class="flex items-center justify-between px-2 pt-2">
-              <div class="flex items-center gap-2">
-                <span class="font-headline-lg text-[18px] font-bold text-text-primary">Selasa, 20 Agustus 2024</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-badge-micro text-[10px] font-bold animate-pulse">
-                  HARI INI • 3 AGENDA RUANGKREASI
+            <!-- Visual Calendar Grid -->
+            <div class="p-spacing-md rounded-2xl bg-surface-container-lowest border border-surface-border shadow-sm">
+              <div class="grid grid-cols-7 text-center font-caption-meta text-[12px] text-text-muted mb-2">
+                <span class="font-semibold py-2">Min</span>
+                <span class="font-semibold py-2">Sen</span>
+                <span class="font-semibold py-2">Sel</span>
+                <span class="font-semibold py-2">Rab</span>
+                <span class="font-semibold py-2">Kam</span>
+                <span class="font-semibold py-2">Jum</span>
+                <span class="font-semibold py-2">Sab</span>
+              </div>
+              
+              <div class="grid grid-cols-7 gap-1.5">
+                <!-- Prev month days -->
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">28</span></div>
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">29</span></div>
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">30</span></div>
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">31</span></div>
+                
+                <!-- Current month days -->
+                ${Array.from({length: 31}, (_, i) => {
+                  const day = i + 1;
+                  let eventsHtml = '';
+                  let bgClass = 'bg-surface-container-lowest';
+                  
+                  if (day === 20) {
+                    bgClass = 'bg-primary/5 ring-1 ring-primary/40';
+                    eventsHtml = `
+                      <div class="mt-1 flex flex-col gap-1">
+                        <div class="text-[9px] bg-error text-white px-1.5 py-0.5 rounded truncate font-bold">LIVE AUDIT</div>
+                        <div class="text-[9px] bg-status-planning/20 text-status-planning px-1.5 py-0.5 rounded truncate font-semibold">Briefing</div>
+                        <div class="text-[9px] bg-status-success/20 text-status-success px-1.5 py-0.5 rounded truncate font-semibold">Deploy</div>
+                      </div>
+                    `;
+                  } else if (day === 22) {
+                    eventsHtml = `
+                      <div class="mt-1 flex flex-col gap-1">
+                        <div class="text-[9px] bg-status-warning/20 text-status-warning px-1.5 py-0.5 rounded truncate font-semibold">Desain UI</div>
+                      </div>
+                    `;
+                  } else if (day === 25) {
+                    eventsHtml = `
+                      <div class="mt-1 flex flex-col gap-1">
+                        <div class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded truncate font-semibold">Grand Launch</div>
+                      </div>
+                    `;
+                  }
+                  
+                  return `
+                    <div class="border border-surface-border/50 rounded-xl p-1.5 hover:border-primary/50 transition-all cursor-pointer ${bgClass} min-h-[90px] flex flex-col">
+                      <div class="flex justify-between items-center">
+                        <span class="font-semibold text-[12px] w-6 h-6 flex items-center justify-center rounded-full ${day === 20 ? 'bg-primary text-on-primary shadow-sm' : 'text-text-primary'}">${day}</span>
+                        ${eventsHtml && day !== 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-brand-accent"></span>' : ''}
+                      </div>
+                      ${eventsHtml}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Selected Day Agenda -->
+            <div class="flex flex-col gap-4">
+              <!-- Selasa 20 Agustus Section Header -->
+              <div class="flex items-center justify-between px-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-headline-lg text-[18px] font-bold text-text-primary">Selasa, 20 Agustus 2024</span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-badge-micro text-[10px] font-bold animate-pulse">
+                    HARI INI • 3 AGENDA RUANGKREASI
+                  </span>
+                </div>
+                <span class="font-caption-meta text-[11px] text-primary font-bold">Target Audit OOH & Sinkronisasi 4K</span>
+              </div>
+
+              <!-- Tuesday Card 1: Completed Morning Briefing -->
+              <div class="p-4 rounded-xl bg-surface-container-lowest border border-surface-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-status-success mt-0.5 shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                  </div>
+                  <div class="flex flex-col">
+                    <div class="flex items-center gap-2">
+                      <span class="font-caption-meta text-[11px] text-text-muted font-bold">08:30 - 09:30 WIB</span>
+                      <span class="px-1.5 py-0.2 rounded bg-status-planning/15 text-status-planning font-badge-micro text-[10px] font-bold">RuangKreasi</span>
+                      <span class="px-1.5 py-0.2 rounded bg-surface-container font-badge-micro text-[10px]">Sync Vendor</span>
+                    </div>
+                    <h3 class="font-body-medium text-[13px] font-bold text-text-primary mt-0.5">
+                      Briefing Pagi & Sinkronisasi Controller Vendor Novastar
+                    </h3>
+                    <span class="text-text-muted font-caption-meta text-[11px] mt-0.5">PIC: Sari Rahmawati • Protokol koneksi LED terverifikasi</span>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded bg-surface-container text-status-success font-caption-meta text-[11px] font-bold self-end md:self-auto">
+                  Selesai
                 </span>
               </div>
-              <span class="font-caption-meta text-[11px] text-primary font-bold">Target Audit OOH & Sinkronisasi 4K</span>
-            </div>
 
-            <!-- Tuesday Card 1: Completed Morning Briefing -->
-            <div class="p-4 rounded-xl bg-surface-container-lowest border border-surface-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-status-success mt-0.5 shrink-0">
-                  <span class="material-symbols-outlined text-[20px]">check_circle</span>
-                </div>
-                <div class="flex flex-col">
-                  <div class="flex items-center gap-2">
-                    <span class="font-caption-meta text-[11px] text-text-muted font-bold">08:30 - 09:30 WIB</span>
-                    <span class="px-1.5 py-0.2 rounded bg-status-planning/15 text-status-planning font-badge-micro text-[10px] font-bold">RuangKreasi</span>
-                    <span class="px-1.5 py-0.2 rounded bg-surface-container font-badge-micro text-[10px]">Sync Vendor</span>
-                  </div>
-                  <h3 class="font-body-medium text-[13px] font-bold text-text-primary mt-0.5">
-                    Briefing Pagi & Sinkronisasi Controller Vendor Novastar
-                  </h3>
-                  <span class="text-text-muted font-caption-meta text-[11px] mt-0.5">PIC: Sari Rahmawati • Protokol koneksi LED terverifikasi</span>
-                </div>
-              </div>
-              <span class="px-2 py-1 rounded bg-surface-container text-status-success font-caption-meta text-[11px] font-bold self-end md:self-auto">
-                Selesai
-              </span>
-            </div>
-
-            <!-- Tuesday Card 2: HERO CARD LIVE AUDIT (#RK-304) -->
-            <div class="relative overflow-hidden p-5 rounded-2xl bg-surface-container-lowest shadow-md border-2 border-primary-container flex flex-col gap-3">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error text-white font-badge-micro text-[10px] font-bold uppercase tracking-wide">
-                    <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                    Live Berlangsung
-                  </span>
-                  <span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-badge-micro text-[10px] font-bold">Audit Kritis</span>
-                  <span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-bold">#RK-304</span>
-                  <span class="text-brand-accent font-caption-meta text-[11px] font-bold">10:00 - 12:00 WIB</span>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-surface-container text-text-secondary font-caption-meta text-[10px]">Rescheduled OK pasca perizinan</span>
-              </div>
-
-              <div>
-                <h3 class="font-headline-md text-[16px] font-bold text-text-primary">
-                  Safe-Zone LED Bundaran HI & Flyover Antasari — Verifikasi Teknis & Rasio 16:9
-                </h3>
-                <p class="font-body-default text-[12px] text-text-secondary mt-1">
-                  Uji keterbacaan tipografi kampanye pada kecepatan 40-60 km/jam, kecerahan nits siang hari, dan kalibrasi pixel mapping multi-layar Novastar.
-                </p>
-              </div>
-
-              <!-- Media Visual Mockup -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-1">
-                <div class="relative h-28 rounded-lg overflow-hidden bg-slate-900 shadow-inner">
-                  <img 
-                    alt="Bundaran HI Billboard" 
-                    class="w-full h-full object-cover" 
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9cLSlK-ybgxsHTOmKx9P6qW4dU9Pj4US3TTVY-VqPfbA7B32xwJgc2f_eCQrU0jV4dtkLkkz3hMB_09FxmgjDiFXemye5oEMHbyn4syMOUpAnJ7fDfmNk9w5xsKO3HVP45BkfwleAUBg6aeAARbH2OuCAERhrTCQqpHG_zPB0vMpDMlZIKgRjI1BV5ghBTxxukptOIGvw6kCwVGCovOpK3q7RrMRmQ3mCTHG7YUqMXrHu2MeZ8T1C"
-                  />
-                  <div class="absolute bottom-1 left-1.5 bg-black/70 text-white px-1.5 py-0.5 rounded font-badge-micro text-[9px]">
-                    Titik Bundaran HI (Slot #2)
-                  </div>
-                </div>
-
-                <div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col justify-between border border-surface-border">
-                  <div>
-                    <span class="font-caption-meta text-[10px] text-text-muted uppercase">Target Rasio</span>
-                    <p class="font-body-medium text-[13px] font-bold text-text-primary mt-0.5">3840 x 2160 (16:9 4K)</p>
-                  </div>
-                  <div class="flex items-center gap-1 text-status-success font-caption-meta text-[11px] font-bold">
-                    <span class="material-symbols-outlined text-[14px]">verified</span> Safe Area Pass 98%
-                  </div>
-                </div>
-
-                <div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col justify-between border border-surface-border">
-                  <div>
-                    <span class="font-caption-meta text-[10px] text-text-muted uppercase">Tim Lapangan (On-Site)</span>
-                    <div class="flex items-center gap-1.5 mt-1">
-                      <div class="w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center text-[9px] font-bold">SR</div>
-                      <span class="font-body-default text-[12px] font-semibold text-text-primary">Sari R. & Budi P.</span>
-                    </div>
-                  </div>
-                  <span class="font-caption-meta text-[11px] text-brand-accent font-medium">Sinyal Live-Stream Stabil</span>
-                </div>
-              </div>
-
-              <!-- Actions -->
-              <div class="flex items-center justify-between pt-2 border-t border-surface-border">
-                <div class="flex items-center gap-2">
-                  <button id="btn-open-task-rk304" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-xs" type="button">
-                    <span class="material-symbols-outlined text-[15px]">open_in_new</span>
-                    <span>Buka Detail #RK-304</span>
-                  </button>
-                  <button id="btn-quick-reschedule" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-text-primary font-body-medium text-[12px] transition-colors" type="button">
-                    <span class="material-symbols-outlined text-[15px]">schedule</span>
-                    <span>Jadwalkan Ulang</span>
-                  </button>
-                </div>
-                <div class="flex items-center gap-1 text-text-muted font-caption-meta text-[11px]">
-                  <span class="material-symbols-outlined text-[14px]">location_on</span>
-                  <span>Posko Satelit Bundaran HI</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Other Agenda Items -->
-            <div class="flex flex-col gap-2">
-              ${events.filter(e => e.id !== 'evt-2').map(evt => `
-                <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/50 transition-all flex items-center justify-between gap-3 shadow-xs">
-                  <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary mt-0.5 shrink-0">
-                      <span class="material-symbols-outlined text-[18px]">event</span>
-                    </div>
-                    <div class="flex flex-col">
-                      <div class="flex items-center gap-2">
-                        <span class="font-caption-meta text-[11px] text-text-muted font-bold">${evt.dayName}, ${evt.time}</span>
-                        <span class="px-1.5 py-0.2 rounded bg-surface-container font-badge-micro text-[10px] font-semibold capitalize">${evt.pillar}</span>
-                        <span class="px-1.5 py-0.2 rounded bg-surface-container text-text-secondary font-badge-micro text-[10px]">${evt.badge}</span>
+              <!-- Other Agenda Items -->
+              <div class="flex flex-col gap-2">
+                ${events.filter(e => e.id !== 'evt-2').map(evt => `
+                  <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/50 transition-all flex items-center justify-between gap-3 shadow-xs">
+                    <div class="flex items-start gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary mt-0.5 shrink-0">
+                        <span class="material-symbols-outlined text-[18px]">event</span>
                       </div>
-                      <h4 class="font-body-medium text-[13px] font-bold text-text-primary mt-0.5">${evt.title}</h4>
-                      <span class="text-text-muted font-caption-meta text-[11px] mt-0.5">PIC: ${evt.pic} • Lokasi: ${evt.location}</span>
+                      <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                          <span class="font-caption-meta text-[11px] text-text-muted font-bold">${evt.dayName}, ${evt.time}</span>
+                          <span class="px-1.5 py-0.2 rounded bg-surface-container font-badge-micro text-[10px] font-semibold capitalize">${evt.pillar}</span>
+                          <span class="px-1.5 py-0.2 rounded bg-surface-container text-text-secondary font-badge-micro text-[10px]">${evt.badge}</span>
+                        </div>
+                        <h4 class="font-body-medium text-[13px] font-bold text-text-primary mt-0.5">${evt.title}</h4>
+                        <span class="text-text-muted font-caption-meta text-[11px] mt-0.5">PIC: ${evt.pic} • Lokasi: ${evt.location}</span>
+                      </div>
                     </div>
+                    <span class="px-2 py-1 rounded bg-surface-container text-text-secondary font-caption-meta text-[11px] capitalize font-medium">
+                      ${evt.status}
+                    </span>
                   </div>
-                  <span class="px-2 py-1 rounded bg-surface-container text-text-secondary font-caption-meta text-[11px] capitalize font-medium">
-                    ${evt.status}
-                  </span>
-                </div>
-              `).join('')}
+                `).join('')}
+              </div>
             </div>
 
           </section>
 
           <!-- Right: Intelligence Sidebar -->
           <aside class="lg:col-span-4 flex flex-col gap-4">
-            
-            <!-- Mini Calendar Card -->
-            <div class="p-4 rounded-xl bg-surface-container-lowest border border-surface-border shadow-sm flex flex-col gap-2">
-              <div class="flex items-center justify-between">
-                <span class="font-headline-md text-[14px] font-bold text-text-primary">Agustus 2024</span>
-                <div class="flex items-center gap-1">
-                  <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-container">
-                    <span class="material-symbols-outlined text-[14px]">chevron_left</span>
-                  </button>
-                  <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-container">
-                    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Mini Grid -->
-              <div class="grid grid-cols-7 text-center font-caption-meta text-[10px] gap-y-1">
-                <span class="text-text-muted font-semibold py-1">Min</span>
-                <span class="text-text-muted font-semibold py-1">Sen</span>
-                <span class="text-text-muted font-semibold py-1">Sel</span>
-                <span class="text-text-muted font-semibold py-1">Rab</span>
-                <span class="text-text-muted font-semibold py-1">Kam</span>
-                <span class="text-text-muted font-semibold py-1">Jum</span>
-                <span class="text-text-muted font-semibold py-1">Sab</span>
-
-                <span class="text-text-muted/30 py-1">28</span>
-                <span class="text-text-muted/30 py-1">29</span>
-                <span class="text-text-muted/30 py-1">30</span>
-                <span class="text-text-muted/30 py-1">31</span>
-                <span class="py-1">1</span>
-                <span class="py-1">2</span>
-                <span class="py-1">3</span>
-                <span class="py-1">4</span>
-                <span class="py-1">5</span>
-                <span class="py-1">6</span>
-                <span class="py-1">7</span>
-                <span class="py-1">8</span>
-                <span class="py-1">9</span>
-                <span class="py-1">10</span>
-                <span class="py-1">11</span>
-                <span class="py-1">12</span>
-                <span class="py-1">13</span>
-                <span class="py-1">14</span>
-                <span class="py-1">15</span>
-                <span class="py-1">16</span>
-                <span class="py-1">17</span>
-                <span class="py-1">18</span>
-                <span class="bg-primary/10 text-primary font-semibold py-1 rounded-l">19</span>
-                <span class="bg-primary text-on-primary font-bold py-1 shadow-xs">20</span>
-                <span class="bg-primary/10 text-primary font-semibold py-1">21</span>
-                <span class="bg-primary/10 text-primary font-semibold py-1">22</span>
-                <span class="bg-primary/10 text-primary font-semibold py-1">23</span>
-                <span class="bg-primary/10 text-primary font-semibold py-1 rounded-r">24</span>
-                <span class="bg-purple-600 text-white font-bold py-1 rounded">25</span>
-                <span class="py-1">26</span>
-                <span class="py-1">27</span>
-                <span class="py-1">28</span>
-                <span class="py-1">29</span>
-                <span class="py-1">30</span>
-                <span class="py-1">31</span>
-              </div>
-            </div>
 
             <!-- Workload Distribution Card -->
             <div class="p-4 rounded-xl bg-surface-container-lowest border border-surface-border shadow-sm flex flex-col gap-3">
@@ -393,7 +317,6 @@ export class CalendarView extends BaseView {
     granBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         this.viewMode = btn.getAttribute('data-mode');
-        this.notificationService.info(`Tampilan kalender diubah ke mode: ${this.viewMode.toUpperCase()}`);
         this.mount(this.element);
       });
     });

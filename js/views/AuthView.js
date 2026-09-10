@@ -1,4 +1,5 @@
 import { BaseView } from '../core/BaseView.js';
+import { QRCodeGenerator } from '../services/QRCodeGenerator.js';
 
 /**
  * AuthView - Single Responsibility Principle (SRP)
@@ -48,46 +49,68 @@ export class AuthView extends BaseView {
             <div class="relative z-10 w-full mb-spacing-md">
               <div class="relative w-full aspect-[4/3] max-h-48 bg-slate-950 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-spacing-md group">
                 
+                <!-- Live Camera Video Feed (strictly mirrored by default) -->
+                <video id="camera-video-stream" class="absolute inset-0 w-full h-full object-cover hidden z-10" playsinline autoplay muted style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></video>
+                <!-- Camera Simulation Canvas (fallback if hardware camera is blocked/unavailable) -->
+                <canvas id="camera-sim-canvas" class="absolute inset-0 w-full h-full object-cover hidden z-10" style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></canvas>
+
+                <!-- Top Camera Status Indicator Badge -->
+                <div id="camera-badge-info" class="hidden absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-status-success font-mono text-[9px] font-semibold items-center gap-1.5 z-30">
+                  <span class="w-1.5 h-1.5 rounded-full bg-status-success animate-ping"></span>
+                  <span id="camera-badge-mode">KAMERA AKTIF (MIRROR)</span>
+                </div>
+
                 <!-- Viewfinder Corner Reticles -->
-                <div class="absolute top-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none">
+                <div class="absolute top-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none z-20">
                   <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
                   <div class="w-0.5 h-4 bg-brand-accent rounded-full -mt-0.5"></div>
                 </div>
-                <div class="absolute top-3 right-3 w-5 h-5 flex flex-col items-end justify-between pointer-events-none">
+                <div class="absolute top-3 right-3 w-5 h-5 flex flex-col items-end justify-between pointer-events-none z-20">
                   <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
                   <div class="w-0.5 h-4 bg-brand-accent rounded-full -mt-0.5"></div>
                 </div>
-                <div class="absolute bottom-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none">
+                <div class="absolute bottom-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none z-20">
                   <div class="w-0.5 h-4 bg-brand-accent rounded-full mb-[-2px]"></div>
                   <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
                 </div>
-                <div class="absolute bottom-3 right-3 w-5 h-5 flex flex-col items-end justify-between pointer-events-none">
+                <div class="absolute bottom-3 right-3 w-5 h-5 flex flex-col items-end justify-between pointer-events-none z-20">
                   <div class="w-0.5 h-4 bg-brand-accent rounded-full mb-[-2px]"></div>
                   <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
                 </div>
 
                 <!-- Animated Laser Beam Line -->
-                <div class="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#ef4444] laser-scanner-beam pointer-events-none"></div>
+                <div class="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#ef4444] laser-scanner-beam pointer-events-none z-20"></div>
 
-                <!-- QR Hologram Mockup -->
-                <div class="flex flex-col items-center justify-center opacity-85 pointer-events-none transition-transform duration-300 group-hover:scale-105">
-                  <svg class="w-16 h-16 text-white/80" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h2.25v2.25H13.5v-2.25ZM18 13.5h2.25v2.25H18v-2.25ZM15.75 18H18v2.25h-2.25V18ZM13.5 18h.75v2.25h-.75V18ZM18 18h2.25v2.25H18V18Z" stroke-linecap="round" stroke-linejoin="round"></path>
-                  </svg>
+                <!-- Dynamic QR Code Container (shown if camera is off) -->
+                <div id="qr-scanner-area" class="flex flex-col items-center justify-center opacity-90 transition-transform duration-300 group-hover:scale-105 cursor-pointer z-20" title="Klik untuk simulasi scan">
+                  <div class="w-20 h-20 bg-white p-1.5 rounded-lg shadow-sm">
+                    ${QRCodeGenerator.generate('http://localhost:3000/#/auth?scan=auto', { size: 68, darkColor: '#0b1c30' })}
+                  </div>
                   <span class="mt-2 text-white/90 font-caption-meta text-[11px] tracking-wide uppercase font-semibold">Pindai ID Card / QR</span>
                 </div>
 
-                <!-- Scanner Controls Overlay -->
-                <div class="absolute bottom-2 inset-x-2 flex items-center justify-between px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-status-success animate-ping"></span>
-                    <span class="font-badge-micro text-[10px] text-white uppercase tracking-wider">Kamera Sensor Aktif</span>
+                <!-- Live Camera Reticle Overlay (when camera is on) -->
+                <div id="camera-active-overlay" class="hidden absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+                  <div class="w-32 h-32 border-2 border-dashed border-status-success/80 rounded-xl animate-pulse flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[32px] text-status-success/80">filter_center_focus</span>
                   </div>
-                  <button id="btn-trigger-scan" class="text-brand-subdued hover:text-white font-badge-micro text-[11px] flex items-center gap-1 transition-colors" type="button">
-                    <span class="material-symbols-outlined text-[14px]">flip_camera_android</span>
-                    <span>Uji Sensor</span>
-                  </button>
+                  <span class="mt-2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-status-success font-mono text-[10px] font-bold tracking-wider">
+                    SCANNING BARCODE / QR...
+                  </span>
+                </div>
+
+                <!-- Scanner Controls Overlay (no toggle buttons, automatically on) -->
+                <div class="absolute bottom-1.5 inset-x-1.5 sm:bottom-2 sm:inset-x-2 flex items-center justify-between px-3 py-1.5 bg-black/80 backdrop-blur-md rounded-lg z-30">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span id="camera-status-dot" class="w-2 h-2 rounded-full bg-status-success animate-ping shrink-0"></span>
+                    <span id="camera-status-text" class="font-badge-micro text-[10px] text-white uppercase tracking-wider truncate">Kamera Pemindai Aktif</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button id="btn-trigger-scan" class="bg-brand-accent/20 hover:bg-brand-accent/30 text-white font-badge-micro text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded-md border border-brand-accent/30" type="button">
+                      <span class="material-symbols-outlined text-[13px]">qr_code_scanner</span>
+                      <span>Uji Scan</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -178,14 +201,201 @@ export class AuthView extends BaseView {
 
   bindEvents() {
     const feedback = this.element.querySelector('#scanner-feedback');
+    const videoEl = this.element.querySelector('#camera-video-stream');
+    const canvasEl = this.element.querySelector('#camera-sim-canvas');
+    const qrArea = this.element.querySelector('#qr-scanner-area');
+    const activeOverlay = this.element.querySelector('#camera-active-overlay');
+    const cameraStatusDot = this.element.querySelector('#camera-status-dot');
+    const cameraStatusText = this.element.querySelector('#camera-status-text');
+    const cameraBadgeInfo = this.element.querySelector('#camera-badge-info');
+    const cameraBadgeMode = this.element.querySelector('#camera-badge-mode');
+
+    this.isCameraOn = false;
+    this.isMirrored = true; // Automatically mirrored by default (scaleX -1)
+    this.cameraStream = null;
+    this.simAnimId = null;
+    this.barcodeDetectorInterval = null;
+
+    const applyMirrorState = () => {
+      const transformValue = 'scaleX(-1)';
+      if (videoEl) {
+        videoEl.style.transform = transformValue;
+        videoEl.style.webkitTransform = transformValue;
+      }
+      if (canvasEl) {
+        canvasEl.style.transform = transformValue;
+        canvasEl.style.webkitTransform = transformValue;
+      }
+      if (cameraBadgeMode) {
+        cameraBadgeMode.textContent = 'KAMERA AKTIF (MIRROR)';
+      }
+      if (cameraStatusText && this.isCameraOn) {
+        cameraStatusText.textContent = 'Kamera Pemindai Aktif';
+      }
+    };
+
+    const stopCamera = () => {
+      this.isCameraOn = false;
+      if (this.barcodeDetectorInterval) {
+        clearInterval(this.barcodeDetectorInterval);
+        this.barcodeDetectorInterval = null;
+      }
+      if (this.cameraStream) {
+        this.cameraStream.getTracks().forEach(t => t.stop());
+        this.cameraStream = null;
+      }
+      if (this.simAnimId) {
+        cancelAnimationFrame(this.simAnimId);
+        this.simAnimId = null;
+      }
+      if (videoEl) {
+        videoEl.pause();
+        videoEl.srcObject = null;
+        videoEl.classList.add('hidden');
+      }
+      if (canvasEl) canvasEl.classList.add('hidden');
+      if (activeOverlay) activeOverlay.classList.add('hidden');
+      if (cameraBadgeInfo) {
+        cameraBadgeInfo.classList.remove('flex');
+        cameraBadgeInfo.classList.add('hidden');
+      }
+      if (qrArea) qrArea.classList.remove('hidden');
+      if (cameraStatusDot) {
+        cameraStatusDot.className = 'w-2 h-2 rounded-full bg-slate-400 shrink-0';
+      }
+      if (cameraStatusText) cameraStatusText.textContent = 'Kamera Siap';
+    };
+
+    this._cleanupCamera = stopCamera;
+
+    const startCanvasSimulation = () => {
+      if (!canvasEl) return;
+      canvasEl.classList.remove('hidden');
+      applyMirrorState();
+      const ctx = canvasEl.getContext('2d');
+      canvasEl.width = 320;
+      canvasEl.height = 240;
+
+      let frame = 0;
+      const drawSimFeed = () => {
+        if (!this.isCameraOn) return;
+        frame++;
+        ctx.fillStyle = '#060d17';
+        ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+
+        // Ambient scanner grid pattern
+        ctx.strokeStyle = 'rgba(79, 70, 229, 0.15)';
+        ctx.lineWidth = 1;
+        const step = 20;
+        for (let x = 0; x < canvasEl.width; x += step) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvasEl.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvasEl.height; y += step) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvasEl.width, y);
+          ctx.stroke();
+        }
+
+        // Animated target crosshair
+        const cx = canvasEl.width / 2;
+        const cy = canvasEl.height / 2;
+        const radius = 35 + Math.sin(frame * 0.05) * 5;
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // HUD overlay text (clearly stating mirror orientation)
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
+        ctx.font = '10px monospace';
+        ctx.fillText('CAM: SENSOR READY (MIRROR)', 12, 20);
+        ctx.fillText('AI DETECT: SCANNING...', 12, 35);
+        ctx.fillText(new Date().toISOString().substring(11, 19) + ' WIB', canvasEl.width - 95, 20);
+
+        this.simAnimId = requestAnimationFrame(drawSimFeed);
+      };
+      drawSimFeed();
+    };
+
+    const startCamera = async () => {
+      this.isCameraOn = true;
+      if (qrArea) qrArea.classList.add('hidden');
+      if (activeOverlay) activeOverlay.classList.remove('hidden');
+      if (cameraBadgeInfo) {
+        cameraBadgeInfo.classList.remove('hidden');
+        cameraBadgeInfo.classList.add('flex');
+      }
+      if (cameraStatusDot) {
+        cameraStatusDot.className = 'w-2 h-2 rounded-full bg-status-success animate-ping shrink-0';
+      }
+      if (cameraStatusText) cameraStatusText.textContent = 'Kamera Pemindai Aktif';
+      applyMirrorState();
+
+      if (feedback) {
+        feedback.innerHTML = `<span class="text-status-success font-semibold">Kamera Aktif (Mirror).</span> Arahkan barcode fisik kartu pegawai atau QR aplikasi seluler ke kamera.`;
+      }
+
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          let stream = null;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+          } catch (camErr) {
+            // Fallback for environment/any webcam
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { width: { ideal: 640 }, height: { ideal: 480 } }
+            });
+          }
+
+          this.cameraStream = stream;
+          if (videoEl) {
+            videoEl.srcObject = stream;
+            videoEl.classList.remove('hidden');
+            applyMirrorState();
+            await videoEl.play();
+
+            // Real barcode / QR detection support via BarcodeDetector API if available
+            if ('BarcodeDetector' in window) {
+              try {
+                const detector = new window.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
+                this.barcodeDetectorInterval = setInterval(async () => {
+                  if (!this.isCameraOn || !videoEl || videoEl.readyState < 2) return;
+                  try {
+                    const barcodes = await detector.detect(videoEl);
+                    if (barcodes && barcodes.length > 0) {
+                      clearInterval(this.barcodeDetectorInterval);
+                      this.barcodeDetectorInterval = null;
+                      triggerScanSimulation();
+                    }
+                  } catch (e) {}
+                }, 400);
+              } catch (e) {}
+            }
+          }
+        } else {
+          startCanvasSimulation();
+        }
+      } catch (err) {
+        console.warn('Physical camera unavailable or access denied, running simulation feed:', err);
+        startCanvasSimulation();
+      }
+    };
 
     const handleRoleSelect = (role) => {
+      stopCamera();
       if (feedback) {
         feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Autentikasi Terverifikasi!</span> Mengalihkan sesi ke Creative Office...`;
       }
       setTimeout(() => {
+        // loginWithRole emits 'auth:login' which is handled in app.js to navigate to dashboard
         this.authService.loginWithRole(role);
-        this.eventBus.emit('navigate', { view: 'dashboard' });
       }, 700);
     };
 
@@ -198,21 +408,24 @@ export class AuthView extends BaseView {
     });
 
     const testScanBtn = this.element.querySelector('#btn-trigger-scan');
-    if (testScanBtn) {
-      testScanBtn.addEventListener('click', () => {
+    
+    const triggerScanSimulation = () => {
+      if (feedback) {
+        feedback.innerHTML = `<span class="text-brand-accent animate-pulse font-semibold">Membaca Barcode ID Card Pegawai...</span>`;
+      }
+      this.authService.simulateScan().then(user => {
         if (feedback) {
-          feedback.innerHTML = `<span class="text-brand-accent animate-pulse font-semibold">Membaca Barcode ID Card Pegawai...</span>`;
+          feedback.innerHTML = `<span class="text-status-success font-semibold">Scan Berhasil!</span> Selamat datang, ${user.name}`;
         }
-        this.authService.simulateScan().then(user => {
-          if (feedback) {
-            feedback.innerHTML = `<span class="text-status-success font-semibold">Scan Berhasil!</span> Selamat datang, ${user.name}`;
-          }
-          setTimeout(() => {
-            this.eventBus.emit('navigate', { view: 'dashboard' });
-          }, 600);
-        });
+        setTimeout(() => {
+          stopCamera();
+          // loginWithRole (inside simulateScan) already emits 'auth:login' => navigates to dashboard
+        }, 600);
       });
-    }
+    };
+
+    if (testScanBtn) testScanBtn.addEventListener('click', triggerScanSimulation);
+    if (qrArea) qrArea.addEventListener('click', triggerScanSimulation);
 
     const ssoBtn = this.element.querySelector('#btn-sso-login');
     if (ssoBtn) {
@@ -225,5 +438,15 @@ export class AuthView extends BaseView {
         }, 800);
       });
     }
+
+    // Automatically activate camera when QR gate loads (User requirement)
+    startCamera();
+  }
+
+  unmount() {
+    if (this._cleanupCamera) {
+      this._cleanupCamera();
+    }
+    super.unmount();
   }
 }

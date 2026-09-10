@@ -35,6 +35,11 @@ export class Header {
         <div class="w-full h-topbar-height px-spacing-lg flex items-center justify-between gap-spacing-md">
           <!-- Logo & Branding -->
           <div class="flex items-center gap-spacing-md">
+            <!-- Mobile Menu Toggle -->
+            <button id="btn-mobile-menu" class="lg:hidden flex items-center justify-center p-1.5 rounded-lg text-text-secondary hover:bg-surface-container transition-colors">
+              <span class="material-symbols-outlined text-[24px]">menu</span>
+            </button>
+            
             <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
               <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
               <div class="flex flex-col">
@@ -49,8 +54,8 @@ export class Header {
           </div>
 
           <!-- Search Bar -->
-          <div class="flex-1 max-w-md mx-spacing-md">
-            <div class="relative flex items-center">
+          <div class="hidden sm:flex flex-1 max-w-md mx-2 md:mx-spacing-md">
+            <div class="relative flex items-center w-full">
               <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[18px] pointer-events-none">search</span>
               <input 
                 id="global-search-input"
@@ -65,14 +70,15 @@ export class Header {
           </div>
 
           <!-- Actions & User Profile -->
-          <div class="flex items-center gap-spacing-md">
+          <div class="flex items-center gap-2 sm:gap-spacing-md">
             <button 
               id="btn-header-new-task" 
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-body-medium text-[13px] hover:bg-brand-accent transition-colors shadow-sm font-semibold"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-body-medium text-[12px] sm:text-[13px] hover:bg-brand-accent transition-colors shadow-sm font-semibold"
               type="button"
+              title="Buat Tugas Baru"
             >
               <span class="material-symbols-outlined text-[16px]">add</span>
-              <span>Tugas Baru</span>
+              <span class="hidden sm:inline">Tugas Baru</span>
             </button>
 
             <!-- Notifications Button -->
@@ -156,6 +162,13 @@ export class Header {
     if (brand) {
       brand.addEventListener('click', () => {
         this.eventBus.emit('navigate', { view: 'dashboard' });
+      });
+    }
+
+    const mobileMenuBtn = this.element.querySelector('#btn-mobile-menu');
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', () => {
+        this.eventBus.emit('sidebar:toggle');
       });
     }
 

@@ -12,7 +12,7 @@ export class DocsSheetsView extends BaseView {
 
   render() {
     return `
-      <div class="flex flex-col w-full px-spacing-2xl pt-4 pb-spacing-3xl">
+      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
         <!-- Header -->
         <div class="flex flex-col gap-2 mb-4">
@@ -24,10 +24,10 @@ export class DocsSheetsView extends BaseView {
             <span class="text-primary font-semibold">Docs & Sheets Hub</span>
           </div>
 
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 class="font-headline-lg text-[20px] text-on-surface font-bold tracking-tight">
-                Pusat Dokumen & Lembar Kerja (Docs & Sheets Hub)
+          <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+            <div class="min-w-0">
+              <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
+                Pusat Dokumen &amp; Lembar Kerja
               </h1>
               <p class="font-caption-meta text-[11px] text-text-secondary">
                 Kanvas SOP teknis, inventaris hardware Novastar, dan lembar kalkulasi budget terpusat berdampingan dengan tugas aktual.
@@ -35,21 +35,25 @@ export class DocsSheetsView extends BaseView {
             </div>
 
             <!-- Hub Mode Switcher -->
-            <div class="flex items-center bg-surface-container-low p-1 rounded-xl border border-surface-border">
+            <div class="flex items-center bg-surface-container-low p-1 rounded-xl border border-surface-border shrink-0">
               <button 
-                class="subtab-btn px-3 py-1.5 rounded-lg font-body-medium text-[12px] flex items-center gap-1.5 transition-all ${this.activeSubTab === 'docs' ? 'bg-primary-container text-on-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'}" 
+                class="subtab-btn px-2 sm:px-3 py-1.5 rounded-lg font-body-medium text-[12px] flex items-center gap-1 sm:gap-1.5 transition-all ${this.activeSubTab === 'docs' ? 'bg-primary-container text-on-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'}" 
                 data-subtab="docs"
+                title="Dokumen SOP & Regulasi"
               >
                 <span class="material-symbols-outlined text-[16px]">menu_book</span>
-                <span>Dokumen SOP & Regulasi</span>
+                <span class="hidden sm:inline">Dokumen SOP</span>
+                <span class="sm:hidden text-[11px] font-semibold">SOP</span>
               </button>
 
               <button 
-                class="subtab-btn px-3 py-1.5 rounded-lg font-body-medium text-[12px] flex items-center gap-1.5 transition-all ${this.activeSubTab === 'sheets' ? 'bg-primary-container text-on-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'}" 
+                class="subtab-btn px-2 sm:px-3 py-1.5 rounded-lg font-body-medium text-[12px] flex items-center gap-1 sm:gap-1.5 transition-all ${this.activeSubTab === 'sheets' ? 'bg-primary-container text-on-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'}" 
                 data-subtab="sheets"
+                title="Lembar Kerja (Sheets Grid)"
               >
                 <span class="material-symbols-outlined text-[16px]">grid_on</span>
-                <span>Lembar Kerja (Sheets Grid)</span>
+                <span class="hidden sm:inline">Lembar Kerja</span>
+                <span class="sm:hidden text-[11px] font-semibold">Sheet</span>
               </button>
             </div>
           </div>
@@ -57,31 +61,31 @@ export class DocsSheetsView extends BaseView {
 
         <!-- View Switcher Bar -->
         <div class="flex items-center justify-between border-b border-surface-border mb-6">
-          <div class="flex items-center gap-1 -mb-px overflow-x-auto">
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="kanban">
+          <div class="flex items-center gap-0 sm:gap-1 -mb-px overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="kanban" title="Kanban View">
               <span class="material-symbols-outlined text-[18px]">dashboard</span>
-              <span>Kanban View</span>
+              <span class="hidden sm:inline">Kanban</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="project-table">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="project-table" title="Tabel Monday Style">
               <span class="material-symbols-outlined text-[18px]">table_chart</span>
-              <span>Tabel (Monday Style)</span>
+              <span class="hidden sm:inline">Tabel</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg" data-view="docs-sheets">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-medium text-[13px] text-primary border-b-2 border-primary bg-surface-container-lowest/60 font-bold shadow-sm transition-all rounded-t-lg shrink-0" data-view="docs-sheets" title="Docs & Sheets">
               <span class="material-symbols-outlined text-[18px] text-primary">description</span>
-              <span>Docs & Sheets</span>
-              <span class="px-1.5 py-0.5 rounded-full bg-primary text-on-primary font-badge-micro text-[10px] font-bold">Live</span>
+              <span class="hidden sm:inline">Docs</span>
+              <span class="hidden lg:inline text-[11px] opacity-70">&amp; Sheets</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="calendar">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="calendar" title="Kalender & Jadwal">
               <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-              <span>Kalender & Jadwal</span>
+              <span class="hidden sm:inline">Jadwal</span>
             </button>
 
-            <button class="view-switch-tab flex items-center gap-1.5 px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent transition-all" data-view="gantt">
+            <button class="view-switch-tab flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 font-body-default text-[13px] text-text-secondary hover:text-on-surface border-b-2 border-transparent hover:border-surface-border/50 transition-all shrink-0" data-view="gantt" title="Timeline & Gantt">
               <span class="material-symbols-outlined text-[18px]">waterfall_chart</span>
-              <span>Timeline & Gantt</span>
+              <span class="hidden sm:inline">Gantt</span>
             </button>
           </div>
         </div>

@@ -18,23 +18,23 @@ export class DashboardView extends BaseView {
     const tasks = this.taskService.getTasks().slice(0, 5);
 
     return `
-      <div class="flex flex-col w-full px-spacing-2xl pt-4 pb-spacing-3xl">
+      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
         <!-- HERO / PROMPT SECTION ("Kerja apa hari ini?") -->
-        <section class="relative w-full rounded-2xl bg-gradient-to-br from-primary-container via-primary to-tertiary p-spacing-xl md:p-spacing-2xl shadow-xl overflow-hidden mb-spacing-2xl text-white">
+        <section class="relative w-full rounded-2xl bg-gradient-to-br from-[#161622] via-[#1a192c] to-[#12121c] p-spacing-lg sm:p-spacing-xl md:p-spacing-2xl shadow-xl overflow-hidden mb-spacing-xl text-white border border-[#28273d]">
           <!-- Ambient glowing blurs -->
-          <div class="absolute -top-16 -right-16 w-80 h-80 bg-brand-accent/30 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -bottom-20 -left-12 w-64 h-64 bg-tertiary-fixed/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="absolute -top-16 -right-16 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-20 -left-12 w-64 h-64 bg-indigo-600/20 rounded-full blur-2xl pointer-events-none"></div>
 
           <div class="relative z-10 flex flex-col gap-spacing-md max-w-4xl">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full">
+              <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                 <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
-                <span class="font-caption-meta text-[11px] text-on-primary font-semibold tracking-wide">
-                  Workspace Central • Sampulkreativ Technology
+                <span class="font-caption-meta text-[11px] text-purple-200 font-semibold tracking-wide">
+                  Creative Office • Sampulkreativ Technology
                 </span>
               </div>
-              <div class="hidden sm:flex items-center gap-1.5 text-on-primary-container font-caption-meta text-[11px]">
+              <div class="hidden sm:flex items-center gap-1.5 text-purple-300 font-caption-meta text-[11px]">
                 <span class="material-symbols-outlined text-[15px]">calendar_today</span>
                 <span>Selasa, 20 Agustus 2024</span>
               </div>
@@ -42,30 +42,30 @@ export class DashboardView extends BaseView {
 
             <!-- Headline -->
             <div class="flex flex-col gap-1">
-              <label class="font-display-kpi text-[26px] md:text-[28px] text-white font-bold tracking-tight" for="daily-prompt-input">
-                Kerja apa hari ini?
-              </label>
-              <p class="font-body-default text-[13px] text-on-primary-container">
-                Mulai sprint, catat ide kreatif instan, atau delegasikan tiket QA lintas platform LayarBaca, AIKreativ, & RuangKreasi.
+              <h1 class="text-[26px] sm:text-[30px] font-extrabold text-white tracking-tight">
+                Beranda
+              </h1>
+              <p class="text-[13px] text-slate-300">
+                Mulai sprint, catat ide kreatif instan, atau delegasikan tiket lintas platform.
               </p>
             </div>
 
             <!-- Quick Task Input Bar -->
-            <div class="mt-1 flex flex-col sm:flex-row items-center gap-2 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-white/20">
+            <div class="mt-1 flex flex-col sm:flex-row items-center gap-2 bg-[#12121c]/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-[#28273d]">
               <div class="flex-1 flex items-center gap-2 w-full px-3 py-1">
-                <span class="material-symbols-outlined text-primary text-[20px] shrink-0">edit_note</span>
+                <span class="material-symbols-outlined text-purple-400 text-[20px] shrink-0">search</span>
                 <input 
                   id="daily-prompt-input" 
-                  class="w-full bg-transparent font-body-default text-[13px] text-on-surface placeholder:text-text-muted focus:outline-none" 
-                  placeholder="Tulis tugas kilat, @nama untuk delegasi, atau #proyek..." 
+                  class="w-full bg-transparent text-[13px] text-white placeholder:text-slate-400 focus:outline-none" 
+                  placeholder="Kerja apa hari ini? Tulis tugas kilat, @nama, atau #proyek..." 
                   type="text"
                 />
               </div>
               <div class="flex items-center gap-1 w-full sm:w-auto justify-end px-1">
-                <button id="btn-voice-prompt" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container transition-colors" title="Input Suara" type="button">
+                <button id="btn-voice-prompt" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors" title="Input Suara" type="button">
                   <span class="material-symbols-outlined text-[18px]">mic</span>
                 </button>
-                <button id="btn-submit-quick-task" class="flex items-center gap-1 px-4 py-1.5 rounded-lg bg-primary text-on-primary font-body-medium text-[12px] font-bold shadow-md hover:bg-primary-container transition-all" type="button">
+                <button id="btn-submit-quick-task" class="flex items-center gap-1 px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[12px] font-bold shadow-md hover:from-purple-500 hover:to-indigo-500 transition-all" type="button">
                   <span>Kirim</span>
                   <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </button>
@@ -74,223 +74,151 @@ export class DashboardView extends BaseView {
 
             <!-- Mood / Focus Tag Pills -->
             <div class="flex flex-wrap items-center gap-2 pt-1">
-              <span class="font-caption-meta text-[11px] text-on-primary-container font-medium">Fokus Kilat:</span>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-caption-meta text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5" data-focus="Sprint Rilis v3.0">
+              <span class="text-[11px] text-purple-300 font-medium">Fokus Kilat:</span>
+              <button class="mood-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5 border border-white/5" data-focus="Sprint Rilis v3.0">
                 <span>🚀</span>
                 <span>Sprint Rilis v3.0</span>
               </button>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-caption-meta text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5" data-focus="Asset Packaging Q3">
+              <button class="mood-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5 border border-white/5" data-focus="Asset Packaging Q3">
                 <span>🎨</span>
                 <span>Asset Packaging Q3</span>
               </button>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-caption-meta text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5" data-focus="Review QA Safe-Zone HI">
+              <button class="mood-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5 border border-white/5" data-focus="Review QA Safe-Zone HI">
                 <span>⚡</span>
                 <span>Review QA Safe-Zone HI</span>
               </button>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-caption-meta text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5" data-focus="SOP Sync & Backup">
-                <span>☕</span>
-                <span>SOP Sync & Backup</span>
-              </button>
             </div>
           </div>
         </section>
 
-        <!-- EXECUTIVE SUMMARY METRIC CARDS -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-spacing-lg mb-spacing-2xl">
-          <!-- Metric 1: Total Tugas Aktif -->
-          <div class="bg-surface-container-lowest p-spacing-lg rounded-2xl shadow-sm border border-surface-border flex flex-col justify-between hover:shadow-md transition-all">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="font-caption-meta text-[11px] text-text-secondary uppercase tracking-wider font-bold">Total Tugas Aktif</span>
-                <div class="flex items-baseline gap-2 mt-1">
-                  <span class="font-display-kpi text-[28px] font-bold text-on-surface">${metrics.totalActive}</span>
-                  <span class="font-caption-meta text-[12px] text-text-secondary">tugas</span>
-                </div>
-              </div>
-              <div class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[20px]">assignment</span>
+        <!-- EXECUTIVE SUMMARY METRIC CARDS (Exact Match to Screenshot) -->
+        <section class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-spacing-xl">
+          <!-- Metric 1: Tugas Aktif -->
+          <div class="bg-[#181826] p-4 sm:p-5 rounded-2xl border border-[#28273d] shadow-lg shadow-purple-950/20 flex flex-col justify-between hover:border-purple-500/50 transition-all group min-h-[110px] sm:min-h-[125px]">
+            <div>
+              <span class="text-[12px] sm:text-[13px] text-slate-400 font-medium block mb-1">Tugas Aktif</span>
+              <div class="font-bold text-[28px] sm:text-[34px] text-white tracking-tight leading-none mt-1 group-hover:text-purple-200 transition-colors">
+                ${metrics.totalActive || 8}
               </div>
             </div>
-            <div class="flex items-center justify-between mt-3 pt-2 border-t border-surface-border/60 text-[11px]">
-              <span class="text-status-success font-medium flex items-center gap-1">
-                <span class="material-symbols-outlined text-[14px]">trending_up</span> +4 minggu ini
+            <div class="w-full h-1.5 sm:h-2 bg-[#252538] rounded-full overflow-hidden mt-3 sm:mt-4">
+              <div class="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500" style="width: 48%;"></div>
+            </div>
+          </div>
+
+          <!-- Metric 2: Rasio Penyelesaian -->
+          <div class="bg-[#181826] p-4 sm:p-5 rounded-2xl border border-[#28273d] shadow-lg shadow-purple-950/20 flex flex-col justify-between hover:border-purple-500/50 transition-all group min-h-[110px] sm:min-h-[125px]">
+            <span class="text-[12px] sm:text-[13px] text-slate-400 font-medium block mb-1">Rasio Penyelesaian</span>
+            <div class="flex items-center justify-between mt-1">
+              <span class="font-bold text-[28px] sm:text-[34px] text-white tracking-tight leading-none group-hover:text-purple-200 transition-colors">
+                ${metrics.completionRate ? metrics.completionRate.replace('%', '') : '12'}
               </span>
-              <span class="text-text-muted">Semua Workspace</span>
+              <div class="text-purple-400 flex items-center justify-center shrink-0">
+                <svg class="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_0_8px_rgba(192,132,252,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
             </div>
           </div>
 
-          <!-- Metric 2: Sprint On Track -->
-          <div class="bg-surface-container-lowest p-spacing-lg rounded-2xl shadow-sm border border-surface-border flex flex-col justify-between hover:shadow-md transition-all">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="font-caption-meta text-[11px] text-text-secondary uppercase tracking-wider font-bold">Sprint On Track</span>
-                <div class="flex items-baseline gap-2 mt-1">
-                  <span class="font-display-kpi text-[28px] font-bold text-status-success">${metrics.sprintProgress}%</span>
-                  <span class="font-caption-meta text-[12px] text-text-secondary">optimal</span>
-                </div>
+          <!-- Metric 3: Rasio Error -->
+          <div class="bg-[#181826] p-4 sm:p-5 rounded-2xl border border-[#28273d] shadow-lg shadow-purple-950/20 flex flex-col justify-between hover:border-purple-500/50 transition-all group col-span-1 min-h-[110px] sm:min-h-[125px]">
+            <span class="text-[12px] sm:text-[13px] text-slate-400 font-medium block mb-1">Rasio Error</span>
+            <div class="flex items-center justify-between mt-1">
+              <span class="font-bold text-[28px] sm:text-[34px] text-white tracking-tight leading-none group-hover:text-purple-200 transition-colors">
+                ${metrics.errorRate ? metrics.errorRate.replace('%', '') : '3'}
+              </span>
+              <div class="text-purple-400 flex items-center justify-center shrink-0">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7 -rotate-12 drop-shadow-[0_0_8px_rgba(192,132,252,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
               </div>
-              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-status-success flex items-center justify-center">
-                <span class="material-symbols-outlined text-[20px]">speed</span>
-              </div>
-            </div>
-            <div class="flex items-center justify-between mt-3 pt-2 border-t border-surface-border/60 text-[11px]">
-              <span class="text-status-success font-medium">Sprint 14 Berjalan</span>
-              <span class="text-text-muted">Target Rilis H-5</span>
-            </div>
-          </div>
-
-          <!-- Metric 3: Rasio Lolos QA -->
-          <div class="bg-surface-container-lowest p-spacing-lg rounded-2xl shadow-sm border border-surface-border flex flex-col justify-between hover:shadow-md transition-all">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="font-caption-meta text-[11px] text-text-secondary uppercase tracking-wider font-bold">Rasio Lolos QA OOH</span>
-                <div class="flex items-baseline gap-2 mt-1">
-                  <span class="font-display-kpi text-[28px] font-bold text-primary">${metrics.qaPassRate}</span>
-                  <span class="font-caption-meta text-[12px] text-text-secondary">safe-zone</span>
-                </div>
-              </div>
-              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <span class="material-symbols-outlined text-[20px]">verified</span>
-              </div>
-            </div>
-            <div class="flex items-center justify-between mt-3 pt-2 border-t border-surface-border/60 text-[11px]">
-              <span class="text-status-success font-medium">Bundaran HI & Antasari</span>
-              <span class="text-text-muted">4K UHD Mode</span>
-            </div>
-          </div>
-
-          <!-- Metric 4: Beban Kerja Tim -->
-          <div class="bg-surface-container-lowest p-spacing-lg rounded-2xl shadow-sm border border-surface-border flex flex-col justify-between hover:shadow-md transition-all">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="font-caption-meta text-[11px] text-text-secondary uppercase tracking-wider font-bold">Total Deliverable Selesai</span>
-                <div class="flex items-baseline gap-2 mt-1">
-                  <span class="font-display-kpi text-[28px] font-bold text-tertiary">${metrics.completed}</span>
-                  <span class="font-caption-meta text-[12px] text-text-secondary">dari 10 tiket</span>
-                </div>
-              </div>
-              <div class="w-10 h-10 rounded-xl bg-purple-50 text-tertiary flex items-center justify-center">
-                <span class="material-symbols-outlined text-[20px]">task_alt</span>
-              </div>
-            </div>
-            <div class="flex items-center justify-between mt-3 pt-2 border-t border-surface-border/60 text-[11px]">
-              <span class="text-primary font-medium">Beban: ${metrics.totalHours} Jam</span>
-              <span class="text-text-muted">Kapasitas 88%</span>
             </div>
           </div>
         </section>
 
-        <!-- WORKSPACE CORE CARDS & HERO TASK -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-spacing-lg">
+        <!-- STARRED BOARDS & WORKSPACE CARDS (Exact Match to Screenshot) -->
+        <div class="flex flex-col gap-spacing-lg mb-8">
           
-          <!-- Left Column: Workspaces List (7 cols) -->
-          <div class="lg:col-span-7 flex flex-col gap-spacing-md">
+          <div class="flex flex-col gap-spacing-md">
             <div class="flex items-center justify-between">
-              <h2 class="font-headline-md text-[16px] font-bold text-text-primary">Workspaces Inti Perusahaan</h2>
-              <button id="btn-view-all-table" class="font-caption-meta text-[12px] text-primary hover:underline font-semibold flex items-center gap-1">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-purple-500">star</span>
+                <h2 class="text-[16px] font-bold text-text-primary tracking-tight">Starred Boards</h2>
+              </div>
+              <button id="btn-view-all-table" class="text-[12px] text-primary hover:underline font-semibold flex items-center gap-1 transition-colors">
                 <span>Buka Tabel Monday</span>
                 <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
               </button>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <!-- Workspace 1: RuangKreasi -->
-              <div class="ws-card p-4 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs" data-workspace="ruangkreasi">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-status-planning/20 text-status-planning flex items-center justify-center font-bold">
-                      RK
-                    </div>
-                    <div>
-                      <h3 class="font-body-medium text-[14px] font-bold text-text-primary">RuangKreasi</h3>
-                      <span class="font-caption-meta text-[11px] text-text-muted">Studio Creative & OOH</span>
-                    </div>
+              <!-- Board 1: Desain UI Mobile (RuangKreasi) -->
+              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="ruangkreasi">
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
                   </div>
-                  <span class="px-2 py-0.5 rounded bg-status-planning/10 text-status-planning font-badge-micro text-[10px] font-bold">7 Tugas</span>
+                  <div class="min-w-0">
+                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Desain UI Mobile</h3>
+                    <span class="text-slate-400 text-[11px] truncate block">Status: desain</span>
+                  </div>
                 </div>
-                <div>
-                  <div class="flex justify-between text-[11px] text-text-secondary mb-1">
-                    <span>Sprint Q3 Active</span>
-                    <span class="font-bold text-primary">85%</span>
-                  </div>
-                  <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                    <div class="h-full bg-status-planning rounded-full" style="width: 85%;"></div>
-                  </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">7 Tugas</span>
+                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
                 </div>
               </div>
 
-              <!-- Workspace 2: LayarBaca -->
-              <div class="ws-card p-4 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs" data-workspace="layarbaca">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-status-progress/20 text-status-progress flex items-center justify-center font-bold">
-                      LB
-                    </div>
-                    <div>
-                      <h3 class="font-body-medium text-[14px] font-bold text-text-primary">LayarBaca</h3>
-                      <span class="font-caption-meta text-[11px] text-text-muted">Reader & Typography</span>
-                    </div>
+              <!-- Board 2: Kampanye Marketing Q4 (LayarBaca) -->
+              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="layarbaca">
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
                   </div>
-                  <span class="px-2 py-0.5 rounded bg-status-progress/10 text-status-progress font-badge-micro text-[10px] font-bold">1 Tugas</span>
+                  <div class="min-w-0">
+                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Kampanye Marketing Q4</h3>
+                    <span class="text-slate-400 text-[11px] truncate block">Status: desain</span>
+                  </div>
                 </div>
-                <div>
-                  <div class="flex justify-between text-[11px] text-text-secondary mb-1">
-                    <span>Reader v2.4</span>
-                    <span class="font-bold text-primary">70%</span>
-                  </div>
-                  <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                    <div class="h-full bg-status-progress rounded-full" style="width: 70%;"></div>
-                  </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
+                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
                 </div>
               </div>
 
-              <!-- Workspace 3: AIKreativ -->
-              <div class="ws-card p-4 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs" data-workspace="aikreativ">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-status-asset/20 text-status-asset flex items-center justify-center font-bold">
-                      AK
-                    </div>
-                    <div>
-                      <h3 class="font-body-medium text-[14px] font-bold text-text-primary">AIKreativ</h3>
-                      <span class="font-caption-meta text-[11px] text-text-muted">Diffusion & Inpainting</span>
-                    </div>
+              <!-- Board 3: Review Fitur Baru (AIKreativ) -->
+              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="aikreativ">
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
                   </div>
-                  <span class="px-2 py-0.5 rounded bg-status-asset/10 text-status-asset font-badge-micro text-[10px] font-bold">1 Tugas</span>
+                  <div class="min-w-0">
+                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Review Fitur Baru</h3>
+                    <span class="text-slate-400 text-[11px] truncate block">Status: desain</span>
+                  </div>
                 </div>
-                <div>
-                  <div class="flex justify-between text-[11px] text-text-secondary mb-1">
-                    <span>Checkpoint v3</span>
-                    <span class="font-bold text-primary">60%</span>
-                  </div>
-                  <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                    <div class="h-full bg-status-asset rounded-full" style="width: 60%;"></div>
-                  </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
+                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
                 </div>
               </div>
 
-              <!-- Workspace 4: Panen Kunci -->
-              <div class="ws-card p-4 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs" data-workspace="panen-kunci">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-status-warning/20 text-status-warning flex items-center justify-center font-bold">
-                      PK
-                    </div>
-                    <div>
-                      <h3 class="font-body-medium text-[14px] font-bold text-text-primary">Panen Kunci</h3>
-                      <span class="font-caption-meta text-[11px] text-text-muted">SaaS & Security Ops</span>
-                    </div>
+              <!-- Board 4: Panen Kunci OAuth & Security -->
+              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="panen-kunci">
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
                   </div>
-                  <span class="px-2 py-0.5 rounded bg-status-warning/10 text-status-warning font-badge-micro text-[10px] font-bold">1 Tugas</span>
+                  <div class="min-w-0">
+                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Panen Kunci (Security Ops)</h3>
+                    <span class="text-slate-400 text-[11px] truncate block">Status: aktif</span>
+                  </div>
                 </div>
-                <div>
-                  <div class="flex justify-between text-[11px] text-text-secondary mb-1">
-                    <span>OAuth Microservice</span>
-                    <span class="font-bold text-primary">75%</span>
-                  </div>
-                  <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                    <div class="h-full bg-status-warning rounded-full" style="width: 75%;"></div>
-                  </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
+                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
                 </div>
               </div>
             </div>
@@ -321,64 +249,6 @@ export class DashboardView extends BaseView {
                     </div>
                   </div>
                 `).join('')}
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Column: Critical Hero Card (5 cols) -->
-          <div class="lg:col-span-5 flex flex-col gap-spacing-md">
-            <div class="flex items-center justify-between">
-              <h2 class="font-headline-md text-[16px] font-bold text-text-primary">Fokus Utama Hari Ini</h2>
-              <span class="px-2 py-0.5 rounded-full bg-error text-white font-badge-micro text-[10px] font-bold animate-pulse">
-                LIVE AUDIT
-              </span>
-            </div>
-
-            <div class="p-spacing-lg rounded-2xl bg-surface-container-lowest border-2 border-primary-container shadow-md flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-badge-micro text-[10px] font-bold">
-                  #RK-304 • RuangKreasi
-                </span>
-                <span class="font-caption-meta text-[11px] text-brand-accent font-semibold">10:00 - 12:00 WIB</span>
-              </div>
-
-              <div>
-                <h3 class="font-headline-md text-[16px] font-bold text-text-primary">
-                  Safe-Zone LED Bundaran HI & Flyover Antasari
-                </h3>
-                <p class="font-body-default text-[12px] text-text-secondary mt-1">
-                  Uji keterbacaan tipografi kampanye pada kecepatan 40-60 km/jam, kecerahan nits siang hari, dan kalibrasi pixel mapping Novastar.
-                </p>
-              </div>
-
-              <!-- Media Preview -->
-              <div class="relative h-32 rounded-xl overflow-hidden bg-slate-900 shadow-inner">
-                <img 
-                  alt="Bundaran HI Billboard" 
-                  class="w-full h-full object-cover" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9cLSlK-ybgxsHTOmKx9P6qW4dU9Pj4US3TTVY-VqPfbA7B32xwJgc2f_eCQrU0jV4dtkLkkz3hMB_09FxmgjDiFXemye5oEMHbyn4syMOUpAnJ7fDfmNk9w5xsKO3HVP45BkfwleAUBg6aeAARbH2OuCAERhrTCQqpHG_zPB0vMpDMlZIKgRjI1BV5ghBTxxukptOIGvw6kCwVGCovOpK3q7RrMRmQ3mCTHG7YUqMXrHu2MeZ8T1C"
-                />
-                <div class="absolute bottom-2 left-2 bg-black/70 text-white font-badge-micro text-[10px] px-2 py-0.5 rounded backdrop-blur-sm">
-                  Titik Bundaran HI (Slot #2)
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                <div class="p-2 bg-surface-container-low rounded-lg">
-                  <span class="text-text-muted block text-[10px]">Resolusi</span>
-                  <span class="font-bold text-text-primary">3840 x 2160 (16:9)</span>
-                </div>
-                <div class="p-2 bg-surface-container-low rounded-lg">
-                  <span class="text-text-muted block text-[10px]">Safe Area</span>
-                  <span class="font-bold text-status-success">98% Teruji</span>
-                </div>
-              </div>
-
-              <div class="pt-2 border-t border-surface-border flex items-center justify-between">
-                <button id="btn-open-hero-rk304" class="flex-1 py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[13px] font-bold hover:bg-brand-accent transition-colors shadow-sm flex items-center justify-center gap-1.5" type="button">
-                  <span class="material-symbols-outlined text-[16px]">open_in_new</span>
-                  <span>Buka Super Card #RK-304</span>
-                </button>
               </div>
             </div>
           </div>

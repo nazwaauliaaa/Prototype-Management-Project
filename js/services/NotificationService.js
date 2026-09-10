@@ -16,7 +16,7 @@ export class NotificationService {
   init() {
     this.container = document.createElement('div');
     this.container.id = 'toast-container';
-    this.container.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4';
+    this.container.className = 'fixed top-5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 z-[9999] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4';
     document.body.appendChild(this.container);
   }
 
@@ -30,7 +30,7 @@ export class NotificationService {
     const id = 'toast-' + Date.now();
     const toast = document.createElement('div');
     toast.id = id;
-    toast.className = `pointer-events-auto flex items-center gap-3 p-3.5 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 text-sm font-medium ${this.getTypeStyles(type)}`;
+    toast.className = `pointer-events-auto flex items-center gap-3 p-3.5 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-300 transform -translate-y-4 opacity-0 text-sm font-medium ${this.getTypeStyles(type)}`;
     
     const iconName = this.getIcon(type);
     toast.innerHTML = `
@@ -43,12 +43,12 @@ export class NotificationService {
 
     this.container.appendChild(toast);
     requestAnimationFrame(() => {
-      toast.classList.remove('translate-y-2', 'opacity-0');
+      toast.classList.remove('-translate-y-4', 'opacity-0');
       toast.classList.add('translate-y-0', 'opacity-100');
     });
 
     setTimeout(() => {
-      toast.classList.add('opacity-0', 'translate-y-2');
+      toast.classList.add('opacity-0', '-translate-y-4');
       setTimeout(() => toast.remove(), 300);
     }, duration);
   }

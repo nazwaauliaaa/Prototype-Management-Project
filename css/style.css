@@ -79,6 +79,36 @@ body {
   background: #94a3b8;
 }
 
+/* Hide scrollbar utility for tab nav containers */
+.scrollbar-hide::-webkit-scrollbar,
+[style*="scrollbar-width:none"]::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Mobile: prevent horizontal overflow on main layout */
+#app-root,
+#app-shell-layout,
+#app-content {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Mobile: touch-friendly horizontal scroll */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile: ensure tab buttons have min touch target */
+@media (max-width: 640px) {
+  .view-switch-tab {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+}
+
 /* Laser Scanner Animation */
 @keyframes laserSweep {
   0% {
@@ -97,6 +127,14 @@ body {
 
 .laser-scanner-beam {
   animation: laserSweep 2.8s ease-in-out infinite;
+}
+
+/* Camera Viewfinder - strictly mirrored (selfie/natural mirror orientation) by default */
+#camera-video-stream,
+#camera-sim-canvas {
+  transform: scaleX(-1) !important;
+  -webkit-transform: scaleX(-1) !important;
+  transition: transform 0.2s ease-in-out;
 }
 
 /* Smooth view transition */
