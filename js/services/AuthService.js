@@ -12,7 +12,7 @@ export class AuthService {
   constructor(eventBus, notificationService) {
     this.eventBus = eventBus;
     this.notifications = notificationService;
-    
+
     // Default mock profiles for roles
     this.roleProfiles = {
       eksekutif: new User({
@@ -44,7 +44,7 @@ export class AuthService {
       })
     };
 
-    // Start logged out — user must authenticate via QR, role select, or SSO
+    // Default: not logged in — user must authenticate via AuthView
     this.currentUser = null;
     this.isAuthenticated = false;
   }
