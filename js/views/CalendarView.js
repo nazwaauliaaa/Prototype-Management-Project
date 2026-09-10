@@ -258,42 +258,6 @@ export class CalendarView extends BaseView {
               </div>
             </div>
 
-            <!-- Filter Pilar Terlibat Card -->
-            <div class="p-4 rounded-xl bg-surface-container-lowest border border-surface-border shadow-sm flex flex-col gap-2.5">
-              <div class="flex items-center justify-between">
-                <span class="font-headline-md text-[14px] font-bold text-text-primary">Filter Pilar Terlibat</span>
-                <button id="btn-reset-pillar-filter" class="text-[11px] text-primary hover:underline font-semibold">Reset (Semua)</button>
-              </div>
-
-              <div class="flex flex-col gap-1.5 text-[12px] text-text-secondary">
-                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low font-semibold ${this.activeFilter === 'ruangkreasi' ? 'bg-primary/10 text-primary' : ''}">
-                  <input type="radio" name="pillar-filter" value="ruangkreasi" ${this.activeFilter === 'ruangkreasi' ? 'checked' : ''} class="accent-primary" />
-                  <span class="w-2.5 h-2.5 rounded-full bg-status-planning"></span>
-                  <span class="flex-1">RuangKreasi</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low font-semibold ${this.activeFilter === 'layarbaca' ? 'bg-primary/10 text-primary' : ''}">
-                  <input type="radio" name="pillar-filter" value="layarbaca" ${this.activeFilter === 'layarbaca' ? 'checked' : ''} class="accent-primary" />
-                  <span class="w-2.5 h-2.5 rounded-full bg-status-progress"></span>
-                  <span class="flex-1">LayarBaca</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low font-semibold ${this.activeFilter === 'aikreativ' ? 'bg-primary/10 text-primary' : ''}">
-                  <input type="radio" name="pillar-filter" value="aikreativ" ${this.activeFilter === 'aikreativ' ? 'checked' : ''} class="accent-primary" />
-                  <span class="w-2.5 h-2.5 rounded-full bg-status-asset"></span>
-                  <span class="flex-1">AIKreativ</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low font-semibold ${this.activeFilter === 'panen-kunci' ? 'bg-primary/10 text-primary' : ''}">
-                  <input type="radio" name="pillar-filter" value="panen-kunci" ${this.activeFilter === 'panen-kunci' ? 'checked' : ''} class="accent-primary" />
-                  <span class="w-2.5 h-2.5 rounded-full bg-status-warning"></span>
-                  <span class="flex-1">Panen Kunci</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low font-semibold ${this.activeFilter === 'sharinginaja' ? 'bg-primary/10 text-primary' : ''}">
-                  <input type="radio" name="pillar-filter" value="sharinginaja" ${this.activeFilter === 'sharinginaja' ? 'checked' : ''} class="accent-primary" />
-                  <span class="w-2.5 h-2.5 rounded-full bg-status-success"></span>
-                  <span class="flex-1">Sharinginaja</span>
-                </label>
-              </div>
-            </div>
-
           </aside>
 
         </div>
@@ -320,23 +284,6 @@ export class CalendarView extends BaseView {
         this.mount(this.element);
       });
     });
-
-    // Pillar filter radios
-    const pillarRadios = this.element.querySelectorAll('input[name="pillar-filter"]');
-    pillarRadios.forEach(radio => {
-      radio.addEventListener('change', () => {
-        this.activeFilter = radio.value;
-        this.mount(this.element);
-      });
-    });
-
-    const resetFilterBtn = this.element.querySelector('#btn-reset-pillar-filter');
-    if (resetFilterBtn) {
-      resetFilterBtn.addEventListener('click', () => {
-        this.activeFilter = 'all';
-        this.mount(this.element);
-      });
-    }
 
     // Open detail task #RK-304
     const openTaskBtn = this.element.querySelector('#btn-open-task-rk304');
