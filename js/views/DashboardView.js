@@ -120,45 +120,6 @@ export class DashboardView extends BaseView {
           </div>
         </section>
 
-        <!-- 2. FOCUS KIT (Compact Manager Shortcuts) -->
-        <section class="flex items-center gap-1.5 p-2 rounded-xl bg-[#141422] border border-[#26253b] flex-wrap sm:flex-nowrap justify-between">
-          <div class="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 shrink-0">
-            <span class="material-symbols-outlined text-[15px] text-purple-400">bolt</span>
-            <span>Focus Kit</span>
-          </div>
-
-          <div class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-start sm:justify-end">
-            <button 
-              class="focus-kit-btn px-2.5 py-1 rounded-lg bg-[#1e1c32] hover:bg-purple-600/25 text-purple-200 hover:text-white text-[11.5px] font-semibold border border-purple-500/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shrink-0" 
-              data-action="sprint" 
-              type="button"
-              title="Buka Papan Kanban Sprint"
-            >
-              <span>🚀</span>
-              <span>Sprint Ritme</span>
-            </button>
-
-            <button 
-              class="focus-kit-btn px-2.5 py-1 rounded-lg bg-[#1e1c32] hover:bg-purple-600/25 text-purple-200 hover:text-white text-[11.5px] font-semibold border border-purple-500/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shrink-0" 
-              data-action="asset" 
-              type="button"
-              title="Buka Lembar Aset & Hardware"
-            >
-              <span>📦</span>
-              <span>Asset Packaging</span>
-            </button>
-
-            <button 
-              class="focus-kit-btn px-2.5 py-1 rounded-lg bg-[#1e1c32] hover:bg-purple-600/25 text-purple-200 hover:text-white text-[11.5px] font-semibold border border-purple-500/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shrink-0" 
-              data-action="review" 
-              type="button"
-              title="Buka Tugas Review QA"
-            >
-              <span>⚡</span>
-              <span>Review QA</span>
-            </button>
-          </div>
-        </section>
 
         <!-- 3. SUMMARY / STATISTICS (Tugas Aktif, Selesai, Terlambat, Progress Project %) -->
         <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
@@ -488,25 +449,6 @@ export class DashboardView extends BaseView {
       });
     }
 
-    // 3. Focus Kit actions
-    const focusButtons = this.element.querySelectorAll('.focus-kit-btn');
-    focusButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const action = btn.getAttribute('data-action');
-        if (action === 'sprint') {
-          this.eventBus.emit('navigate', { view: 'kanban', workspace: 'ruangkreasi' });
-        } else if (action === 'asset') {
-          this.eventBus.emit('navigate', { view: 'docs-sheets' });
-        } else if (action === 'review') {
-          const task = this.taskService ? (this.taskService.getTask('#RK-304') || this.taskService.getTasks()[0]) : null;
-          if (task && this.modalManager) {
-            this.modalManager.open('task-detail', { task });
-          } else {
-            this.eventBus.emit('navigate', { view: 'project-table' });
-          }
-        }
-      });
-    });
 
     // 4. Starred Board cards navigation
     const boardCards = this.element.querySelectorAll('.board-card');

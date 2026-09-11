@@ -7,8 +7,8 @@ export class CalendarEvent {
     title,
     description = '',
     pillar = 'ruangkreasi', // 'ruangkreasi' | 'layarbaca' | 'aikreativ' | 'panen-kunci' | 'sharinginaja'
-    date = '2024-08-20',
-    dayName = 'Selasa',
+    date = '2026-09-11',
+    dayName = 'Jumat',
     time = '10:00 - 12:00 WIB',
     pic = 'Sari Rahmawati',
     location = 'Posko Satelit Bundaran HI',

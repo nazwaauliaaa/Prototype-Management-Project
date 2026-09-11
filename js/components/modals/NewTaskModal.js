@@ -148,7 +148,7 @@ export class NewTaskModal extends BaseModal {
                 <input 
                   id="new-task-start-date" 
                   type="date" 
-                  value="2024-08-20"
+                  value="2026-09-11"
                   class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary text-[12px] font-medium"
                   required
                 />
@@ -158,7 +158,7 @@ export class NewTaskModal extends BaseModal {
                 <input 
                   id="new-task-end-date" 
                   type="date" 
-                  value="2024-08-24"
+                  value="2026-09-15"
                   class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary text-[12px] font-medium"
                   required
                 />
@@ -209,8 +209,8 @@ export class NewTaskModal extends BaseModal {
         const hours = parseInt(modalRoot.querySelector('#new-task-hours').value, 10) || 8;
         const status = modalRoot.querySelector('#new-task-status').value;
         const description = modalRoot.querySelector('#new-task-desc').value;
-        const startDate = modalRoot.querySelector('#new-task-start-date').value || '2024-08-20';
-        const endDate = modalRoot.querySelector('#new-task-end-date').value || '2024-08-24';
+        const startDate = modalRoot.querySelector('#new-task-start-date').value || '2026-09-11';
+        const endDate = modalRoot.querySelector('#new-task-end-date').value || '2026-09-15';
 
         // Format timeline string for Monday table & Gantt display (e.g. "20 - 24 Ags")
         const formatDayMonth = (dateStr) => {

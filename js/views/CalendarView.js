@@ -48,7 +48,7 @@ export class CalendarView extends BaseView {
                 </button>
                 <div class="flex items-center gap-2 px-3 font-body-medium text-[12px] font-bold text-text-primary">
                   <span class="material-symbols-outlined text-[16px] text-brand-accent">event</span>
-                  <span>19 – 25 Agustus 2024</span>
+                  <span>07 – 13 September 2026</span>
                 </div>
                 <button class="w-7 h-7 flex items-center justify-center text-text-secondary hover:text-text-primary rounded-md hover:bg-surface-container">
                   <span class="material-symbols-outlined text-[16px]">chevron_right</span>
@@ -89,19 +89,17 @@ export class CalendarView extends BaseView {
               </div>
               
               <div class="grid grid-cols-7 gap-1.5">
-                <!-- Prev month days -->
-                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">28</span></div>
-                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">29</span></div>
+                <!-- Prev month days (Agustus 2026) -->
                 <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">30</span></div>
                 <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">31</span></div>
                 
-                <!-- Current month days -->
-                ${Array.from({length: 31}, (_, i) => {
+                <!-- Current month days (September 2026) -->
+                ${Array.from({length: 30}, (_, i) => {
                   const day = i + 1;
                   let eventsHtml = '';
                   let bgClass = 'bg-surface-container-lowest';
                   
-                  if (day === 20) {
+                  if (day === 11) {
                     bgClass = 'bg-primary/5 ring-1 ring-primary/40';
                     eventsHtml = `
                       <div class="mt-1 flex flex-col gap-1">
@@ -110,13 +108,13 @@ export class CalendarView extends BaseView {
                         <div class="text-[9px] bg-status-success/20 text-status-success px-1.5 py-0.5 rounded truncate font-semibold">Deploy</div>
                       </div>
                     `;
-                  } else if (day === 22) {
+                  } else if (day === 14) {
                     eventsHtml = `
                       <div class="mt-1 flex flex-col gap-1">
                         <div class="text-[9px] bg-status-warning/20 text-status-warning px-1.5 py-0.5 rounded truncate font-semibold">Desain UI</div>
                       </div>
                     `;
-                  } else if (day === 25) {
+                  } else if (day === 20) {
                     eventsHtml = `
                       <div class="mt-1 flex flex-col gap-1">
                         <div class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded truncate font-semibold">Grand Launch</div>
@@ -127,22 +125,27 @@ export class CalendarView extends BaseView {
                   return `
                     <div class="border border-surface-border/50 rounded-xl p-1.5 hover:border-primary/50 transition-all cursor-pointer ${bgClass} min-h-[90px] flex flex-col">
                       <div class="flex justify-between items-center">
-                        <span class="font-semibold text-[12px] w-6 h-6 flex items-center justify-center rounded-full ${day === 20 ? 'bg-primary text-on-primary shadow-sm' : 'text-text-primary'}">${day}</span>
-                        ${eventsHtml && day !== 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-brand-accent"></span>' : ''}
+                        <span class="font-semibold text-[12px] w-6 h-6 flex items-center justify-center rounded-full ${day === 11 ? 'bg-primary text-on-primary shadow-sm' : 'text-text-primary'}">${day}</span>
+                        ${eventsHtml && day !== 11 ? '<span class="w-1.5 h-1.5 rounded-full bg-brand-accent"></span>' : ''}
                       </div>
                       ${eventsHtml}
                     </div>
                   `;
                 }).join('')}
+
+                <!-- Next month days (Oktober 2026) -->
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">1</span></div>
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">2</span></div>
+                <div class="border border-surface-border/50 rounded-xl p-1.5 opacity-40 bg-surface-container-low min-h-[90px]"><span class="font-semibold text-[12px] p-1">3</span></div>
               </div>
             </div>
 
             <!-- Selected Day Agenda -->
             <div class="flex flex-col gap-4">
-              <!-- Selasa 20 Agustus Section Header -->
+              <!-- Jumat 11 September 2026 Section Header -->
               <div class="flex items-center justify-between px-2">
                 <div class="flex items-center gap-2">
-                  <span class="font-headline-lg text-[18px] font-bold text-text-primary">Selasa, 20 Agustus 2024</span>
+                  <span class="font-headline-lg text-[18px] font-bold text-text-primary">Jumat, 11 September 2026</span>
                   <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-badge-micro text-[10px] font-bold animate-pulse">
                     HARI INI • 3 AGENDA RUANGKREASI
                   </span>
