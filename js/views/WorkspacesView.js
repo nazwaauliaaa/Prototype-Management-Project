@@ -154,15 +154,6 @@ export class WorkspacesView extends BaseView {
             </button>
 
             <div class="flex items-center gap-2">
-              <button
-                id="btn-open-create-project"
-                class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white transition-all text-xs font-bold cursor-pointer shadow-md shadow-purple-600/25 active:scale-95 border border-purple-400/40"
-                type="button"
-              >
-                <span class="material-symbols-outlined text-[16px]">add_circle</span>
-                <span>+ Tambah Proyek</span>
-              </button>
-
               <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 Workspace Aktif
@@ -525,7 +516,6 @@ export class WorkspacesView extends BaseView {
     });
 
     // Open Modal Tambah Proyek
-    const openModalBtn = this.element.querySelector('#btn-open-create-project');
     const openModalBtnCard = this.element.querySelector('#btn-add-new-project-card');
 
     const handleOpenModal = () => {
@@ -537,7 +527,6 @@ export class WorkspacesView extends BaseView {
       }, 50);
     };
 
-    if (openModalBtn) openModalBtn.addEventListener('click', handleOpenModal);
     if (openModalBtnCard) openModalBtnCard.addEventListener('click', handleOpenModal);
 
     // Close Modal
