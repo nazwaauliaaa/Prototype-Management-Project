@@ -11,7 +11,7 @@ export class KanbanBoardView extends BaseView {
     this.taskService = container.resolve('TaskService');
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
-    this.currentWorkspace = null; // Show all workspaces by default
+    this.currentWorkspace = localStorage.getItem('active_workspace') || 'ruangkreasi';
     this.columns = [
       { id: 'backlog',      title: 'Daftar Pekerjaan',     color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-600' },
       { id: 'in-progress',  title: 'Sedang Berjalan',      color: 'border-blue-400',   dot: 'bg-blue-400',     badge: 'bg-blue-100 text-blue-700' },
@@ -28,7 +28,26 @@ export class KanbanBoardView extends BaseView {
     this.currentWorkspace = workspace || 'ruangkreasi';
   }
 
+  getWorkspaceName(wsKey) {
+    if (!wsKey) return 'RuangKreasi';
+    const names = {
+      'ruangkreasi': 'RuangKreasi',
+      'layarbaca': 'LayarBaca',
+      'aikreativ': 'AIKreativ',
+      'panen-kunci': 'Panen Kunci',
+      'sharinginaja': 'Sharinginaja'
+    };
+    if (names[wsKey]) return names[wsKey];
+    try {
+      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      const found = custom.find(w => w.id === wsKey);
+      if (found && found.title) return found.title;
+    } catch (e) {}
+    return wsKey.charAt(0).toUpperCase() + wsKey.slice(1);
+  }
+
   render() {
+    const wsName = this.getWorkspaceName(this.currentWorkspace);
     const allTasks = this.taskService.getTasks(this.currentWorkspace);
 
     return `
@@ -112,16 +131,24 @@ export class KanbanBoardView extends BaseView {
 
       <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
         
-        <!-- Workspace Subheader -->
-        <div class="flex flex-col items-start gap-3 mb-4">
-          <div class="min-w-0">
-            <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
-              Creative Hub Kanban Board
-            </h1>
-            <p class="font-caption-meta text-[11px] text-text-secondary flex items-center gap-1.5 mt-0.5">
-              <span class="material-symbols-outlined text-[13px] text-brand-accent">drag_indicator</span>
-              Drag & drop kartu antar kolom untuk ubah status
-            </p>
+        <!-- Breadcrumbs & Navigation Header -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-2 text-[12px] text-text-muted">
+            <button
+              id="btn-kanban-back-ws"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-primary transition-colors text-xs font-semibold cursor-pointer shadow-xs active:scale-95"
+              title="Kembali ke Ruang Kerja"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px] text-primary">arrow_back</span>
+              <span>Ruang Kerja</span>
+            </button>
+            <span class="text-text-muted hidden sm:inline">/</span>
+            <span class="hover:text-primary cursor-pointer transition-colors font-semibold text-text-secondary hidden sm:inline" id="btn-crumb-ws" title="Kembali ke Ruang Kerja">
+              ${wsName}
+            </span>
+            <span class="material-symbols-outlined text-[14px] text-text-muted hidden sm:inline">chevron_right</span>
+            <span class="text-primary font-bold hidden sm:inline">Papan Kanban</span>
           </div>
 
           <button id="btn-add-kanban-task" class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm shrink-0">
@@ -129,6 +156,19 @@ export class KanbanBoardView extends BaseView {
             <span class="hidden sm:inline">Tambah Kartu</span>
             <span class="sm:hidden">Tambah</span>
           </button>
+        </div>
+
+        <!-- Workspace Subheader -->
+        <div class="flex flex-col items-start gap-1 mb-4">
+          <div class="min-w-0">
+            <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
+              ${wsName} Kanban Board
+            </h1>
+            <p class="font-caption-meta text-[11px] text-text-secondary flex items-center gap-1.5 mt-0.5">
+              <span class="material-symbols-outlined text-[13px] text-brand-accent">drag_indicator</span>
+              Drag & drop kartu antar kolom untuk ubah status tugas ${wsName}
+            </p>
+          </div>
         </div>
 
         <!-- Kanban Board Columns Stream (swipeable on mobile) -->
@@ -169,10 +209,21 @@ export class KanbanBoardView extends BaseView {
                       data-task-status="${task.status}"
                       draggable="true"
                     >
-                      <!-- Card Code & Priority -->
-                      <div class="flex items-center justify-between">
-                        <span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] font-bold text-primary">${task.code}</span>
-                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${this.getPriorityBadge(task.priority)}">
+                      <!-- Card Code, Workspace & Priority -->
+                      <div class="flex items-center justify-between gap-1.5">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                          <span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] font-bold text-primary shrink-0">${task.code}</span>
+                          <button
+                            class="btn-task-back-ws flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 hover:bg-purple-600/20 text-purple-400 hover:text-purple-300 font-medium text-[10px] transition-colors border border-purple-500/20 truncate"
+                            title="Kembali ke Ruang Kerja (${this.getWorkspaceName(task.workspace || this.currentWorkspace)})"
+                            data-workspace="${task.workspace || this.currentWorkspace || 'ruangkreasi'}"
+                            type="button"
+                          >
+                            <span class="material-symbols-outlined text-[11px] shrink-0">workspaces</span>
+                            <span class="truncate max-w-[75px]">${this.getWorkspaceName(task.workspace || this.currentWorkspace)}</span>
+                          </button>
+                        </div>
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${this.getPriorityBadge(task.priority)} shrink-0">
                           ${task.priority}
                         </span>
                       </div>
@@ -588,6 +639,29 @@ export class KanbanBoardView extends BaseView {
 
 
   bindEvents() {
+    // Back to Workspaces navigation
+    const backWsBtn = this.element.querySelector('#btn-kanban-back-ws');
+    if (backWsBtn) {
+      backWsBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'workspaces' });
+      });
+    }
+
+    const crumbWs = this.element.querySelector('#btn-crumb-ws');
+    if (crumbWs) {
+      crumbWs.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'workspaces' });
+      });
+    }
+
+    const taskBackBtns = this.element.querySelectorAll('.btn-task-back-ws');
+    taskBackBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.eventBus.emit('navigate', { view: 'workspaces' });
+      });
+    });
+
     // Card click opens Super Card modal
     const cards = this.element.querySelectorAll('.kanban-card');
     cards.forEach(card => {

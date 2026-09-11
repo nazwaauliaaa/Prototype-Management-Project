@@ -56,9 +56,15 @@ export class TaskDetailModal extends BaseModal {
               <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-badge-micro text-[11px] font-bold tracking-wide">
                 ${task.code}
               </span>
-              <span class="px-2.5 py-0.5 rounded-full bg-status-planning/20 text-status-planning font-badge-micro text-[11px] font-bold capitalize">
-                ${task.workspace}
-              </span>
+              <button 
+                id="btn-modal-back-workspace" 
+                class="px-2.5 py-0.5 rounded-full bg-status-planning/20 hover:bg-status-planning/35 text-status-planning font-badge-micro text-[11px] font-bold capitalize transition-colors flex items-center gap-1 cursor-pointer border border-status-planning/30"
+                type="button"
+                title="Kembali ke Ruang Kerja ${task.workspace}"
+              >
+                <span class="material-symbols-outlined text-[13px]">arrow_back</span>
+                <span>${task.workspace}</span>
+              </button>
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error text-on-error font-badge-micro text-[10px] font-bold tracking-wide uppercase">
                 <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
                 ● LIVE CRITICAL AUDIT
@@ -472,6 +478,16 @@ export class TaskDetailModal extends BaseModal {
     const closeAction = () => this.modalManager.close(this.modalId);
     if (closeBtn) closeBtn.addEventListener('click', closeAction);
     if (footerCloseBtn) footerCloseBtn.addEventListener('click', closeAction);
+
+    // Back to workspace from modal
+    const wsBackBtn = modalRoot.querySelector('#btn-modal-back-workspace');
+    if (wsBackBtn) {
+      wsBackBtn.addEventListener('click', () => {
+        this.modalManager.close(this.modalId);
+        const eventBus = this.container.resolve('EventBus');
+        if (eventBus) eventBus.emit('navigate', { view: 'workspaces' });
+      });
+    }
 
     // Reschedule button
     const rescheduleBtn = modalRoot.querySelector('#btn-modal-reschedule');
