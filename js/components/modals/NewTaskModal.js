@@ -129,7 +129,7 @@ export class NewTaskModal extends BaseModal {
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Status Awal</label>
               <select id="new-task-status" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium">
                 <option value="in-progress" selected>In Progress</option>
-                <option value="backlog">Backlog</option>
+                <option value="backlog">Daftar Pekerjaan</option>
                 <option value="review-qa">Review QA</option>
                 <option value="ready-launch">Siap Launching</option>
               </select>

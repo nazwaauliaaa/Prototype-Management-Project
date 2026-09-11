@@ -266,7 +266,7 @@ export class ProjectTableView extends BaseView {
                 <option value="review-qa">Review QA</option>
                 <option value="ready-launch">Siap Launching</option>
                 <option value="done">Selesai</option>
-                <option value="backlog">Backlog</option>
+                <option value="backlog">Daftar Pekerjaan</option>
               </select>
             </div>
 
@@ -369,7 +369,7 @@ export class ProjectTableView extends BaseView {
                         class="status-dropdown px-2.5 py-1 rounded-lg text-[11px] font-bold border border-surface-border transition-colors cursor-pointer ${this.getStatusStyle(task.status)}"
                         data-task-id="${task.id}"
                       >
-                        <option value="backlog" ${task.status === 'backlog' ? 'selected' : ''}>Backlog</option>
+                        <option value="backlog" ${task.status === 'backlog' ? 'selected' : ''}>Daftar Pekerjaan</option>
                         <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
                         <option value="review-qa" ${task.status === 'review-qa' ? 'selected' : ''}>Review QA Lapangan</option>
                         <option value="ready-launch" ${task.status === 'ready-launch' ? 'selected' : ''}>Siap Launching</option>
