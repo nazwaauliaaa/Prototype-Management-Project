@@ -493,7 +493,7 @@ export class KanbanBoardView extends BaseView {
       display: flex;
       align-items: center;
       gap: 8px;
-      transform: scale(1.04) rotate(-1.5deg);
+      transform: scale(1.02);
       transition: transform 0.15s ease;
       opacity: 0.96;
       max-width: 80vw;
