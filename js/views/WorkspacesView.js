@@ -19,6 +19,9 @@ export class WorkspacesView extends BaseView {
 
     this.activeWorkspaceId = localStorage.getItem('active_workspace') || 'ruangkreasi';
     this.isModalOpen = false;
+    this.isDeleteModalOpen = false;
+    this.pendingDeleteWsId = null;
+    this.pendingDeleteWsTitle = null;
     this.hostElement = null;
 
     this.defaultWorkspaces = [
@@ -118,12 +121,19 @@ export class WorkspacesView extends BaseView {
 
   loadWorkspaces() {
     let custom = [];
+    let deleted = [];
     try {
       custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
     } catch (e) {
       custom = [];
     }
-    this.workspaces = [...custom, ...this.defaultWorkspaces];
+    try {
+      deleted = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
+    } catch (e) {
+      deleted = [];
+    }
+    const all = [...custom, ...this.defaultWorkspaces];
+    this.workspaces = all.filter(ws => !deleted.includes(ws.id));
   }
 
   mount(hostElement) {
@@ -139,14 +149,14 @@ export class WorkspacesView extends BaseView {
 
   render() {
     return `
-      <div class="workspaces-page min-h-[calc(100vh-var(--topbar-height))] bg-[#080612] text-slate-100 pb-28 pt-4 sm:pt-6 px-4 sm:px-8 flex justify-center relative">
+      <div class="workspaces-page min-h-[calc(100vh-var(--topbar-height))] bg-[#f8fafc] text-slate-800 pb-28 pt-4 sm:pt-6 px-4 sm:px-8 flex justify-center relative">
         <div class="w-full max-w-2xl space-y-5">
 
           <!-- Top Navigation Header: Back Button & Add Project Action -->
           <div class="flex items-center justify-between gap-3">
             <button
               id="btn-workspaces-back"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#141124] border border-[#26213d] text-slate-300 hover:text-white hover:bg-[#1f1a38] transition-colors text-xs font-semibold cursor-pointer shadow-sm"
+              class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-purple-700 hover:border-purple-300 hover:bg-purple-50/50 transition-all text-xs font-semibold cursor-pointer shadow-sm"
               title="Kembali ke Beranda"
             >
               <span class="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -154,16 +164,33 @@ export class WorkspacesView extends BaseView {
             </button>
 
             <div class="flex items-center gap-2">
-              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold flex items-center gap-1.5 shadow-xs">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Workspace Aktif
               </span>
             </div>
           </div>
 
           <!-- Main Container Card (PILIH RUANG KERJA) -->
-          <div class="rounded-3xl bg-[#0e0c1b] border border-[#221c38] shadow-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
-            <div class="absolute -top-16 -right-16 w-44 h-44 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 p-6 sm:p-8 space-y-6 relative overflow-hidden">
+            <div class="absolute -top-16 -right-16 w-44 h-44 bg-purple-100/70 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Brand Header -->
+            <div class="text-center space-y-3">
+              <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs">
+                <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-sm">
+                  <span class="material-symbols-outlined text-white text-[15px]">workspaces</span>
+                </div>
+                <span class="font-extrabold text-slate-800 text-[15px] sm:text-[17px] tracking-wider">CREATIVEOFFICE</span>
+              </div>
+
+              <!-- Decorative Divider -->
+              <div class="flex items-center gap-3 w-full max-w-md mx-auto pt-1">
+                <span class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-purple-300"></span>
+                <span class="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-widest px-1">PILIH RUANG KERJA</span>
+                <span class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-purple-300"></span>
+              </div>
+            </div>
 
             <!-- Search Input Bar -->
             <div class="relative w-full flex items-center">
@@ -171,26 +198,9 @@ export class WorkspacesView extends BaseView {
                 type="text" 
                 id="search-ws-input" 
                 placeholder="Cari Ruang Kerja..." 
-                class="w-full bg-[#090814] border border-[#28213e] focus:border-purple-500 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500/50 pr-10 transition-colors shadow-inner"
+                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-4 py-2.5 text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 pr-10 transition-all shadow-xs"
               />
-              <span class="material-symbols-outlined absolute right-3.5 text-slate-500 text-[18px] pointer-events-none">search</span>
-            </div>
-
-            <!-- Brand Header -->
-            <div class="text-center space-y-3">
-              <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-2xl bg-[#17132b] border border-[#2b244c] shadow-inner">
-                <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-sm">
-                  <span class="material-symbols-outlined text-white text-[15px]">workspaces</span>
-                </div>
-                <span class="font-extrabold text-white text-[15px] sm:text-[17px] tracking-wider">CREATIVEOFFICE</span>
-              </div>
-
-              <!-- Decorative Divider -->
-              <div class="flex items-center gap-3 w-full max-w-md mx-auto pt-1">
-                <span class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-purple-500/40"></span>
-                <span class="text-[11px] sm:text-[12px] font-bold text-slate-400 uppercase tracking-widest px-1">PILIH RUANG KERJA</span>
-                <span class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-purple-500/40"></span>
-              </div>
+              <span class="material-symbols-outlined absolute right-3.5 text-slate-400 text-[18px] pointer-events-none">search</span>
             </div>
 
             <!-- Interactive Workspace Cards -->
@@ -203,7 +213,7 @@ export class WorkspacesView extends BaseView {
 
                 return `
                   <div
-                    class="workspace-select-card ${isActive ? 'active-neon border-purple-500/60 bg-purple-950/20' : 'border-[#221c38] bg-[#120f24]/70'} p-4 rounded-2xl cursor-pointer flex flex-col gap-3 group shadow-sm transition-all border hover:border-purple-500/40 hover:bg-[#16122d]"
+                    class="workspace-select-card ${isActive ? 'border-purple-500 bg-purple-50/60 ring-1 ring-purple-500/30 shadow-sm' : 'border-slate-200 bg-white hover:border-purple-300 hover:bg-slate-50/70 shadow-xs'} p-4 rounded-2xl cursor-pointer flex flex-col gap-3 group transition-all border"
                     data-workspace="${ws.id}"
                     data-title="${ws.title}"
                     role="button"
@@ -211,51 +221,50 @@ export class WorkspacesView extends BaseView {
                   >
                     <div class="flex items-center justify-between gap-3.5">
                       <div class="flex items-center gap-3.5 min-w-0">
-                        <div class="ws-icon-box w-11 h-11 rounded-xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-center p-2.5 shrink-0 transition-transform group-hover:scale-105">
+                        <div class="ws-icon-box w-11 h-11 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 border border-purple-500/20 shadow-sm flex items-center justify-center p-2.5 shrink-0 transition-transform group-hover:scale-105 text-white">
                           ${ws.iconSvg}
                         </div>
                         <div class="flex flex-col min-w-0">
                           <div class="flex items-center gap-2">
-                            <span class="ws-title font-bold text-white text-[15px] sm:text-[16px] tracking-wide transition-colors truncate">${ws.title}</span>
+                            <span class="ws-title font-bold text-slate-900 group-hover:text-purple-700 text-[15px] sm:text-[16px] tracking-tight transition-colors truncate">${ws.title}</span>
                             ${ws.isCustom ? `
-                              <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-badge-micro text-[10px] font-bold">
+                              <span class="px-2 py-0.5 rounded-full bg-purple-100 border border-purple-200 text-purple-700 font-badge-micro text-[10px] font-bold">
                                 Baru
                               </span>
                             ` : ''}
                             ${isActive ? `
-                              <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-badge-micro text-[10px] font-bold">
+                              <span class="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700 font-badge-micro text-[10px] font-bold">
                                 Aktif
                               </span>
                             ` : ''}
                           </div>
-                          <span class="text-[11px] text-slate-400 truncate">${ws.tag}</span>
+                          <span class="text-[11.5px] text-slate-500 font-medium truncate">${ws.tag}</span>
                         </div>
                       </div>
 
                       <div class="flex items-center gap-2 shrink-0">
                         <span class="w-2.5 h-2.5 rounded-full" style="background: ${ws.color};" title="Status Indicator"></span>
-                        <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[20px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+                        <span class="material-symbols-outlined text-slate-400 group-hover:text-purple-600 text-[20px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
                       </div>
                     </div>
 
                     <!-- Dynamic Workspace Stats & Quick Action Bar -->
-                    <div class="pt-2 border-t border-purple-500/10 flex items-center justify-between gap-2 text-[11px]">
-                      <div class="flex items-center gap-2 text-slate-400">
-                        <span class="flex items-center gap-1">
-                          <span class="material-symbols-outlined text-[14px] text-purple-400">task_alt</span>
-                          <span>${tasks.length} Tugas (${activeTasks} aktif)</span>
+                    <div class="pt-2.5 border-t border-slate-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 text-[11px]">
+                      <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap text-[11.5px] font-medium">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 border border-purple-100 text-purple-900 shadow-2xs">
+                          <span class="material-symbols-outlined text-[14px] text-purple-600 shrink-0">task_alt</span>
+                          <span><strong class="text-slate-800 font-semibold">${tasks.length}</strong> Tugas <span class="text-slate-500 text-[10.5px]">(${activeTasks} aktif)</span></span>
                         </span>
-                        <span>•</span>
-                        <span class="flex items-center gap-1">
-                          <span class="material-symbols-outlined text-[14px] text-blue-400">folder</span>
-                          <span>${projects.length} Proyek</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-100 text-blue-900 shadow-2xs">
+                          <span class="material-symbols-outlined text-[14px] text-blue-600 shrink-0">folder</span>
+                          <span><strong class="text-slate-800 font-semibold">${projects.length}</strong> Proyek</span>
                         </span>
                       </div>
 
                       <!-- Action Buttons -->
-                      <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+                      <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
                         <button
-                          class="btn-open-ws-kanban px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white transition-colors text-[11px] font-semibold flex items-center gap-1 border border-purple-500/30"
+                          class="btn-open-ws-kanban px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors text-[11px] font-semibold flex items-center gap-1 border border-purple-200 shadow-2xs"
                           data-workspace="${ws.id}"
                           data-title="${ws.title}"
                           type="button"
@@ -265,7 +274,7 @@ export class WorkspacesView extends BaseView {
                           <span>Kanban</span>
                         </button>
                         <button
-                          class="btn-open-ws-table px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-[11px] font-semibold flex items-center gap-1 border border-slate-700"
+                          class="btn-open-ws-table px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors text-[11px] font-semibold flex items-center gap-1 border border-slate-200 shadow-2xs"
                           data-workspace="${ws.id}"
                           data-title="${ws.title}"
                           type="button"
@@ -279,16 +288,26 @@ export class WorkspacesView extends BaseView {
                   </div>
                 `;
               }).join('')}
+
+              ${this.workspaces.length === 0 ? `
+                <div class="py-10 text-center text-slate-500 text-[13px] bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-6 flex flex-col items-center gap-3">
+                  <span class="material-symbols-outlined text-[32px] text-purple-500">workspaces</span>
+                  <p>Semua ruang kerja telah dihapus.</p>
+                  <button id="btn-reset-workspaces" class="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-semibold text-xs transition-all cursor-pointer shadow-sm" type="button">
+                    Pulihkan Ruang Kerja Bawaan
+                  </button>
+                </div>
+              ` : ''}
             </div>
 
             <!-- Empty Search State -->
-            <div id="ws-empty-msg" class="hidden py-6 text-center text-slate-400 text-[13px]">
-              <span class="material-symbols-outlined text-[24px] text-purple-400 mb-1 block">search_off</span>
+            <div id="ws-empty-msg" class="hidden py-6 text-center text-slate-500 text-[13px]">
+              <span class="material-symbols-outlined text-[24px] text-purple-500 mb-1 block">search_off</span>
               Ruang kerja tidak ditemukan
             </div>
 
-            <!-- Controls: Tambah Proyek Button -->
-            <div class="pt-2">
+            <!-- Controls: Tambah Proyek Button & Hapus Ruang Kerja Button -->
+            <div class="pt-2 flex flex-col gap-2.5">
               <button
                 id="btn-add-new-project-card"
                 class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[13px] shadow-lg shadow-purple-600/25 transition-all cursor-pointer border border-purple-400/30 shrink-0 active:scale-95"
@@ -296,6 +315,16 @@ export class WorkspacesView extends BaseView {
               >
                 <span class="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>Tambah Proyek</span>
+              </button>
+
+              <button
+                id="btn-open-delete-modal-card"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100/80 text-red-600 hover:text-red-700 font-bold text-[13px] transition-all cursor-pointer border border-red-200 shrink-0 active:scale-95 shadow-2xs"
+                type="button"
+                title="Hapus Ruang Kerja"
+              >
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+                <span>Hapus Ruang Kerja</span>
               </button>
             </div>
 
@@ -306,24 +335,24 @@ export class WorkspacesView extends BaseView {
         <!-- MODAL TAMBAH PROYEK (OTOMATIS MEMBUAT RUANG KERJA BARU) -->
         <div 
           id="modal-create-project" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-200 ${this.isModalOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all duration-200 ${this.isModalOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}"
           role="dialog"
           aria-modal="true"
         >
-          <div class="relative w-full max-w-lg bg-[#120f24] border border-[#2b244c] rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 ${this.isModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}">
+          <div class="relative w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 ${this.isModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}">
             
             <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-4 mb-4 border-b border-purple-500/20">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+                <div class="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center">
                   <span class="material-symbols-outlined text-[20px]">create_new_folder</span>
                 </div>
                 <div>
-                  <h3 class="text-base font-bold text-white">Tambah Proyek Baru</h3>
-                  <p class="text-[11px] text-slate-400">Otomatis membuat ruang kerja baru untuk proyek Anda</p>
+                  <h3 class="text-base font-bold text-slate-900">Tambah Proyek Baru</h3>
+                  <p class="text-[11px] text-slate-500">Otomatis membuat ruang kerja baru untuk proyek Anda</p>
                 </div>
               </div>
-              <button id="btn-close-create-project" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer" type="button">
+              <button id="btn-close-create-project" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer" type="button">
                 <span class="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
@@ -331,22 +360,22 @@ export class WorkspacesView extends BaseView {
             <!-- Modal Form -->
             <form id="form-create-project" class="flex flex-col gap-3.5">
               <div>
-                <label class="block text-xs font-semibold text-slate-200 mb-1">Nama Proyek *</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Proyek *</label>
                 <input
                   id="input-ws-project-name"
                   type="text"
                   required
                   placeholder="Contoh: Kampanye LED Brand Launch Q4"
-                  class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                  class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
                 />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
                     <span>Ruang Kerja Baru *</span>
-                    <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                       Otomatis Baru
                     </span>
                   </label>
@@ -355,15 +384,15 @@ export class WorkspacesView extends BaseView {
                     type="text"
                     required
                     placeholder="Nama ruang kerja baru..."
-                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                    class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label class="block text-xs font-semibold text-slate-200 mb-1">Kategori / Divisi</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
                   <select
                     id="select-ws-new-workspace-tag"
-                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
+                    class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
                   >
                     <option value="Dev / Creative Hub" selected>Dev / Creative Hub</option>
                     <option value="Produk / Inovasi">Produk / Inovasi</option>
@@ -377,10 +406,10 @@ export class WorkspacesView extends BaseView {
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-200 mb-1">Prioritas</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Prioritas</label>
                   <select
                     id="select-ws-project-priority"
-                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
+                    class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
                   >
                     <option value="Critical">Critical</option>
                     <option value="High" selected>High</option>
@@ -390,51 +419,51 @@ export class WorkspacesView extends BaseView {
                 </div>
 
                 <div>
-                  <label class="block text-xs font-semibold text-slate-200 mb-1">Target Deadline</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Target Deadline</label>
                   <input
                     id="input-ws-project-due"
                     type="text"
                     placeholder="Contoh: Nov 2026"
                     value="Des 2026"
-                    class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                    class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-200 mb-1">Estimasi Budget</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Estimasi Budget</label>
                 <input
                   id="input-ws-project-budget"
                   type="text"
                   placeholder="Contoh: Rp 75.000.000"
                   value="Rp 85.000.000"
-                  class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                  class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
                 />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-200 mb-1">Deskripsi Proyek</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
                 <textarea
                   id="input-ws-project-desc"
                   rows="2"
                   placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..."
-                  class="w-full bg-[#0a0817] border border-[#2b244c] focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all resize-none"
+                  class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
                 ></textarea>
               </div>
 
               <!-- Modal Footer Actions -->
-              <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-purple-500/20">
+              <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-slate-100">
                 <button
                   id="btn-cancel-create-project"
                   type="button"
-                  class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+                  class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   id="btn-submit-create-project"
                   type="submit"
-                  class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
+                  class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-600/25 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
                 >
                   <span class="material-symbols-outlined text-[16px]">save</span>
                   <span>Simpan & Buat Ruang Kerja</span>
@@ -442,6 +471,69 @@ export class WorkspacesView extends BaseView {
               </div>
             </form>
 
+          </div>
+        </div>
+
+        <!-- MODAL KONFIRMASI HAPUS RUANG KERJA -->
+        <div 
+          id="modal-delete-workspace" 
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all duration-200 ${this.isDeleteModalOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div class="relative w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 ${this.isDeleteModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[20px]">delete_forever</span>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-slate-900">Hapus Ruang Kerja</h3>
+                  <p class="text-[11px] text-slate-500">Pilih ruang kerja yang ingin dihapus</p>
+                </div>
+              </div>
+              <button id="btn-close-delete-modal" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer" type="button">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <!-- Workspace Selection -->
+            <div class="mb-5 space-y-2">
+              <label class="block text-xs font-semibold text-slate-700">Pilih Ruang Kerja:</label>
+              <select
+                id="select-delete-workspace"
+                class="w-full bg-slate-50 border border-slate-200 focus:border-red-500 focus:bg-white rounded-xl px-3.5 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors"
+              >
+                ${this.workspaces.map(ws => `
+                  <option value="${ws.id}" ${(this.pendingDeleteWsId || this.activeWorkspaceId) === ws.id ? 'selected' : ''}>
+                    ${ws.title} (${ws.tag || 'Ruang Kerja'})
+                  </option>
+                `).join('')}
+              </select>
+              <p class="text-[11px] text-slate-500 pt-1 leading-relaxed">
+                Peringatan: Data ruang kerja yang dipilih tidak akan ditampilkan di daftar.
+              </p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2.5">
+              <button
+                id="btn-cancel-delete-ws"
+                class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer border border-slate-200"
+                type="button"
+              >
+                Batal
+              </button>
+              <button
+                id="btn-confirm-delete-ws"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/30 transition-all cursor-pointer border border-red-400/30 active:scale-95"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+                <span>Hapus Sekarang</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -514,6 +606,101 @@ export class WorkspacesView extends BaseView {
         activateAndNavigate(wsId, title, 'project-table');
       });
     });
+
+    // Open Delete Workspace Modal from bottom control button
+    const openDeleteBtn = this.element.querySelector('#btn-open-delete-modal-card');
+    if (openDeleteBtn) {
+      openDeleteBtn.addEventListener('click', () => {
+        if (this.workspaces.length === 0) {
+          this.notificationService.warning('Tidak ada ruang kerja yang dapat dihapus.');
+          return;
+        }
+        this.isDeleteModalOpen = true;
+        this.renderToDOM();
+      });
+    }
+
+    // Delete Confirmation Modal handlers
+    const cancelDeleteBtn = this.element.querySelector('#btn-cancel-delete-ws');
+    const closeDeleteModalBtn = this.element.querySelector('#btn-close-delete-modal');
+    const deleteModalBackdrop = this.element.querySelector('#modal-delete-workspace');
+    const confirmDeleteBtn = this.element.querySelector('#btn-confirm-delete-ws');
+
+    const handleCloseDeleteModal = () => {
+      this.isDeleteModalOpen = false;
+      this.pendingDeleteWsId = null;
+      this.pendingDeleteWsTitle = null;
+      this.renderToDOM();
+    };
+
+    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', handleCloseDeleteModal);
+    if (closeDeleteModalBtn) closeDeleteModalBtn.addEventListener('click', handleCloseDeleteModal);
+    if (deleteModalBackdrop) {
+      deleteModalBackdrop.addEventListener('click', (e) => {
+        if (e.target === deleteModalBackdrop) handleCloseDeleteModal();
+      });
+    }
+
+    if (confirmDeleteBtn) {
+      confirmDeleteBtn.addEventListener('click', () => {
+        const selectWs = this.element.querySelector('#select-delete-workspace');
+        const wsId = selectWs ? selectWs.value : (this.pendingDeleteWsId || (this.workspaces[0] && this.workspaces[0].id));
+        if (!wsId) return;
+        const targetWs = this.workspaces.find(w => w.id === wsId);
+        const title = targetWs ? targetWs.title : wsId;
+
+        // 1. Remove from custom_workspaces if present
+        try {
+          const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+          const updatedCustom = custom.filter(w => w.id !== wsId);
+          localStorage.setItem('custom_workspaces', JSON.stringify(updatedCustom));
+        } catch (err) {
+          console.error('Error updating custom_workspaces:', err);
+        }
+
+        // 2. Add to deleted_workspaces in localStorage
+        try {
+          const deleted = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
+          if (!deleted.includes(wsId)) {
+            deleted.push(wsId);
+            localStorage.setItem('deleted_workspaces', JSON.stringify(deleted));
+          }
+        } catch (err) {
+          console.error('Error updating deleted_workspaces:', err);
+        }
+
+        // 3. Reload workspaces
+        this.loadWorkspaces();
+
+        // 4. If current active workspace is deleted, fallback to another available
+        if (this.activeWorkspaceId === wsId) {
+          const fallbackId = this.workspaces[0] ? this.workspaces[0].id : 'ruangkreasi';
+          this.activeWorkspaceId = fallbackId;
+          localStorage.setItem('active_workspace', fallbackId);
+          this.eventBus.emit('workspace:selected', { workspace: fallbackId });
+        }
+
+        this.notificationService.success(`Ruang kerja "${title}" berhasil dihapus.`);
+        this.eventBus.emit('workspace:deleted', { workspaceId: wsId });
+
+        // Close modal and re-render
+        this.isDeleteModalOpen = false;
+        this.pendingDeleteWsId = null;
+        this.pendingDeleteWsTitle = null;
+        this.renderToDOM();
+      });
+    }
+
+    // Reset default workspaces button (if all workspaces were deleted)
+    const resetWorkspacesBtn = this.element.querySelector('#btn-reset-workspaces');
+    if (resetWorkspacesBtn) {
+      resetWorkspacesBtn.addEventListener('click', () => {
+        localStorage.removeItem('deleted_workspaces');
+        this.loadWorkspaces();
+        this.renderToDOM();
+        this.notificationService.success('Ruang kerja bawaan berhasil dipulihkan.');
+      });
+    }
 
     // Open Modal Tambah Proyek
     const openModalBtnCard = this.element.querySelector('#btn-add-new-project-card');
