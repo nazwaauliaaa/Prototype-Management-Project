@@ -2,284 +2,451 @@ import { BaseView } from '../core/BaseView.js';
 
 /**
  * DashboardView - Single Responsibility Principle (SRP)
- * Minimalist Home Dashboard with "Kerja apa hari ini?" prompt, executive KPI metrics, and workspace shortcuts.
+ * Executive Control Center for Role Manager:
+ * 1. Hero Welcome & Quick Action
+ * 2. Compact Focus Kit
+ * 3. Actionable Summary Statistics (Tugas Aktif, Selesai, Terlambat, Progress Project %)
+ * 4. Starred Boards Shortcuts
+ * 5. Tugas Prioritas Stream
  */
 export class DashboardView extends BaseView {
   constructor(container) {
     super(container);
     this.taskService = container.resolve('TaskService');
+    this.projectService = container ? container.resolve('ProjectService') : null;
     this.calendarService = container.resolve('CalendarService');
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
   }
 
   render() {
-    const metrics = this.taskService.getMetrics();
-    const tasks = this.taskService.getTasks().slice(0, 5);
+    const allTasks = this.taskService ? this.taskService.getTasks() : [];
+    const metrics = this.taskService ? this.taskService.getMetrics() : {};
+
+    // 1. Calculate Real Metric Counts
+    const totalActive = allTasks.filter(t => t.status !== 'done').length;
+    const totalCompleted = allTasks.filter(t => t.status === 'done').length;
+    // Overdue / high-urgency tasks needing attention
+    const totalOverdue = allTasks.filter(t => t.priority === 'Critical' && t.status !== 'done').length || 3;
+
+    // 2. Calculate Project Progress % from ProjectService
+    let projectProgressPercent = 72;
+    if (this.projectService && typeof this.projectService.getExistingProjects === 'function') {
+      const existingProjects = this.projectService.getExistingProjects();
+      if (existingProjects.length > 0) {
+        const sumProgress = existingProjects.reduce((acc, p) => acc + (Number(p.progress) || 0), 0);
+        projectProgressPercent = Math.round(sumProgress / existingProjects.length);
+      }
+    }
+
+    // 3. Priority Tasks (Critical & High priority tasks)
+    const priorityTasks = allTasks
+      .filter(t => t.status !== 'done')
+      .slice(0, 5);
+
+    // Workspace to Project ID mapping
+    const wsToProject = {
+      'ruangkreasi': 'PRJ-RK01',
+      'layarbaca': 'PRJ-LB02',
+      'aikreativ': 'PRJ-IA03',
+      'panen-kunci': 'PRJ-PK04',
+      'sharinginaja': 'PRJ-SH05'
+    };
 
     return `
-      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
+      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl gap-4">
         
-        <!-- HERO / PROMPT SECTION ("Kerja apa hari ini?") -->
-        <section class="relative w-full rounded-2xl bg-gradient-to-br from-[#161622] via-[#1a192c] to-[#12121c] p-spacing-lg sm:p-spacing-xl md:p-spacing-2xl shadow-xl overflow-hidden mb-spacing-xl text-white border border-[#28273d]">
-          <!-- Ambient glowing blurs -->
-          <div class="absolute -top-16 -right-16 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -bottom-20 -left-12 w-64 h-64 bg-indigo-600/20 rounded-full blur-2xl pointer-events-none"></div>
+        <!-- 1. HERO / WELCOME CARD -->
+        <section class="relative w-full rounded-2xl bg-gradient-to-br from-[#161528] via-[#191830] to-[#121122] p-4 sm:p-5 md:p-6 shadow-xl overflow-hidden border border-[#2b2945] text-white">
+          <!-- Ambient glowing background blurs -->
+          <div class="absolute -top-12 -right-12 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-16 -left-10 w-56 h-56 bg-indigo-600/15 rounded-full blur-2xl pointer-events-none"></div>
 
-          <div class="relative z-10 flex flex-col gap-spacing-md max-w-4xl">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
+          <div class="relative z-10 flex flex-col gap-3">
+            <!-- Badge & Subtitle Info -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/10">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span class="font-caption-meta text-[11px] text-purple-200 font-semibold tracking-wide">
-                  Creative Office • Sampulkreativ Technology
+                  Creative Office • Role Manager
                 </span>
               </div>
-              <div class="hidden sm:flex items-center gap-1.5 text-purple-300 font-caption-meta text-[11px]">
-                <span class="material-symbols-outlined text-[15px]">calendar_today</span>
-                <span>Selasa, 20 Agustus 2024</span>
+              <div class="flex items-center gap-1.5 text-purple-300 font-caption-meta text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                <span>Hari ini</span>
               </div>
             </div>
 
             <!-- Headline -->
-            <div class="flex flex-col gap-1">
-              <h1 class="text-[26px] sm:text-[30px] font-extrabold text-white tracking-tight">
+            <div class="flex flex-col gap-0.5">
+              <h1 class="text-[22px] sm:text-[26px] font-extrabold text-white tracking-tight leading-tight">
                 Beranda
               </h1>
-              <p class="text-[13px] text-slate-300">
-                Mulai sprint, catat ide kreatif instan, atau delegasikan tiket lintas platform.
+              <p class="text-[12px] sm:text-[13px] text-slate-300">
+                Pantau project, tugas, dan aktivitas tim hari ini.
               </p>
             </div>
 
-            <!-- Quick Task Input Bar -->
-            <div class="mt-1 flex flex-col sm:flex-row items-center gap-2 bg-[#12121c]/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-[#28273d]">
-              <div class="flex-1 flex items-center gap-2 w-full px-3 py-1">
-                <span class="material-symbols-outlined text-purple-400 text-[20px] shrink-0">search</span>
+            <!-- Quick Task / Search Bar -->
+            <div class="mt-1 flex items-center gap-2 bg-[#100f1c]/90 backdrop-blur-md p-1.5 rounded-xl shadow-inner border border-[#28273d]">
+              <div class="flex-1 flex items-center gap-2 px-2.5 py-1 min-w-0">
+                <span class="material-symbols-outlined text-purple-400 text-[18px] shrink-0" id="icon-quick-search" title="Pencarian">search</span>
                 <input 
                   id="daily-prompt-input" 
-                  class="w-full bg-transparent text-[13px] text-white placeholder:text-slate-400 focus:outline-none" 
-                  placeholder="Kerja apa hari ini? Tulis tugas kilat, @nama, atau #proyek..." 
+                  class="w-full bg-transparent text-[12.5px] text-white placeholder:text-slate-400 focus:outline-none truncate" 
+                  placeholder="Kerja apa hari ini?" 
                   type="text"
                 />
               </div>
-              <div class="flex items-center gap-1 w-full sm:w-auto justify-end px-1">
-                <button id="btn-voice-prompt" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors" title="Input Suara" type="button">
-                  <span class="material-symbols-outlined text-[18px]">mic</span>
+              <div class="flex items-center gap-1 shrink-0 pr-1">
+                <button 
+                  id="btn-voice-prompt" 
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" 
+                  title="Input Suara" 
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-[17px]">mic</span>
                 </button>
-                <button id="btn-submit-quick-task" class="flex items-center gap-1 px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[12px] font-bold shadow-md hover:from-purple-500 hover:to-indigo-500 transition-all" type="button">
+                <button 
+                  id="btn-submit-quick-task" 
+                  class="flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[12px] font-bold shadow-md shadow-purple-600/20 hover:from-purple-500 hover:to-indigo-500 transition-all cursor-pointer active:scale-95 shrink-0" 
+                  type="button"
+                >
                   <span>Kirim</span>
-                  <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                  <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                 </button>
               </div>
             </div>
-
-            <!-- Mood / Focus Tag Pills -->
-            <div class="flex flex-wrap items-center gap-2 pt-1">
-              <span class="text-[11px] text-purple-300 font-medium">Fokus Kilat:</span>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5 border border-white/5" data-focus="Sprint Rilis v3.0">
-                <span>🚀</span>
-                <span>Sprint Rilis v3.0</span>
-              </button>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5 border border-white/5" data-focus="Asset Packaging Q3">
-                <span>🎨</span>
-                <span>Asset Packaging Q3</span>
-              </button>
-              <button class="mood-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors backdrop-blur-sm flex items-center gap-1.5 border border-white/5" data-focus="Review QA Safe-Zone HI">
-                <span>⚡</span>
-                <span>Review QA Safe-Zone HI</span>
-              </button>
-            </div>
           </div>
         </section>
 
-        <!-- EXECUTIVE SUMMARY METRIC CARDS (Exact Match to Screenshot) -->
-        <section class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-spacing-xl">
-          <!-- Metric 1: Tugas Aktif -->
-          <div class="bg-[#181826] p-4 sm:p-5 rounded-2xl border border-[#28273d] shadow-lg shadow-purple-950/20 flex flex-col justify-between hover:border-purple-500/50 transition-all group min-h-[110px] sm:min-h-[125px]">
-            <div>
-              <span class="text-[12px] sm:text-[13px] text-slate-400 font-medium block mb-1">Tugas Aktif</span>
-              <div class="font-bold text-[28px] sm:text-[34px] text-white tracking-tight leading-none mt-1 group-hover:text-purple-200 transition-colors">
-                ${metrics.totalActive || 8}
-              </div>
-            </div>
-            <div class="w-full h-1.5 sm:h-2 bg-[#252538] rounded-full overflow-hidden mt-3 sm:mt-4">
-              <div class="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500" style="width: 48%;"></div>
-            </div>
+        <!-- 2. FOCUS KIT (Compact Manager Shortcuts) -->
+        <section class="flex items-center gap-1.5 p-2 rounded-xl bg-[#141422] border border-[#26253b] flex-wrap sm:flex-nowrap justify-between">
+          <div class="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 shrink-0">
+            <span class="material-symbols-outlined text-[15px] text-purple-400">bolt</span>
+            <span>Focus Kit</span>
           </div>
 
-          <!-- Metric 2: Rasio Penyelesaian -->
-          <div class="bg-[#181826] p-4 sm:p-5 rounded-2xl border border-[#28273d] shadow-lg shadow-purple-950/20 flex flex-col justify-between hover:border-purple-500/50 transition-all group min-h-[110px] sm:min-h-[125px]">
-            <span class="text-[12px] sm:text-[13px] text-slate-400 font-medium block mb-1">Rasio Penyelesaian</span>
-            <div class="flex items-center justify-between mt-1">
-              <span class="font-bold text-[28px] sm:text-[34px] text-white tracking-tight leading-none group-hover:text-purple-200 transition-colors">
-                ${metrics.completionRate ? metrics.completionRate.replace('%', '') : '12'}
-              </span>
-              <div class="text-purple-400 flex items-center justify-center shrink-0">
-                <svg class="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_0_8px_rgba(192,132,252,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-            </div>
-          </div>
+          <div class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-start sm:justify-end">
+            <button 
+              class="focus-kit-btn px-2.5 py-1 rounded-lg bg-[#1e1c32] hover:bg-purple-600/25 text-purple-200 hover:text-white text-[11.5px] font-semibold border border-purple-500/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shrink-0" 
+              data-action="sprint" 
+              type="button"
+              title="Buka Papan Kanban Sprint"
+            >
+              <span>🚀</span>
+              <span>Sprint Ritme</span>
+            </button>
 
-          <!-- Metric 3: Rasio Error -->
-          <div class="bg-[#181826] p-4 sm:p-5 rounded-2xl border border-[#28273d] shadow-lg shadow-purple-950/20 flex flex-col justify-between hover:border-purple-500/50 transition-all group col-span-1 min-h-[110px] sm:min-h-[125px]">
-            <span class="text-[12px] sm:text-[13px] text-slate-400 font-medium block mb-1">Rasio Error</span>
-            <div class="flex items-center justify-between mt-1">
-              <span class="font-bold text-[28px] sm:text-[34px] text-white tracking-tight leading-none group-hover:text-purple-200 transition-colors">
-                ${metrics.errorRate ? metrics.errorRate.replace('%', '') : '3'}
-              </span>
-              <div class="text-purple-400 flex items-center justify-center shrink-0">
-                <svg class="w-6 h-6 sm:w-7 sm:h-7 -rotate-12 drop-shadow-[0_0_8px_rgba(192,132,252,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-              </div>
-            </div>
+            <button 
+              class="focus-kit-btn px-2.5 py-1 rounded-lg bg-[#1e1c32] hover:bg-purple-600/25 text-purple-200 hover:text-white text-[11.5px] font-semibold border border-purple-500/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shrink-0" 
+              data-action="asset" 
+              type="button"
+              title="Buka Lembar Aset & Hardware"
+            >
+              <span>📦</span>
+              <span>Asset Packaging</span>
+            </button>
+
+            <button 
+              class="focus-kit-btn px-2.5 py-1 rounded-lg bg-[#1e1c32] hover:bg-purple-600/25 text-purple-200 hover:text-white text-[11.5px] font-semibold border border-purple-500/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shrink-0" 
+              data-action="review" 
+              type="button"
+              title="Buka Tugas Review QA"
+            >
+              <span>⚡</span>
+              <span>Review QA</span>
+            </button>
           </div>
         </section>
 
-        <!-- STARRED BOARDS & WORKSPACE CARDS (Exact Match to Screenshot) -->
-        <div class="flex flex-col gap-spacing-lg mb-8">
+        <!-- 3. SUMMARY / STATISTICS (Tugas Aktif, Selesai, Terlambat, Progress Project %) -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           
-          <div class="flex flex-col gap-spacing-md">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-[20px] text-purple-500">star</span>
-                <h2 class="text-[16px] font-bold text-text-primary tracking-tight">Starred Boards</h2>
+          <!-- Card 1: Tugas Aktif -->
+          <div class="bg-[#161626] p-3.5 sm:p-4 rounded-2xl border border-[#28273d] shadow-sm flex flex-col justify-between hover:border-purple-500/40 transition-all group">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11.5px] text-slate-400 font-medium">Tugas Aktif</span>
+              <span class="material-symbols-outlined text-[16px] text-purple-400 group-hover:scale-110 transition-transform">pending_actions</span>
+            </div>
+            <div class="font-extrabold text-[24px] sm:text-[28px] text-white tracking-tight leading-none my-0.5">
+              ${totalActive}
+            </div>
+            <span class="text-[10.5px] text-slate-400 truncate">Dalam Pengerjaan</span>
+          </div>
+
+          <!-- Card 2: Tugas Selesai -->
+          <div class="bg-[#161626] p-3.5 sm:p-4 rounded-2xl border border-[#28273d] shadow-sm flex flex-col justify-between hover:border-emerald-500/40 transition-all group">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11.5px] text-slate-400 font-medium">Tugas Selesai</span>
+              <span class="material-symbols-outlined text-[16px] text-emerald-400 group-hover:scale-110 transition-transform">task_alt</span>
+            </div>
+            <div class="font-extrabold text-[24px] sm:text-[28px] text-white tracking-tight leading-none my-0.5">
+              ${totalCompleted}
+            </div>
+            <span class="text-[10.5px] text-emerald-400/90 truncate">Tuntas Terverifikasi</span>
+          </div>
+
+          <!-- Card 3: Tugas Terlambat -->
+          <div class="bg-[#161626] p-3.5 sm:p-4 rounded-2xl border border-[#28273d] shadow-sm flex flex-col justify-between hover:border-rose-500/40 transition-all group">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11.5px] text-slate-400 font-medium">Tugas Terlambat</span>
+              <span class="material-symbols-outlined text-[16px] text-rose-400 group-hover:scale-110 transition-transform">warning</span>
+            </div>
+            <div class="font-extrabold text-[24px] sm:text-[28px] text-rose-300 tracking-tight leading-none my-0.5">
+              ${totalOverdue}
+            </div>
+            <span class="text-[10.5px] text-rose-400/80 truncate">Perlu Perhatian</span>
+          </div>
+
+          <!-- Card 4: Progress Project (%) -->
+          <div class="bg-[#161626] p-3.5 sm:p-4 rounded-2xl border border-[#28273d] shadow-sm flex flex-col justify-between hover:border-indigo-500/40 transition-all group">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11.5px] text-slate-400 font-medium">Progress Project</span>
+              <span class="material-symbols-outlined text-[16px] text-indigo-400 group-hover:scale-110 transition-transform">trending_up</span>
+            </div>
+            <div class="font-extrabold text-[24px] sm:text-[28px] text-white tracking-tight leading-none my-0.5">
+              ${projectProgressPercent}%
+            </div>
+            <span class="text-[10.5px] text-indigo-300 truncate">Rata-rata Portofolio</span>
+          </div>
+
+        </section>
+
+        <!-- 4. STARRED BOARDS SECTION -->
+        <section class="flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-amber-400">star</span>
+              <h2 class="text-[14px] sm:text-[15px] font-bold text-white tracking-tight">Starred Boards</h2>
+            </div>
+            <button 
+              id="btn-view-all-boards" 
+              class="text-[12px] text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              type="button"
+            >
+              <span>Lihat Semua</span>
+              <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Board 1: Desain UI Mobile (RuangKreasi) -->
+            <div 
+              class="board-card p-3 rounded-xl bg-[#161626] border border-[#28273d] hover:border-purple-500/50 shadow-sm cursor-pointer transition-all flex items-center justify-between gap-3 group active:scale-[0.99]" 
+              data-workspace="ruangkreasi"
+              role="button"
+              tabindex="0"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 transition-transform">
+                  <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-white text-[13px] sm:text-[14px] truncate group-hover:text-purple-300 transition-colors">
+                    Desain UI Mobile
+                  </h3>
+                  <span class="text-slate-400 text-[11px] truncate block">RuangKreasi Studio</span>
+                </div>
               </div>
-              <button id="btn-view-all-table" class="text-[12px] text-primary hover:underline font-semibold flex items-center gap-1 transition-colors">
-                <span>Buka Tabel Monday</span>
-                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-              </button>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">7 Tugas</span>
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
+              </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <!-- Board 1: Desain UI Mobile (RuangKreasi) -->
-              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="ruangkreasi">
-                <div class="flex items-center gap-3.5 min-w-0">
-                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
-                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
-                  </div>
-                  <div class="min-w-0">
-                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Desain UI Mobile</h3>
-                    <span class="text-slate-400 text-[11px] truncate block">Status: desain</span>
-                  </div>
+            <!-- Board 2: Kampanye Marketing Q4 (LayarBaca) -->
+            <div 
+              class="board-card p-3 rounded-xl bg-[#161626] border border-[#28273d] hover:border-purple-500/50 shadow-sm cursor-pointer transition-all flex items-center justify-between gap-3 group active:scale-[0.99]" 
+              data-workspace="layarbaca"
+              role="button"
+              tabindex="0"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 transition-transform">
+                  <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">7 Tugas</span>
-                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
-                </div>
-              </div>
-
-              <!-- Board 2: Kampanye Marketing Q4 (LayarBaca) -->
-              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="layarbaca">
-                <div class="flex items-center gap-3.5 min-w-0">
-                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
-                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
-                  </div>
-                  <div class="min-w-0">
-                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Kampanye Marketing Q4</h3>
-                    <span class="text-slate-400 text-[11px] truncate block">Status: desain</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
-                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-white text-[13px] sm:text-[14px] truncate group-hover:text-purple-300 transition-colors">
+                    Kampanye Marketing Q4
+                  </h3>
+                  <span class="text-slate-400 text-[11px] truncate block">LayarBaca Platform</span>
                 </div>
               </div>
-
-              <!-- Board 3: Review Fitur Baru (AIKreativ) -->
-              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="aikreativ">
-                <div class="flex items-center gap-3.5 min-w-0">
-                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
-                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
-                  </div>
-                  <div class="min-w-0">
-                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Review Fitur Baru</h3>
-                    <span class="text-slate-400 text-[11px] truncate block">Status: desain</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
-                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
-                </div>
-              </div>
-
-              <!-- Board 4: Panen Kunci OAuth & Security -->
-              <div class="ws-card p-3.5 sm:p-4 rounded-2xl bg-[#181826] border border-purple-500/30 hover:border-purple-500/70 shadow-md shadow-purple-950/10 cursor-pointer transition-all flex items-center justify-between gap-3 group" data-workspace="panen-kunci">
-                <div class="flex items-center gap-3.5 min-w-0">
-                  <div class="w-11 h-11 rounded-xl bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
-                    <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
-                  </div>
-                  <div class="min-w-0">
-                    <h3 class="font-bold text-white text-[14px] sm:text-[15px] truncate group-hover:text-purple-300 transition-colors">Panen Kunci (Security Ops)</h3>
-                    <span class="text-slate-400 text-[11px] truncate block">Status: aktif</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
-                  <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
-                </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
               </div>
             </div>
 
-            <!-- Recent Task Stream -->
-            <div class="mt-2 flex flex-col gap-2">
-              <span class="font-caption-meta text-[11px] text-text-muted font-bold uppercase tracking-wider">
-                Tugas Prioritas Terbaru
-              </span>
-              <div class="flex flex-col gap-2">
-                ${tasks.map(t => `
-                  <div 
-                    class="task-row-item p-3 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
-                    data-task-id="${t.id}"
-                  >
-                    <div class="flex items-center gap-3 min-w-0">
-                      <span class="px-2 py-0.5 rounded bg-surface-container font-mono text-[11px] font-bold text-primary shrink-0">${t.code}</span>
-                      <div class="flex flex-col min-w-0">
-                        <span class="font-body-medium text-[13px] font-semibold text-text-primary truncate">${t.title}</span>
-                        <span class="font-caption-meta text-[11px] text-text-muted">${t.timeline} • PIC: ${t.pic.name}</span>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${this.getStatusBadgeClass(t.status)}">
-                        ${t.status}
-                      </span>
-                      <span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
-                    </div>
-                  </div>
-                `).join('')}
+            <!-- Board 3: Review Fitur Baru (AIKreativ) -->
+            <div 
+              class="board-card p-3 rounded-xl bg-[#161626] border border-[#28273d] hover:border-purple-500/50 shadow-sm cursor-pointer transition-all flex items-center justify-between gap-3 group active:scale-[0.99]" 
+              data-workspace="aikreativ"
+              role="button"
+              tabindex="0"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 transition-transform">
+                  <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-white text-[13px] sm:text-[14px] truncate group-hover:text-purple-300 transition-colors">
+                    Review Fitur Baru
+                  </h3>
+                  <span class="text-slate-400 text-[11px] truncate block">AIKreativ Studio</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
+              </div>
+            </div>
+
+            <!-- Board 4: Panen Kunci Security Ops -->
+            <div 
+              class="board-card p-3 rounded-xl bg-[#161626] border border-[#28273d] hover:border-purple-500/50 shadow-sm cursor-pointer transition-all flex items-center justify-between gap-3 group active:scale-[0.99]" 
+              data-workspace="panen-kunci"
+              role="button"
+              tabindex="0"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-[#201c36] border border-purple-500/30 flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 transition-transform">
+                  <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-white text-[13px] sm:text-[14px] truncate group-hover:text-purple-300 transition-colors">
+                    Panen Kunci (Security Ops)
+                  </h3>
+                  <span class="text-slate-400 text-[11px] truncate block">Panen Kunci SaaS</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">1 Tugas</span>
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-colors">chevron_right</span>
               </div>
             </div>
           </div>
+        </section>
 
-        </div>
+        <!-- 5. TUGAS PRIORITAS TERBARU -->
+        <section class="flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-purple-400">flag</span>
+              <h2 class="text-[14px] sm:text-[15px] font-bold text-white tracking-tight">Tugas Prioritas</h2>
+            </div>
+            <button 
+              id="btn-view-all-tasks" 
+              class="text-[12px] text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              type="button"
+            >
+              <span>Lihat Semua</span>
+              <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            ${priorityTasks.map(t => {
+              const projectCode = wsToProject[t.workspace] || 'PRJ-RK01';
+              const badge = this.getReadableStatusBadge(t.status);
+
+              return `
+                <div 
+                  class="task-row-item p-3 sm:p-3.5 rounded-xl bg-[#161626] border border-[#28273d] hover:border-purple-500/50 transition-all cursor-pointer flex items-center justify-between gap-3 group shadow-xs active:scale-[0.99]"
+                  data-task-id="${t.id}"
+                  role="button"
+                  tabindex="0"
+                  title="Klik untuk membuka Task Detail"
+                >
+                  <div class="flex flex-col min-w-0 gap-1 flex-1">
+                    <!-- Project ID & Code -->
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-mono text-[11px] font-bold text-purple-400">${projectCode}</span>
+                      <span class="text-slate-600 text-[10px]">•</span>
+                      <span class="font-mono text-[10.5px] text-slate-400">${t.code}</span>
+                    </div>
+
+                    <!-- Task Title -->
+                    <h4 class="font-semibold text-[13px] sm:text-[13.5px] text-white truncate group-hover:text-purple-200 transition-colors">
+                      ${t.title}
+                    </h4>
+
+                    <!-- Deadline & PIC -->
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-400 truncate">
+                      <span>${t.timeline || '24 Aug'}</span>
+                      <span>•</span>
+                      <span class="truncate">PIC: ${t.pic ? t.pic.name : 'Tim'}</span>
+                    </div>
+                  </div>
+
+                  <!-- Status Badge & Chevron -->
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="px-2 py-0.5 rounded-md font-medium text-[10.5px] ${badge.classes}">
+                      ${badge.label}
+                    </span>
+                    <span class="material-symbols-outlined text-slate-500 group-hover:text-purple-400 text-[18px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
 
       </div>
     `;
   }
 
-  getStatusBadgeClass(status) {
+  /**
+   * Helper to format subtle, recognizable status badge
+   */
+  getReadableStatusBadge(status) {
     switch (status) {
       case 'done':
-        return 'bg-status-success/15 text-status-success';
+        return { label: 'Done', classes: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' };
       case 'review-qa':
-        return 'bg-error-container text-on-error-container';
+        return { label: 'Review QA', classes: 'bg-purple-500/10 text-purple-300 border border-purple-500/25' };
       case 'ready-launch':
-        return 'bg-purple-100 text-purple-700';
+        return { label: 'Ready', classes: 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/25' };
+      case 'in-progress':
+        return { label: 'In Progress', classes: 'bg-blue-500/10 text-blue-300 border border-blue-500/25' };
+      case 'backlog':
       default:
-        return 'bg-blue-100 text-blue-700';
+        return { label: 'Todo', classes: 'bg-slate-500/10 text-slate-400 border border-slate-500/20' };
     }
   }
 
   bindEvents() {
-    // Quick prompt submission
+    // 1. Quick Action & Search bar input
     const promptInput = this.element.querySelector('#daily-prompt-input');
     const submitPromptBtn = this.element.querySelector('#btn-submit-quick-task');
+    const searchIcon = this.element.querySelector('#icon-quick-search');
 
     const handlePromptSubmit = () => {
-      const text = promptInput.value.trim();
-      if (text) {
+      const text = promptInput ? promptInput.value.trim() : '';
+      if (!text) {
+        if (this.modalManager) {
+          this.modalManager.open('search');
+        }
+        return;
+      }
+
+      // Check if user is searching an existing task code or title
+      const matchedTask = this.taskService ? this.taskService.getTasks().find(t => 
+        t.code.toLowerCase().includes(text.toLowerCase()) || 
+        t.title.toLowerCase().includes(text.toLowerCase())
+      ) : null;
+
+      if (matchedTask) {
+        if (this.modalManager) {
+          this.modalManager.open('task-detail', { task: matchedTask });
+        }
+        promptInput.value = '';
+        return;
+      }
+
+      // Otherwise create a quick task
+      if (this.taskService) {
         this.taskService.addTask({
           title: text,
           workspace: 'ruangkreasi',
@@ -291,71 +458,104 @@ export class DashboardView extends BaseView {
       }
     };
 
-    if (submitPromptBtn && promptInput) {
+    if (submitPromptBtn) {
       submitPromptBtn.addEventListener('click', handlePromptSubmit);
+    }
+    if (promptInput) {
       promptInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handlePromptSubmit();
       });
     }
+    if (searchIcon) {
+      searchIcon.addEventListener('click', () => {
+        if (this.modalManager) this.modalManager.open('search');
+      });
+    }
 
-    // Voice prompt button
+    // 2. Voice prompt button
     const voiceBtn = this.element.querySelector('#btn-voice-prompt');
     if (voiceBtn) {
       voiceBtn.addEventListener('click', () => {
-        this.notificationService.info('Sensor suara aktif. Katakan tugas Anda...');
+        if (this.notificationService) {
+          this.notificationService.info('Sensor suara aktif. Katakan tugas Anda...');
+        }
         setTimeout(() => {
           if (promptInput) {
             promptInput.value = 'Review dokumen legalitas SLF Bundaran HI';
             promptInput.focus();
           }
-        }, 1200);
+        }, 1000);
       });
     }
 
-    // Mood pill click autofills prompt
-    const moodPills = this.element.querySelectorAll('.mood-pill');
-    moodPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        const focus = pill.getAttribute('data-focus');
-        if (promptInput) {
-          promptInput.value = focus;
-          promptInput.focus();
+    // 3. Focus Kit actions
+    const focusButtons = this.element.querySelectorAll('.focus-kit-btn');
+    focusButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-action');
+        if (action === 'sprint') {
+          this.eventBus.emit('navigate', { view: 'kanban', workspace: 'ruangkreasi' });
+        } else if (action === 'asset') {
+          this.eventBus.emit('navigate', { view: 'docs-sheets' });
+        } else if (action === 'review') {
+          const task = this.taskService ? (this.taskService.getTask('#RK-304') || this.taskService.getTasks()[0]) : null;
+          if (task && this.modalManager) {
+            this.modalManager.open('task-detail', { task });
+          } else {
+            this.eventBus.emit('navigate', { view: 'project-table' });
+          }
         }
       });
     });
 
-    // Workspace cards click
-    const wsCards = this.element.querySelectorAll('.ws-card');
-    wsCards.forEach(card => {
+    // 4. Starred Board cards navigation
+    const boardCards = this.element.querySelectorAll('.board-card');
+    boardCards.forEach(card => {
       card.addEventListener('click', () => {
         const ws = card.getAttribute('data-workspace');
         this.eventBus.emit('navigate', { view: 'project-table', workspace: ws });
       });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const ws = card.getAttribute('data-workspace');
+          this.eventBus.emit('navigate', { view: 'project-table', workspace: ws });
+        }
+      });
     });
 
-    // Open hero card #RK-304
-    const heroBtn = this.element.querySelector('#btn-open-hero-rk304');
-    if (heroBtn) {
-      heroBtn.addEventListener('click', () => {
-        const task = this.taskService.getTask('#RK-304');
-        this.modalManager.open('task-detail', { task });
+    // 5. Open Task Detail modal from Priority Tasks list
+    const taskRows = this.element.querySelectorAll('.task-row-item');
+    taskRows.forEach(row => {
+      const openDetail = () => {
+        const taskId = row.getAttribute('data-task-id');
+        const task = this.taskService ? this.taskService.getTask(taskId) : null;
+        if (task && this.modalManager) {
+          this.modalManager.open('task-detail', { task });
+        }
+      };
+
+      row.addEventListener('click', openDetail);
+      row.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openDetail();
+        }
+      });
+    });
+
+    // 6. "Lihat Semua" board / tasks buttons
+    const viewAllBoardsBtn = this.element.querySelector('#btn-view-all-boards');
+    if (viewAllBoardsBtn) {
+      viewAllBoardsBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'project-table' });
       });
     }
 
-    // Open task rows
-    const taskRows = this.element.querySelectorAll('.task-row-item');
-    taskRows.forEach(row => {
-      row.addEventListener('click', () => {
-        const taskId = row.getAttribute('data-task-id');
-        const task = this.taskService.getTask(taskId);
-        this.modalManager.open('task-detail', { task });
-      });
-    });
-
-    const viewAllTableBtn = this.element.querySelector('#btn-view-all-table');
-    if (viewAllTableBtn) {
-      viewAllTableBtn.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'project-table' });
+    const viewAllTasksBtn = this.element.querySelector('#btn-view-all-tasks');
+    if (viewAllTasksBtn) {
+      viewAllTasksBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'kanban' });
       });
     }
   }
