@@ -174,6 +174,17 @@ export class WorkspacesView extends BaseView {
           <div class="rounded-3xl bg-[#0e0c1b] border border-[#221c38] shadow-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
             <div class="absolute -top-16 -right-16 w-44 h-44 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
+            <!-- Search Input Bar -->
+            <div class="relative w-full flex items-center">
+              <input 
+                type="text" 
+                id="search-ws-input" 
+                placeholder="Cari Ruang Kerja..." 
+                class="w-full bg-[#090814] border border-[#28213e] focus:border-purple-500 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500/50 pr-10 transition-colors shadow-inner"
+              />
+              <span class="material-symbols-outlined absolute right-3.5 text-slate-500 text-[18px] pointer-events-none">search</span>
+            </div>
+
             <!-- Brand Header -->
             <div class="text-center space-y-3">
               <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-2xl bg-[#17132b] border border-[#2b244c] shadow-inner">
@@ -285,8 +296,8 @@ export class WorkspacesView extends BaseView {
               Ruang kerja tidak ditemukan
             </div>
 
-            <!-- Controls: Tambah Proyek Button & Search Input Bar -->
-            <div class="flex flex-col gap-2.5 pt-2">
+            <!-- Controls: Tambah Proyek Button -->
+            <div class="pt-2">
               <button
                 id="btn-add-new-project-card"
                 class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[13px] shadow-lg shadow-purple-600/25 transition-all cursor-pointer border border-purple-400/30 shrink-0 active:scale-95"
@@ -295,16 +306,6 @@ export class WorkspacesView extends BaseView {
                 <span class="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>Tambah Proyek</span>
               </button>
-
-              <div class="relative w-full flex items-center">
-                <input 
-                  type="text" 
-                  id="search-ws-input" 
-                  placeholder="Cari Ruang Kerja..." 
-                  class="w-full bg-[#090814] border border-[#28213e] focus:border-purple-500 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500/50 pr-10 transition-colors shadow-inner"
-                />
-                <span class="material-symbols-outlined absolute right-3.5 text-slate-500 text-[18px] pointer-events-none">search</span>
-              </div>
             </div>
 
           </div>
