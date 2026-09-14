@@ -672,24 +672,35 @@ export class AddMemberModal extends BaseModal {
     if (copyLinkBtn) {
       copyLinkBtn.addEventListener('click', async () => {
         const role = linkPermSelect ? linkPermSelect.value : 'Anggota';
-        const dummyInvite = this._pendingInvite || {
-          id: 'link-' + Date.now(),
-          name: 'Tamu',
-          email: '',
-          role: role === 'Anggota' ? 'Editor' : 'Viewer',
+        const inputVal = emailInput?.value.trim() || '';
+        let targetEmail = inputVal.includes('@') ? inputVal.toLowerCase() : (inputVal ? `${inputVal.toLowerCase().replace(/\s+/g, '')}@gmail.com` : '');
+        let targetName = inputVal ? (inputVal.includes('@') ? inputVal.split('@')[0] : inputVal) : 'Anggota Baru';
+
+        if (!targetEmail) {
+          targetEmail = `anggota.${Math.floor(100 + Math.random() * 900)}@gmail.com`;
+        }
+
+        const freshInvite = {
+          id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+          name: targetName,
+          email: targetEmail,
+          role: role === 'Anggota' ? 'Editor' : (role === 'Admin' ? 'Admin' : 'Viewer'),
           workspace: this.currentWorkspace,
           boardTitle: this.boardTitle,
           color: '#2563eb'
         };
 
-        const link = this.generateInviteLink(dummyInvite);
+        this._pendingInvite = freshInvite;
+        this.savePendingInvite(freshInvite);
+
+        const link = this.generateInviteLink(freshInvite);
         const badgeSpan = modalRoot.querySelector('#copy-link-badge');
 
         try {
           await navigator.clipboard.writeText(link);
           if (badgeSpan) badgeSpan.textContent = '✅ Berhasil Disalin!';
           if (this.notificationService) {
-            this.notificationService.success(`Tautan (${role === 'Anggota' ? 'Sebagai Anggota' : 'Sebagai Pengamat'}) berhasil disalin!`);
+            this.notificationService.success(`Tautan untuk ${targetEmail} (${role === 'Anggota' ? 'Sebagai Anggota' : role}) berhasil disalin!`);
           }
         } catch (err) {
           if (badgeSpan) badgeSpan.textContent = 'Tersalin!';
@@ -697,12 +708,19 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 5. Button: Delete / Reset link
+    // 5. Button: Delete / Reset link (Reset link lama dan buat token baru)
     const deleteLinkBtn = modalRoot.querySelector('#btn-delete-invite-link');
     if (deleteLinkBtn) {
       deleteLinkBtn.addEventListener('click', () => {
+        if (this._pendingInvite) {
+          this.removePendingInvite(this._pendingInvite.id, this.currentWorkspace);
+          this._pendingInvite = null;
+        }
+        if (emailInput) {
+          emailInput.value = '';
+        }
         if (this.notificationService) {
-          this.notificationService.info('Tautan dinonaktifkan & diperbarui.');
+          this.notificationService.info('🔄 Tautan lama berhasil di-reset. Tautan baru siap dibuat.');
         }
       });
     }

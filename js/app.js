@@ -63,15 +63,51 @@ class CreativeOfficeApp {
       const inviteToken = urlParams.get('accept_invite');
       if (!inviteToken) return;
 
-      const name = urlParams.get('name') || 'Anggota Baru';
-      const email = urlParams.get('email') || '';
+      const rawName = urlParams.get('name') || 'Anggota Baru';
+      const rawEmail = urlParams.get('email') || '';
       const role = urlParams.get('role') || 'Anggota';
       const workspace = urlParams.get('ws') || urlParams.get('workspace') || 'panen-kunci';
       const projectId = urlParams.get('project_id') || urlParams.get('projectId') || workspace;
       const boardTitle = urlParams.get('board_title') || workspace;
       const color = urlParams.get('color') || '#2563eb';
 
-      // 1. Map role to internal authorization role and jobdesk title
+      const eventBus = this.container.resolve('EventBus');
+      const notificationService = this.container.resolve('NotificationService');
+
+      // 1. One-time Link Validation & Reset Mechanism
+      const usedTokensKey = `used_invite_tokens_${workspace}`;
+      let usedTokens = [];
+      try {
+        usedTokens = JSON.parse(localStorage.getItem(usedTokensKey) || '[]');
+      } catch (e) {
+        usedTokens = [];
+      }
+
+      if (usedTokens.includes(inviteToken)) {
+        if (notificationService) {
+          notificationService.warning('⚠️ Tautan ini sudah pernah digunakan dan telah di-reset. Silakan minta tautan baru dari admin.');
+        }
+        const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${projectId || workspace}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+        return;
+      }
+
+      // Mark token as consumed/reset
+      usedTokens.push(inviteToken);
+      localStorage.setItem(usedTokensKey, JSON.stringify(usedTokens));
+
+      // 2. Email Validation: Wajib ada email
+      let finalEmail = rawEmail.trim().toLowerCase();
+      let finalName = rawName.trim();
+
+      if (!finalEmail) {
+        finalEmail = `${finalName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+      }
+      if (finalEmail.includes('@') && finalName === 'Anggota Baru') {
+        finalName = finalEmail.split('@')[0];
+      }
+
+      // 3. Map role to internal authorization role and jobdesk title
       let authRole = 'user';
       let jobdeskTitle = 'Creative Specialist & Kontributor';
       const lowerRole = role.toLowerCase();
@@ -86,38 +122,37 @@ class CreativeOfficeApp {
         authRole = 'qa';
         jobdeskTitle = 'Pengamat & Quality Assurance';
       } else {
-        // Anggota / Editor
         authRole = 'user';
         jobdeskTitle = 'Editor & Anggota Tim Proyek';
       }
 
-      // 2. Create User Model instance
+      // 4. Create User Model instance with valid email
       const userInstance = new User({
         id: 'usr-' + Date.now(),
-        name,
-        email: email || `${name.toLowerCase().replace(/\s+/g, '')}@sampulkreativ.id`,
+        name: finalName,
+        email: finalEmail,
         role: authRole,
         title: jobdeskTitle,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color.replace('#','')}&color=fff&bold=true`,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=${color.replace('#','')}&color=fff&bold=true`,
         workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca']
       });
 
-      // 3. Login to AuthService
+      // 5. Login to AuthService
       const authService = this.container.resolve('AuthService');
       if (authService) {
         authService.currentUser = userInstance;
         authService.isAuthenticated = true;
       }
 
-      // 4. Create new member record
+      // 6. Create new member record with confirmed email
       const newMember = {
         id: 'mem-' + Date.now(),
-        name,
-        email: userInstance.email,
+        name: finalName,
+        email: finalEmail,
         role: role === 'Anggota' ? 'Editor' : role,
         roleDescription: jobdeskTitle,
         color,
-        initials: name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
+        initials: finalName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
         workspace,
         joinedViaGmail: true,
         isOnline: true,
@@ -128,20 +163,20 @@ class CreativeOfficeApp {
       try {
         const pKey = `pending_invites_${workspace}`;
         const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
-        const filtered = pending.filter(p => p.email.toLowerCase() !== email.toLowerCase() && p.id !== inviteToken);
+        const filtered = pending.filter(p => p.email.toLowerCase() !== finalEmail && p.id !== inviteToken);
         localStorage.setItem(pKey, JSON.stringify(filtered));
       } catch(e) {}
 
       try {
         const boardKey = `board_members_${workspace}`;
         const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
-        if (!currentBoardMembers.some(m => m.email && m.email.toLowerCase() === userInstance.email.toLowerCase())) {
+        if (!currentBoardMembers.some(m => m.email && m.email.toLowerCase() === finalEmail)) {
           currentBoardMembers.push(newMember);
           localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
         }
       } catch (err) {}
 
-      // 5. Set active workspace and project
+      // 7. Set active workspace and project
       localStorage.setItem('active_workspace', workspace);
       localStorage.setItem('active_project_id', projectId);
       this.activeWorkspace = workspace;
@@ -154,14 +189,11 @@ class CreativeOfficeApp {
         }
       }
 
-      // 6. Clean up query string from URL & set hash to kanban
+      // 8. Clean up query string from URL & set hash to kanban
       const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${projectId || workspace}`;
       window.history.replaceState({}, document.title, cleanUrl);
 
-      // 7. Show QR Login Animation and route directly to Kanban for this project
-      const eventBus = this.container.resolve('EventBus');
-      const notificationService = this.container.resolve('NotificationService');
-
+      // 9. Show QR Login Animation displaying user email and route directly to Kanban
       this.showQrLoginSuccessOverlay(userInstance, boardTitle || workspace, jobdeskTitle);
 
       setTimeout(() => {
@@ -173,7 +205,7 @@ class CreativeOfficeApp {
         this.navigateTo('kanban', { projectId: projectId || workspace, workspace: workspace });
 
         if (notificationService) {
-          notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${name}, Anda langsung masuk ke papan Kanban "${boardTitle || workspace}" (${jobdeskTitle}).`);
+          notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${finalName} (${finalEmail}), Anda langsung masuk ke papan Kanban "${boardTitle || workspace}" (${jobdeskTitle}).`);
         }
       }, 1500);
 
@@ -194,7 +226,7 @@ class CreativeOfficeApp {
         
         <!-- QR Code Container with scanning animation -->
         <div class="relative w-28 h-28 bg-white p-2.5 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center my-2">
-          ${QRCodeGenerator.generate(\`http://localhost:3000/#/auth?scan=\${userInstance.name}\`, { size: 92, darkColor: '#0b1c30' })}
+          ${QRCodeGenerator.generate(\`http://localhost:3000/#/auth?scan=\${userInstance.email || userInstance.name}\`, { size: 92, darkColor: '#0b1c30' })}
           <div class="absolute inset-x-2 h-0.5 bg-rose-500 shadow-[0_0_8px_#ef4444] rounded-full animate-bounce"></div>
           <div class="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md">
             <span class="material-symbols-outlined text-[16px]">check</span>
@@ -207,6 +239,7 @@ class CreativeOfficeApp {
         </div>
 
         <h3 class="text-base font-bold text-slate-900 dark:text-white mt-1">Selamat Datang, ${userInstance.name}!</h3>
+        <p class="text-xs text-rose-600 dark:text-rose-400 font-medium">${userInstance.email}</p>
         
         <!-- User Jobdesk Badge -->
         <div class="w-full mt-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
