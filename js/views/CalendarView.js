@@ -268,7 +268,9 @@ export class CalendarView extends BaseView {
     const addEventBtn = this.element.querySelector('#btn-add-event');
     if (addEventBtn) {
       addEventBtn.addEventListener('click', () => {
-        this.modalManager.open('new-task');
+        this.modalManager.open('new-task', {
+          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
+        });
       });
     }
   }

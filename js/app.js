@@ -20,6 +20,7 @@ import { NewTaskModal } from './components/modals/NewTaskModal.js';
 import { SearchModal } from './components/modals/SearchModal.js';
 import { AddMemberModal } from './components/modals/AddMemberModal.js';
 import { CreateBoardModal } from './components/modals/CreateBoardModal.js';
+import { DeleteTaskModal } from './components/modals/DeleteTaskModal.js';
 
 import { AuthView } from './views/AuthView.js';
 import { DashboardView } from './views/DashboardView.js';
@@ -96,6 +97,7 @@ class CreativeOfficeApp {
     modalManager.register('search', new SearchModal(this.container));
     modalManager.register('add-member', new AddMemberModal(this.container));
     modalManager.register('create-board', new CreateBoardModal(this.container));
+    modalManager.register('delete-task', new DeleteTaskModal(this.container));
   }
 
   initShell() {
@@ -118,8 +120,13 @@ class CreativeOfficeApp {
     if (workspaceBarHost) this.workspaceTabBar.mount(workspaceBarHost);
 
     // Listen to global navigation events
-    eventBus.on('navigate', ({ view, workspace, board, projectId }) => {
-      this.navigateTo(view, { workspace, board, projectId });
+    eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
+      if (workspace) {
+        this.activeWorkspace = workspace;
+        localStorage.setItem('active_workspace', workspace);
+        eventBus.emit('workspace:selected', { workspace });
+      }
+      this.navigateTo(view, { workspace, board, projectId, newTaskId });
     });
 
     // Listen to workspace selection events
@@ -247,6 +254,9 @@ class CreativeOfficeApp {
         } else {
           const wsKanban = params.workspace || this.activeWorkspace;
           if (wsKanban) this.currentView.setWorkspace(wsKanban);
+        }
+        if (params.newTaskId) {
+          this.currentView.highlightTaskId = params.newTaskId;
         }
         break;
       case 'docs-sheets':

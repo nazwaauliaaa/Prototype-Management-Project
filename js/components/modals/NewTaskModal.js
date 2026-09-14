@@ -48,7 +48,9 @@ export class NewTaskModal extends BaseModal {
   }
 
   render(data = {}) {
-    const activeWs = data?.workspace || 'ruangkreasi';
+    this._modalData = data || {};
+    const activeWs = data?.workspace || localStorage.getItem('active_workspace') || 'ruangkreasi';
+    const activeStatus = data?.status || 'in-progress';
     const workspaces = this.getWorkspacesList();
     const members = this.getRegisteredMembers();
 
@@ -175,10 +177,11 @@ export class NewTaskModal extends BaseModal {
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Status Awal</label>
               <select id="new-task-status" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
-                <option value="in-progress" selected>In Progress</option>
-                <option value="backlog">Daftar Pekerjaan</option>
-                <option value="review-qa">Review QA</option>
-                <option value="ready-launch">Siap Launching</option>
+                <option value="backlog" ${activeStatus === 'backlog' ? 'selected' : ''}>Daftar Pekerjaan</option>
+                <option value="in-progress" ${activeStatus === 'in-progress' ? 'selected' : ''}>Sedang Berjalan</option>
+                <option value="review-qa" ${activeStatus === 'review-qa' ? 'selected' : ''}>Review QA Lapangan</option>
+                <option value="ready-launch" ${activeStatus === 'ready-launch' ? 'selected' : ''}>Siap Launching</option>
+                <option value="done" ${activeStatus === 'done' ? 'selected' : ''}>Selesai</option>
               </select>
             </div>
           </div>
@@ -334,6 +337,7 @@ export class NewTaskModal extends BaseModal {
         const createdTask = this.taskService.addTask({
           title,
           workspace,
+          projectId: this._modalData?.projectId || null,
           priority,
           hours,
           status,
@@ -356,7 +360,7 @@ export class NewTaskModal extends BaseModal {
               pillar: workspace,
               date: startDate,
               time: '09:00 - 17:00 WIB',
-              pic: 'Sari Rahmawati',
+              pic: picName,
               status,
               badge: `${formatDayMonth(endDate)} Deadline`,
               taskRef: createdTask.code
@@ -366,7 +370,19 @@ export class NewTaskModal extends BaseModal {
           console.warn('Calendar sync notice:', calErr);
         }
 
+        // Simpan workspace aktif
+        localStorage.setItem('active_workspace', workspace);
+
+        // Tutup modal
         this.modalManager.close(this.modalId);
+
+        // Langsung arahkan & buka di papan Kanban dengan highlight kartu baru
+        this.eventBus.emit('navigate', {
+          view: 'kanban',
+          workspace,
+          projectId: this._modalData?.projectId || null,
+          newTaskId: createdTask.id
+        });
       });
     }
   }

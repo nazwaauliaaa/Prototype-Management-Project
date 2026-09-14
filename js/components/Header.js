@@ -34,16 +34,6 @@ export class Header {
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
         <div class="w-full h-topbar-height px-3 sm:px-5 flex items-center justify-between gap-3">
 
-          <!-- Hamburger Menu (mobile only) -->
-          <button
-            id="btn-hamburger-menu"
-            aria-label="Buka menu navigasi"
-            class="md:hidden w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors flex-shrink-0"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[22px]">menu</span>
-          </button>
-
           <!-- Logo & Branding -->
           <div class="flex items-center gap-spacing-md">
             <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
@@ -77,6 +67,17 @@ export class Header {
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Create</span>
             </button>
+
+            <!-- Delete Task Button in rose -->
+            <button
+              id="btn-header-delete-task"
+              class="h-8 px-2.5 sm:px-3 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 hover:border-rose-300 font-semibold text-[12.5px] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0 shadow-2xs"
+              title="Hapus deliverable / tugas dari sistem"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px] text-rose-600">delete</span>
+              <span>Hapus Tugas</span>
+            </button>
           </div>
 
           <!-- Right: Mobile Search/Create & Notification & Profile -->
@@ -91,6 +92,15 @@ export class Header {
               >
                 <span class="material-symbols-outlined text-[15px]">add</span>
                 <span>Create</span>
+              </button>
+              <button
+                id="btn-mobile-delete-task"
+                aria-label="Hapus Tugas"
+                class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                type="button"
+                title="Hapus Tugas"
+              >
+                <span class="material-symbols-outlined text-[18px]">delete</span>
               </button>
               <button
                 id="btn-mobile-search"
@@ -191,13 +201,6 @@ export class Header {
       });
     }
 
-    const hamburgerBtn = this.element.querySelector('#btn-hamburger-menu');
-    if (hamburgerBtn) {
-      hamburgerBtn.addEventListener('click', () => {
-        this.eventBus.emit('sidebar:toggle');
-      });
-    }
-
     const mobileSearchBtn = this.element.querySelector('#btn-mobile-search');
     if (mobileSearchBtn) {
       mobileSearchBtn.addEventListener('click', () => {
@@ -212,6 +215,15 @@ export class Header {
       });
     }
 
+    const deleteTaskBtn = this.element.querySelector('#btn-header-delete-task');
+    if (deleteTaskBtn) {
+      deleteTaskBtn.addEventListener('click', () => {
+        this.modalManager.open('delete-task', {
+          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
+        });
+      });
+    }
+
     const mobileCreateBoardBtn = this.element.querySelector('#btn-mobile-create-board');
     if (mobileCreateBoardBtn) {
       mobileCreateBoardBtn.addEventListener('click', () => {
@@ -219,10 +231,21 @@ export class Header {
       });
     }
 
+    const mobileDeleteTaskBtn = this.element.querySelector('#btn-mobile-delete-task');
+    if (mobileDeleteTaskBtn) {
+      mobileDeleteTaskBtn.addEventListener('click', () => {
+        this.modalManager.open('delete-task', {
+          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
+        });
+      });
+    }
+
     const newTaskBtn = this.element.querySelector('#btn-header-new-task');
     if (newTaskBtn) {
       newTaskBtn.addEventListener('click', () => {
-        this.modalManager.open('new-task');
+        this.modalManager.open('new-task', {
+          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
+        });
       });
     }
 
