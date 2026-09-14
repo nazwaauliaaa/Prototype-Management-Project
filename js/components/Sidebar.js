@@ -37,26 +37,7 @@ export class Sidebar {
   }
 
   render() {
-    return `
-      <!-- Sidebar Panel -->
-      <aside class="fixed left-0 top-0 bottom-0 w-sidebar-width bg-surface-container-lowest pt-topbar-height flex flex-col z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-border">
-        <div class="flex-1"></div>
-
-        <!-- Cloud Sync Footer -->
-        <div class="p-3 bg-surface-container-low m-2 rounded-xl flex flex-col gap-1 border border-surface-border/50">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-status-success text-[16px]">cloud_done</span>
-              <span class="font-caption-meta text-[11px] text-on-surface font-semibold">Cloud Sync Aktif</span>
-            </div>
-            <span class="w-2 h-2 rounded-full bg-status-success"></span>
-          </div>
-          <p class="font-badge-micro text-[10px] text-text-secondary leading-tight">
-            Tersinkronisasi otomatis dengan server Sampulkreativ.
-          </p>
-        </div>
-      </aside>
-    `;
+    return '';
   }
 
   renderToDOM() {

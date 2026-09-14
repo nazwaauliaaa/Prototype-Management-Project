@@ -2,21 +2,91 @@ import { BaseView } from '../core/BaseView.js';
 
 /**
  * GanttTimelineView - Single Responsibility Principle (SRP)
- * Renders master launch roadmap and interactive Gantt chart timeline for RuangKreasi Q3.
+ * Renders the Trello-style dark floating Timeline & Gantt View over purple wallpaper matching user reference screenshot.
  */
 export class GanttTimelineView extends BaseView {
   constructor(container) {
     super(container);
     this.taskService = container.resolve('TaskService');
+    this.projectService = container.resolve('ProjectService');
     this.modalManager = container.resolve('ModalManager');
+    this.notificationService = container.resolve('NotificationService');
+
+    this.projectId = null;
+    this.project = null;
+    this.currentWorkspace = localStorage.getItem('active_workspace') || 'ruangkreasi';
+    this.activeFilter = 'all'; // 'all' | 'critical' | 'done' | 'in-progress'
+  }
+
+  setWorkspace(workspace) {
+    this.currentWorkspace = workspace || 'ruangkreasi';
+    if (this.projectService && !this.projectId) {
+      const projects = this.projectService.getProjectsByWorkspace(this.currentWorkspace);
+      if (projects.length > 0) {
+        this.project = projects[0];
+        this.projectId = this.project.id;
+      }
+    }
+  }
+
+  setProject(projectId) {
+    this.projectId = projectId;
+    if (this.projectService) {
+      this.project = this.projectService.getProject(projectId);
+      if (this.project) {
+        this.currentWorkspace = this.project.workspace || 'ruangkreasi';
+      }
+    }
   }
 
   render() {
-    const tasks = this.taskService.getTasks('ruangkreasi');
+    if (!this.project && this.projectService) {
+      if (this.projectId) {
+        this.project = this.projectService.getProject(this.projectId);
+      } else {
+        const all = this.projectService.getAllProjects();
+        if (all.length > 0) {
+          this.project = all[0];
+          this.projectId = this.project.id;
+        }
+      }
+    }
 
-    const calculateGanttPosition = (task) => {
-      let startDay = 20;
-      let endDay = 23;
+    const boardTitle = this.project ? this.project.name : 'My Trello Board';
+    const theme = this.project?.theme || {
+      type: 'gradient',
+      value: 'linear-gradient(135deg, #1e1b4b 0%, #3b0764 45%, #581c87 100%)',
+      name: 'Purple Dusk'
+    };
+
+    let bgStyle = '';
+    if (theme.type === 'image') {
+      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat; min-height: 100%;`;
+    } else if (theme.type === 'gradient') {
+      bgStyle = `background: ${theme.value}; min-height: 100%;`;
+    } else {
+      bgStyle = `background: linear-gradient(135deg, #1e1b4b 0%, #3b0764 45%, #581c87 100%); min-height: 100%;`;
+    }
+
+    // Retrieve tasks
+    let tasks = this.taskService ? this.taskService.getTasks(this.currentWorkspace) : [];
+    if (tasks.length === 0 && this.taskService) {
+      tasks = this.taskService.getTasks();
+    }
+
+    // Filter tasks if filter is active
+    let filteredTasks = tasks;
+    if (this.activeFilter === 'critical') {
+      filteredTasks = tasks.filter(t => t.priority === 'Critical');
+    } else if (this.activeFilter === 'done') {
+      filteredTasks = tasks.filter(t => t.status === 'done');
+    } else if (this.activeFilter === 'in-progress') {
+      filteredTasks = tasks.filter(t => t.status === 'in-progress' || t.status === 'review-qa');
+    }
+
+    const calculateGanttPosition = (task, index) => {
+      let startDay = 15;
+      let endDay = 20;
 
       if (task.startDate && task.endDate) {
         const s = parseInt(task.startDate.split('-')[2], 10);
@@ -30,142 +100,307 @@ export class GanttTimelineView extends BaseView {
           endDay = parseInt(matches[1], 10);
         } else if (matches && matches.length === 1) {
           startDay = parseInt(matches[0], 10);
-          endDay = Math.min(25, startDay + 1);
+          endDay = Math.min(25, startDay + 2);
         }
+      } else {
+        startDay = 14 + (index % 5);
+        endDay = startDay + 2 + (index % 3);
       }
 
-      // Clamp to 19 - 25 August
-      startDay = Math.max(19, Math.min(25, startDay));
+      // Clamp to 14 - 25
+      startDay = Math.max(14, Math.min(25, startDay));
       endDay = Math.max(startDay, Math.min(25, endDay));
 
-      const leftPercent = ((startDay - 19) / 7) * 100;
+      const leftPercent = ((startDay - 14) / 11) * 100;
       const spanDays = endDay - startDay + 1;
-      const widthPercent = Math.min(100 - leftPercent, (spanDays / 7) * 100);
+      const widthPercent = Math.max(12, Math.min(100 - leftPercent, (spanDays / 11) * 100));
 
       return { leftPercent, widthPercent, startDay, endDay };
     };
 
     const getGanttBarStyle = (task) => {
-      if (task.code === '#RK-304') {
-        return 'bg-gradient-to-r from-primary-container to-tertiary text-white shadow-sm animate-pulse';
+      if (task.priority === 'Critical') {
+        return 'bg-gradient-to-r from-rose-600 to-red-500 text-white shadow-md border border-rose-400/40';
       }
-      if (task.code === '#RK-310') {
-        return 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-bold shadow-md';
+      if (task.status === 'done') {
+        return 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-sm border border-emerald-400/40';
       }
-      switch (task.status) {
-        case 'done':
-          return 'bg-emerald-500 text-white shadow-xs';
-        case 'review-qa':
-          return 'bg-rose-500 text-white shadow-xs';
-        case 'ready-launch':
-          return 'bg-purple-600 text-white shadow-xs';
-        case 'in-progress':
-          return 'bg-blue-500 text-white shadow-xs';
-        default:
-          return 'bg-slate-400 text-white shadow-xs';
+      if (task.status === 'review-qa') {
+        return 'bg-gradient-to-r from-amber-600 to-orange-500 text-white shadow-sm border border-amber-400/40';
       }
+      if (task.status === 'ready-launch') {
+        return 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md border border-purple-400/40';
+      }
+      return 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-sm border border-blue-400/40';
     };
 
     return `
-      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
+      <!-- Main Canvas Container with Theme Background -->
+      <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
         
-        <!-- Header -->
-        <div class="flex flex-col gap-2 mb-4">
-          <div class="flex items-center gap-2 text-[12px] text-text-muted">
-            <span class="hover:text-primary cursor-pointer transition-colors" id="btn-crumb-gantt">Workspaces</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-text-primary font-medium">RuangKreasi</span>
-            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-primary font-semibold">Timeline & Gantt Roadmap Q3</span>
+        <!-- Board Top Header Bar (Trello Toolbar) -->
+        <div class="w-full px-4 sm:px-6 py-2.5 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-3 text-white z-30 relative">
+          
+          <!-- Left: Board Title + View Switcher Dropdown Button -->
+          <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+            <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate">
+              ${boardTitle}
+            </h1>
+
+            <!-- View Switcher Dropdown Button [Icon v] -->
+            <button
+              id="btn-board-view-switch"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10"
+              title="Tampilan Papan (Timeline)"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[17px]">timeline</span>
+              <span class="material-symbols-outlined text-[15px]">expand_more</span>
+            </button>
           </div>
 
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 class="font-headline-lg text-[20px] text-on-surface font-bold tracking-tight">
-                Timeline & Gantt Chart Peluncuran RuangKreasi
-              </h1>
-              <p class="font-caption-meta text-[11px] text-text-secondary">
-                Pelacakan milestone, dependensi deliverable antar pilar, dan simulasi penayangan serentak 14 titik Jabodetabek.
-              </p>
-            </div>
+          <!-- Right: Filter & More Tools -->
+          <div class="flex items-center gap-1 sm:gap-2">
+            <button
+              id="btn-board-filter"
+              class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+              title="Filter Timeline"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[20px]">filter_list</span>
+            </button>
 
-            <!-- Milestone Progress Pill -->
-            <div class="flex items-center gap-4 bg-surface-container-lowest px-4 py-2 rounded-xl shadow-sm border border-surface-border">
-              <div class="flex flex-col">
-                <span class="font-badge-micro text-[10px] text-text-muted uppercase">TARGET GRAND LAUNCH</span>
-                <span class="font-body-medium text-[13px] text-primary font-bold">25 Agustus 2024 (H-5)</span>
-              </div>
-              <div class="w-px h-6 bg-surface-border"></div>
-              <div class="flex flex-col">
-                <span class="font-badge-micro text-[10px] text-text-muted uppercase">KESIAPAN GLOBAL</span>
-                <span class="font-body-medium text-[13px] text-status-success font-bold">78% On-Track</span>
-              </div>
-            </div>
+            <button
+              id="btn-board-more-menu"
+              class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+              title="Menu Pengaturan"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[22px]">more_horiz</span>
+            </button>
           </div>
         </div>
 
-        <!-- Gantt Visual Board Container with Mobile Horizontal Scroll -->
-        <div class="w-full bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-border overflow-x-auto flex flex-col">
-          <div class="min-w-[760px] flex flex-col">
+        <!-- Central Floating Dark Modal/Panel Card (Matching Screenshot Style) -->
+        <div class="flex-1 w-full max-w-5xl mx-auto p-3 sm:p-5 flex flex-col pb-28">
+          <div class="flex-1 w-full bg-[#18191c]/95 dark:bg-[#18191c]/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
-            <!-- Timeline Header Days Scale -->
-            <div class="grid grid-cols-12 bg-surface-container-low border-b border-surface-border text-center font-mono text-[11px] py-3 text-text-secondary font-semibold">
-              <div class="col-span-4 text-left px-4 font-sans font-bold text-text-primary">Tiket Deliverable / Milestone</div>
-              <div class="col-span-1 border-l border-surface-border/50 gantt-date-btn cursor-pointer hover:bg-surface-container transition-colors" data-date="19">19 Ags<br/><span class="text-[9px] text-text-muted">Sen</span></div>
-              <div class="col-span-1 border-l border-surface-border/50 bg-primary/10 text-primary font-bold gantt-date-btn cursor-pointer hover:bg-primary/20 transition-colors" data-date="20">20 Ags<br/><span class="text-[9px]">HARI INI</span></div>
-              <div class="col-span-1 border-l border-surface-border/50 gantt-date-btn cursor-pointer hover:bg-surface-container transition-colors" data-date="21">21 Ags<br/><span class="text-[9px] text-text-muted">Rab</span></div>
-              <div class="col-span-1 border-l border-surface-border/50 gantt-date-btn cursor-pointer hover:bg-surface-container transition-colors" data-date="22">22 Ags<br/><span class="text-[9px] text-text-muted">Kam</span></div>
-              <div class="col-span-1 border-l border-surface-border/50 gantt-date-btn cursor-pointer hover:bg-surface-container transition-colors" data-date="23">23 Ags<br/><span class="text-[9px] text-text-muted">Jum</span></div>
-              <div class="col-span-1 border-l border-surface-border/50 gantt-date-btn cursor-pointer hover:bg-surface-container transition-colors" data-date="24">24 Ags<br/><span class="text-[9px] text-text-muted">Sab</span></div>
-              <div class="col-span-2 border-l border-surface-border/50 bg-purple-100 text-purple-900 font-bold gantt-date-btn cursor-pointer hover:bg-purple-200 transition-colors" data-date="25">25 Ags<br/><span class="text-[9px]">LAUNCH</span></div>
+            <!-- Top Controls inside card -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10 text-white">
+              <!-- Filter Pills -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button class="gantt-filter-btn px-3 py-1 rounded-xl text-[11.5px] font-semibold transition-all cursor-pointer ${this.activeFilter === 'all' ? 'bg-[#0c66e4] text-white shadow-xs' : 'bg-white/10 text-slate-300 hover:text-white hover:bg-white/15'}" data-filter="all">
+                  Semua
+                </button>
+                <button class="gantt-filter-btn px-3 py-1 rounded-xl text-[11.5px] font-semibold transition-all cursor-pointer ${this.activeFilter === 'in-progress' ? 'bg-[#0c66e4] text-white shadow-xs' : 'bg-white/10 text-slate-300 hover:text-white hover:bg-white/15'}" data-filter="in-progress">
+                  Berjalan
+                </button>
+                <button class="gantt-filter-btn px-3 py-1 rounded-xl text-[11.5px] font-semibold transition-all cursor-pointer ${this.activeFilter === 'critical' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white/10 text-slate-300 hover:text-white hover:bg-white/15'}" data-filter="critical">
+                  Kritis
+                </button>
+                <button class="gantt-filter-btn px-3 py-1 rounded-xl text-[11.5px] font-semibold transition-all cursor-pointer ${this.activeFilter === 'done' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white/10 text-slate-300 hover:text-white hover:bg-white/15'}" data-filter="done">
+                  Selesai
+                </button>
+              </div>
+
+              <!-- Close Button (Returns to Kanban) -->
+              <div class="flex items-center gap-2">
+                <button
+                  id="btn-close-gantt-view"
+                  class="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer active:scale-95"
+                  title="Kembali ke Papan Kanban"
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Dynamic Gantt Rows Stream -->
-            <div class="divide-y divide-surface-border font-sans text-[12px]">
-              ${tasks.map(task => {
-                const pos = calculateGanttPosition(task);
-                const barClass = getGanttBarStyle(task);
-                return `
-                  <div 
-                    class="gantt-task-row grid grid-cols-12 items-center py-3.5 px-4 hover:bg-surface-container-low/60 transition-colors cursor-pointer"
-                    data-task-id="${task.id}"
-                  >
-                    <div class="col-span-4 flex items-center gap-2 pr-4 min-w-0">
-                      <span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] font-bold text-primary shrink-0">${task.code}</span>
-                      <span class="font-medium text-text-primary truncate" title="${task.title}">${task.title}</span>
-                    </div>
-                    <div class="col-span-8 relative flex items-center h-8">
-                      <div 
-                        class="absolute py-1 px-2.5 rounded-lg flex items-center justify-between text-[10px] font-semibold truncate transition-all hover:brightness-105 ${barClass}"
-                        style="left: ${pos.leftPercent}%; width: ${pos.widthPercent}%;"
-                      >
-                        <span class="truncate">${task.timeline || `${pos.startDay} - ${pos.endDay} Ags`}</span>
-                        <span class="material-symbols-outlined text-[12px] shrink-0 ml-1">
-                          ${task.status === 'done' ? 'check' : task.status === 'review-qa' ? 'verified' : 'arrow_forward'}
-                        </span>
-                      </div>
-                    </div>
+            <!-- Gantt Chart Area with Horizontal Scroll for Mobile -->
+            <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] pr-1 select-none">
+              <div class="min-w-[700px] flex flex-col">
+                
+                <!-- Table / Gantt Scale Header matching screenshot column styling -->
+                <div class="grid grid-cols-12 py-2 px-3 border-b border-white/10 text-[11.5px] font-bold text-[#9fadbc] uppercase tracking-wider">
+                  <div class="col-span-5 text-left flex items-center gap-1">
+                    <span>Card</span>
                   </div>
-                `;
-              }).join('')}
+                  <div class="col-span-7 grid grid-cols-6 text-center">
+                    <span class="border-l border-white/5">14 Sep</span>
+                    <span class="border-l border-white/5 text-blue-400 font-bold bg-blue-500/10 rounded">15 Sep</span>
+                    <span class="border-l border-white/5">18 Sep</span>
+                    <span class="border-l border-white/5">20 Sep</span>
+                    <span class="border-l border-white/5">22 Sep</span>
+                    <span class="border-l border-white/5 text-purple-300">25 Sep</span>
+                  </div>
+                </div>
+
+                <!-- Gantt Rows Stream -->
+                <div class="divide-y divide-white/5">
+                  ${filteredTasks.map((task, index) => {
+                    const pos = calculateGanttPosition(task, index);
+                    const barClass = getGanttBarStyle(task);
+                    const listName = task.listName || (task.status === 'done' ? 'Done' : task.status === 'in-progress' ? 'Doing' : 'Trello Resources');
+
+                    return `
+                      <div 
+                        class="gantt-task-row grid grid-cols-12 items-center py-3 px-3 hover:bg-white/5 transition-colors cursor-pointer rounded-xl group"
+                        data-task-id="${task.id}"
+                      >
+                        <!-- Left Card Info -->
+                        <div class="col-span-5 flex items-center gap-2.5 pr-3 min-w-0">
+                          <span class="material-symbols-outlined text-slate-500 group-hover:text-slate-300 text-[16px] shrink-0">drag_indicator</span>
+                          <div class="min-w-0">
+                            <div class="text-[13px] font-medium text-white group-hover:text-blue-400 transition-colors truncate" title="${task.title}">
+                              ${task.title}
+                            </div>
+                            <div class="flex items-center gap-2 text-[11px] text-[#579dff] mt-0.5">
+                              <span>${listName}</span>
+                              <span class="text-slate-500">•</span>
+                              <span class="text-slate-400 text-[10px]">${task.code || '#RK-' + (index + 101)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Right Gantt Bar Lane -->
+                        <div class="col-span-7 relative flex items-center h-9 px-1">
+                          <div 
+                            class="absolute py-1 px-2.5 rounded-lg flex items-center justify-between text-[10.5px] font-semibold truncate transition-all hover:brightness-110 active:scale-98 ${barClass}"
+                            style="left: ${pos.leftPercent}%; width: ${pos.widthPercent}%;"
+                          >
+                            <span class="truncate">${task.timeline || `${pos.startDay} - ${pos.endDay} Sep`}</span>
+                            <span class="material-symbols-outlined text-[13px] shrink-0 ml-1">
+                              ${task.status === 'done' ? 'check' : 'schedule'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+
+              </div>
             </div>
 
-            <!-- Gantt Footer -->
-            <div class="p-4 bg-surface-container-low border-t border-surface-border flex flex-wrap items-center justify-between gap-4 text-[11px] text-text-secondary">
-              <div class="flex flex-wrap items-center gap-4">
+            <!-- Bottom Action: + Add button (Matching Reference Screenshot) -->
+            <div class="pt-3 border-t border-white/10 flex items-center justify-between">
+              <button
+                id="btn-add-gantt-task"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[12px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[17px]">add</span>
+                <span>Add</span>
+              </button>
+
+              <div class="flex items-center gap-3 text-[11px] text-[#9fadbc]">
                 <span class="flex items-center gap-1.5">
-                  <span class="w-3 h-3 rounded bg-emerald-500"></span> Selesai
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Selesai
                 </span>
                 <span class="flex items-center gap-1.5">
-                  <span class="w-3 h-3 rounded bg-primary-container"></span> Sedang Berjalan
+                  <span class="w-2 h-2 rounded-full bg-blue-400"></span> Berjalan
                 </span>
                 <span class="flex items-center gap-1.5">
-                  <span class="w-3 h-3 rounded bg-purple-600"></span> Milestone Kunci
+                  <span class="w-2 h-2 rounded-full bg-rose-400"></span> Kritis
                 </span>
               </div>
-              <span>Sinkronisasi otomatis dengan Jadwal Global &amp; Timeline</span>
             </div>
 
+          </div>
+        </div>
+
+        <!-- Floating Bottom Dock matching screenshot -->
+        <nav
+          id="kanban-bottom-dock"
+          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#1e2025]/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-2 sm:gap-3 transition-all text-white"
+        >
+          <!-- 1. Inbox Button -->
+          <button
+            id="btn-dock-inbox"
+            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="Inbox"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[19px]">inbox</span>
+          </button>
+
+          <!-- 2. Calendar Button -->
+          <button
+            id="btn-dock-calendar"
+            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="Kalender"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[19px]">calendar_month</span>
+          </button>
+
+          <!-- 3. Board / Kanban Button -->
+          <button
+            id="btn-dock-board"
+            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="Papan Kanban"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[19px]">view_week</span>
+          </button>
+
+          <!-- 4. Active Timeline Pill with Blue Underline Indicator -->
+          <button
+            id="btn-dock-views-switch"
+            class="flex items-center justify-center px-4 py-1.5 rounded-xl bg-blue-950/70 border border-blue-800/80 text-blue-400 font-bold relative transition-all shadow-xs cursor-pointer active:scale-95"
+            title="Timeline (Aktif)"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[19px]">timeline</span>
+            <span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>
+          </button>
+        </nav>
+
+        <!-- Views Switcher Popover -->
+        <div
+          id="popup-board-view-switch"
+          class="hidden absolute top-14 left-4 sm:left-48 z-50 w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-3.5 text-slate-800 dark:text-white flex flex-col gap-2.5 transition-all animate-in fade-in zoom-in duration-150"
+        >
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+            <h4 class="font-bold text-[13px] text-slate-900 dark:text-white">Tampilan Projek</h4>
+            <button class="btn-close-modal w-6 h-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer" type="button" title="Tutup">
+              <span class="material-symbols-outlined text-[16px] pointer-events-none">close</span>
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <!-- 1. Papan (Kanban) -->
+            <button id="btn-switch-view-kanban" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">view_week</span>
+                <span>Papan (Kanban)</span>
+              </div>
+            </button>
+
+            <!-- 2. Tabel (Table View) -->
+            <button id="btn-switch-view-table" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">table_chart</span>
+                <span>Tabel (Table)</span>
+              </div>
+            </button>
+
+            <!-- 3. Kalender (Calendar View) -->
+            <button id="btn-switch-view-calendar" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
+                <span>Kalender (Calendar)</span>
+              </div>
+            </button>
+
+            <!-- 4. Timeline (Gantt) - Active -->
+            <button class="w-full p-2 rounded-xl text-left flex items-center justify-between bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-800/80 text-[#0c66e4] dark:text-blue-300 font-bold text-[12.5px] cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px]">timeline</span>
+                <span>Timeline (Gantt)</span>
+              </div>
+              <span class="material-symbols-outlined text-[17px]">check</span>
+            </button>
           </div>
         </div>
 
@@ -174,29 +409,135 @@ export class GanttTimelineView extends BaseView {
   }
 
   bindEvents() {
-    const taskRows = this.element.querySelectorAll('.gantt-task-row');
-    taskRows.forEach(row => {
+    // 1. Close timeline view -> back to Kanban
+    const closeBtn = this.element.querySelector('#btn-close-gantt-view');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', {
+          view: 'kanban',
+          projectId: this.projectId,
+          workspace: this.currentWorkspace
+        });
+      });
+    }
+
+    // 2. Filter Pills
+    const filterBtns = this.element.querySelectorAll('.gantt-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.activeFilter = btn.getAttribute('data-filter');
+        this.mount(this.element);
+      });
+    });
+
+    // 3. Task Rows click -> open task detail modal
+    const rows = this.element.querySelectorAll('.gantt-task-row');
+    rows.forEach(row => {
       row.addEventListener('click', () => {
         const taskId = row.getAttribute('data-task-id');
-        const task = this.taskService.getTask(taskId);
-        if (task) {
+        const task = this.taskService ? this.taskService.getTask(taskId) : null;
+        if (task && this.modalManager) {
           this.modalManager.open('task-detail', { task });
         }
       });
     });
 
-    const crumb = this.element.querySelector('#btn-crumb-gantt');
-    if (crumb) {
-      crumb.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'dashboard' });
+    // 4. View Switcher Toggle
+    const viewSwitchBtn = this.element.querySelector('#btn-board-view-switch');
+    const dockViewsSwitchBtn = this.element.querySelector('#btn-dock-views-switch');
+    const popupViewSwitch = this.element.querySelector('#popup-board-view-switch');
+
+    const toggleViewSwitch = (e) => {
+      e.stopPropagation();
+      if (popupViewSwitch) {
+        popupViewSwitch.classList.toggle('hidden');
+      }
+    };
+
+    if (viewSwitchBtn) viewSwitchBtn.addEventListener('click', toggleViewSwitch);
+    if (dockViewsSwitchBtn) dockViewsSwitchBtn.addEventListener('click', toggleViewSwitch);
+
+    // Switch buttons
+    const kanbanBtn = this.element.querySelector('#btn-switch-view-kanban');
+    if (kanbanBtn) {
+      kanbanBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: this.projectId, workspace: this.currentWorkspace });
       });
     }
 
-    const dateBtns = this.element.querySelectorAll('.gantt-date-btn');
-    dateBtns.forEach(btn => {
+    const tableBtn = this.element.querySelector('#btn-switch-view-table');
+    if (tableBtn) {
+      tableBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'project-table', projectId: this.projectId, workspace: this.currentWorkspace });
+      });
+    }
+
+    const calBtn = this.element.querySelector('#btn-switch-view-calendar');
+    if (calBtn) {
+      calBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'calendar', projectId: this.projectId, workspace: this.currentWorkspace });
+      });
+    }
+
+    // Dock Board Button
+    const dockBoardBtn = this.element.querySelector('#btn-dock-board');
+    if (dockBoardBtn) {
+      dockBoardBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: this.projectId, workspace: this.currentWorkspace });
+      });
+    }
+
+    // Dock Calendar Button
+    const dockCalBtn = this.element.querySelector('#btn-dock-calendar');
+    if (dockCalBtn) {
+      dockCalBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'calendar', projectId: this.projectId, workspace: this.currentWorkspace });
+      });
+    }
+
+    // Dock Inbox Button
+    const dockInboxBtn = this.element.querySelector('#btn-dock-inbox');
+    if (dockInboxBtn) {
+      dockInboxBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: this.projectId, workspace: this.currentWorkspace, openInbox: true });
+      });
+    }
+
+    // Click outside closes popup
+    this.element.addEventListener('click', (e) => {
+      const isInside = e.target.closest('#popup-board-view-switch');
+      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-dock-views-switch');
+      if (!isInside && !isTrigger && popupViewSwitch) {
+        popupViewSwitch.classList.add('hidden');
+      }
+    });
+
+    const closePopupBtns = this.element.querySelectorAll('.btn-close-modal');
+    closePopupBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'calendar' });
+        if (popupViewSwitch) popupViewSwitch.classList.add('hidden');
       });
     });
+
+    // 5. Add Task Button
+    const addTaskBtn = this.element.querySelector('#btn-add-gantt-task');
+    if (addTaskBtn) {
+      addTaskBtn.addEventListener('click', () => {
+        if (this.modalManager) {
+          this.modalManager.open('new-task', {
+            workspace: this.currentWorkspace,
+            projectId: this.projectId
+          });
+        }
+      });
+    }
+
+    // 6. Header Filter & More buttons
+    const filterBtn = this.element.querySelector('#btn-board-filter');
+    if (filterBtn) {
+      filterBtn.addEventListener('click', () => {
+        if (this.notificationService) this.notificationService.info('Menampilkan filter status pada timeline.');
+      });
+    }
   }
 }

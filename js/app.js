@@ -293,7 +293,8 @@ class CreativeOfficeApp {
     }
 
     if (shellLayout) {
-      shellLayout.classList.add('md:pl-sidebar-width');
+      shellLayout.classList.remove('md:pl-sidebar-width');
+      shellLayout.classList.remove('pl-sidebar-width');
       shellLayout.style.paddingTop = 'var(--topbar-height)';
     }
 
@@ -311,8 +312,12 @@ class CreativeOfficeApp {
       case 'project-table':
       case 'tabel':
         this.currentView = new ProjectTableView(this.container);
-        const wsTable = params.workspace || this.activeWorkspace;
-        if (wsTable) this.currentView.setWorkspace(wsTable, params.board);
+        if (params.projectId) {
+          this.currentView.setProject(params.projectId);
+        } else {
+          const wsTable = params.workspace || this.activeWorkspace;
+          if (wsTable) this.currentView.setWorkspace(wsTable, params.board);
+        }
         break;
       case 'kanban':
         this.currentView = new KanbanBoardView(this.container);
@@ -336,10 +341,22 @@ class CreativeOfficeApp {
       case 'kalender':
       case 'jadwal':
         this.currentView = new CalendarView(this.container);
+        if (params.projectId) {
+          this.currentView.setProject(params.projectId);
+        } else {
+          const wsCal = params.workspace || this.activeWorkspace;
+          if (wsCal) this.currentView.setWorkspace(wsCal);
+        }
         break;
       case 'gantt':
       case 'timeline':
         this.currentView = new GanttTimelineView(this.container);
+        if (params.projectId) {
+          this.currentView.setProject(params.projectId);
+        } else {
+          const wsGantt = params.workspace || this.activeWorkspace;
+          if (wsGantt) this.currentView.setWorkspace(wsGantt);
+        }
         break;
       case 'projects':
       case 'project-list':

@@ -416,11 +416,11 @@ export class KanbanBoardView extends BaseView {
     // Background style according to theme
     let bgStyle = '';
     if (theme.type === 'image') {
-      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center/cover fixed;`;
+      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat; min-height: 100%;`;
     } else if (theme.type === 'gradient') {
-      bgStyle = `background: ${theme.value};`;
+      bgStyle = `background: ${theme.value}; min-height: 100%;`;
     } else {
-      bgStyle = `background-color: ${theme.value};`;
+      bgStyle = `background-color: ${theme.value}; min-height: 100%;`;
     }
 
     return `
@@ -534,7 +534,7 @@ export class KanbanBoardView extends BaseView {
       </div>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full min-h-[calc(100vh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
+      <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
         
         <!-- Board Top Header Bar (Trello Toolbar) -->
         <div class="w-full px-4 sm:px-6 py-2.5 bg-black/35 backdrop-blur-md border-b border-white/15 flex flex-wrap items-center justify-between gap-3 text-white z-30 relative">
@@ -1028,7 +1028,7 @@ export class KanbanBoardView extends BaseView {
           <!-- 1. Inbox Button (Kiri) -->
           <button
             id="btn-dock-inbox"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 font-bold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer active:scale-95"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 font-bold shadow-xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer active:scale-95"
             title="Inbox Tugas"
             type="button"
           >
@@ -1037,16 +1037,16 @@ export class KanbanBoardView extends BaseView {
             ${this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
           </button>
 
-          <!-- 2. Board / Kanban Button (Tengah - Active) -->
+          <!-- 2. Board / Kanban Button (Tengah) -->
           <button
             id="btn-dock-board"
-            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 relative transition-all cursor-pointer shadow-xs border border-blue-200/60 dark:border-blue-800/60 active:scale-95"
-            title="Tampilan Papan Kanban (Aktif)"
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all relative ${!this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 shadow-xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer active:scale-95"
+            title="Tampilan Papan Kanban"
             type="button"
           >
             <span class="material-symbols-outlined text-[17px]">view_week</span>
             <span>Kanban</span>
-            <span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>
+            ${!this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
           </button>
         </nav>
 
@@ -2681,6 +2681,11 @@ export class KanbanBoardView extends BaseView {
     if (dockBoardBtn) {
       dockBoardBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (this.isInboxOpen) {
+          this.isInboxOpen = false;
+          this.mount(this.element);
+          return;
+        }
         const scrollArea = this.element.querySelector('#kanban-scroll-area');
         if (scrollArea) {
           scrollArea.scrollTo({ left: 0, behavior: 'smooth' });
