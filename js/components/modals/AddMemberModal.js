@@ -224,20 +224,20 @@ export class AddMemberModal extends BaseModal {
                       </span>
                     </div>
                     <div class="bPh30IIvkhqqXa flex flex-col">
-                      <p data-testid="board-share-link-label" class="Ml9BEm63ZDv2mn text-xs text-slate-700 dark:text-slate-300 font-medium">Siapa saja yang memiliki tautan dapat bergabung sebagai pengamat</p>
+                      <p id="board-share-link-label" data-testid="board-share-link-label" class="Ml9BEm63ZDv2mn text-xs text-slate-700 dark:text-slate-300 font-medium">Siapa pun yang memiliki link tersebut dapat bergabung sebagai anggota</p>
                       <div class="ssaeEGuU5Va6Qf flex items-center gap-1.5 text-[11px] text-rose-600 dark:text-rose-400 font-medium mt-0.5">
                         <button id="btn-copy-invite-link" class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM hover:underline cursor-pointer" type="button" data-testid="board-invite-link-copy-button">Salin tautan</button>
                         <span>·</span>
-                        <button class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM hover:underline text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" type="button">Hapus tautan</button>
+                        <button id="btn-delete-invite-link" class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM hover:underline text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" type="button">Hapus tautan</button>
                       </div>
                     </div>
                   </div>
 
                   <div data-testid="board-invite-link-select-menu" class="FpfymAlOJKvXJd shrink-0">
-                    <button aria-expanded="false" aria-haspopup="true" aria-live="polite" type="button" class="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 transition-colors cursor-pointer" data-testid="board-invite-type-selector-dropdown--trigger">
-                      <span class="text-xs">Ubah izin</span>
-                      <span class="material-symbols-outlined text-[14px]">expand_more</span>
-                    </button>
+                    <select id="select-link-permission" class="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-1 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-rose-500" data-testid="board-invite-type-selector-dropdown--trigger" aria-label="Ubah izin link">
+                      <option value="Anggota" selected>Sebagai Anggota</option>
+                      <option value="Pengamat">Sebagai Pengamat</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -633,7 +633,20 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 2. Button: Open Real Gmail (mail.google.com) compose in new tab
+    // 2. Link Permission Selector & Link Label
+    const linkPermSelect = modalRoot.querySelector('#select-link-permission');
+    const linkLabel = modalRoot.querySelector('#board-share-link-label');
+    if (linkPermSelect && linkLabel) {
+      linkPermSelect.addEventListener('change', () => {
+        if (linkPermSelect.value === 'Anggota') {
+          linkLabel.textContent = 'Siapa pun yang memiliki link tersebut dapat bergabung sebagai anggota';
+        } else {
+          linkLabel.textContent = 'Siapa pun yang memiliki link tersebut dapat bergabung sebagai pengamat';
+        }
+      });
+    }
+
+    // 3. Button: Open Real Gmail (mail.google.com) compose in new tab
     const openRealGmailBtn = modalRoot.querySelector('#btn-open-real-gmail');
     if (openRealGmailBtn) {
       openRealGmailBtn.addEventListener('click', () => {
@@ -646,19 +659,29 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 3. Button: Copy Direct Auto-Accept Invite Link
+    // 4. Button: Copy Direct Auto-Accept Invite Link
     const copyLinkBtn = modalRoot.querySelector('#btn-copy-invite-link');
     if (copyLinkBtn) {
       copyLinkBtn.addEventListener('click', async () => {
-        if (!this._pendingInvite) return;
-        const link = this.generateInviteLink(this._pendingInvite);
+        const role = linkPermSelect ? linkPermSelect.value : 'Anggota';
+        const dummyInvite = this._pendingInvite || {
+          id: 'link-' + Date.now(),
+          name: 'Tamu',
+          email: '',
+          role: role === 'Anggota' ? 'Editor' : 'Viewer',
+          workspace: this.currentWorkspace,
+          boardTitle: this.boardTitle,
+          color: '#2563eb'
+        };
+
+        const link = this.generateInviteLink(dummyInvite);
         const badgeSpan = modalRoot.querySelector('#copy-link-badge');
 
         try {
           await navigator.clipboard.writeText(link);
           if (badgeSpan) badgeSpan.textContent = '✅ Berhasil Disalin!';
           if (this.notificationService) {
-            this.notificationService.success('Tautan undangan otomatis berhasil disalin!');
+            this.notificationService.success(`Tautan (${role === 'Anggota' ? 'Sebagai Anggota' : 'Sebagai Pengamat'}) berhasil disalin!`);
           }
         } catch (err) {
           if (badgeSpan) badgeSpan.textContent = 'Tersalin!';
@@ -666,7 +689,17 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 4. Button: In-App Simulation (Screen 3)
+    // 5. Button: Delete / Reset link
+    const deleteLinkBtn = modalRoot.querySelector('#btn-delete-invite-link');
+    if (deleteLinkBtn) {
+      deleteLinkBtn.addEventListener('click', () => {
+        if (this.notificationService) {
+          this.notificationService.info('Tautan dinonaktifkan & diperbarui.');
+        }
+      });
+    }
+
+    // 6. Button: In-App Simulation (Screen 3)
     const gotoRecipientGmailBtn = modalRoot.querySelector('#btn-goto-recipient-gmail');
     if (gotoRecipientGmailBtn) {
       gotoRecipientGmailBtn.addEventListener('click', () => {
