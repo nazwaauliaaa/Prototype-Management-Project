@@ -160,142 +160,137 @@ export class AddMemberModal extends BaseModal {
     const invite = this._pendingInvite || {};
 
     return `
-      <div class="relative w-full max-w-xl bg-surface-container-lowest rounded-3xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col modal-content-box animate-in fade-in zoom-in duration-200">
+      <div class="relative w-full max-w-xl bg-surface-container-lowest dark:bg-slate-900 rounded-3xl shadow-2xl border border-surface-border dark:border-slate-800 overflow-hidden my-auto flex flex-col modal-content-box animate-in fade-in zoom-in duration-200 text-slate-800 dark:text-slate-100">
         
-        <!-- ==================== SCREEN 1: FORM UNDANG VIA GMAIL ==================== -->
+        <!-- ==================== SCREEN 1: BAGIKAN PAPAN (SHARE BOARD) ==================== -->
         <div id="screen-invite-form" class="${isDirectGmail ? 'hidden' : ''} flex flex-col">
-          <!-- Header with Gmail Branding -->
-          <div class="p-4 bg-gradient-to-r from-red-50 to-rose-50 dark:from-slate-800 dark:to-slate-800/80 border-b border-rose-100 dark:border-slate-700 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-700 shadow-sm border border-rose-200 dark:border-slate-600 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[24px] text-rose-600 dark:text-rose-400">mail</span>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-[15.5px] text-slate-900 dark:text-white">Undang Rekan via Gmail</h3>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300">Gmail Only</span>
-                </div>
-                <p class="text-[11.5px] text-slate-500 dark:text-slate-400">Kirim email ke Gmail rekan & otomatis masuk ke proyek saat diterima</p>
-              </div>
-            </div>
-            <button id="btn-close-add-member" class="w-8 h-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer" type="button">
-              <span class="material-symbols-outlined text-[20px]">close</span>
-            </button>
-          </div>
-
-          <!-- Form Input -->
-          <form id="form-add-member" class="p-5 flex flex-col gap-4 text-[13px]">
-            
-            <!-- Nama Lengkap -->
-            <div>
-              <label class="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                Nama Lengkap Calon Anggota *
-              </label>
-              <input 
-                id="input-member-name" 
-                type="text"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-medium text-xs transition-all" 
-                placeholder="Contoh: Dimas Pratama, Nadia Safitri..." 
-                required
-              />
-            </div>
-
-            <!-- Email Gmail -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Alamat Gmail Penerima *
-                </label>
-                <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-0.5">
-                  <span class="material-symbols-outlined text-[12px]">verified</span>
-                  Wajib @gmail.com
+          <div class="IcTfl2a5Uq_10m p-6 flex flex-col gap-5">
+            <!-- Header Modal -->
+            <div class="cCr7QBc6YbUqjA flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h2 class="Fez15_lTRggJxV text-base font-bold text-slate-900 dark:text-white">Bagikan papan</h2>
+              <div role="status" aria-atomic="true"></div>
+              <button id="btn-close-add-member" class="RobxpJ3hE98Gle LqSvvPPsbZ2WfV w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer" data-testid="board-invite-modal-close-button" type="button" aria-label="Tutup">
+                <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
+                  <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-4 h-4">
+                    <path fill="currentColor" d="M13.53 3.53 9.06 8l4.47 4.47-1.06 1.06L8 9.06l-4.47 4.47-1.06-1.06L6.94 8 2.47 3.53l1.06-1.06L8 6.94l4.47-4.47z"></path>
+                  </svg>
                 </span>
-              </div>
-              <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-rose-500 text-[18px]">alternate_email</span>
-                <input 
-                  id="input-member-email" 
-                  type="email"
-                  class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs transition-all" 
-                  placeholder="rekan.anda@gmail.com" 
-                  value="${prefillEmail}"
-                  required
-                />
-              </div>
-              <p id="email-validation-error" class="hidden text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                <span class="material-symbols-outlined text-[13px]">error</span>
-                <span>Alamat email harus menggunakan domain @gmail.com</span>
-              </p>
-            </div>
-
-            <!-- Peran & Warna Avatar -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Peran di Proyek *
-                </label>
-                <select id="select-member-role" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs transition-all cursor-pointer font-medium">
-                  <option value="Editor" selected>Editor (Buat & Edit Kartu)</option>
-                  <option value="Lead">Lead (Koordinator & Review)</option>
-                  <option value="Viewer">Viewer (Hanya Melihat)</option>
-                  <option value="Admin">Admin (Pengelola Penuh)</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Warna Avatar
-                </label>
-                <select id="select-member-color" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs transition-all cursor-pointer font-medium">
-                  <option value="#2563eb" selected>Biru (Engineering)</option>
-                  <option value="#9333ea">Ungu (Creative Lead)</option>
-                  <option value="#10b981">Hijau (QA / Operations)</option>
-                  <option value="#d97706">Amber (Research & AI)</option>
-                  <option value="#e11d48">Rose (Brand & Design)</option>
-                  <option value="#0891b2">Cyan (DevOps)</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Tugaskan langsung ke deliverable (opsional) -->
-            <div>
-              <label class="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                Tugaskan Langsung ke Deliverable (Opsional)
-              </label>
-              <select id="select-member-assign-task" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs transition-all cursor-pointer">
-                <option value="">-- Tanpa Tugas (Hanya Masuk ke Papan) --</option>
-                ${workspaceTasks.map(t => `
-                  <option value="${t.id}">${t.code} - ${t.title.slice(0, 38)}...</option>
-                `).join('')}
-              </select>
-            </div>
-
-            <!-- Live Preview Card -->
-            <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
-              <div id="member-preview-badge" class="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                DP
-              </div>
-              <div class="flex flex-col min-w-0">
-                <span id="member-preview-name" class="text-xs font-bold text-slate-900 dark:text-white truncate">Dimas Pratama</span>
-                <span id="member-preview-role" class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Editor • rekan.anda@gmail.com</span>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
-              <button id="btn-cancel-add-member" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer" type="button">
-                Batal
-              </button>
-              <button 
-                type="submit" 
-                class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/25 active:scale-95 cursor-pointer"
-              >
-                <span class="material-symbols-outlined text-[17px]">send</span>
-                <span>Siapkan & Kirim Undangan Gmail</span>
               </button>
             </div>
 
-          </form>
+            <div class="SadtAP5JgvF0Sx flex flex-col gap-4">
+              <!-- Search & Share Container -->
+              <div class="boardInviteSearchContainer">
+                <div class="multi-select-autocomplete-container flex items-center gap-2" data-testid="member-multi-select-autocomplete">
+                  <div class="autocomplete-user-limits-container flex-1">
+                    <div class="autocomplete-input-container relative">
+                      <div class="autocomplete-selected">
+                        <input id="input-member-email" class="autocomplete-input o0x2X1pjVgxxtU w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs transition-all" type="text" placeholder="Alamat email atau nama" role="combobox" aria-label="Alamat email atau nama" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" data-testid="add-members-input" value="${prefillEmail}" style="min-width: 2px;">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="boardPermissionSelector">
+                    <div data-testid="member-type-select">
+                      <div class="relative">
+                        <select id="select-member-role" class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs transition-all cursor-pointer font-medium" data-testid="board-permission-selector-dropdown--trigger" aria-label="Bagikan papan dengan izin">
+                          <option value="Anggota" selected>Anggota</option>
+                          <option value="Admin">Admin</option>
+                          <option value="Pengamat">Pengamat</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button id="btn-submit-share" class="EnykcYH1yA60NK bqDBTa8KAMX3yi DJ1mUdUFUjmhEj px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-all shadow-sm active:scale-95 cursor-pointer" type="button" data-testid="team-invite-submit-button">Bagikan</button>
+                </div>
+                <p id="email-validation-error" class="hidden text-[11px] text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[13px]">error</span>
+                  <span>Masukkan alamat email yang valid</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="HCQ1HNtXelc9z5 flex flex-col gap-4">
+              <!-- Link Sharing Section -->
+              <div class="AgqNgq2vl3Cl7n p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div class="QoPC4_0NHi4CSp flex items-center justify-between gap-3">
+                  <div class="H_Q5rPPtw5JNhd flex items-center gap-3">
+                    <div class="QUue44UQyAa3y_ w-8 h-8 rounded-lg bg-slate-200/70 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                      <span data-testid="board-share-link-icon" aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n text-slate-600 dark:text-slate-300">
+                        <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-4 h-4">
+                          <path fill="currentColor" fill-rule="evenodd" d="M8.22 2.22a3.932 3.932 0 1 1 5.56 5.56l-2.25 2.25-1.06-1.06 2.25-2.25a2.432 2.432 0 0 0-3.44-3.44L7.03 5.53 5.97 4.47zm3.06 3.56-5.5 5.5-1.06-1.06 5.5-5.5zM2.22 8.22l2.25-2.25 1.06 1.06-2.25 2.25a2.432 2.432 0 0 0 3.44 3.44l2.25-2.25 1.06 1.06-2.25 2.25a3.932 3.932 0 1 1-5.56-5.56" clip-rule="evenodd"></path>
+                        </svg>
+                      </span>
+                    </div>
+                    <div class="bPh30IIvkhqqXa flex flex-col">
+                      <p data-testid="board-share-link-label" class="Ml9BEm63ZDv2mn text-xs text-slate-700 dark:text-slate-300 font-medium">Siapa saja yang memiliki tautan dapat bergabung sebagai pengamat</p>
+                      <div class="ssaeEGuU5Va6Qf flex items-center gap-1.5 text-[11px] text-rose-600 dark:text-rose-400 font-medium mt-0.5">
+                        <button id="btn-copy-invite-link" class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM hover:underline cursor-pointer" type="button" data-testid="board-invite-link-copy-button">Salin tautan</button>
+                        <span>·</span>
+                        <button class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM hover:underline text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" type="button">Hapus tautan</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div data-testid="board-invite-link-select-menu" class="FpfymAlOJKvXJd shrink-0">
+                    <button aria-expanded="false" aria-haspopup="true" aria-live="polite" type="button" class="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 transition-colors cursor-pointer" data-testid="board-invite-type-selector-dropdown--trigger">
+                      <span class="text-xs">Ubah izin</span>
+                      <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tabs & Members List -->
+              <div class="mPKaQevFgFe1YW flex flex-col gap-3">
+                <div class="_1e0c1txw _p12f1osq _1tkeidpf _i0dl1osq _2lx21bp4 _16jlkb7n _1c3y1txw _ftfaidpf _18i0kb7n _185bglyw flex items-center border-b border-slate-100 dark:border-slate-800 gap-4 text-xs">
+                  <div role="tablist" class="flex gap-4">
+                    <button id="boardInviteModalMembersAndRequests-0" aria-controls="boardInviteModalMembersAndRequests-0-tab" aria-posinset="1" aria-selected="true" aria-setsize="2" role="tab" tabindex="0" class="pb-2 font-bold text-slate-900 dark:text-white border-b-2 border-rose-600 flex items-center gap-1.5 cursor-pointer" type="button">
+                      <span>Anggota papan</span>
+                      <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">1</span>
+                    </button>
+                    <button id="boardInviteModalMembersAndRequests-1" aria-controls="boardInviteModalMembersAndRequests-1-tab" aria-posinset="2" aria-selected="false" aria-setsize="2" role="tab" tabindex="-1" class="pb-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer" type="button">
+                      <span>Permintaan bergabung</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div role="tabpanel" id="boardInviteModalMembersAndRequests-0-tab" aria-labelledby="boardInviteModalMembersAndRequests-0" tabindex="0">
+                  <div class="cX7DxBpgEOIOL2">
+                    <ul class="B7nkPJRc6Kdh6U flex flex-col gap-2">
+                      <li class="tNfnRxYxdIqnQH flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                        <div class="AulaCcEkdJa7N3 flex items-center gap-3" data-testid="member-item">
+                          <div class="Aoxwv99qpKH22F i1rCadx_dtKkIk w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs" title="awa14 (awa14)" data-testid="member-list-item-avatar">
+                            <span>AW</span>
+                          </div>
+                          <div class="SCS1NQH7aiuMRS flex flex-col">
+                            <div class="NIQPWvypMos65h">
+                              <span data-testid="member-list-item-full-name" class="text-xs font-bold text-slate-900 dark:text-white">awa14 (Anda)</span>
+                            </div>
+                            <div class="pHyphbJngjmhaP">
+                              <div class="c86PnW9jzpEPgX text-[11px] text-slate-500 dark:text-slate-400">
+                                <div>@awa14 • Admin ruang kerja</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div data-testid="board-permission-selector">
+                            <button aria-expanded="false" aria-haspopup="true" aria-live="polite" aria-label="Bagikan papan dengan izin: Admin" type="button" class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 transition-colors cursor-pointer" data-testid="board-permission-selector-dropdown--trigger">
+                              <span>Admin</span>
+                              <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- ==================== SCREEN 2: PILIHAN PENGIRIMAN GMAIL (SENDER VIEW) ==================== -->
@@ -582,61 +577,58 @@ export class AddMemberModal extends BaseModal {
       if (gmailHeaderTo) gmailHeaderTo.textContent = `${inv.name} <${inv.email}>`;
     };
 
-    // 1. Submit Form: Save Pending Invite, show delivery options
-    const form = modalRoot.querySelector('#form-add-member');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = nameInput?.value.trim();
-        const rawEmail = emailInput?.value.trim().toLowerCase();
-        const role = roleSelect?.value || 'Editor';
-        const color = colorSelect?.value || '#2563eb';
-        const assignedTaskId = modalRoot.querySelector('#select-member-assign-task')?.value;
+    // 1. Submit Handler: Save Pending Invite, show delivery options
+    const handleShareSubmit = () => {
+      const rawInput = emailInput?.value.trim() || '';
+      if (!rawInput) return;
 
-        if (!name || !rawEmail) return;
+      const rawEmail = rawInput.includes('@') ? rawInput.toLowerCase() : `${rawInput.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
+      const name = rawInput.includes('@') ? rawInput.split('@')[0] : rawInput;
+      const role = roleSelect?.value || 'Anggota';
+      const color = '#2563eb';
 
-        // Strict Gmail Validation: Must end with @gmail.com
-        if (!rawEmail.endsWith('@gmail.com')) {
-          emailError?.classList.remove('hidden');
-          if (this.notificationService) {
-            this.notificationService.warning('Undangan wajib dikirim ke alamat Gmail (@gmail.com).');
-          }
-          return;
-        }
+      const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DP';
+      const newInvite = {
+        id: 'inv-' + Date.now(),
+        name,
+        email: rawEmail,
+        role,
+        color,
+        initials,
+        workspace: this.currentWorkspace,
+        boardTitle: this.boardTitle,
+        sentAt: new Date().toISOString(),
+        status: 'pending'
+      };
 
-        emailError?.classList.add('hidden');
+      this._pendingInvite = newInvite;
+      this.savePendingInvite(newInvite);
 
-        const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DP';
-        const newInvite = {
-          id: 'inv-' + Date.now(),
-          name,
-          email: rawEmail,
-          role,
-          color,
-          initials,
-          assignedTaskId,
-          workspace: this.currentWorkspace,
-          boardTitle: this.boardTitle,
-          sentAt: new Date().toISOString(),
-          status: 'pending'
-        };
+      // Update Screen 2 Target Information
+      const sentTargetEmail = modalRoot.querySelector('#sent-target-email');
+      const sentTargetName = modalRoot.querySelector('#sent-target-name');
 
-        this._pendingInvite = newInvite;
-        this.savePendingInvite(newInvite);
+      if (sentTargetEmail) sentTargetEmail.textContent = rawEmail;
+      if (sentTargetName) sentTargetName.textContent = name;
 
-        // Update Screen 2 Target Information
-        const sentTargetEmail = modalRoot.querySelector('#sent-target-email');
-        const sentTargetName = modalRoot.querySelector('#sent-target-name');
+      // Switch to Screen 2: Delivery Options
+      screenInviteForm?.classList.add('hidden');
+      screenInviteSent?.classList.remove('hidden');
 
-        if (sentTargetEmail) sentTargetEmail.textContent = rawEmail;
-        if (sentTargetName) sentTargetName.textContent = name;
+      if (this.notificationService) {
+        this.notificationService.success(`Undangan untuk ${rawEmail} berhasil disiapkan.`);
+      }
+    };
 
-        // Switch to Screen 2: Delivery Options
-        screenInviteForm?.classList.add('hidden');
-        screenInviteSent?.classList.remove('hidden');
-
-        if (this.notificationService) {
-          this.notificationService.info(`Undangan untuk ${rawEmail} siap dikirimkan.`);
+    const submitShareBtn = modalRoot.querySelector('#btn-submit-share');
+    if (submitShareBtn) {
+      submitShareBtn.addEventListener('click', handleShareSubmit);
+    }
+    if (emailInput) {
+      emailInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleShareSubmit();
         }
       });
     }
