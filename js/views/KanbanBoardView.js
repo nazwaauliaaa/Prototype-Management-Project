@@ -996,11 +996,11 @@ export class KanbanBoardView extends BaseView {
                         class="list-actions-popover hidden"
                         id="lap-${col.id}"
                         role="dialog"
-                        aria-label="List actions"
+                        aria-label="Aksi daftar"
                       >
                         <div class="lap-header">
-                          <span class="lap-title">List actions</span>
-                          <button class="lap-close btn-lap-close" data-column-id="${col.id}" type="button" aria-label="Close">
+                          <span class="lap-title">Aksi daftar</span>
+                          <button class="lap-close btn-lap-close" data-column-id="${col.id}" type="button" aria-label="Tutup">
                             <span class="material-symbols-outlined" style="font-size:18px;pointer-events:none;">close</span>
                           </button>
                         </div>
@@ -1008,65 +1008,65 @@ export class KanbanBoardView extends BaseView {
                           <!-- Main actions -->
                           <button class="lap-item btn-lap-add-card" data-column-id="${col.id}" type="button">
                             <span class="material-symbols-outlined mi">add_card</span>
-                            <span>Add card</span>
+                            <span>Tambah kartu</span>
                           </button>
                           <button class="lap-item btn-lap-copy-list" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
                             <span class="material-symbols-outlined mi">content_copy</span>
-                            <span>Copy list</span>
+                            <span>Salin daftar</span>
                           </button>
                           <button class="lap-item btn-lap-move-list" data-column-id="${col.id}" type="button">
                             <span class="material-symbols-outlined mi">swap_horiz</span>
-                            <span>Move list</span>
+                            <span>Pindahkan daftar</span>
                           </button>
                           <button class="lap-item btn-lap-move-all-cards" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
                             <span class="material-symbols-outlined mi">drive_file_move</span>
-                            <span>Move all cards in this list</span>
+                            <span>Pindahkan semua kartu di daftar ini</span>
                           </button>
                           <button class="lap-item btn-lap-watch" data-column-id="${col.id}" type="button">
                             <span class="material-symbols-outlined mi">visibility</span>
-                            <span>Watch</span>
+                            <span>Pantau</span>
                           </button>
 
                           <div class="lap-divider"></div>
 
                           <!-- Change list color -->
-                          <div class="lap-section-title">Change list color</div>
+                          <div class="lap-section-title">Ubah warna daftar</div>
                           <div class="lap-color-grid">
-                            <button class="lap-color-tile" style="background:#4ade80;" data-color="#4ade80" data-column-id="${col.id}" title="Green" type="button"></button>
-                            <button class="lap-color-tile" style="background:#facc15;" data-color="#facc15" data-column-id="${col.id}" title="Yellow" type="button"></button>
-                            <button class="lap-color-tile" style="background:#fb923c;" data-color="#fb923c" data-column-id="${col.id}" title="Orange" type="button"></button>
-                            <button class="lap-color-tile" style="background:#f87171;" data-color="#f87171" data-column-id="${col.id}" title="Red" type="button"></button>
-                            <button class="lap-color-tile" style="background:#c084fc;" data-color="#c084fc" data-column-id="${col.id}" title="Purple" type="button"></button>
-                            <button class="lap-color-tile" style="background:#60a5fa;" data-color="#60a5fa" data-column-id="${col.id}" title="Blue" type="button"></button>
+                            <button class="lap-color-tile" style="background:#4ade80;" data-color="#4ade80" data-column-id="${col.id}" title="Hijau" type="button"></button>
+                            <button class="lap-color-tile" style="background:#facc15;" data-color="#facc15" data-column-id="${col.id}" title="Kuning" type="button"></button>
+                            <button class="lap-color-tile" style="background:#fb923c;" data-color="#fb923c" data-column-id="${col.id}" title="Oranye" type="button"></button>
+                            <button class="lap-color-tile" style="background:#f87171;" data-color="#f87171" data-column-id="${col.id}" title="Merah" type="button"></button>
+                            <button class="lap-color-tile" style="background:#c084fc;" data-color="#c084fc" data-column-id="${col.id}" title="Ungu" type="button"></button>
+                            <button class="lap-color-tile" style="background:#60a5fa;" data-color="#60a5fa" data-column-id="${col.id}" title="Biru" type="button"></button>
                             <button class="lap-color-tile" style="background:#2dd4bf;" data-color="#2dd4bf" data-column-id="${col.id}" title="Teal" type="button"></button>
-                            <button class="lap-color-tile" style="background:#a3e635;" data-color="#a3e635" data-column-id="${col.id}" title="Lime" type="button"></button>
+                            <button class="lap-color-tile" style="background:#a3e635;" data-color="#a3e635" data-column-id="${col.id}" title="Hijau Muda" type="button"></button>
                             <button class="lap-color-tile" style="background:#f472b6;" data-color="#f472b6" data-column-id="${col.id}" title="Magenta" type="button"></button>
-                            <button class="lap-color-tile" style="background:#94a3b8;" data-color="#94a3b8" data-column-id="${col.id}" title="Gray" type="button"></button>
+                            <button class="lap-color-tile" style="background:#94a3b8;" data-color="#94a3b8" data-column-id="${col.id}" title="Abu-abu" type="button"></button>
                           </div>
                           <button class="lap-item btn-lap-remove-color" data-column-id="${col.id}" type="button" style="margin-top:-4px;">
                             <span class="material-symbols-outlined mi">format_color_reset</span>
-                            <span>Remove color</span>
+                            <span>Hapus warna</span>
                           </button>
 
                           <div class="lap-divider"></div>
 
                           <!-- Automation -->
-                          <div class="lap-section-title">Automation</div>
+                          <div class="lap-section-title">Otomatisasi</div>
                           <button class="lap-item btn-lap-auto" data-column-id="${col.id}" data-rule="when-added" type="button">
                             <span class="material-symbols-outlined mi">bolt</span>
-                            <span>When a card is added to the list</span>
+                            <span>Saat kartu ditambahkan ke daftar</span>
                           </button>
                           <button class="lap-item btn-lap-auto" data-column-id="${col.id}" data-rule="sort-daily" type="button">
                             <span class="material-symbols-outlined mi">today</span>
-                            <span>Every day, sort list by…</span>
+                            <span>Setiap hari, urutkan daftar berdasarkan…</span>
                           </button>
                           <button class="lap-item btn-lap-auto" data-column-id="${col.id}" data-rule="sort-weekly" type="button">
                             <span class="material-symbols-outlined mi">date_range</span>
-                            <span>Every Monday, sort list by…</span>
+                            <span>Setiap Senin, urutkan daftar berdasarkan…</span>
                           </button>
                           <button class="lap-item btn-lap-create-rule" data-column-id="${col.id}" type="button">
                             <span class="material-symbols-outlined mi">add_circle</span>
-                            <span>Create a rule</span>
+                            <span>Buat aturan</span>
                           </button>
 
                           <div class="lap-divider"></div>
@@ -1074,11 +1074,11 @@ export class KanbanBoardView extends BaseView {
                           <!-- Archive actions -->
                           <button class="lap-item btn-lap-archive-list" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
                             <span class="material-symbols-outlined mi">archive</span>
-                            <span>Archive this list</span>
+                            <span>Arsipkan daftar ini</span>
                           </button>
                           <button class="lap-item danger btn-lap-archive-all-cards" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
                             <span class="material-symbols-outlined mi">inventory_2</span>
-                            <span>Archive all cards in this list</span>
+                            <span>Arsipkan semua kartu di daftar ini</span>
                           </button>
                         </div>
                       </div>
