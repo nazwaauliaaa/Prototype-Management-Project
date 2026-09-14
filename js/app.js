@@ -19,6 +19,7 @@ import { RescheduleModal } from './components/modals/RescheduleModal.js';
 import { NewTaskModal } from './components/modals/NewTaskModal.js';
 import { SearchModal } from './components/modals/SearchModal.js';
 import { AddMemberModal } from './components/modals/AddMemberModal.js';
+import { CreateBoardModal } from './components/modals/CreateBoardModal.js';
 
 import { AuthView } from './views/AuthView.js';
 import { DashboardView } from './views/DashboardView.js';
@@ -94,6 +95,7 @@ class CreativeOfficeApp {
     modalManager.register('new-task', new NewTaskModal(this.container));
     modalManager.register('search', new SearchModal(this.container));
     modalManager.register('add-member', new AddMemberModal(this.container));
+    modalManager.register('create-board', new CreateBoardModal(this.container));
   }
 
   initShell() {
@@ -116,8 +118,8 @@ class CreativeOfficeApp {
     if (workspaceBarHost) this.workspaceTabBar.mount(workspaceBarHost);
 
     // Listen to global navigation events
-    eventBus.on('navigate', ({ view, workspace, board }) => {
-      this.navigateTo(view, { workspace, board });
+    eventBus.on('navigate', ({ view, workspace, board, projectId }) => {
+      this.navigateTo(view, { workspace, board, projectId });
     });
 
     // Listen to workspace selection events
@@ -156,12 +158,10 @@ class CreativeOfficeApp {
 
     if (viewName === 'workspace') {
       this.navigateTo('project-table', { workspace: param });
-    } else if (viewName === 'board') {
-      if (param === 'kanban') {
-        this.navigateTo('kanban');
-      } else {
-        this.navigateTo('project-table', { board: param });
-      }
+    } else if (viewName === 'board' || viewName === 'project') {
+      this.navigateTo('kanban', { projectId: param });
+    } else if (viewName === 'kanban') {
+      this.navigateTo('kanban', { projectId: param });
     } else {
       this.navigateTo(viewName);
     }
@@ -180,7 +180,7 @@ class CreativeOfficeApp {
     const eventBus = this.container.resolve('EventBus');
 
     // Update URL hash without triggering double reload
-    const targetHash = `/${viewName}`;
+    const targetHash = params.projectId ? `/${viewName}/${params.projectId}` : `/${viewName}`;
     if (window.location.hash !== `#${targetHash}`) {
       history.replaceState(null, '', `#${targetHash}`);
     }
@@ -242,8 +242,12 @@ class CreativeOfficeApp {
         break;
       case 'kanban':
         this.currentView = new KanbanBoardView(this.container);
-        const wsKanban = params.workspace || this.activeWorkspace;
-        if (wsKanban) this.currentView.setWorkspace(wsKanban);
+        if (params.projectId) {
+          this.currentView.setProject(params.projectId);
+        } else {
+          const wsKanban = params.workspace || this.activeWorkspace;
+          if (wsKanban) this.currentView.setWorkspace(wsKanban);
+        }
         break;
       case 'docs-sheets':
       case 'dokumen-dan-sop':

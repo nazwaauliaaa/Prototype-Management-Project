@@ -2,23 +2,30 @@ import { BaseView } from '../core/BaseView.js';
 
 /**
  * KanbanBoardView - Single Responsibility Principle (SRP)
- * Renders the Creative Hub Kanban board with columns, media asset thumbnails,
- * task status progression, and HTML5 drag-and-drop between all columns.
+ * Renders the project's focused Kanban board with custom theme backgrounds,
+ * interactive columns, HTML5 desktop drag-and-drop, touch mobile drag-and-drop,
+ * and quick card addition.
  */
 export class KanbanBoardView extends BaseView {
   constructor(container) {
     super(container);
     this.taskService = container.resolve('TaskService');
+    this.projectService = container.resolve('ProjectService');
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
+
+    this.projectId = null;
+    this.project = null;
     this.currentWorkspace = localStorage.getItem('active_workspace') || 'ruangkreasi';
+
     this.columns = [
-      { id: 'backlog',      title: 'Daftar Pekerjaan',     color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-600' },
-      { id: 'in-progress',  title: 'Sedang Berjalan',      color: 'border-blue-400',   dot: 'bg-blue-400',     badge: 'bg-blue-100 text-blue-700' },
-      { id: 'review-qa',    title: 'Review QA Lapangan',   color: 'border-rose-400',   dot: 'bg-rose-400',     badge: 'bg-rose-100 text-rose-700' },
-      { id: 'ready-launch', title: 'Siap Launching',       color: 'border-purple-400', dot: 'bg-purple-500',   badge: 'bg-purple-100 text-purple-700' },
-      { id: 'done',         title: 'Selesai',               color: 'border-emerald-400',dot: 'bg-emerald-500',  badge: 'bg-emerald-100 text-emerald-700' }
+      { id: 'backlog',      title: 'Daftar Pekerjaan',     color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-700' },
+      { id: 'in-progress',  title: 'Sedang Berjalan',      color: 'border-blue-500',   dot: 'bg-blue-500',     badge: 'bg-blue-100 text-blue-700' },
+      { id: 'review-qa',    title: 'Review QA Lapangan',   color: 'border-rose-500',   dot: 'bg-rose-500',     badge: 'bg-rose-100 text-rose-700' },
+      { id: 'ready-launch', title: 'Siap Launching',       color: 'border-purple-500', dot: 'bg-purple-600',   badge: 'bg-purple-100 text-purple-700' },
+      { id: 'done',         title: 'Selesai',               color: 'border-emerald-500',dot: 'bg-emerald-600',  badge: 'bg-emerald-100 text-emerald-700' }
     ];
+
     // Track drag state internally
     this._draggedTaskId = null;
     this._draggedFromCol = null;
@@ -26,6 +33,16 @@ export class KanbanBoardView extends BaseView {
 
   setWorkspace(workspace) {
     this.currentWorkspace = workspace || 'ruangkreasi';
+  }
+
+  setProject(projectId) {
+    this.projectId = projectId;
+    if (this.projectService) {
+      this.project = this.projectService.getProject(projectId);
+      if (this.project) {
+        this.currentWorkspace = this.project.workspace || 'ruangkreasi';
+      }
+    }
   }
 
   getWorkspaceName(wsKey) {
@@ -47,8 +64,38 @@ export class KanbanBoardView extends BaseView {
   }
 
   render() {
-    const wsName = this.getWorkspaceName(this.currentWorkspace);
-    const allTasks = this.taskService.getTasks(this.currentWorkspace);
+    // Resolve project if projectId set
+    if (this.projectId && !this.project && this.projectService) {
+      this.project = this.projectService.getProject(this.projectId);
+      if (this.project) {
+        this.currentWorkspace = this.project.workspace || 'ruangkreasi';
+      }
+    }
+
+    const boardTitle = this.project ? this.project.name : `${this.getWorkspaceName(this.currentWorkspace)} Kanban Board`;
+    const theme = this.project?.theme || {
+      type: 'image',
+      value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
+      name: 'City Skyline'
+    };
+
+    // Filter tasks for this project / workspace
+    const allTasks = this.taskService ? this.taskService.getTasks().filter(t => {
+      if (this.projectId) {
+        return t.projectId === this.projectId || (!t.projectId && t.workspace === this.currentWorkspace);
+      }
+      return t.workspace === this.currentWorkspace;
+    }) : [];
+
+    // Background style according to theme
+    let bgStyle = '';
+    if (theme.type === 'image') {
+      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center/cover fixed;`;
+    } else if (theme.type === 'gradient') {
+      bgStyle = `background: ${theme.value};`;
+    } else {
+      bgStyle = `background-color: ${theme.value};`;
+    }
 
     return `
       <style>
@@ -63,15 +110,15 @@ export class KanbanBoardView extends BaseView {
         .kanban-card.is-dragging {
           opacity: 0.35;
           transform: scale(0.97);
-          box-shadow: 0 0 0 2px #4f46e5, 0 8px 24px rgba(79,70,229,0.18);
+          box-shadow: 0 0 0 2px #0c66e4, 0 8px 24px rgba(12,102,228,0.25);
           transition: opacity 0.15s, transform 0.15s;
         }
         .kanban-column {
           transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
         }
         .kanban-column.drag-over {
-          background-color: rgba(79,70,229,0.06);
-          box-shadow: 0 0 0 2px #4f46e5, inset 0 0 0 2px rgba(79,70,229,0.1);
+          background-color: rgba(255,255,255,0.95);
+          box-shadow: 0 0 0 2px #0c66e4, inset 0 0 0 2px rgba(12,102,228,0.15);
           transform: scale(1.015);
         }
         .kanban-column.drag-over .column-drop-hint {
@@ -82,20 +129,20 @@ export class KanbanBoardView extends BaseView {
           align-items: center;
           justify-content: center;
           gap: 6px;
-          padding: 10px;
+          padding: 8px;
           border-radius: 10px;
-          border: 2px dashed #4f46e5;
-          background: rgba(79,70,229,0.04);
-          color: #4f46e5;
+          border: 2px dashed #0c66e4;
+          background: rgba(12,102,228,0.08);
+          color: #0c66e4;
           font-size: 11px;
-          font-weight: 600;
-          margin-bottom: 4px;
+          font-weight: 700;
+          margin-bottom: 6px;
           pointer-events: none;
           animation: dropHintPulse 1s ease-in-out infinite alternate;
         }
         @keyframes dropHintPulse {
-          from { border-color: rgba(79,70,229,0.4); background: rgba(79,70,229,0.03); }
-          to   { border-color: #4f46e5; background: rgba(79,70,229,0.07); }
+          from { border-color: rgba(12,102,228,0.4); background: rgba(12,102,228,0.04); }
+          to   { border-color: #0c66e4; background: rgba(12,102,228,0.12); }
         }
         .kanban-card.drop-snap {
           animation: snapIn 0.22s cubic-bezier(0.16,1,0.3,1) forwards;
@@ -107,7 +154,7 @@ export class KanbanBoardView extends BaseView {
         .drag-ghost-badge {
           position: fixed;
           top: -999px; left: -999px;
-          background: #4f46e5;
+          background: #0c66e4;
           color: #fff;
           border-radius: 10px;
           padding: 6px 14px 6px 10px;
@@ -118,7 +165,7 @@ export class KanbanBoardView extends BaseView {
           gap: 6px;
           pointer-events: none;
           z-index: 9999;
-          box-shadow: 0 6px 24px rgba(79,70,229,0.35);
+          box-shadow: 0 6px 24px rgba(12,102,228,0.35);
           white-space: nowrap;
         }
       </style>
@@ -129,162 +176,169 @@ export class KanbanBoardView extends BaseView {
         <span id="kanban-drag-ghost-label">Tugas</span>
       </div>
 
-      <div class="flex flex-col w-full px-4 sm:px-6 md:px-spacing-2xl pt-4 pb-spacing-3xl">
+      <!-- Main Kanban Canvas with Theme Background -->
+      <div class="flex flex-col w-full min-h-[calc(100vh-var(--topbar-height))] transition-all duration-300" style="${bgStyle}">
         
-        <!-- Breadcrumbs & Navigation Header -->
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <div class="flex items-center gap-2 text-[12px] text-text-muted">
+        <!-- Board Top Header Bar -->
+        <div class="w-full px-4 sm:px-6 py-3 bg-black/25 backdrop-blur-md border-b border-white/10 flex flex-wrap items-center justify-between gap-3 text-white">
+          
+          <!-- Left: Back to Home + Board Title & Theme Info -->
+          <div class="flex items-center gap-3 min-w-0">
             <button
-              id="btn-kanban-back-ws"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-primary transition-colors text-xs font-semibold cursor-pointer shadow-xs active:scale-95"
-              title="Kembali ke Ruang Kerja"
+              id="btn-kanban-back-home"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs"
+              title="Kembali ke Beranda"
               type="button"
             >
-              <span class="material-symbols-outlined text-[16px] text-primary">arrow_back</span>
-              <span>Ruang Kerja</span>
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Beranda</span>
             </button>
-            <span class="text-text-muted hidden sm:inline">/</span>
-            <span class="hover:text-primary cursor-pointer transition-colors font-semibold text-text-secondary hidden sm:inline" id="btn-crumb-ws" title="Kembali ke Ruang Kerja">
-              ${wsName}
-            </span>
-            <span class="material-symbols-outlined text-[14px] text-text-muted hidden sm:inline">chevron_right</span>
-            <span class="text-primary font-bold hidden sm:inline">Papan Kanban</span>
-          </div>
 
-          <button id="btn-add-kanban-task" class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-primary text-on-primary font-body-medium text-[12px] font-bold hover:bg-brand-accent transition-colors shadow-sm shrink-0">
-            <span class="material-symbols-outlined text-[16px]">add</span>
-            <span class="hidden sm:inline">Tambah Kartu</span>
-            <span class="sm:hidden">Tambah</span>
-          </button>
-        </div>
+            <span class="text-white/40">|</span>
 
-        <!-- Workspace Subheader -->
-        <div class="flex flex-col items-start gap-1 mb-4">
-          <div class="min-w-0">
-            <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
-              ${wsName} Kanban Board
-            </h1>
-            <p class="font-caption-meta text-[11px] text-text-secondary flex items-center gap-1.5 mt-0.5">
-              <span class="material-symbols-outlined text-[13px] text-brand-accent">drag_indicator</span>
-              Drag & drop kartu antar kolom untuk ubah status tugas ${wsName}
-            </p>
-          </div>
-        </div>
+            <div class="flex items-center gap-2 min-w-0">
+              <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate">
+                ${boardTitle}
+              </h1>
 
-        <!-- Kanban Board Columns Stream (swipeable on mobile) -->
-        <div class="flex gap-4 items-start overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0" id="kanban-board">
-          ${this.columns.map(col => {
-            const colTasks = allTasks.filter(t => t.status === col.id);
-            return `
-              <div
-                class="kanban-column flex flex-col bg-surface-container-low/70 rounded-2xl p-3 border border-surface-border min-w-[268px] max-w-[268px] shadow-xs flex-shrink-0"
-                data-column-id="${col.id}"
-              >
-                <!-- Column Header -->
-                <div class="flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full ${col.dot} inline-block"></span>
-                    <h3 class="font-body-medium text-[13px] font-bold text-text-primary">${col.title}</h3>
-                    <span class="px-1.5 rounded-full ${col.badge} text-[10px] font-mono font-bold">
-                      ${colTasks.length}
-                    </span>
-                  </div>
-                  <button class="text-text-muted hover:text-text-primary p-0.5" title="Opsi kolom">
-                    <span class="material-symbols-outlined text-[16px]">more_horiz</span>
-                  </button>
-                </div>
+              <button id="btn-star-board" class="w-7 h-7 rounded-lg hover:bg-white/15 flex items-center justify-center text-amber-300 transition-colors" title="Bintangi Papan" type="button">
+                <span class="material-symbols-outlined text-[18px]">star</span>
+              </button>
 
-                <!-- Drop Hint (shown on drag-over) -->
-                <div class="column-drop-hint">
-                  <span class="material-symbols-outlined" style="font-size:14px">south</span>
-                  <span>Lepaskan di sini</span>
-                </div>
-
-                <!-- Column Cards List -->
-                <div class="flex flex-col gap-2.5 min-h-[140px]" data-cards-area="${col.id}">
-                  ${colTasks.map(task => `
-                    <div
-                      class="kanban-card p-3 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-primary/60 hover:shadow-md transition-all cursor-pointer flex flex-col gap-2 group"
-                      data-task-id="${task.id}"
-                      data-task-status="${task.status}"
-                      draggable="true"
-                    >
-                      <!-- Card Code, Workspace & Priority -->
-                      <div class="flex items-center justify-between gap-1.5">
-                        <div class="flex items-center gap-1.5 min-w-0">
-                          <span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] font-bold text-primary shrink-0">${task.code}</span>
-                          <button
-                            class="btn-task-back-ws flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 hover:bg-purple-600/20 text-purple-400 hover:text-purple-300 font-medium text-[10px] transition-colors border border-purple-500/20 truncate"
-                            title="Kembali ke Ruang Kerja (${this.getWorkspaceName(task.workspace || this.currentWorkspace)})"
-                            data-workspace="${task.workspace || this.currentWorkspace || 'ruangkreasi'}"
-                            type="button"
-                          >
-                            <span class="material-symbols-outlined text-[11px] shrink-0">workspaces</span>
-                            <span class="truncate max-w-[75px]">${this.getWorkspaceName(task.workspace || this.currentWorkspace)}</span>
-                          </button>
-                        </div>
-                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${this.getPriorityBadge(task.priority)} shrink-0">
-                          ${task.priority}
-                        </span>
-                      </div>
-
-                      <!-- Drag indicator pill (hover on desktop, always visible on mobile) -->
-                      <div class="drag-mobile-hint flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span class="material-symbols-outlined text-text-muted" style="font-size:13px">drag_indicator</span>
-                        <span class="text-[10px] text-text-muted font-medium hidden md:inline">Geser untuk pindah kolom</span>
-                        <span class="text-[10px] text-text-muted font-medium md:hidden">Tahan lalu geser untuk pindah</span>
-                      </div>
-
-
-                      <!-- Title -->
-                      <h4 class="font-body-medium text-[13px] font-semibold text-text-primary group-hover:text-primary transition-colors leading-snug">
-                        ${task.title}
-                      </h4>
-
-                      <!-- Visual Thumbnail if Available -->
-                      ${task.code === '#RK-304' ? `
-                        <div class="relative h-24 rounded-lg overflow-hidden bg-slate-900 shadow-inner my-0.5">
-                          <img
-                            alt="LED Billboard Preview"
-                            class="w-full h-full object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9cLSlK-ybgxsHTOmKx9P6qW4dU9Pj4US3TTVY-VqPfbA7B32xwJgc2f_eCQrU0jV4dtkLkkz3hMB_09FxmgjDiFXemye5oEMHbyn4syMOUpAnJ7fDfmNk9w5xsKO3HVP45BkfwleAUBg6aeAARbH2OuCAERhrTCQqpHG_zPB0vMpDMlZIKgRjI1BV5ghBTxxukptOIGvw6kCwVGCovOpK3q7RrMRmQ3mCTHG7YUqMXrHu2MeZ8T1C"
-                          />
-                          <span class="absolute bottom-1 left-1.5 bg-black/70 text-white font-badge-micro text-[9px] px-1.5 py-0.2 rounded">16:9 Safe-Zone</span>
-                        </div>
-                      ` : ''}
-
-                      <!-- Card Footer: PIC, QA Progress, Column Shift Controls -->
-                      <div class="flex items-center justify-between pt-2 border-t border-surface-border text-[11px] text-text-muted">
-                        <div class="flex items-center gap-1.5">
-                          <div class="w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center text-[9px] font-bold">
-                            ${task.pic.initials}
-                          </div>
-                          <span class="text-[11px] truncate max-w-[80px]">${task.pic.name.split(' ')[0]}</span>
-                        </div>
-
-                        <!-- Shift Column Buttons -->
-                        <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                          <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-surface-container text-text-muted hover:text-primary transition-colors" data-task-id="${task.id}" data-dir="prev" title="Pindah ke kolom sebelumnya">
-                            <span class="material-symbols-outlined text-[14px]">arrow_back</span>
-                          </button>
-                          <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-surface-container text-text-muted hover:text-primary transition-colors" data-task-id="${task.id}" data-dir="next" title="Pindah ke kolom berikutnya">
-                            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  `).join('')}
-
-                  ${colTasks.length === 0 ? `
-                    <div class="column-empty-placeholder p-4 rounded-xl border border-dashed border-surface-border text-center text-text-muted text-[11px] flex flex-col items-center justify-center gap-1 min-h-[80px]">
-                      <span class="material-symbols-outlined text-[18px] text-text-muted/60">inbox</span>
-                      <span>Kolom kosong — drag kartu ke sini</span>
-                    </div>
-                  ` : ''}
-                </div>
+              <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/15 backdrop-blur-md text-[11px] text-white/90 font-medium border border-white/10">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Tema: ${theme.name}</span>
               </div>
-            `;
-          }).join('')}
+            </div>
+          </div>
+
+          <!-- Right: Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-add-kanban-task"
+              class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12.5px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>Tambah Kartu</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Kanban Columns Stream (Full Height, Swipeable/Scrollable) -->
+        <div class="flex-1 w-full overflow-x-auto p-4 sm:p-6" id="kanban-scroll-area">
+          <div class="flex gap-4 items-start min-w-max pb-8" id="kanban-board">
+            
+            ${this.columns.map(col => {
+              const colTasks = allTasks.filter(t => t.status === col.id);
+
+              return `
+                <div
+                  class="kanban-column flex flex-col bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg min-w-[280px] max-w-[280px] flex-shrink-0 transition-all"
+                  data-column-id="${col.id}"
+                >
+                  <!-- Column Header -->
+                  <div class="flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block"></span>
+                      <h3 class="font-bold text-[13.5px] text-text-primary tracking-tight">${col.title}</h3>
+                      <span class="px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold">
+                        ${colTasks.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Drop Hint (shown on drag-over) -->
+                  <div class="column-drop-hint">
+                    <span class="material-symbols-outlined text-[14px]">south</span>
+                    <span>Lepaskan kartu di sini</span>
+                  </div>
+
+                  <!-- Cards List Container -->
+                  <div class="flex flex-col gap-2.5 min-h-[140px]" data-cards-area="${col.id}">
+                    ${colTasks.map(task => `
+                      <div
+                        class="kanban-card p-3.5 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-[#0c66e4] hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99]"
+                        data-task-id="${task.id}"
+                        data-task-status="${task.status}"
+                        draggable="true"
+                      >
+                        <!-- Card Code & Priority -->
+                        <div class="flex items-center justify-between gap-1.5">
+                          <span class="px-2 py-0.5 rounded bg-surface-container-low font-mono text-[10.5px] font-bold text-primary">
+                            ${task.code || '#TASK'}
+                          </span>
+                          <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
+                            ${task.priority}
+                          </span>
+                        </div>
+
+                        <!-- Title -->
+                        <h4 class="text-[13px] font-semibold text-text-primary group-hover:text-primary transition-colors leading-snug">
+                          ${task.title}
+                        </h4>
+
+                        <!-- Visual Thumbnail if Available -->
+                        ${task.code === '#RK-304' ? `
+                          <div class="relative h-24 rounded-lg overflow-hidden bg-slate-900 shadow-inner my-0.5">
+                            <img
+                              alt="Billboard Preview"
+                              class="w-full h-full object-cover"
+                              src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80"
+                            />
+                            <span class="absolute bottom-1 left-1.5 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">16:9 4K</span>
+                          </div>
+                        ` : ''}
+
+                        <!-- Footer: PIC & Column Shift Buttons -->
+                        <div class="flex items-center justify-between pt-2 border-t border-surface-border text-[11px] text-text-muted">
+                          <div class="flex items-center gap-1.5">
+                            <div class="w-5 h-5 rounded-full bg-[#0c66e4] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs">
+                              ${task.pic?.initials || 'SR'}
+                            </div>
+                            <span class="text-[11px] font-medium text-text-secondary truncate max-w-[85px]">
+                              ${(task.pic?.name || 'Tim').split(' ')[0]}
+                            </span>
+                          </div>
+
+                          <!-- Shift Column Buttons (Quick status shift) -->
+                          <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                            <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-surface-container text-text-muted hover:text-primary transition-colors" data-task-id="${task.id}" data-dir="prev" title="Pindah ke kolom kiri">
+                              <span class="material-symbols-outlined text-[14px]">arrow_back</span>
+                            </button>
+                            <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-surface-container text-text-muted hover:text-primary transition-colors" data-task-id="${task.id}" data-dir="next" title="Pindah ke kolom kanan">
+                              <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    `).join('')}
+
+                    ${colTasks.length === 0 ? `
+                      <div class="p-4 rounded-xl border border-dashed border-surface-border text-center text-text-muted text-[11px] flex flex-col items-center justify-center gap-1 min-h-[90px] bg-white/40">
+                        <span class="material-symbols-outlined text-[18px] text-text-muted/60">inbox</span>
+                        <span>Kolom kosong — lepaskan kartu di sini</span>
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <!-- Quick Add Card Button in Column -->
+                  <button
+                    class="btn-quick-add-col mt-2.5 py-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    data-column-id="${col.id}"
+                    type="button"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    <span>Tambah kartu</span>
+                  </button>
+
+                </div>
+              `;
+            }).join('')}
+
+          </div>
         </div>
 
       </div>
@@ -293,9 +347,9 @@ export class KanbanBoardView extends BaseView {
 
   getPriorityBadge(priority) {
     switch (priority) {
-      case 'Critical': return 'bg-red-100 text-red-700';
+      case 'Critical': return 'bg-rose-100 text-rose-700';
       case 'High':     return 'bg-amber-100 text-amber-700';
-      default:         return 'bg-slate-100 text-slate-600';
+      default:         return 'bg-slate-100 text-slate-700';
     }
   }
 
@@ -308,27 +362,22 @@ export class KanbanBoardView extends BaseView {
   }
 
   /**
-   * HTML5 Drag-and-Drop — Desktop only.
-   * (Touch devices ignore drag events, so this is safe.)
+   * HTML5 Drag-and-Drop — Desktop.
    */
   _setupDesktopDragAndDrop() {
     const ghost = this.element.querySelector('#kanban-drag-ghost');
     const ghostLabel = this.element.querySelector('#kanban-drag-ghost-label');
-
     const cards = this.element.querySelectorAll('.kanban-card[draggable]');
     const columns = this.element.querySelectorAll('.kanban-column');
-    const columnOrder = this.columns.map(c => c.id);
 
-    // ── CARD: dragstart ──────────────────────────────────────────────
     cards.forEach(card => {
       card.addEventListener('dragstart', (e) => {
         this._draggedTaskId = card.getAttribute('data-task-id');
         this._draggedFromCol = card.getAttribute('data-task-status');
 
-        // Custom ghost image
         const task = this.taskService.getTask(this._draggedTaskId);
         if (ghost && ghostLabel && task) {
-          ghostLabel.textContent = task.code + ' ' + task.title.substring(0, 30) + '…';
+          ghostLabel.textContent = `${task.code || ''} ${task.title.substring(0, 30)}...`;
           ghost.style.top  = '-999px';
           ghost.style.left = '-999px';
           document.body.appendChild(ghost);
@@ -338,7 +387,6 @@ export class KanbanBoardView extends BaseView {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', this._draggedTaskId);
 
-        // Fade out source card
         requestAnimationFrame(() => card.classList.add('is-dragging'));
       });
 
@@ -346,12 +394,10 @@ export class KanbanBoardView extends BaseView {
         card.classList.remove('is-dragging');
         this._draggedTaskId = null;
         this._draggedFromCol = null;
-        // Clean up column highlights
         columns.forEach(col => col.classList.remove('drag-over'));
       });
     });
 
-    // ── COLUMN: dragover / dragenter / dragleave / drop ──────────────
     columns.forEach(col => {
       const colId = col.getAttribute('data-column-id');
 
@@ -368,7 +414,6 @@ export class KanbanBoardView extends BaseView {
       });
 
       col.addEventListener('dragleave', (e) => {
-        // Only remove highlight if leaving to outside the column element
         if (!col.contains(e.relatedTarget)) {
           col.classList.remove('drag-over');
         }
@@ -388,19 +433,11 @@ export class KanbanBoardView extends BaseView {
 
   /**
    * Touch Drag-and-Drop — Mobile support.
-   * Uses touchstart/touchmove/touchend with a floating ghost clone
-   * that follows the user's finger, and elementFromPoint to detect the target column.
    */
   _setupTouchDragAndDrop() {
     const cards = this.element.querySelectorAll('.kanban-card[draggable]');
-    const boardEl = this.element.querySelector('#kanban-board');
-    const columnOrder = this.columns.map(c => c.id);
-
-    // Shared touch drag state
-    let touchDragState = null; // { taskId, fromCol, ghostEl, startX, startY, scrollStart }
-
-    const LONG_PRESS_MS = 350; // hold duration to activate drag
-    const DRAG_THRESHOLD = 8;  // px movement to confirm drag intent
+    const LONG_PRESS_MS = 320;
+    const DRAG_THRESHOLD = 8;
 
     cards.forEach(card => {
       let pressTimer = null;
@@ -415,14 +452,10 @@ export class KanbanBoardView extends BaseView {
         touchStartY = touch.clientY;
         isDragActive = false;
 
-        // Long-press timer to activate drag
         pressTimer = setTimeout(() => {
           isDragActive = true;
-          this._activateTouchDrag(card, touch, touchDragState);
-          // Reassign state reference after activation
-          touchDragState = this._touchDragState;
-          // Vibrate for haptic feedback (supported on Android)
-          if (navigator.vibrate) navigator.vibrate(40);
+          this._activateTouchDrag(card, touch);
+          if (navigator.vibrate) navigator.vibrate(35);
         }, LONG_PRESS_MS);
       }, { passive: true });
 
@@ -431,14 +464,13 @@ export class KanbanBoardView extends BaseView {
         const dx = Math.abs(touch.clientX - touchStartX);
         const dy = Math.abs(touch.clientY - touchStartY);
 
-        // Cancel long-press if finger moved too much before activation
         if (!isDragActive && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
           clearTimeout(pressTimer);
           pressTimer = null;
         }
 
         if (isDragActive && this._touchDragState) {
-          e.preventDefault(); // Prevent scroll while dragging
+          e.preventDefault();
           this._onTouchDragMove(e.touches[0]);
         }
       }, { passive: false });
@@ -465,66 +497,54 @@ export class KanbanBoardView extends BaseView {
     });
   }
 
-  /** Activate touch drag: create ghost, mark card as dragging */
-  _activateTouchDrag(card, touch, existingState) {
+  _activateTouchDrag(card, touch) {
     const taskId = card.getAttribute('data-task-id');
     const fromCol = card.getAttribute('data-task-status');
     const task = this.taskService.getTask(taskId);
     if (!task) return;
 
-    // Build floating ghost element
     const ghost = document.createElement('div');
     ghost.id = 'touch-drag-ghost';
     ghost.style.cssText = `
       position: fixed;
       z-index: 99999;
       pointer-events: none;
-      left: ${touch.clientX - 134}px;
+      left: ${touch.clientX - 140}px;
       top: ${touch.clientY - 40}px;
-      width: 268px;
-      background: #4f46e5;
+      width: 280px;
+      background: #0c66e4;
       color: #fff;
       border-radius: 14px;
       padding: 10px 14px;
-      box-shadow: 0 12px 40px rgba(79,70,229,0.45), 0 2px 8px rgba(0,0,0,0.2);
-      font-family: 'Inter', sans-serif;
+      box-shadow: 0 12px 40px rgba(12,102,228,0.45);
       font-size: 13px;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
-      transform: scale(1.02);
-      transition: transform 0.15s ease;
       opacity: 0.96;
       max-width: 80vw;
     `;
     ghost.innerHTML = `
       <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0">drag_indicator</span>
       <div style="min-width:0">
-        <div style="font-size:10px;opacity:0.8;font-weight:600;letter-spacing:0.5px">${task.code} · ${fromCol}</div>
+        <div style="font-size:10px;opacity:0.8;font-weight:600">${task.code || ''}</div>
         <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${task.title}</div>
       </div>
     `;
     document.body.appendChild(ghost);
 
-    // Mark source card
     card.classList.add('is-dragging');
-
-    // Mark all column drop zones as potential targets
-    this.element.querySelectorAll('.kanban-column').forEach(col => {
-      col.classList.add('touch-drop-ready');
-    });
 
     this._touchDragState = {
       taskId,
       fromCol,
       ghost,
       sourceCard: card,
-      currentOverCol: null,
+      currentOverCol: null
     };
   }
 
-  /** Update ghost position and highlight target column */
   _onTouchDragMove(touch) {
     const state = this._touchDragState;
     if (!state) return;
@@ -532,24 +552,18 @@ export class KanbanBoardView extends BaseView {
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // Move ghost to follow finger
-    state.ghost.style.left = `${x - 134}px`;
+    state.ghost.style.left = `${x - 140}px`;
     state.ghost.style.top  = `${y - 40}px`;
 
-    // Hide ghost temporarily to detect element underneath
     state.ghost.style.display = 'none';
     const elUnder = document.elementFromPoint(x, y);
     state.ghost.style.display = '';
 
-    // Find nearest kanban-column ancestor
     const targetCol = elUnder?.closest('.kanban-column');
     const targetColId = targetCol?.getAttribute('data-column-id') ?? null;
 
-    // Update column highlight
     if (targetColId !== state.currentOverCol) {
-      // Clear previous
       this.element.querySelectorAll('.kanban-column.drag-over').forEach(c => c.classList.remove('drag-over'));
-      // Set new highlight (only if different from source)
       if (targetColId && targetColId !== state.fromCol) {
         targetCol.classList.add('drag-over');
       }
@@ -557,7 +571,6 @@ export class KanbanBoardView extends BaseView {
     }
   }
 
-  /** Handle finger lift: drop the card in target column */
   _onTouchDragEnd(touch) {
     const state = this._touchDragState;
     if (!state) return;
@@ -565,25 +578,20 @@ export class KanbanBoardView extends BaseView {
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // Final column detection
     state.ghost.style.display = 'none';
     const elUnder = document.elementFromPoint(x, y);
     const targetCol = elUnder?.closest('.kanban-column');
     const targetColId = targetCol?.getAttribute('data-column-id') ?? null;
 
-    // Cleanup ghost and state
     this._cleanupTouchDrag();
 
-    // Perform the drop if valid target
     if (targetColId && targetColId !== state.fromCol) {
       this._dropTaskInColumn(state.taskId, targetColId);
     } else {
-      // Animate card back (restore opacity without re-render)
       state.sourceCard.classList.remove('is-dragging');
     }
   }
 
-  /** Cancel ongoing touch drag (no drop) */
   _cancelTouchDrag() {
     const state = this._touchDragState;
     if (!state) return;
@@ -591,7 +599,6 @@ export class KanbanBoardView extends BaseView {
     state.sourceCard.classList.remove('is-dragging');
   }
 
-  /** Remove ghost element and reset all column states */
   _cleanupTouchDrag() {
     const state = this._touchDragState;
     if (!state) return;
@@ -601,33 +608,19 @@ export class KanbanBoardView extends BaseView {
     }
 
     this.element.querySelectorAll('.kanban-column').forEach(col => {
-      col.classList.remove('drag-over', 'touch-drop-ready');
+      col.classList.remove('drag-over');
     });
 
     this._touchDragState = null;
   }
 
-  /**
-   * Shared drop logic — used by both desktop and touch DnD.
-   * @param {string} taskId
-   * @param {string} colId  - target column id
-   */
   _dropTaskInColumn(taskId, colId) {
-    const columnOrder = this.columns.map(c => c.id);
     const task = this.taskService.getTask(taskId);
     if (!task || task.status === colId) return;
 
-    const fromColIndex = columnOrder.indexOf(task.status);
-    const toColIndex   = columnOrder.indexOf(colId);
-    const toColTitle   = this.columns[toColIndex]?.title ?? colId;
-
-    // Update task status in service
     this.taskService.updateTaskStatus(taskId, colId);
-
-    // Re-render the board
     this.mount(this.element);
 
-    // Flash snap animation on newly placed card
     requestAnimationFrame(() => {
       const newCard = this.element.querySelector(`.kanban-card[data-task-id="${taskId}"]`);
       if (newCard) {
@@ -637,42 +630,52 @@ export class KanbanBoardView extends BaseView {
     });
   }
 
-
   bindEvents() {
-    // Back to Workspaces navigation
-    const backWsBtn = this.element.querySelector('#btn-kanban-back-ws');
-    if (backWsBtn) {
-      backWsBtn.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'workspaces' });
+    // 1. Back to Home (Beranda)
+    const backHomeBtn = this.element.querySelector('#btn-kanban-back-home');
+    if (backHomeBtn) {
+      backHomeBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }
 
-    const crumbWs = this.element.querySelector('#btn-crumb-ws');
-    if (crumbWs) {
-      crumbWs.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'workspaces' });
+    // 2. Add Kanban Task from top bar
+    const addTaskBtn = this.element.querySelector('#btn-add-kanban-task');
+    if (addTaskBtn) {
+      addTaskBtn.addEventListener('click', () => {
+        this.modalManager.open('new-task', {
+          workspace: this.currentWorkspace,
+          projectId: this.projectId
+        });
       });
     }
 
-    const taskBackBtns = this.element.querySelectorAll('.btn-task-back-ws');
-    taskBackBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.eventBus.emit('navigate', { view: 'workspaces' });
+    // 3. Quick Add Card in Column
+    const quickAddBtns = this.element.querySelectorAll('.btn-quick-add-col');
+    quickAddBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const colId = btn.getAttribute('data-column-id');
+        this.modalManager.open('new-task', {
+          workspace: this.currentWorkspace,
+          projectId: this.projectId,
+          status: colId
+        });
       });
     });
 
-    // Card click opens Super Card modal
+    // 4. Card click opens Task Detail
     const cards = this.element.querySelectorAll('.kanban-card');
     cards.forEach(card => {
       card.addEventListener('click', () => {
         const taskId = card.getAttribute('data-task-id');
         const task = this.taskService.getTask(taskId);
-        this.modalManager.open('task-detail', { task });
+        if (task && this.modalManager) {
+          this.modalManager.open('task-detail', { task });
+        }
       });
     });
 
-    // Shift column buttons (move status left/right)
+    // 5. Shift column buttons
     const columnOrder = ['backlog', 'in-progress', 'review-qa', 'ready-launch', 'done'];
     const shiftButtons = this.element.querySelectorAll('.btn-shift-col');
     shiftButtons.forEach(btn => {
@@ -692,17 +695,18 @@ export class KanbanBoardView extends BaseView {
       });
     });
 
-    // Add task
-    const addTaskBtn = this.element.querySelector('#btn-add-kanban-task');
-    if (addTaskBtn) {
-      addTaskBtn.addEventListener('click', () => {
-        this.modalManager.open('new-task');
+    // 6. Star board toggle
+    const starBtn = this.element.querySelector('#btn-star-board');
+    if (starBtn) {
+      starBtn.addEventListener('click', () => {
+        const isStarred = starBtn.classList.toggle('text-amber-400');
+        if (this.notificationService) {
+          this.notificationService.info(isStarred ? 'Papan ditambahkan ke favorit' : 'Papan dihapus dari favorit');
+        }
       });
     }
 
-    // Initialize drag-and-drop
+    // 7. Setup Drag & Drop
     this._setupDragAndDrop();
   }
 }
-
-

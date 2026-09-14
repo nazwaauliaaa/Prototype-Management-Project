@@ -13,17 +13,42 @@ export class ProjectService {
     this.eventBus = eventBus;
     this.notifications = notificationService;
     this.projects = [];
+    this.loadFromStorage();
+  }
+
+  loadFromStorage() {
+    try {
+      const stored = localStorage.getItem('creative_office_projects');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.projects = parsed.map(p => new Project(p));
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load projects from storage:', e);
+    }
     this.initDefaultProjects();
+    this.saveToStorage();
+  }
+
+  saveToStorage() {
+    try {
+      localStorage.setItem('creative_office_projects', JSON.stringify(this.projects));
+    } catch (e) {
+      console.warn('Failed to save projects to storage:', e);
+    }
   }
 
   initDefaultProjects() {
     this.projects = [
-      // ── Proyek yang Sudah Ada (Existing / Aktif / Selesai) ──
+      // ── Boards matching user screenshot ──
       new Project({
-        id: 'proj-1',
-        code: 'PRJ-RK01',
-        name: 'Safe-Zone LED Bundaran HI & Flyover Antasari',
-        description: 'Verifikasi teknis rasio 16:9 4K UHD, kalibrasi pixel mapping Novastar, dan uji keterbacaan nits siang hari.',
+        id: 'proj-creativ-office',
+        code: 'PRJ-CO01',
+        name: 'CreativOffice',
+        description: 'Papan manajemen utama portofolio dan verifikasi deliverable tim CreativOffice.',
         workspace: 'ruangkreasi',
         status: 'active',
         type: 'existing',
@@ -31,12 +56,72 @@ export class ProjectService {
         priority: 'Critical',
         startDate: '01 Ags 2026',
         dueDate: '25 Ags 2026',
-        tasksCount: { total: 18, completed: 14 },
+        tasksCount: { total: 7, completed: 4 },
         budget: 'Rp 120.000.000',
+        theme: {
+          id: 'skyline',
+          name: 'City Skyline',
+          type: 'image',
+          thumb: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80',
+          value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
+          textColor: '#ffffff'
+        },
         members: [
           { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
-          { name: 'Bagas Wicaksono', initials: 'BW', role: 'Graphic Specialist' },
+          { name: 'Bagas Wicaksono', initials: 'BW', role: 'Graphic Specialist' }
+        ]
+      }),
+      new Project({
+        id: 'proj-aikreativ',
+        code: 'PRJ-AI02',
+        name: 'AIKreativ',
+        description: 'Pipeline pembuatan storyboard dan animasi dinamis otomatis berbasis AI.',
+        workspace: 'aikreativ',
+        status: 'active',
+        type: 'existing',
+        progress: 65,
+        priority: 'High',
+        startDate: '10 Ags 2026',
+        dueDate: '15 Sep 2026',
+        tasksCount: { total: 5, completed: 3 },
+        budget: 'Rp 95.000.000',
+        theme: {
+          id: 'skyline',
+          name: 'City Skyline',
+          type: 'image',
+          thumb: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80',
+          value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
+          textColor: '#ffffff'
+        },
+        members: [
+          { name: 'Budi Santoso', initials: 'BS', role: 'AI Engineer' },
           { name: 'Nabila Putri', initials: 'NP', role: 'Motion Lead' }
+        ]
+      }),
+      new Project({
+        id: 'proj-trello-board',
+        code: 'PRJ-TB03',
+        name: 'My Trello Board',
+        description: 'Papan kerja personal dengan alur Kanban visual dan pelacakan sprint.',
+        workspace: 'ruangkreasi',
+        status: 'active',
+        type: 'existing',
+        progress: 40,
+        priority: 'Medium',
+        startDate: '15 Ags 2026',
+        dueDate: '30 Sep 2026',
+        tasksCount: { total: 6, completed: 2 },
+        budget: 'Rp 40.000.000',
+        theme: {
+          id: 'sunset-peach',
+          name: 'Sunset Peach',
+          type: 'gradient',
+          thumb: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)',
+          value: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)',
+          textColor: '#ffffff'
+        },
+        members: [
+          { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' }
         ]
       }),
       new Project({
@@ -234,6 +319,21 @@ export class ProjectService {
   }
 
   /**
+   * Mengambil satu proyek berdasarkan ID atau kode atau nama
+   * @param {string} idOrCode
+   * @returns {Project|undefined}
+   */
+  getProject(idOrCode) {
+    if (!idOrCode) return undefined;
+    const search = idOrCode.toLowerCase();
+    return this.projects.find(p => 
+      p.id.toLowerCase() === search || 
+      p.code.toLowerCase() === search || 
+      p.name.toLowerCase() === search
+    );
+  }
+
+  /**
    * Menambahkan proyek baru (Dummy function)
    * Mengikuti SRP: memvalidasi, membuat entitas, menyimpan, dan memicu notifikasi & event.
    * @param {Object} data
@@ -252,11 +352,13 @@ export class ProjectService {
       startDate: data.startDate || 'Segera',
       dueDate: data.dueDate || 'Q4 2026',
       budget: data.budget || 'Rp 50.000.000',
-      tasksCount: { total: 5, completed: 0 }
+      tasksCount: data.tasksCount || { total: 3, completed: 0 },
+      theme: data.theme || null
     });
 
     // Sisipkan di posisi paling atas kategori terkait
     this.projects.unshift(newProject);
+    this.saveToStorage();
 
     // Emit event melalui EventBus (DIP / OCP)
     if (this.eventBus) {
@@ -265,7 +367,7 @@ export class ProjectService {
 
     // Tampilkan notifikasi (SRP)
     if (this.notifications) {
-      this.notifications.success(`Proyek "${newProject.name}" berhasil ditambahkan!`);
+      this.notifications.success(`Papan proyek "${newProject.name}" berhasil dibuat!`);
     }
 
     return newProject;

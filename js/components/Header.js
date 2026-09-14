@@ -59,31 +59,52 @@ export class Header {
             </div>
           </div>
 
-          <!-- Search Bar (hidden on mobile via CSS, shown md+) -->
-          <div class="flex-1 max-w-md mx-spacing-md hidden md:block">
-            <div class="relative flex items-center">
+          <!-- Search Bar & Create Button (Trello-style) -->
+          <div class="flex-1 max-w-lg mx-spacing-md hidden md:flex items-center gap-2">
+            <div class="relative flex-1 flex items-center">
               <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[18px] pointer-events-none">search</span>
               <input
                 id="global-search-input"
-                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-xl font-body-default text-body-default text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary text-[13px] border border-transparent focus:border-primary transition-all"
-                placeholder="Cari tugas, papan, SOP, atau perizinan..."
+                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-xl font-body-default text-body-default text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-[#0c66e4] text-[13px] border border-transparent focus:border-[#0c66e4] transition-all"
+                placeholder="Search..."
                 type="text"
               />
               <div class="absolute right-2 flex items-center pointer-events-none">
                 <kbd class="px-1.5 py-0.5 rounded bg-surface-container-lowest text-text-muted font-badge-micro text-[10px] shadow-sm border border-surface-border">⌘K</kbd>
               </div>
             </div>
+
+            <!-- Trello-style Create Button directly next to search -->
+            <button
+              id="btn-header-create-board"
+              class="h-8 px-3.5 rounded-lg bg-[#0c66e4] hover:bg-[#0055cc] text-white font-semibold text-[13px] flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Buat papan / proyek baru"
+              type="button"
+            >
+              <span>Create</span>
+            </button>
           </div>
 
-          <!-- Mobile Search Icon (mobile only) -->
-          <button
-            id="btn-mobile-search"
-            aria-label="Cari"
-            class="md:hidden w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container transition-colors"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[20px]">search</span>
-          </button>
+          <!-- Mobile Search & Create Buttons (mobile only) -->
+          <div class="md:hidden flex items-center gap-1.5">
+            <button
+              id="btn-mobile-create-board"
+              aria-label="Buat Papan"
+              class="h-8 px-2.5 rounded-lg bg-[#0c66e4] text-white text-[12px] font-bold flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>Create</span>
+            </button>
+            <button
+              id="btn-mobile-search"
+              aria-label="Cari"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container transition-colors"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[20px]">search</span>
+            </button>
+          </div>
 
           <!-- Actions & User Profile -->
           <div class="flex items-center gap-spacing-md">
@@ -195,6 +216,20 @@ export class Header {
     if (mobileSearchBtn) {
       mobileSearchBtn.addEventListener('click', () => {
         this.modalManager.open('search');
+      });
+    }
+
+    const createBoardBtn = this.element.querySelector('#btn-header-create-board');
+    if (createBoardBtn) {
+      createBoardBtn.addEventListener('click', () => {
+        this.modalManager.open('create-board');
+      });
+    }
+
+    const mobileCreateBoardBtn = this.element.querySelector('#btn-mobile-create-board');
+    if (mobileCreateBoardBtn) {
+      mobileCreateBoardBtn.addEventListener('click', () => {
+        this.modalManager.open('create-board');
       });
     }
 

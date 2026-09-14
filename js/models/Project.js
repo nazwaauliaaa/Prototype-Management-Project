@@ -18,11 +18,19 @@ export class Project {
     members = [],
     tasksCount = { total: 0, completed: 0 },
     budget = '',
+    theme = null,
     createdAt = new Date().toISOString()
   }) {
     this.id = id || 'proj-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     this.code = code || `PRJ-${Math.floor(100 + Math.random() * 900)}`;
     this.name = name;
+    this.theme = theme || {
+      id: 'skyline',
+      name: 'City Skyline',
+      type: 'image',
+      thumb: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80',
+      value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80'
+    };
     this.description = description;
     this.workspace = workspace;
     this.status = status;
