@@ -100,41 +100,56 @@ export class NewTaskModal extends BaseModal {
                 `).join('')}
                 <option value="__new_member__">+ Tambah Orang Baru...</option>
               </select>
-
-              <!-- Formulir Tambah Orang Baru -->
-              <div id="new-pic-field-wrapper" class="hidden mt-2 p-2.5 bg-surface-container-low border border-surface-border rounded-xl flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-bold text-text-primary flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px] text-purple-600">person_add</span>
-                    Orang / Anggota Baru
-                  </span>
-                  <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Tersimpan ke Tim</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <div>
-                    <label class="text-[10px] font-semibold text-text-secondary block mb-0.5">Nama Lengkap *</label>
-                    <input
-                      type="text"
-                      id="input-new-pic-name"
-                      placeholder="Nama orang baru..."
-                      class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-surface-border rounded-lg text-text-primary text-[11.5px] focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-[10px] font-semibold text-text-secondary block mb-0.5">Peran / Posisi *</label>
-                    <input
-                      type="text"
-                      id="input-new-pic-role"
-                      placeholder="Contoh: Frontend Dev"
-                      class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-surface-border rounded-lg text-text-primary text-[11.5px] focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20"
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Formulir Tambah Orang Baru (Full-Width Card) -->
+          <div id="new-pic-field-wrapper" class="hidden p-3 bg-purple-500/5 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-800/40 rounded-xl flex flex-col gap-2.5 transition-all animate-in fade-in slide-in-from-top-1 duration-150">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <div class="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[14px]">person_add</span>
+                </div>
+                <span class="font-caption-meta text-[11.5px] font-bold text-text-primary">Data Orang / Anggota Baru</span>
+              </div>
+              <span class="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-2 py-0.5 rounded-full">
+                <span class="material-symbols-outlined text-[12px]">cloud_done</span>
+                Tersimpan Otomatis ke Tim
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="font-caption-meta text-[10.5px] font-semibold text-text-secondary uppercase tracking-wider block mb-1">
+                  Nama Lengkap <span class="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="input-new-pic-name"
+                  placeholder="Contoh: Nadia Safitri"
+                  class="w-full px-3 py-2 bg-surface-container-lowest border border-surface-border rounded-lg text-text-primary text-[12px] placeholder:text-text-muted focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/30 transition-all font-medium"
+                />
+              </div>
+              <div>
+                <label class="font-caption-meta text-[10.5px] font-semibold text-text-secondary uppercase tracking-wider block mb-1">
+                  Peran / Posisi <span class="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="input-new-pic-role"
+                  placeholder="Contoh: UI/UX Designer"
+                  class="w-full px-3 py-2 bg-surface-container-lowest border border-surface-border rounded-lg text-text-primary text-[12px] placeholder:text-text-muted focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/30 transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            <p class="font-caption-meta text-[10.5px] text-text-muted flex items-center gap-1">
+              <span class="material-symbols-outlined text-[13px] text-purple-500">info</span>
+              Profil baru ini akan disimpan ke daftar tim dan otomatis dijadikan penanggung jawab tugas ini.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Prioritas</label>
               <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
@@ -145,9 +160,8 @@ export class NewTaskModal extends BaseModal {
               </select>
             </div>
 
-          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Estimasi Beban (Jam)</label>
+              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Estimasi Beban</label>
               <input 
                 id="new-task-hours" 
                 type="number" 
@@ -157,9 +171,10 @@ export class NewTaskModal extends BaseModal {
                 class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium"
               />
             </div>
+
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Status Awal</label>
-              <select id="new-task-status" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium">
+              <select id="new-task-status" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
                 <option value="in-progress" selected>In Progress</option>
                 <option value="backlog">Daftar Pekerjaan</option>
                 <option value="review-qa">Review QA</option>
