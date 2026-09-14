@@ -47,10 +47,7 @@ export class Sidebar {
             <div class="w-8 h-8 rounded-lg bg-primary-container p-1 flex items-center justify-center">
               <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-md" src="assets/logo.svg" />
             </div>
-            <div class="flex flex-col">
-              <span class="font-headline-md text-[15px] font-bold text-on-surface leading-none tracking-tight">Creative Office</span>
-              <span class="font-badge-micro text-[10px] text-text-muted leading-none mt-1">Portal Manajemen</span>
-            </div>
+            <span class="font-headline-md text-[15px] font-bold text-on-surface leading-none tracking-tight">Creative Office</span>
           </div>
 
           <!-- Navigasi Utama -->

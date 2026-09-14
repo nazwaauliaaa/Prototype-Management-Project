@@ -168,6 +168,64 @@ export class KanbanBoardView extends BaseView {
           box-shadow: 0 6px 24px rgba(12,102,228,0.35);
           white-space: nowrap;
         }
+
+        /* ── List Collapse Button & Collapsed Column Styles ── */
+        .HWSXYBl9AjpaH2,
+        [data-testid="list-collapse-button"] {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          border-radius: 6px;
+          border: none;
+          background: transparent;
+          color: #626f86;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          padding: 0;
+          flex-shrink: 0;
+        }
+        .HWSXYBl9AjpaH2:hover,
+        [data-testid="list-collapse-button"]:hover {
+          background-color: rgba(9, 30, 66, 0.08);
+          color: #172b4d;
+        }
+        .HWSXYBl9AjpaH2 svg,
+        [data-testid="list-collapse-button"] svg {
+          width: 16px;
+          height: 16px;
+          display: block;
+        }
+        .kanban-column.is-collapsed {
+          min-width: 44px !important;
+          max-width: 44px !important;
+          padding: 10px 8px !important;
+          background-color: rgba(255, 255, 255, 0.88) !important;
+          cursor: pointer;
+          user-select: none;
+        }
+        .kanban-column.is-collapsed .column-header-inner {
+          flex-direction: column;
+          gap: 10px;
+          align-items: center;
+          border-bottom: none !important;
+          padding-bottom: 0 !important;
+          margin-bottom: 0 !important;
+        }
+        .kanban-column.is-collapsed .column-header-title {
+          writing-mode: vertical-rl;
+          transform: rotate(180deg);
+          white-space: nowrap;
+          margin-top: 8px;
+          font-size: 13px;
+        }
+        .kanban-column.is-collapsed .column-drop-hint,
+        .kanban-column.is-collapsed [data-cards-area],
+        .kanban-column.is-collapsed .btn-quick-add-col,
+        .kanban-column.is-collapsed .column-count-badge {
+          display: none !important;
+        }
       </style>
 
       <!-- Ghost badge element for custom drag image -->
@@ -239,13 +297,20 @@ export class KanbanBoardView extends BaseView {
                   data-column-id="${col.id}"
                 >
                   <!-- Column Header -->
-                  <div class="flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}">
-                    <div class="flex items-center gap-2">
-                      <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block"></span>
-                      <h3 class="font-bold text-[13.5px] text-text-primary tracking-tight">${col.title}</h3>
-                      <span class="px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold">
+                  <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
+                      <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate">${col.title}</h3>
+                      <span class="column-count-badge px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold shrink-0">
                         ${colTasks.length}
                       </span>
+                    </div>
+
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button class="btn-clear-kanban-col w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" data-column-id="${col.id}" data-column-title="${col.title}" title="Bersihkan/hapus semua kartu di kolom ini" type="button">
+                        <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
+                      </button>
+                      <button class="HWSXYBl9AjpaH2 bqDBTa8KAMX3yi fHETqJ4siBv5Ok" type="button" data-testid="list-collapse-button" aria-labelledby="list-${col.id === 'backlog' ? '6aa76785514951485f588565' : col.id}" title="Ciutkan daftar"><span role="img" aria-label="Collapse list " class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;"><svg fill="none" viewBox="0 0 16 16" role="presentation" class="_1reo15vq _18m915vq _syaz1r31 _lcxvglyw _s7n4yfq0 _vc881r31 _1bsbpxbi _4t3ipxbi"><path fill="currentcolor" fill-rule="evenodd" d="M6.25 8.75H0v-1.5h6.25zm3.5-1.5H16v1.5H9.75z" clip-rule="evenodd"></path><path fill="currentcolor" fill-rule="evenodd" d="M5.19 8 2.22 5.03l1.06-1.06 3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5-1.06-1.06zm4.03-.53 3.5-3.5 1.06 1.06L10.81 8l2.97 2.97-1.06 1.06-3.5-3.5a.75.75 0 0 1 0-1.06" clip-rule="evenodd"></path></svg></span></button>
                     </div>
                   </div>
 
@@ -264,14 +329,24 @@ export class KanbanBoardView extends BaseView {
                         data-task-status="${task.status}"
                         draggable="true"
                       >
-                        <!-- Card Code & Priority -->
+                        <!-- Card Code & Priority & Delete Button -->
                         <div class="flex items-center justify-between gap-1.5">
                           <span class="px-2 py-0.5 rounded bg-surface-container-low font-mono text-[10.5px] font-bold text-primary">
                             ${task.code || '#TASK'}
                           </span>
-                          <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
-                            ${task.priority}
-                          </span>
+                          <div class="flex items-center gap-1">
+                            <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
+                              ${task.priority}
+                            </span>
+                            <button
+                              class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
+                              data-task-id="${task.id}"
+                              title="Hapus kartu ini"
+                              type="button"
+                            >
+                              <span class="material-symbols-outlined text-[15px]">delete</span>
+                            </button>
+                          </div>
                         </div>
 
                         <!-- Title -->
@@ -708,5 +783,106 @@ export class KanbanBoardView extends BaseView {
 
     // 7. Setup Drag & Drop
     this._setupDragAndDrop();
+
+    // 8. Setup List Collapse Button Toggle
+    const collapseBtns = this.element.querySelectorAll('[data-testid="list-collapse-button"]');
+    collapseBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const col = btn.closest('.kanban-column');
+        if (col) {
+          col.classList.toggle('is-collapsed');
+        }
+      });
+    });
+
+    const columns = this.element.querySelectorAll('.kanban-column');
+    columns.forEach(col => {
+      col.addEventListener('click', (e) => {
+        if (col.classList.contains('is-collapsed')) {
+          col.classList.remove('is-collapsed');
+        }
+      });
+    });
+
+    // 9. Remove / Delete Single Card from Kanban (with Undo, no confirm prompt)
+    const deleteCardBtns = this.element.querySelectorAll('.btn-delete-kanban-card');
+    deleteCardBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const taskId = btn.getAttribute('data-task-id');
+        const task = this.taskService.getTask(taskId);
+        if (!task) return;
+
+        const taskTitle = task.title;
+        // Delete immediately without annoying confirm dialog
+        const result = this.taskService.deleteTask(taskId, true);
+        this.mount(this.element);
+
+        // Show Undo toast notification
+        if (this.notificationService && result) {
+          const truncatedTitle = taskTitle.length > 32 ? taskTitle.substring(0, 32) + '...' : taskTitle;
+          this.notificationService.showWithAction(
+            `Kartu "${truncatedTitle}" dihapus`,
+            {
+              label: 'Undo',
+              onClick: () => {
+                this.taskService.restoreTask(result.task, result.index);
+                this.mount(this.element);
+              }
+            },
+            'warning',
+            6500
+          );
+        }
+      });
+    });
+
+    // 10. Clear / Remove all cards in a Kanban Column (with Undo, no confirm prompt)
+    const clearColBtns = this.element.querySelectorAll('.btn-clear-kanban-col');
+    clearColBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const colTitle = btn.getAttribute('data-column-title');
+        const tasksInCol = this.taskService.getTasks().filter(t => {
+          if (this.projectId) {
+            return t.status === colId && (t.projectId === this.projectId || (!t.projectId && t.workspace === this.currentWorkspace));
+          }
+          return t.status === colId && t.workspace === this.currentWorkspace;
+        });
+
+        if (tasksInCol.length === 0) {
+          if (this.notificationService) {
+            this.notificationService.info(`Kolom "${colTitle}" sudah kosong.`);
+          }
+          return;
+        }
+
+        // Delete all silently without confirm dialog
+        const removedItems = [];
+        tasksInCol.forEach(t => {
+          const res = this.taskService.deleteTask(t.id, true);
+          if (res) removedItems.push(res);
+        });
+        this.mount(this.element);
+
+        // Show Undo toast notification
+        if (this.notificationService && removedItems.length > 0) {
+          this.notificationService.showWithAction(
+            `${removedItems.length} kartu di kolom "${colTitle}" dihapus`,
+            {
+              label: 'Undo',
+              onClick: () => {
+                this.taskService.restoreTasks(removedItems);
+                this.mount(this.element);
+              }
+            },
+            'warning',
+            6500
+          );
+        }
+      });
+    });
   }
 }

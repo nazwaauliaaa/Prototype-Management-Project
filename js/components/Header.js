@@ -48,10 +48,7 @@ export class Header {
           <div class="flex items-center gap-spacing-md">
             <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
               <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
-              <div class="flex flex-col">
-                <span class="font-headline-md text-[15px] font-bold text-on-surface leading-none">Creative Office</span>
-                <span class="font-badge-micro text-[10px] text-text-muted leading-none mt-1">by Sampulkreativ Technology</span>
-              </div>
+              <span class="font-headline-md text-[13px] font-bold text-on-surface leading-none">Creative Office</span>
             </div>
             <div class="header-https-badge hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low text-status-success font-caption-meta text-caption-meta">
               <span class="w-1.5 h-1.5 rounded-full bg-status-success inline-block animate-pulse"></span>
