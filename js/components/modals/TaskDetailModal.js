@@ -76,6 +76,15 @@ export class TaskDetailModal extends BaseModal {
 
             <div class="flex items-center gap-2">
               <button 
+                id="btn-modal-delete-task" 
+                class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 font-body-medium text-[12px] font-semibold transition-colors cursor-pointer border border-rose-500/20"
+                type="button"
+                title="Hapus tugas ini"
+              >
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+                <span>Hapus</span>
+              </button>
+              <button 
                 id="btn-modal-reschedule" 
                 class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-text-secondary font-body-medium text-[12px] transition-colors"
                 type="button"
@@ -478,6 +487,33 @@ export class TaskDetailModal extends BaseModal {
     const closeAction = () => this.modalManager.close(this.modalId);
     if (closeBtn) closeBtn.addEventListener('click', closeAction);
     if (footerCloseBtn) footerCloseBtn.addEventListener('click', closeAction);
+
+    // Delete task button handler (with Undo, no confirm prompt)
+    const deleteBtn = modalRoot.querySelector('#btn-modal-delete-task');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        if (!this.currentTask) return;
+        const task = this.currentTask;
+        const taskTitle = task.title;
+        const result = this.taskService.deleteTask(task.id, true);
+        this.modalManager.close(this.modalId);
+
+        if (this.notificationService && result) {
+          const truncatedTitle = taskTitle.length > 32 ? taskTitle.substring(0, 32) + '...' : taskTitle;
+          this.notificationService.showWithAction(
+            `Tugas "${truncatedTitle}" dihapus`,
+            {
+              label: 'Undo',
+              onClick: () => {
+                this.taskService.restoreTask(result.task, result.index);
+              }
+            },
+            'warning',
+            6500
+          );
+        }
+      });
+    }
 
     // Back to workspace from modal
     const wsBackBtn = modalRoot.querySelector('#btn-modal-back-workspace');

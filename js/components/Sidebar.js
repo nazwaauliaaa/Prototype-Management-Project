@@ -40,7 +40,78 @@ export class Sidebar {
     return `
       <!-- Sidebar Panel -->
       <aside class="fixed left-0 top-0 bottom-0 w-sidebar-width bg-surface-container-lowest pt-topbar-height flex flex-col z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-border">
-        <div class="flex-1"></div>
+        <div class="flex-1 overflow-y-auto px-spacing-sm py-spacing-md flex flex-col gap-spacing-lg">
+          
+          <!-- Branding Logo in Sidebar -->
+          <div class="flex items-center gap-spacing-sm px-2 cursor-pointer mb-2" id="sidebar-brand-logo">
+            <div class="w-8 h-8 rounded-lg bg-primary-container p-1 flex items-center justify-center">
+              <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-md" src="assets/logo.svg" />
+            </div>
+            <span class="font-headline-md text-[15px] font-bold text-on-surface leading-none tracking-tight">Creative Office</span>
+          </div>
+
+          <!-- Navigasi Utama -->
+          <nav class="flex flex-col gap-1">
+            <span class="px-spacing-sm py-1 font-badge-micro text-[10px] text-text-muted uppercase font-bold tracking-wider">
+              Navigasi Utama
+            </span>
+            
+            <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('dashboard') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="dashboard" 
+              href="#/dashboard"
+            >
+              <span class="material-symbols-outlined text-[18px]">grid_view</span>
+              <span>Beranda</span>
+            </a>
+
+            <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('calendar') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="calendar" 
+              href="#/calendar"
+            >
+              <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+              <span>Jadwal Global</span>
+            </a>
+
+            <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('projects') || this.isActiveRoute('project-list') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="projects" 
+              href="#/projects"
+            >
+              <span class="material-symbols-outlined text-[18px]">assignment</span>
+              <span>Daftar Proyek</span>
+            </a>
+
+            <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('kanban') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="kanban" 
+              href="#/kanban"
+            >
+              <span class="material-symbols-outlined text-[18px]">view_kanban</span>
+              <span>Papan Kanban</span>
+            </a>
+
+            <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('docs-sheets') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="docs-sheets" 
+              href="#/docs-sheets"
+            >
+              <span class="material-symbols-outlined text-[18px]">description</span>
+              <span>Dokumen & SOP</span>
+            </a>
+
+            <a 
+              class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all font-body-medium text-[13px] ${this.isActiveRoute('gantt') ? 'bg-primary-container text-on-primary font-semibold shadow-sm' : 'text-text-secondary hover:bg-surface-container hover:text-on-surface'}" 
+              data-route="gantt" 
+              href="#/gantt"
+            >
+              <span class="material-symbols-outlined text-[18px]">waterfall_chart</span>
+              <span>Timeline & Gantt</span>
+            </a>
+          </nav>
+
+        </div>
 
         <!-- Cloud Sync Footer -->
         <div class="p-3 bg-surface-container-low m-2 rounded-xl flex flex-col gap-1 border border-surface-border/50">

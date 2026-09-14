@@ -34,17 +34,21 @@ export class Header {
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
         <div class="w-full h-topbar-height px-3 sm:px-5 flex items-center justify-between gap-3">
 
-          <!-- Left: Brand Logo -->
-          <div class="flex items-center gap-2.5 shrink-0">
-            <!-- Brand Logo -->
-            <div class="flex items-center gap-2 cursor-pointer select-none group" id="header-brand-logo">
-              <div class="w-7 h-7 rounded-lg bg-primary-container p-1 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-                <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[14px] font-bold text-on-surface leading-none tracking-tight">Creative Office</span>
-                <span class="text-[9.5px] text-text-muted leading-none mt-1 font-medium">by Sampulkreativ</span>
-              </div>
+          <!-- Hamburger Menu (mobile only) -->
+          <button
+            id="btn-hamburger-menu"
+            aria-label="Buka menu navigasi"
+            class="md:hidden w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors flex-shrink-0"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[22px]">menu</span>
+          </button>
+
+          <!-- Logo & Branding -->
+          <div class="flex items-center gap-spacing-md">
+            <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
+              <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
+              <span class="font-headline-md text-[13px] font-bold text-on-surface leading-none">Creative Office</span>
             </div>
           </div>
 

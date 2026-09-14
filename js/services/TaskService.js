@@ -302,6 +302,55 @@ export class TaskService {
   }
 
   /**
+   * Delete / remove a task by ID
+   * @param {string} taskId
+   * @param {boolean} [silent] - whether to suppress default toast
+   * @returns {{ task: Task, index: number }|null}
+   */
+  deleteTask(taskId, silent = false) {
+    const index = this.tasks.findIndex(t => t.id === taskId);
+    if (index !== -1) {
+      const removed = this.tasks.splice(index, 1)[0];
+      this.eventBus.emit('tasks:updated', this.tasks);
+      if (!silent) {
+        this.notifications.success(`Tugas "${removed.title}" berhasil dihapus.`);
+      }
+      return { task: removed, index };
+    }
+    return null;
+  }
+
+  /**
+   * Restore a previously deleted task (Undo)
+   * @param {Task} task
+   * @param {number} [index]
+   * @returns {boolean}
+   */
+  restoreTask(task, index = 0) {
+    if (!task) return false;
+    const insertIndex = Math.min(Math.max(0, index), this.tasks.length);
+    this.tasks.splice(insertIndex, 0, task);
+    this.eventBus.emit('tasks:updated', this.tasks);
+    this.notifications.success(`Kartu "${task.title}" berhasil dipulihkan.`);
+    return true;
+  }
+
+  /**
+   * Restore multiple tasks (Undo)
+   * @param {Array<{ task: Task, index: number }>} items
+   */
+  restoreTasks(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    const sorted = [...items].sort((a, b) => a.index - b.index);
+    sorted.forEach(({ task, index }) => {
+      const insertIndex = Math.min(Math.max(0, index), this.tasks.length);
+      this.tasks.splice(insertIndex, 0, task);
+    });
+    this.eventBus.emit('tasks:updated', this.tasks);
+    this.notifications.success(`${sorted.length} kartu berhasil dipulihkan.`);
+  }
+
+  /**
    * Update task status (e.g. dragging between Kanban columns or table dropdown)
    * @param {string} taskId
    * @param {string} newStatus
