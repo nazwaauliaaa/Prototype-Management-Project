@@ -749,15 +749,6 @@ export class KanbanBoardView extends BaseView {
             ${this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
           </button>
 
-          <!-- 2. Planner Button -->
-          <button
-            id="btn-dock-planner"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[17px]">calendar_month</span>
-            <span>Planner</span>
-          </button>
 
           <!-- 3. Board Button (Active) -->
           <button
@@ -783,40 +774,7 @@ export class KanbanBoardView extends BaseView {
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
 
-        <!-- 1. View Switcher Popover -->
-        <div
-          id="popup-view-switcher"
-          class="hidden absolute top-14 left-24 sm:left-36 z-50 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2 text-slate-800 dark:text-white flex flex-col gap-1"
-        >
-          <div class="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            Tampilan Papan
-          </div>
-          <button class="btn-select-view flex items-center justify-between px-3 py-2 rounded-xl text-[12.5px] font-semibold bg-blue-50 text-[#0c66e4] dark:bg-blue-900/30 cursor-pointer" data-view="kanban">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-[17px]">view_week</span>
-              <span>Papan (Board)</span>
-            </div>
-            <span class="material-symbols-outlined text-[16px]">check</span>
-          </button>
-          <button class="btn-select-view flex items-center justify-between px-3 py-2 rounded-xl text-[12.5px] font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer transition-colors" data-view="project-table">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-[17px]">table_chart</span>
-              <span>Tabel Proyek</span>
-            </div>
-          </button>
-          <button class="btn-select-view flex items-center justify-between px-3 py-2 rounded-xl text-[12.5px] font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer transition-colors" data-view="calendar">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-[17px]">calendar_month</span>
-              <span>Kalender / Planner</span>
-            </div>
-          </button>
-          <button class="btn-select-view flex items-center justify-between px-3 py-2 rounded-xl text-[12.5px] font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer transition-colors" data-view="gantt">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-[17px]">timeline</span>
-              <span>Timeline / Gantt</span>
-            </div>
-          </button>
-        </div>
+
 
         <!-- 2. Members Popover -->
         <div
@@ -1541,7 +1499,6 @@ export class KanbanBoardView extends BaseView {
 
   _closeAllPopups() {
     const popups = [
-      '#popup-view-switcher',
       '#popup-board-members',
       '#modal-powerups',
       '#modal-automation',
@@ -1748,30 +1705,16 @@ export class KanbanBoardView extends BaseView {
 
     // ==================== INTERACTIVE BEHAVIORS FOR ALL ICONS ====================
 
-    // A. View Switcher Dropdown [|||] v
+    // A. View Switcher Button [|||] v
     const viewSwitchBtn = this.element.querySelector('#btn-board-view-switch');
     if (viewSwitchBtn) {
       viewSwitchBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this._togglePopup('#popup-view-switcher');
-      });
-    }
-
-    const selectViewBtns = this.element.querySelectorAll('.btn-select-view');
-    selectViewBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetView = btn.getAttribute('data-view');
-        this._closeAllPopups();
-        if (targetView === 'kanban') {
-          if (this.notificationService) {
-            this.notificationService.info('Anda sedang berada di Tampilan Papan.');
-          }
-        } else {
-          this.eventBus.emit('navigate', { view: targetView, workspace: this.currentWorkspace, projectId: this.projectId });
+        if (this.notificationService) {
+          this.notificationService.info('Tampilan Papan aktif.');
         }
       });
-    });
+    }
 
     // B. Member Avatar [ A ]
     const avatarBtn = this.element.querySelector('#btn-board-avatar');
@@ -2010,7 +1953,7 @@ export class KanbanBoardView extends BaseView {
 
     // Close popups when clicking outside
     this.element.addEventListener('click', (e) => {
-      const isInsidePopup = e.target.closest('#popup-view-switcher, #popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu, #modal-switch-boards');
+      const isInsidePopup = e.target.closest('#popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu, #modal-switch-boards');
       const isTrigger = e.target.closest('#btn-board-view-switch, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu, #btn-dock-switch');
       if (!isInsidePopup && !isTrigger) {
         this._closeAllPopups();
@@ -2100,14 +2043,6 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // Dock 2: Planner (Navigate to Calendar View)
-    const dockPlannerBtn = this.element.querySelector('#btn-dock-planner');
-    if (dockPlannerBtn) {
-      dockPlannerBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.eventBus.emit('navigate', { view: 'calendar', workspace: this.currentWorkspace });
-      });
-    }
 
     // Dock 3: Board (Reset/Focus Board)
     const dockBoardBtn = this.element.querySelector('#btn-dock-board');
