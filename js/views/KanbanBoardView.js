@@ -453,19 +453,6 @@ export class KanbanBoardView extends BaseView {
               <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate">
                 ${boardTitle}
               </h1>
-
-              <!-- View Switcher Button [|||] v -->
-              <div class="relative">
-                <button
-                  id="btn-board-view-switch"
-                  class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-                  title="Ganti Tampilan Papan"
-                  type="button"
-                >
-                  <span class="material-symbols-outlined text-[17px]">view_week</span>
-                  <span class="material-symbols-outlined text-[15px]">expand_more</span>
-                </button>
-              </div>
             </div>
 
             <!-- Filter Badge Chip (if filter is active) -->
@@ -1882,17 +1869,6 @@ export class KanbanBoardView extends BaseView {
     });
 
     // ==================== INTERACTIVE BEHAVIORS FOR ALL ICONS ====================
-
-    // A. View Switcher Button [|||] v
-    const viewSwitchBtn = this.element.querySelector('#btn-board-view-switch');
-    if (viewSwitchBtn) {
-      viewSwitchBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.notificationService) {
-          this.notificationService.info('Tampilan Papan aktif.');
-        }
-      });
-    }
 
     // B. Member Avatar [ A ]
     const avatarBtn = this.element.querySelector('#btn-board-avatar');
