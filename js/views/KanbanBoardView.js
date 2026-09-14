@@ -1741,64 +1741,7 @@ export class KanbanBoardView extends BaseView {
           </button>
         </div>
 
-        <!-- 7. Share Modal -->
-        <div
-          id="modal-share"
-          class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
-        >
-          <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div class="flex items-center gap-2 text-slate-800 dark:text-white">
-                <span class="material-symbols-outlined text-[24px] text-blue-600">share</span>
-                <h3 class="font-bold text-[16px]">Bagikan Papan Proyek</h3>
-              </div>
-              <button class="btn-close-modal w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 cursor-pointer">
-                <span class="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-            <div class="flex flex-col gap-3">
-              <div>
-                <label class="text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">Tautan Papan</label>
-                <div class="flex gap-2">
-                  <input
-                    id="input-share-link"
-                    type="text"
-                    readonly
-                    value="https://app.creativeoffice.id/board/${this.currentWorkspace}"
-                    class="flex-1 px-3 py-2 text-[12.5px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 select-all"
-                  />
-                  <button
-                    id="btn-copy-share-link"
-                    type="button"
-                    class="px-3.5 py-2 bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-                  >
-                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
-                    <span>Salin</span>
-                  </button>
-                </div>
-              </div>
 
-              <div>
-                <label class="text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">Undang Lewat Email</label>
-                <div class="flex gap-2">
-                  <input
-                    id="input-invite-email"
-                    type="email"
-                    placeholder="email.rekan@perusahaan.com"
-                    class="flex-1 px-3 py-2 text-[12.5px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#0c66e4] focus:outline-none"
-                  />
-                  <button
-                    id="btn-send-email-invite"
-                    type="button"
-                    class="px-3.5 py-2 bg-slate-800 hover:bg-black text-white text-[12px] font-semibold rounded-xl transition-all cursor-pointer"
-                  >
-                    Kirim
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- 8. More Menu / Theme Drawer -->
         <div
@@ -2650,45 +2593,12 @@ export class KanbanBoardView extends BaseView {
     if (shareBtn) {
       shareBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this._togglePopup('#modal-share');
-      });
-    }
-
-    const copyLinkBtn = this.element.querySelector('#btn-copy-share-link');
-    if (copyLinkBtn) {
-      copyLinkBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const linkInput = this.element.querySelector('#input-share-link');
-        if (linkInput) {
-          try {
-            await navigator.clipboard.writeText(linkInput.value);
-            if (this.notificationService) {
-              this.notificationService.success('Tautan papan berhasil disalin ke clipboard!');
-            }
-          } catch (err) {
-            linkInput.select();
-            document.execCommand('copy');
-            if (this.notificationService) {
-              this.notificationService.success('Tautan papan berhasil disalin!');
-            }
-          }
-        }
-      });
-    }
-
-    const sendEmailInviteBtn = this.element.querySelector('#btn-send-email-invite');
-    if (sendEmailInviteBtn) {
-      sendEmailInviteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const emailInput = this.element.querySelector('#input-invite-email');
-        const emailVal = emailInput ? emailInput.value.trim() : '';
         this._closeAllPopups();
         if (this.modalManager) {
           this.modalManager.open('add-member', {
             workspace: this.currentWorkspace,
             boardTitle: this.project ? this.project.name : this.getWorkspaceName(this.currentWorkspace),
-            projectId: this.projectId,
-            prefillEmail: emailVal
+            projectId: this.projectId
           });
         }
       });
