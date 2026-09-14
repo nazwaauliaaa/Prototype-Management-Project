@@ -215,13 +215,33 @@ export class Header {
       });
     }
 
+    const openDeleteTaskModal = () => {
+      const projectService = this.container.resolve('ProjectService');
+      const projects = projectService ? projectService.getAllProjects() : [];
+      const activeProjectId = localStorage.getItem('active_project_id');
+      const latestProject = projects.length > 0 ? projects[projects.length - 1] : null;
+
+      let targetProjectId = null;
+      let targetWorkspace = localStorage.getItem('active_workspace') || 'ruangkreasi';
+
+      if (activeProjectId && projects.some(p => p.id === activeProjectId)) {
+        targetProjectId = activeProjectId;
+        const found = projects.find(p => p.id === activeProjectId);
+        if (found) targetWorkspace = found.workspace || targetWorkspace;
+      } else if (latestProject) {
+        targetProjectId = latestProject.id;
+        targetWorkspace = latestProject.workspace || targetWorkspace;
+      }
+
+      this.modalManager.open('delete-task', {
+        workspace: targetWorkspace,
+        projectId: targetProjectId
+      });
+    };
+
     const deleteTaskBtn = this.element.querySelector('#btn-header-delete-task');
     if (deleteTaskBtn) {
-      deleteTaskBtn.addEventListener('click', () => {
-        this.modalManager.open('delete-task', {
-          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
-        });
-      });
+      deleteTaskBtn.addEventListener('click', openDeleteTaskModal);
     }
 
     const mobileCreateBoardBtn = this.element.querySelector('#btn-mobile-create-board');
@@ -233,11 +253,7 @@ export class Header {
 
     const mobileDeleteTaskBtn = this.element.querySelector('#btn-mobile-delete-task');
     if (mobileDeleteTaskBtn) {
-      mobileDeleteTaskBtn.addEventListener('click', () => {
-        this.modalManager.open('delete-task', {
-          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
-        });
-      });
+      mobileDeleteTaskBtn.addEventListener('click', openDeleteTaskModal);
     }
 
     const newTaskBtn = this.element.querySelector('#btn-header-new-task');

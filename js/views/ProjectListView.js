@@ -28,18 +28,30 @@ export class ProjectListView extends BaseView {
 
   /** Workspace visual styling dictionary */
   get workspaceMap() {
-    const defaultMap = {
-      'ruangkreasi':  { label: 'RuangKreasi',  color: '#ec4899', bg: 'bg-pink-500/10 text-pink-400 border-pink-500/20' },
-      'layarbaca':    { label: 'LayarBaca',    color: '#3b82f6', bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-      'aikreativ':    { label: 'AIKreativ',    color: '#8b5cf6', bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-      'panen-kunci':  { label: 'Panen Kunci',  color: '#f59e0b', bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-      'sharinginaja': { label: 'Sharinginaja', color: '#10b981', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-    };
+    const map = {};
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    const colors = ['#0c66e4', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+
+    if (this.projectService) {
+      const projects = this.projectService.getAllProjects();
+      projects.forEach((p, idx) => {
+        const wsKey = (p.workspace || p.id).toLowerCase();
+        if (!oldWs.has(wsKey) && !map[wsKey]) {
+          const color = p.theme?.type === 'color' ? p.theme.value : colors[idx % colors.length];
+          map[wsKey] = {
+            label: p.name,
+            color: color,
+            bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+          };
+        }
+      });
+    }
+
     try {
       const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
       custom.forEach(ws => {
-        if (ws && ws.id && !defaultMap[ws.id]) {
-          defaultMap[ws.id] = {
+        if (ws && ws.id && !oldWs.has(ws.id.toLowerCase()) && !map[ws.id]) {
+          map[ws.id] = {
             label: ws.title || ws.id,
             color: ws.color || '#8b5cf6',
             bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
@@ -47,7 +59,34 @@ export class ProjectListView extends BaseView {
         }
       });
     } catch (e) {}
-    return defaultMap;
+    return map;
+  }
+
+  getWorkspaceOptionsHtml() {
+    const list = [];
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    if (this.projectService) {
+      const projects = this.projectService.getAllProjects();
+      projects.forEach(p => {
+        const val = p.workspace || p.id;
+        if (!oldWs.has(val.toLowerCase()) && !list.some(item => item.value === val)) {
+          list.push({ value: val, label: p.name });
+        }
+      });
+    }
+    try {
+      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      custom.forEach(w => {
+        if (!oldWs.has((w.id || '').toLowerCase()) && !list.some(item => item.value === w.id)) {
+          list.push({ value: w.id, label: w.title || w.name });
+        }
+      });
+    } catch (e) {}
+
+    if (list.length === 0) {
+      list.push({ value: 'workspace-utama', label: 'Ruang Kerja Utama' });
+    }
+    return list.map(item => `<option value="${item.value}">${item.label}</option>`).join('');
   }
 
   getFilteredProjects() {
@@ -271,11 +310,7 @@ export class ProjectListView extends BaseView {
                     id="input-project-workspace"
                     class="w-full bg-surface-container/50 border border-surface-border rounded-xl px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-primary transition-all cursor-pointer"
                   >
-                    <option value="ruangkreasi">RuangKreasi</option>
-                    <option value="layarbaca">LayarBaca</option>
-                    <option value="aikreativ">AIKreativ</option>
-                    <option value="panen-kunci">Panen Kunci</option>
-                    <option value="sharinginaja">Sharinginaja</option>
+                    ${this.getWorkspaceOptionsHtml()}
                   </select>
                 </div>
 
@@ -529,7 +564,7 @@ export class ProjectListView extends BaseView {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const name = this.element.querySelector('#input-project-name')?.value || '';
-        const workspace = this.element.querySelector('#input-project-workspace')?.value || 'ruangkreasi';
+        const workspace = this.element.querySelector('#input-project-workspace')?.value || 'workspace-utama';
         const type = this.element.querySelector('#input-project-type')?.value || 'upcoming';
         const priority = this.element.querySelector('#input-project-priority')?.value || 'Medium';
         const dueDate = this.element.querySelector('#input-project-due')?.value || 'Q4 2026';

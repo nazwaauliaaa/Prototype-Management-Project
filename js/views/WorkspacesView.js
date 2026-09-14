@@ -2,9 +2,8 @@ import { BaseView } from '../core/BaseView.js';
 
 /**
  * WorkspacesView - Single Responsibility Principle (SRP)
- * Renders the dedicated "Pilih Ruang Kerja" view featuring 5 interactive workspaces:
- * LayarBaca, AIKreativ, Panen Kunci, RuangKreasi, and Sharinginaja.
- * Dilengkapi tombol dan dialog modal untuk menambah proyek baru secara interaktif.
+ * Renders the dedicated "Pilih Ruang Kerja" view dynamically reflecting
+ * user-created projects and custom workspaces.
  */
 export class WorkspacesView extends BaseView {
   /**
@@ -17,104 +16,16 @@ export class WorkspacesView extends BaseView {
     this.notificationService = container.resolve('NotificationService');
     this.eventBus = container.resolve('EventBus');
 
-    this.activeWorkspaceId = localStorage.getItem('active_workspace') || 'ruangkreasi';
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    const storedWs = localStorage.getItem('active_workspace');
+    this.activeWorkspaceId = (storedWs && !oldWs.has(storedWs.toLowerCase())) ? storedWs : null;
     this.isModalOpen = false;
     this.isDeleteModalOpen = false;
     this.pendingDeleteWsId = null;
     this.pendingDeleteWsTitle = null;
     this.hostElement = null;
 
-    this.defaultWorkspaces = [
-      {
-        id: 'layarbaca',
-        title: 'LayarBaca',
-        tag: 'Produk / E-Book & Reader',
-        description: 'Modernisasi sistem pembaca konten interaktif, optimasi typography engine, dan offline mode.',
-        color: '#3b82f6',
-        iconSvg: `
-          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 4.5C4 3.5 7 3.5 12 5.5C17 3.5 20 3.5 22 4.5V19.5C20 18.5 17 18.5 12 20.5C7 18.5 4 18.5 2 19.5V4.5Z"/>
-            <path d="M12 5.5V20.5"/>
-            <path d="M5 8.5H9"/><path d="M5 12H9"/><path d="M5 15.5H9"/>
-            <path d="M15 8.5H19"/><path d="M15 12H19"/><path d="M15 15.5H19"/>
-          </svg>
-        `
-      },
-      {
-        id: 'aikreativ',
-        title: 'AIKreativ',
-        tag: 'Studio / Generative AI',
-        description: 'Pipeline pembuatan storyboard dan animasi dinamis otomatis menggunakan generative assets.',
-        color: '#8b5cf6',
-        iconSvg: `
-          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2A6 6 0 0 0 6 8C6 10.5 7.5 12 8.5 13.5V16H12"/>
-            <line x1="8.5" y1="18.5" x2="12" y2="18.5"/>
-            <line x1="9.5" y1="21" x2="12" y2="21"/>
-            <line x1="3" y1="8" x2="1" y2="8"/>
-            <line x1="4.5" y1="4" x2="3" y2="2.5"/>
-            <line x1="4.5" y1="12" x2="3" y2="13.5"/>
-            <path d="M12 2C15 2 18 3.5 18 6.5C18 7.5 17.5 8.5 17 9C18.5 9.5 19 11 19 12.5C19 14.5 17.5 16 16 16.5V19C16 20.1 15.1 21 14 21H12"/>
-            <path d="M14 6C15 6 15.5 7 15 8C14.5 9 13 9 12 9"/>
-            <path d="M14 12C15.5 12 16 13 15 14C14 15 13 14.5 12 14.5"/>
-            <path d="M12 2V21"/>
-          </svg>
-        `
-      },
-      {
-        id: 'panen-kunci',
-        title: 'Panen Kunci',
-        tag: 'SaaS / Auth & Security',
-        description: 'Sistem Single Sign-On korporat, enkripsi token terdistribusi, dan arsitektur Zero-Trust.',
-        color: '#f59e0b',
-        iconSvg: `
-          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 21C6 17 8 13 9 8"/>
-            <path d="M4 18C2.5 17 2 15 3 14C4.5 15 5.5 16.5 4 18Z"/>
-            <path d="M5.5 14C4 13 3.5 11 4.5 10C6 11 7 12.5 5.5 14Z"/>
-            <path d="M7 10C5.5 9 5 7 6 6C7.5 7 8.5 8.5 7 10Z"/>
-            <path d="M8.5 6C7.5 5 7.5 3 8.5 2C9.5 3.5 10 5 8.5 6Z"/>
-            <circle cx="16.5" cy="7.5" r="3.5"/>
-            <path d="M14 10L7 17"/>
-            <path d="M8.5 18.5L10 17"/>
-            <path d="M10.5 16.5L12 15"/>
-          </svg>
-        `
-      },
-      {
-        id: 'ruangkreasi',
-        title: 'RuangKreasi',
-        tag: 'Dev / UI & Creative Hub',
-        description: 'Audit Safe-Zone LED Bundaran HI & Flyover Antasari, kalibrasi pixel mapping Novastar.',
-        color: '#ec4899',
-        iconSvg: `
-          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C13.5 22 14.5 21 14.5 19.5C14.5 18.8 14.2 18.2 13.8 17.7C13.4 17.2 13.1 16.6 13.1 16C13.1 14.9 14 14 15.1 14H17C19.76 14 22 11.76 22 9C22 5.13 17.52 2 12 2Z"/>
-            <circle cx="6.5" cy="8.5" r="1.5" fill="currentColor"/>
-            <circle cx="10" cy="6" r="1.5" fill="currentColor"/>
-            <circle cx="8" cy="14" r="1.5" fill="currentColor"/>
-            <circle cx="16" cy="7.5" r="1.5" fill="currentColor"/>
-            <path d="M18 13L21 21M18 13L16 11M21 21L19.5 21.5"/>
-          </svg>
-        `
-      },
-      {
-        id: 'sharinginaja',
-        title: 'Sharinginaja',
-        tag: 'Cloud / Assets & Drive',
-        description: 'Infrastruktur sinkronisasi multi-region S3, media assets delivery, dan high-throughput storage.',
-        color: '#10b981',
-        iconSvg: `
-          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 19C4.5 19 6 20 8 20H15C17 20 18 18.5 18 17C18 16.5 17.5 15.5 16 15H11L8.5 16H3V19Z"/>
-            <path d="M3 16V19"/>
-            <path d="M6 9H16L13 6"/>
-            <path d="M18 12H8L11 15"/>
-          </svg>
-        `
-      }
-    ];
-
+    this.defaultWorkspaces = [];
     this.workspaces = [];
     this.loadWorkspaces();
   }
@@ -132,8 +43,38 @@ export class WorkspacesView extends BaseView {
     } catch (e) {
       deleted = [];
     }
-    const all = [...custom, ...this.defaultWorkspaces];
-    this.workspaces = all.filter(ws => !deleted.includes(ws.id));
+
+    // Projects from ProjectService become dynamic real workspaces
+    const projectWs = [];
+    if (this.projectService) {
+      const projects = this.projectService.getAllProjects();
+      projects.forEach(p => {
+        projectWs.push({
+          id: p.workspace || p.id,
+          projectId: p.id,
+          title: p.name,
+          tag: p.category || 'Proyek Aktif',
+          description: p.description || `Ruang kerja & deliverable proyek ${p.name}.`,
+          color: p.theme?.type === 'color' ? p.theme.value : '#0c66e4',
+          iconSvg: `
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          `
+        });
+      });
+    }
+
+    const all = [...projectWs, ...custom];
+    // Filter out old mock workspaces
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    this.workspaces = all.filter(ws => !deleted.includes(ws.id) && !oldWs.has(ws.id.toLowerCase()));
+
+    // Update active workspace if pointing to deleted old workspace
+    if (this.workspaces.length > 0 && (!this.activeWorkspaceId || oldWs.has(this.activeWorkspaceId.toLowerCase()))) {
+      this.activeWorkspaceId = this.workspaces[0].id;
+      localStorage.setItem('active_workspace', this.activeWorkspaceId);
+    }
   }
 
   mount(hostElement) {
@@ -674,7 +615,7 @@ export class WorkspacesView extends BaseView {
 
         // 4. If current active workspace is deleted, fallback to another available
         if (this.activeWorkspaceId === wsId) {
-          const fallbackId = this.workspaces[0] ? this.workspaces[0].id : 'ruangkreasi';
+          const fallbackId = this.workspaces[0] ? this.workspaces[0].id : 'workspace-utama';
           this.activeWorkspaceId = fallbackId;
           localStorage.setItem('active_workspace', fallbackId);
           this.eventBus.emit('workspace:selected', { workspace: fallbackId });

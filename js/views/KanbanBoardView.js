@@ -15,9 +15,42 @@ export class KanbanBoardView extends BaseView {
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
 
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    const storedWs = localStorage.getItem('active_workspace');
+    const storedProjId = localStorage.getItem('active_project_id');
+
     this.projectId = null;
     this.project = null;
-    this.currentWorkspace = localStorage.getItem('active_workspace') || 'ruangkreasi';
+
+    if (this.projectService) {
+      const projects = this.projectService.getAllProjects();
+      if (storedProjId && projects.some(p => p.id === storedProjId)) {
+        this.projectId = storedProjId;
+        this.project = projects.find(p => p.id === storedProjId);
+        this.currentWorkspace = this.project.workspace || this.project.id;
+      } else if (storedWs && !oldWs.has(storedWs.toLowerCase())) {
+        this.currentWorkspace = storedWs;
+        const p = projects.find(p => p.workspace === storedWs || p.id === storedWs);
+        if (p) {
+          this.project = p;
+          this.projectId = p.id;
+        }
+      } else if (projects.length > 0) {
+        // Fallback to newest project
+        const latest = projects[projects.length - 1];
+        this.project = latest;
+        this.projectId = latest.id;
+        this.currentWorkspace = latest.workspace || latest.id;
+      }
+    }
+
+    if (!this.currentWorkspace || oldWs.has(this.currentWorkspace.toLowerCase())) {
+      this.currentWorkspace = 'workspace-utama';
+    }
+    localStorage.setItem('active_workspace', this.currentWorkspace);
+    if (this.projectId) {
+      localStorage.setItem('active_project_id', this.projectId);
+    }
 
     // Drag state
     this._draggedTaskId = null;
@@ -127,7 +160,14 @@ export class KanbanBoardView extends BaseView {
   }
 
   setWorkspace(workspace) {
-    this.currentWorkspace = workspace || 'ruangkreasi';
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    if (workspace && !oldWs.has(workspace.toLowerCase())) {
+      this.currentWorkspace = workspace;
+    } else if (this.project) {
+      this.currentWorkspace = this.project.workspace || this.project.id;
+    } else {
+      this.currentWorkspace = 'workspace-utama';
+    }
     this.isStarred = localStorage.getItem(`starred_board_${this.currentWorkspace}`) === 'true';
     this.boardVisibility = localStorage.getItem(`board_vis_${this.currentWorkspace}`) || 'Ruang Kerja';
     this._initColumns();
@@ -135,29 +175,27 @@ export class KanbanBoardView extends BaseView {
 
   setProject(projectId) {
     this.projectId = projectId;
+    localStorage.setItem('active_project_id', projectId || '');
     if (this.projectService) {
       this.project = this.projectService.getProject(projectId);
       if (this.project) {
-        this.currentWorkspace = this.project.workspace || 'ruangkreasi';
+        this.currentWorkspace = this.project.workspace || this.project.id;
+        localStorage.setItem('active_workspace', this.currentWorkspace);
         this.setWorkspace(this.currentWorkspace);
       }
     }
   }
 
   getWorkspaceName(wsKey) {
-    if (!wsKey) return 'RuangKreasi';
-    const names = {
-      'ruangkreasi': 'RuangKreasi',
-      'layarbaca': 'LayarBaca',
-      'aikreativ': 'AIKreativ',
-      'panen-kunci': 'Panen Kunci',
-      'sharinginaja': 'Sharinginaja'
-    };
-    if (names[wsKey]) return names[wsKey];
+    if (!wsKey) return 'Projek';
+    if (this.projectService) {
+      const found = this.projectService.getAllProjects().find(p => p.workspace === wsKey || p.id === wsKey);
+      if (found) return found.name;
+    }
     try {
       const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
       const found = custom.find(w => w.id === wsKey);
-      if (found && found.title) return found.title;
+      if (found && (found.title || found.name)) return found.title || found.name;
     } catch (e) {}
     return wsKey.charAt(0).toUpperCase() + wsKey.slice(1);
   }
@@ -316,7 +354,7 @@ export class KanbanBoardView extends BaseView {
     } catch(e) {}
 
     // 3. Ensure current workspace/project is represented so the user always sees what's active
-    const currentWs = this.currentWorkspace || 'ruangkreasi';
+    const currentWs = this.currentWorkspace || (this.project?.workspace || 'workspace-utama');
     const currentTitle = this.project ? this.project.name : this.getWorkspaceName(currentWs);
     if (!list.some(item => (this.projectId && item.id === this.projectId) || item.workspace === currentWs)) {
       list.unshift({
@@ -338,7 +376,7 @@ export class KanbanBoardView extends BaseView {
     if (this.projectId && !this.project && this.projectService) {
       this.project = this.projectService.getProject(this.projectId);
       if (this.project) {
-        this.currentWorkspace = this.project.workspace || 'ruangkreasi';
+        this.currentWorkspace = this.project.workspace || this.project.id;
       }
     }
 
@@ -363,7 +401,7 @@ export class KanbanBoardView extends BaseView {
     }
 
     // Filter tasks for this project / workspace
-    const currentWs = (this.currentWorkspace || 'ruangkreasi').toLowerCase();
+    const currentWs = (this.currentWorkspace || (this.project?.workspace || 'workspace-utama')).toLowerCase();
     const allTasks = this.taskService ? this.taskService.getTasks().filter(t => {
       const taskWs = (t.workspace || '').toLowerCase();
       const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && taskWs === currentWs)) : (taskWs === currentWs);
@@ -501,24 +539,61 @@ export class KanbanBoardView extends BaseView {
         <!-- Board Top Header Bar (Trello Toolbar) -->
         <div class="w-full px-4 sm:px-6 py-2.5 bg-black/35 backdrop-blur-md border-b border-white/15 flex flex-wrap items-center justify-between gap-3 text-white z-30 relative">
           
-          <!-- Left: Back to Home + Board Title + View Switcher Icon [|||] v -->
+          <!-- Left: Back to Home + Board Title + Project Switcher Icon -->
           <div class="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               id="btn-kanban-back-home"
-              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10"
               title="Kembali ke Beranda"
               type="button"
             >
-              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span class="hidden sm:inline">Beranda</span>
+              <span class="material-symbols-outlined text-[17px]">arrow_back</span>
+              <span>Beranda</span>
             </button>
 
             <span class="text-white/30 hidden sm:inline">|</span>
 
-            <div class="flex items-center gap-1.5 min-w-0">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate">
                 ${boardTitle}
               </h1>
+
+              <!-- Trello View Switcher Button -->
+              <button
+                id="btn-board-view-switch"
+                class="cXf48TZtPvQeOg Rx3sa75BrhBLpI CPJ6qEQnd2n6OO bqDBTa8KAMX3yi NJP5k28ExDCtBL flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10"
+                type="button"
+                data-testid="view-switcher-button-more"
+                aria-label="Views"
+                title="Tampilan Papan (Views)"
+              >
+                <span class="rEmmk8utBLKl8s flex items-center justify-center">
+                  <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n flex items-center" style="color: currentcolor;">
+                    <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-4 h-4 _1reo15vq _18m915vq _syaz1r31 _lcxvglyw _s7n4yfq0 _vc881r31 _1bsbpxbi _4t3ipxbi">
+                      <path fill="currentColor" d="M13.25 13.5h1.25v-11h-1.25zm-11.75-2h1.25v-9H1.5zm5.75-2h1.5v-7h-1.5zm-3 2.125c0 .76-.616 1.375-1.375 1.375h-1.5C.615 13 0 12.384 0 11.625v-9.25C0 1.615.616 1 1.375 1h1.5c.76 0 1.375.616 1.375 1.375zm6-2c0 .76-.616 1.375-1.375 1.375h-1.75c-.76 0-1.375-.616-1.375-1.375v-7.25C5.75 1.615 6.366 1 7.125 1h1.75c.76 0 1.375.616 1.375 1.375zm5.75 4c0 .76-.616 1.375-1.375 1.375h-1.5c-.76 0-1.375-.616-1.375-1.375V2.375c0-.76.616-1.375 1.375-1.375h1.5C15.385 1 16 1.616 16 2.375z"></path>
+                    </svg>
+                  </span>
+                </span>
+                <span class="_qYYcM3h1GTQ5w flex items-center justify-center">
+                  <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n flex items-center" style="color: currentcolor;">
+                    <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-3.5 h-3.5 _1reo15vq _18m915vq _syaz1r31 _lcxvglyw _s7n4yfq0 _vc881r31 _1bsbpxbi _4t3ipxbi">
+                      <path fill="currentColor" d="m14.53 6.03-6 6a.75.75 0 0 1-1.004.052l-.056-.052-6-6 1.06-1.06L8 10.44l5.47-5.47z"></path>
+                    </svg>
+                  </span>
+                </span>
+              </button>
+
+              <!-- Icon Pindah Projek / Ruang Kerja -->
+              <button
+                id="btn-header-switch-project"
+                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10"
+                title="Pindah ke projek yang ada atau projek yang telah dibuat"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[17px]">folder_open</span>
+                <span class="hidden md:inline font-medium">Pilih Projek</span>
+                <span class="material-symbols-outlined text-[15px]">expand_more</span>
+              </button>
             </div>
 
             <!-- Filter Badge Chip (if filter is active) -->
@@ -945,14 +1020,16 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- Floating Bottom Dock matching screenshot -->
+        <!-- Floating Bottom Dock matching screenshot -->
         <nav
           id="kanban-bottom-dock"
-          class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-2.5 py-1.5 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 transition-all"
+          class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 transition-all"
         >
-          <!-- 1. Inbox Button -->
+          <!-- 1. Inbox Button (Kiri) -->
           <button
             id="btn-dock-inbox"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/80 dark:bg-blue-900/30 font-bold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 font-bold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer active:scale-95"
+            title="Inbox Tugas"
             type="button"
           >
             <span class="material-symbols-outlined text-[17px]">inbox</span>
@@ -960,34 +1037,35 @@ export class KanbanBoardView extends BaseView {
             ${this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
           </button>
 
-          <!-- 2. Ruang Kerja Button (Pilih Proyek Lain) -->
-          <button
-            id="btn-dock-workspaces"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-            title="Pilih Ruang Kerja / Proyek Lain"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[17px]">workspaces</span>
-            <span>Ruang Kerja</span>
-            ${availableWorkspaces.length > 1 ? `<span class="px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0c66e4] dark:bg-blue-950/60 dark:text-blue-300 text-[9.5px] font-bold">${availableWorkspaces.length}</span>` : ''}
-          </button>
-
-          <!-- 3. Board Button (Active) -->
+          <!-- 2. Board / Kanban Button (Tengah - Active) -->
           <button
             id="btn-dock-board"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold text-[#0c66e4] bg-blue-50/80 dark:bg-blue-900/30 relative transition-all cursor-pointer"
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 relative transition-all cursor-pointer shadow-xs border border-blue-200/60 dark:border-blue-800/60 active:scale-95"
+            title="Tampilan Papan Kanban (Aktif)"
             type="button"
           >
             <span class="material-symbols-outlined text-[17px]">view_week</span>
-            <span>Board</span>
+            <span>Kanban</span>
             <span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>
+          </button>
+
+          <!-- 3. Ruang Kerja Button (Paling Kanan) -->
+          <button
+            id="btn-dock-workspaces"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer active:scale-95 group"
+            title="Pilih Ruang Kerja / Proyek Lain"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-[18px] leading-none shrink-0 inline-flex items-center justify-center text-slate-500 group-hover:text-slate-800 dark:text-slate-400 dark:group-hover:text-white transition-colors">workspaces</span>
+            <span class="leading-none">Ruang Kerja</span>
+            ${availableWorkspaces.length > 0 ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-100 text-[#0c66e4] dark:bg-blue-950/70 dark:text-blue-300 text-[10px] font-bold leading-none shrink-0 border border-blue-200/60 dark:border-blue-800/60">${availableWorkspaces.length}</span>` : ''}
           </button>
         </nav>
 
         <!-- Ruang Kerja / Proyek Lain Popover -->
         <div
           id="popup-dock-workspaces"
-          class="hidden fixed bottom-22 left-1/2 -translate-x-1/2 z-50 w-80 sm:w-88 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-4 text-slate-800 dark:text-white flex flex-col gap-3 transition-all animate-in fade-in zoom-in duration-150"
+          class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-80 sm:w-88 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-4 text-slate-800 dark:text-white flex flex-col gap-3 transition-all animate-in fade-in zoom-in duration-150"
         >
           <!-- Header -->
           <div class="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-slate-800">
@@ -1005,8 +1083,13 @@ export class KanbanBoardView extends BaseView {
               </div>
             </div>
 
-            <button class="btn-close-modal w-6 h-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer" title="Tutup">
-              <span class="material-symbols-outlined text-[16px]">close</span>
+            <button
+              id="btn-close-dock-workspaces"
+              class="btn-close-modal w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer active:scale-95"
+              title="Tutup"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[18px] pointer-events-none">close</span>
             </button>
           </div>
 
@@ -1065,6 +1148,150 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
+
+        <!-- Views Switcher Popover (Trello Style) -->
+        <div
+          id="popup-board-view-switch"
+          class="hidden absolute top-14 left-4 sm:left-48 z-50 w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-3.5 text-slate-800 dark:text-white flex flex-col gap-2.5 transition-all animate-in fade-in zoom-in duration-150"
+        >
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+            <h4 class="font-bold text-[13px] text-slate-900 dark:text-white">Tampilan Projek</h4>
+            <button class="btn-close-modal w-6 h-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer" type="button" title="Tutup">
+              <span class="material-symbols-outlined text-[16px] pointer-events-none">close</span>
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <!-- 1. Papan (Kanban) - Active -->
+            <button class="w-full p-2 rounded-xl text-left flex items-center justify-between bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-800/80 text-[#0c66e4] dark:text-blue-300 font-bold text-[12.5px] cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px]">view_week</span>
+                <span>Papan (Kanban)</span>
+              </div>
+              <span class="material-symbols-outlined text-[17px]">check</span>
+            </button>
+
+            <!-- 2. Tabel (Table View) -->
+            <button id="btn-switch-view-table" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">table_chart</span>
+                <span>Tabel (Table)</span>
+              </div>
+            </button>
+
+            <!-- 3. Kalender (Calendar View) -->
+            <button id="btn-switch-view-calendar" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
+                <span>Kalender (Calendar)</span>
+              </div>
+            </button>
+
+            <!-- 4. Timeline (Gantt) -->
+            <button id="btn-switch-view-gantt" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">timeline</span>
+                <span>Timeline (Gantt)</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 0. Header Projects Switcher Popover -->
+        <div
+          id="popup-header-projects"
+          class="hidden absolute top-14 left-4 sm:left-32 z-50 w-80 sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-4 text-slate-800 dark:text-white flex flex-col gap-3 transition-all animate-in fade-in zoom-in duration-150"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-slate-800">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200/60 dark:border-indigo-800/60">
+                <span class="material-symbols-outlined text-[19px]">folder_open</span>
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-[13.5px] text-slate-900 dark:text-white tracking-tight leading-tight truncate">
+                  Pindah Projek
+                </h4>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  ${availableWorkspaces.length} Projek / Ruang Kerja Tersedia
+                </p>
+              </div>
+            </div>
+
+            <button
+              id="btn-close-header-projects"
+              class="btn-close-modal w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer active:scale-95"
+              title="Tutup"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[18px] pointer-events-none">close</span>
+            </button>
+          </div>
+
+          <!-- List Proyek yang Tersedia -->
+          <div class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-0.5" id="header-projects-list">
+            ${availableWorkspaces.map(item => {
+              const isCurrent = (this.projectId && item.id === this.projectId) || (!this.projectId && item.workspace === this.currentWorkspace);
+              const taskCount = this.taskService ? this.taskService.getTasks().filter(t => (item.type === 'project' && t.projectId === item.id) || (!t.projectId && t.workspace === item.workspace)).length : 0;
+
+              return `
+                <button
+                  class="btn-header-switch-project-item w-full p-2.5 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${isCurrent ? 'bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 shadow-xs' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'}"
+                  data-id="${item.id}"
+                  data-workspace="${item.workspace}"
+                  data-type="${item.type}"
+                  type="button"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-[11px] shadow-xs shrink-0" style="background: ${item.theme?.type === 'gradient' ? item.theme.value : (item.theme?.type === 'color' ? item.theme.value : '#4f46e5')}">
+                      <span class="material-symbols-outlined text-[18px]">folder</span>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-[12.5px] text-slate-900 dark:text-white truncate">${item.name}</span>
+                        ${isCurrent ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">Aktif</span>' : ''}
+                      </div>
+                      <div class="text-[10.5px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                        <span>${item.category}</span>
+                        <span>•</span>
+                        <span>${taskCount} tugas</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  ${isCurrent ? `
+                    <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-[18px] shrink-0">check_circle</span>
+                  ` : `
+                    <span class="material-symbols-outlined text-slate-400 text-[17px] shrink-0">chevron_right</span>
+                  `}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Bottom Actions: Kembali ke Beranda & Buat Projek Baru -->
+          <div class="pt-2 border-t border-slate-200/80 dark:border-slate-800 flex flex-col gap-1.5">
+            <!-- Button Kembali ke Beranda -->
+            <button
+              id="btn-popup-go-home"
+              class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[12px] font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[17px] text-emerald-600 dark:text-emerald-400">home</span>
+              <span>Kembali ke Beranda</span>
+            </button>
+
+            <!-- Button Buat Projek Baru -->
+            <button
+              id="btn-header-create-new-project"
+              class="w-full py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-indigo-200/60 dark:border-indigo-800/60"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>Buat Projek Baru</span>
+            </button>
+          </div>
+        </div>
 
 
 
@@ -1822,6 +2049,9 @@ export class KanbanBoardView extends BaseView {
 
   _closeAllPopups() {
     const popups = [
+      '#popup-board-view-switch',
+      '#popup-header-projects',
+      '#popup-dock-workspaces',
       '#popup-board-members',
       '#modal-powerups',
       '#modal-automation',
@@ -1847,11 +2077,106 @@ export class KanbanBoardView extends BaseView {
   }
 
   bindEvents() {
-    // 1. Back to Home (Beranda)
+    // 0. Trello View Switcher Button
+    const viewSwitchBtn = this.element.querySelector('#btn-board-view-switch');
+    if (viewSwitchBtn) {
+      viewSwitchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._togglePopup('#popup-board-view-switch');
+      });
+    }
+
+    const switchTableBtn = this.element.querySelector('#btn-switch-view-table');
+    if (switchTableBtn) {
+      switchTableBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        this.eventBus.emit('navigate', { view: 'project-table', workspace: this.currentWorkspace, projectId: this.projectId });
+      });
+    }
+
+    const switchCalendarBtn = this.element.querySelector('#btn-switch-view-calendar');
+    if (switchCalendarBtn) {
+      switchCalendarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        this.eventBus.emit('navigate', { view: 'calendar', workspace: this.currentWorkspace, projectId: this.projectId });
+      });
+    }
+
+    const switchGanttBtn = this.element.querySelector('#btn-switch-view-gantt');
+    if (switchGanttBtn) {
+      switchGanttBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        this.eventBus.emit('navigate', { view: 'gantt', workspace: this.currentWorkspace, projectId: this.projectId });
+      });
+    }
+
+    // 1. Back to Home (Beranda) from Header
     const backHomeBtn = this.element.querySelector('#btn-kanban-back-home');
     if (backHomeBtn) {
       backHomeBtn.addEventListener('click', () => {
         this.eventBus.emit('navigate', { view: 'dashboard' });
+      });
+    }
+
+    // 1.1 Header Project Switcher Button Toggle
+    const headerSwitchProjectBtn = this.element.querySelector('#btn-header-switch-project');
+    if (headerSwitchProjectBtn) {
+      headerSwitchProjectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._togglePopup('#popup-header-projects');
+      });
+    }
+
+    // 1.2 Header Project Switch Items
+    const switchHeaderProjBtns = this.element.querySelectorAll('.btn-header-switch-project-item');
+    switchHeaderProjBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const itemId = btn.getAttribute('data-id');
+        const ws = btn.getAttribute('data-workspace');
+        const type = btn.getAttribute('data-type');
+        this._closeAllPopups();
+
+        if (type === 'project' && this.projectService) {
+          this.setProject(itemId);
+          this.eventBus.emit('navigate', { view: 'kanban', projectId: itemId, workspace: ws });
+        } else {
+          this.projectId = null;
+          this.project = null;
+          this.setWorkspace(ws);
+          this.eventBus.emit('navigate', { view: 'kanban', workspace: ws });
+        }
+
+        if (this.notificationService) {
+          const name = btn.querySelector('.font-bold')?.textContent || 'Projek';
+          this.notificationService.success(`Beralih ke projek "${name}".`);
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // 1.3 Popup Go Home Button
+    const popupGoHomeBtn = this.element.querySelector('#btn-popup-go-home');
+    if (popupGoHomeBtn) {
+      popupGoHomeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        this.eventBus.emit('navigate', { view: 'dashboard' });
+      });
+    }
+
+    // 1.4 Popup Create New Project Button
+    const headerCreateProjectBtn = this.element.querySelector('#btn-header-create-new-project');
+    if (headerCreateProjectBtn) {
+      headerCreateProjectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        if (this.modalManager) {
+          this.modalManager.open('create-board');
+        }
       });
     }
 
@@ -2329,14 +2654,37 @@ export class KanbanBoardView extends BaseView {
     closeBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        e.preventDefault();
         this._closeAllPopups();
       });
     });
 
+    // Explicit Close for Ruang Kerja Dock Popover
+    const closeDockWsBtn = this.element.querySelector('#btn-close-dock-workspaces');
+    if (closeDockWsBtn) {
+      closeDockWsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const popup = this.element.querySelector('#popup-dock-workspaces');
+        if (popup) popup.classList.add('hidden');
+      });
+    }
+
+    // Explicit Close for Header Projects Popover
+    const closeHeaderProjBtn = this.element.querySelector('#btn-close-header-projects');
+    if (closeHeaderProjBtn) {
+      closeHeaderProjBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const popup = this.element.querySelector('#popup-header-projects');
+        if (popup) popup.classList.add('hidden');
+      });
+    }
+
     // Close popups when clicking outside
     this.element.addEventListener('click', (e) => {
-      const isInsidePopup = e.target.closest('#popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu');
-      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu');
+      const isInsidePopup = e.target.closest('#popup-board-view-switch, #popup-header-projects, #popup-dock-workspaces, #popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu');
+      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-header-switch-project, #btn-dock-workspaces, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu');
       if (!isInsidePopup && !isTrigger) {
         this._closeAllPopups();
       }

@@ -2,7 +2,8 @@ import { BaseModal } from '../../core/BaseModal.js';
 
 /**
  * DeleteTaskModal - Single Responsibility Principle (SRP)
- * Modal dedicated to managing, searching, and safely deleting tasks across workspaces with instant Undo capability.
+ * Modal dedicated to managing, searching, and safely deleting tasks across projects & workspaces with instant Undo capability.
+ * Automatically defaults to the current active project or the latest created project.
  */
 export class DeleteTaskModal extends BaseModal {
   constructor(container) {
@@ -10,31 +11,49 @@ export class DeleteTaskModal extends BaseModal {
     this.taskService = container.resolve('TaskService');
     this.notificationService = container.resolve('NotificationService');
     this.modalManager = container.resolve('ModalManager');
+    this.projectService = container.resolve('ProjectService');
     this.selectedWorkspace = 'all';
     this.searchQuery = '';
     this._modalRoot = null;
   }
 
   getWorkspaceList() {
-    const defaultWs = [
-      { id: 'all', title: 'Semua Workspace' },
-      { id: 'ruangkreasi', title: 'RuangKreasi' },
-      { id: 'layarbaca', title: 'LayarBaca' },
-      { id: 'aikreativ', title: 'AIKreativ' },
-      { id: 'panen-kunci', title: 'Panen Kunci' },
-      { id: 'sharinginaja', title: 'Sharinginaja' }
+    const list = [
+      { id: 'all', title: 'Semua Projek & Ruang Kerja', name: 'Semua Projek' }
     ];
 
+    // 1. Hanya Projek nyata yang ada sekarang / terbaru dari ProjectService
+    if (this.projectService) {
+      const projects = this.projectService.getAllProjects();
+      projects.forEach(p => {
+        list.push({
+          id: p.id,
+          title: `Projek: ${p.name}`,
+          name: p.name,
+          workspace: p.workspace,
+          isProject: true
+        });
+      });
+    }
+
+    // 2. Ruang Kerja Kustom pengguna (jika ada dibuat)
     try {
       const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
       custom.forEach(w => {
-        if (!defaultWs.find(item => item.id === w.id)) {
-          defaultWs.push({ id: w.id, title: w.title });
+        if (!oldWs.has((w.id || '').toLowerCase()) && !list.some(item => item.id === w.id || item.workspace === w.id)) {
+          list.push({
+            id: w.id,
+            title: `Ruang Kerja: ${w.title || w.name}`,
+            name: w.title || w.name,
+            workspace: w.id,
+            isProject: false
+          });
         }
       });
     } catch (e) {}
 
-    return defaultWs;
+    return list;
   }
 
   getStatusBadge(status) {
@@ -59,30 +78,71 @@ export class DeleteTaskModal extends BaseModal {
   }
 
   render(data = {}) {
-    this.selectedWorkspace = data?.workspace || 'all';
+    const projects = this.projectService ? this.projectService.getAllProjects() : [];
+    const latestProject = projects.length > 0 ? projects[projects.length - 1] : null;
+
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+    const rawWs = data?.workspace || localStorage.getItem('active_workspace');
+    const activeWorkspace = (rawWs && !oldWs.has(rawWs.toLowerCase())) ? rawWs : null;
+
+    // Prioritaskan projek yang aktif sekarang atau projek terbaru
+    const activeProjectId = data?.projectId || localStorage.getItem('active_project_id');
+
+    let defaultSelection = 'all';
+    let currentContextName = '';
+
+    if (activeProjectId && projects.some(p => p.id === activeProjectId)) {
+      defaultSelection = activeProjectId;
+      const found = projects.find(p => p.id === activeProjectId);
+      currentContextName = found ? found.name : '';
+    } else if (latestProject) {
+      defaultSelection = latestProject.id;
+      currentContextName = latestProject.name;
+    } else if (activeWorkspace && activeWorkspace !== 'all') {
+      const projByWs = projects.find(p => p.workspace === activeWorkspace || p.id === activeWorkspace);
+      if (projByWs) {
+        defaultSelection = projByWs.id;
+        currentContextName = projByWs.name;
+      } else {
+        defaultSelection = activeWorkspace;
+        currentContextName = activeWorkspace;
+      }
+    }
+
+    this.selectedWorkspace = defaultSelection;
     this.searchQuery = '';
+
     const allTasks = this.taskService ? this.taskService.getTasks() : [];
     const workspaces = this.getWorkspaceList();
+    const activeWsObj = workspaces.find(w => w.id === this.selectedWorkspace);
+    const activeWsTitle = activeWsObj ? activeWsObj.name : (currentContextName || '');
+
+    // Hitung tugas awal yang cocok
+    const initialItems = this._getFilteredTasks(allTasks, this.selectedWorkspace, '');
 
     return `
       <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[85vh] modal-content-box animate-in fade-in zoom-in duration-200">
         <!-- Header -->
         <div class="p-spacing-md bg-rose-50/70 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/40 flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-200/80 dark:border-rose-800/40 flex items-center justify-center shadow-xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-200/80 dark:border-rose-800/40 flex items-center justify-center shadow-xs shrink-0">
               <span class="material-symbols-outlined text-[20px]">delete_sweep</span>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="font-headline-md text-[15px] font-bold text-text-primary">Kelola & Hapus Tugas</h3>
-                <span id="delete-modal-task-count" class="text-[10.5px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 px-2 py-0.5 rounded-full">
-                  ${allTasks.length} Tugas
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-headline-md text-[15px] font-bold text-text-primary">
+                  Kelola & Hapus Tugas <span id="delete-modal-context-title" class="text-rose-600 font-bold">${activeWsTitle && activeWsTitle !== 'Semua' && activeWsTitle !== 'Semua Projek' ? `(${activeWsTitle})` : ''}</span>
+                </h3>
+                <span id="delete-modal-task-count" class="text-[10.5px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 px-2 py-0.5 rounded-full shrink-0">
+                  ${initialItems.length} Tugas
                 </span>
               </div>
-              <p class="font-caption-meta text-[11px] text-text-secondary">Pilih deliverable yang ingin dihapus dari sistem (tersedia opsi Undo)</p>
+              <p class="font-caption-meta text-[11px] text-text-secondary truncate mt-0.5">
+                Menampilkan tugas dari projek atau ruang kerja yang dipilih (tersedia opsi Undo)
+              </p>
             </div>
           </div>
-          <button id="btn-close-delete-modal" class="w-8 h-8 rounded-lg hover:bg-rose-100/50 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer" type="button" title="Tutup">
+          <button id="btn-close-delete-modal" class="w-8 h-8 rounded-lg hover:bg-rose-100/50 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-2" type="button" title="Tutup">
             <span class="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
@@ -95,11 +155,11 @@ export class DeleteTaskModal extends BaseModal {
               id="input-search-delete-task"
               type="text"
               class="w-full h-8.5 pl-8 pr-3 bg-surface-container-lowest rounded-lg border border-surface-border text-text-primary placeholder:text-text-muted text-[12.5px] focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition-all"
-              placeholder="Cari tugas berdasarkan judul, kode (#RK-...), atau PIC..."
+              placeholder="Cari tugas berdasarkan judul atau PIC..."
             />
           </div>
 
-          <div class="sm:w-48">
+          <div class="sm:w-56">
             <select
               id="select-ws-delete-task"
               class="w-full h-8.5 px-2.5 bg-surface-container-lowest rounded-lg border border-surface-border text-text-primary text-[12px] font-medium focus:outline-none focus:border-rose-500 cursor-pointer"
@@ -134,19 +194,45 @@ export class DeleteTaskModal extends BaseModal {
     `;
   }
 
-  _renderTaskItems(tasks, workspaceFilter, query) {
+  _getFilteredTasks(tasks, workspaceFilter, query) {
+    const oldMockIds = new Set([
+      'task-1', 'task-2', 'task-3', 'task-4', 'task-5',
+      'task-6', 'task-7', 'task-8', 'task-9', 'task-10',
+      'task-11', 'task-12', 'task-13', 'task-14', 'task-15'
+    ]);
+    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
+
     const q = (query || '').toLowerCase().trim();
     const ws = (workspaceFilter || 'all').toLowerCase();
 
-    const filtered = tasks.filter(t => {
-      const matchWs = ws === 'all' || (t.workspace && t.workspace.toLowerCase() === ws);
+    const projects = this.projectService ? this.projectService.getAllProjects() : [];
+    const targetProject = projects.find(p => p.id === workspaceFilter || (p.workspace && p.workspace.toLowerCase() === ws));
+
+    return tasks.filter(t => {
+      if (oldMockIds.has(t.id) || oldWs.has((t.workspace || '').toLowerCase())) {
+        return false;
+      }
+      let matchWs = false;
+      if (ws === 'all') {
+        matchWs = true;
+      } else if (targetProject) {
+        matchWs = (t.projectId === targetProject.id) || (t.workspace && t.workspace.toLowerCase() === (targetProject.workspace || targetProject.id).toLowerCase());
+      } else {
+        matchWs = (t.projectId === workspaceFilter) || (t.workspace && t.workspace.toLowerCase() === ws);
+      }
+
       const matchQuery = !q ||
         (t.title && t.title.toLowerCase().includes(q)) ||
         (t.code && t.code.toLowerCase().includes(q)) ||
         (t.pic?.name && t.pic.name.toLowerCase().includes(q)) ||
         (t.description && t.description.toLowerCase().includes(q));
+
       return matchWs && matchQuery;
     });
+  }
+
+  _renderTaskItems(tasks, workspaceFilter, query) {
+    const filtered = this._getFilteredTasks(tasks, workspaceFilter, query);
 
     if (filtered.length === 0) {
       return `
@@ -155,14 +241,19 @@ export class DeleteTaskModal extends BaseModal {
             <span class="material-symbols-outlined text-[24px]">task</span>
           </div>
           <p class="text-[13px] font-bold text-text-primary">Tidak Ada Tugas yang Cocok</p>
-          <p class="text-[11.5px] text-text-muted mt-0.5">Semua tugas pada kriteria ini telah dihapus atau tidak ditemukan.</p>
+          <p class="text-[11.5px] text-text-muted mt-0.5">Semua tugas pada kriteria ini telah dihapus atau belum dibuat.</p>
         </div>
       `;
     }
 
+    const projects = this.projectService ? this.projectService.getAllProjects() : [];
+
     return filtered.map(t => {
       const statusBadge = this.getStatusBadge(t.status);
       const priorityClass = this.getPriorityBadge(t.priority);
+      
+      const proj = t.projectId ? projects.find(p => p.id === t.projectId) : null;
+      const contextLabel = proj ? proj.name : (t.workspace || 'Workspace');
 
       return `
         <div class="task-delete-item pt-2 pb-1 flex items-center justify-between gap-3 group transition-all duration-200" data-task-id="${t.id}">
@@ -173,14 +264,14 @@ export class DeleteTaskModal extends BaseModal {
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="font-mono text-[11px] font-semibold text-text-muted">${t.code || '#TK'}</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded border ${statusBadge.color} font-medium">
+                <span class="text-[10px] px-1.5 py-0.5 rounded border ${statusBadge.color} font-medium">
                   ${statusBadge.label}
                 </span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded border ${priorityClass}">
+                <span class="text-[10px] px-1.5 py-0.5 rounded border ${priorityClass}">
                   ${t.priority || 'Medium'}
                 </span>
-                <span class="text-[10.5px] text-text-muted capitalize">
-                  • ${t.workspace || 'Workspace'}
+                <span class="text-[10.5px] text-text-muted">
+                  • ${contextLabel}
                 </span>
               </div>
               <h4 class="text-[12.5px] font-semibold text-text-primary truncate mt-0.5" title="${t.title}">
@@ -221,17 +312,25 @@ export class DeleteTaskModal extends BaseModal {
     const wsSelect = modalRoot.querySelector('#select-ws-delete-task');
     const listContainer = modalRoot.querySelector('#delete-tasks-list');
     const countBadge = modalRoot.querySelector('#delete-modal-task-count');
+    const contextTitle = modalRoot.querySelector('#delete-modal-context-title');
 
     const updateView = () => {
       const q = searchInput?.value || '';
       const ws = wsSelect?.value || 'all';
       const allTasks = this.taskService ? this.taskService.getTasks() : [];
+      const filtered = this._getFilteredTasks(allTasks, ws, q);
+
       if (listContainer) {
         listContainer.innerHTML = this._renderTaskItems(allTasks, ws, q);
         this._attachDeleteListeners(listContainer);
       }
       if (countBadge) {
-        countBadge.textContent = `${allTasks.length} Tugas`;
+        countBadge.textContent = `${filtered.length} Tugas`;
+      }
+      if (contextTitle) {
+        const selectedOption = wsSelect ? wsSelect.options[wsSelect.selectedIndex]?.text : '';
+        const cleanName = selectedOption.replace(/^(Projek|Ruang Kerja):\s*/, '');
+        contextTitle.textContent = ws === 'all' ? '' : `(${cleanName})`;
       }
     };
 
@@ -259,25 +358,25 @@ export class DeleteTaskModal extends BaseModal {
         // Delete via taskService with silent = true (we show our custom undo toast)
         const result = this.taskService.deleteTask(taskId, true);
         if (result) {
-          // Slide out animation on the row
           const itemRow = btn.closest('.task-delete-item');
           if (itemRow) {
             itemRow.style.opacity = '0';
             itemRow.style.transform = 'translateX(20px)';
             setTimeout(() => {
               itemRow.remove();
-              // Update total count
+              const searchInput = this._modalRoot?.querySelector('#input-search-delete-task');
+              const wsSelect = this._modalRoot?.querySelector('#select-ws-delete-task');
               const allTasks = this.taskService ? this.taskService.getTasks() : [];
+              const ws = wsSelect?.value || 'all';
+              const q = searchInput?.value || '';
+              const filtered = this._getFilteredTasks(allTasks, ws, q);
+
               const countBadge = this._modalRoot?.querySelector('#delete-modal-task-count');
               if (countBadge) {
-                countBadge.textContent = `${allTasks.length} Tugas`;
+                countBadge.textContent = `${filtered.length} Tugas`;
               }
-              // If container empty, re-render empty state
-              const remaining = container.querySelectorAll('.task-delete-item');
-              if (remaining.length === 0) {
-                const searchInput = this._modalRoot?.querySelector('#input-search-delete-task');
-                const wsSelect = this._modalRoot?.querySelector('#select-ws-delete-task');
-                container.innerHTML = this._renderTaskItems(allTasks, wsSelect?.value || 'all', searchInput?.value || '');
+              if (filtered.length === 0) {
+                container.innerHTML = this._renderTaskItems(allTasks, ws, q);
               }
             }, 180);
           }
@@ -295,15 +394,20 @@ export class DeleteTaskModal extends BaseModal {
                     const searchInput = this._modalRoot.querySelector('#input-search-delete-task');
                     const wsSelect = this._modalRoot.querySelector('#select-ws-delete-task');
                     const allTasks = this.taskService.getTasks();
-                    container.innerHTML = this._renderTaskItems(allTasks, wsSelect?.value || 'all', searchInput?.value || '');
+                    const ws = wsSelect?.value || 'all';
+                    const q = searchInput?.value || '';
+                    container.innerHTML = this._renderTaskItems(allTasks, ws, q);
                     this._attachDeleteListeners(container);
                     const countBadge = this._modalRoot.querySelector('#delete-modal-task-count');
-                    if (countBadge) countBadge.textContent = `${allTasks.length} Tugas`;
+                    if (countBadge) {
+                      const filtered = this._getFilteredTasks(allTasks, ws, q);
+                      countBadge.textContent = `${filtered.length} Tugas`;
+                    }
                   }
                 }
               },
               'warning',
-              6500
+              6000
             );
           }
         }
