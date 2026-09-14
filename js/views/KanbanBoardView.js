@@ -15,37 +15,38 @@ export class KanbanBoardView extends BaseView {
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
 
-    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
     const storedWs = localStorage.getItem('active_workspace');
     const storedProjId = localStorage.getItem('active_project_id');
 
-    this.projectId = null;
+    this.projectId = storedProjId || null;
     this.project = null;
+    this.currentWorkspace = storedWs || 'panen-kunci';
 
     if (this.projectService) {
       const projects = this.projectService.getAllProjects();
-      if (storedProjId && projects.some(p => p.id === storedProjId)) {
-        this.projectId = storedProjId;
-        this.project = projects.find(p => p.id === storedProjId);
+      if (storedProjId && projects.some(p => p.id === storedProjId || p.workspace === storedProjId)) {
+        this.project = projects.find(p => p.id === storedProjId || p.workspace === storedProjId);
+        this.projectId = this.project.id;
         this.currentWorkspace = this.project.workspace || this.project.id;
-      } else if (storedWs && !oldWs.has(storedWs.toLowerCase())) {
-        this.currentWorkspace = storedWs;
-        const p = projects.find(p => p.workspace === storedWs || p.id === storedWs);
+      } else if (storedWs) {
+        const p = projects.find(p => p.workspace === storedWs || p.id === storedWs || (p.title && p.title.toLowerCase().replace(/[-_\s]+/g, '') === storedWs.toLowerCase().replace(/[-_\s]+/g, '')));
         if (p) {
           this.project = p;
           this.projectId = p.id;
+          this.currentWorkspace = p.workspace || p.id;
+        } else {
+          this.currentWorkspace = storedWs;
         }
       } else if (projects.length > 0) {
-        // Fallback to newest project
-        const latest = projects[projects.length - 1];
+        const latest = projects[0];
         this.project = latest;
         this.projectId = latest.id;
         this.currentWorkspace = latest.workspace || latest.id;
       }
     }
 
-    if (!this.currentWorkspace || oldWs.has(this.currentWorkspace.toLowerCase())) {
-      this.currentWorkspace = 'workspace-utama';
+    if (!this.currentWorkspace) {
+      this.currentWorkspace = 'panen-kunci';
     }
     localStorage.setItem('active_workspace', this.currentWorkspace);
     if (this.projectId) {
@@ -160,13 +161,22 @@ export class KanbanBoardView extends BaseView {
   }
 
   setWorkspace(workspace) {
-    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
-    if (workspace && !oldWs.has(workspace.toLowerCase())) {
+    if (workspace) {
       this.currentWorkspace = workspace;
     } else if (this.project) {
       this.currentWorkspace = this.project.workspace || this.project.id;
     } else {
-      this.currentWorkspace = 'workspace-utama';
+      this.currentWorkspace = 'panen-kunci';
+    }
+    localStorage.setItem('active_workspace', this.currentWorkspace);
+    if (this.projectService) {
+      const projects = this.projectService.getAllProjects();
+      const p = projects.find(proj => proj.workspace === this.currentWorkspace || proj.id === this.currentWorkspace || (proj.title && proj.title.toLowerCase().replace(/[-_\s]+/g, '') === this.currentWorkspace.toLowerCase().replace(/[-_\s]+/g, '')));
+      if (p) {
+        this.project = p;
+        this.projectId = p.id;
+        localStorage.setItem('active_project_id', p.id);
+      }
     }
     this.isStarred = localStorage.getItem(`starred_board_${this.currentWorkspace}`) === 'true';
     this.boardVisibility = localStorage.getItem(`board_vis_${this.currentWorkspace}`) || 'Ruang Kerja';

@@ -127,27 +127,35 @@ export class AddMemberModal extends BaseModal {
   generateInviteLink(invite) {
     const origin = window.location.origin;
     const pathname = window.location.pathname;
+    const currentWs = invite.workspace || this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const currentProjId = invite.projectId || this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const currentTitle = invite.boardTitle || this.boardTitle || currentWs;
+
     const params = new URLSearchParams({
       accept_invite: invite.id || 'inv-' + Date.now(),
-      name: invite.name || '',
+      name: invite.name || 'Anggota Baru',
       email: invite.email || '',
-      role: invite.role || 'Editor',
-      ws: invite.workspace || this.currentWorkspace,
+      role: invite.role || 'Anggota',
+      ws: currentWs,
+      project_id: currentProjId,
+      board_title: currentTitle,
       color: invite.color || '#2563eb'
     });
-    return `${origin}${pathname}?${params.toString()}`;
+    return `${origin}${pathname}?${params.toString()}#/kanban`;
   }
 
   generateGmailComposeUrl(invite) {
     const inviteLink = this.generateInviteLink(invite);
-    const subject = `Undangan Bergabung ke Proyek "${invite.boardTitle || this.boardTitle}" - Creative Office`;
-    const body = `Halo ${invite.name},\n\nAnda telah diundang oleh Awa untuk bergabung ke proyek "${invite.boardTitle || this.boardTitle}" sebagai ${invite.role}.\n\nSilakan klik tautan di bawah ini untuk menerima undangan dan langsung otomatis masuk ke proyek:\n👉 ${inviteLink}\n\n(Tautan ini akan langsung mendaftarkan akun Anda begitu dibuka di browser)\n\nSalam hangat,\nTim Creative Office`;
+    const currentTitle = invite.boardTitle || this.boardTitle || invite.workspace || 'Proyek';
+    const subject = `Undangan Bergabung ke Proyek "${currentTitle}" - Creative Office`;
+    const body = `Halo ${invite.name},\n\nAnda telah diundang oleh Awa untuk bergabung ke proyek "${currentTitle}" sebagai ${invite.role}.\n\nSilakan klik tautan di bawah ini untuk menerima undangan dan langsung otomatis masuk ke proyek:\n👉 ${inviteLink}\n\n(Tautan ini akan langsung mendaftarkan akun Anda begitu dibuka di browser)\n\nSalam hangat,\nTim Creative Office`;
     return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(invite.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
   render(data = {}) {
-    this.currentWorkspace = data?.workspace || this.currentWorkspace || 'ruangkreasi';
-    this.boardTitle = data?.boardTitle || data?.workspace || 'Proyek';
+    this.currentWorkspace = data?.workspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    this.boardTitle = data?.boardTitle || data?.projectName || this.currentWorkspace;
+    this.projectId = data?.projectId || localStorage.getItem('active_project_id') || this.currentWorkspace;
     const prefillEmail = data?.prefillEmail || '';
     const workspaceTasks = this.taskService ? this.taskService.getTasks(this.currentWorkspace) : [];
 

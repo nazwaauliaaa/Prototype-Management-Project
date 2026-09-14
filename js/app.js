@@ -66,7 +66,9 @@ class CreativeOfficeApp {
       const name = urlParams.get('name') || 'Anggota Baru';
       const email = urlParams.get('email') || '';
       const role = urlParams.get('role') || 'Anggota';
-      const workspace = urlParams.get('ws') || 'workspace-utama';
+      const workspace = urlParams.get('ws') || urlParams.get('workspace') || 'panen-kunci';
+      const projectId = urlParams.get('project_id') || urlParams.get('projectId') || workspace;
+      const boardTitle = urlParams.get('board_title') || workspace;
       const color = urlParams.get('color') || '#2563eb';
 
       // 1. Map role to internal authorization role and jobdesk title
@@ -97,7 +99,7 @@ class CreativeOfficeApp {
         role: authRole,
         title: jobdeskTitle,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color.replace('#','')}&color=fff&bold=true`,
-        workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'layarbaca']
+        workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca']
       });
 
       // 3. Login to AuthService
@@ -141,25 +143,26 @@ class CreativeOfficeApp {
 
       // 5. Set active workspace and project
       localStorage.setItem('active_workspace', workspace);
+      localStorage.setItem('active_project_id', projectId);
       this.activeWorkspace = workspace;
       const projectService = this.container.resolve('ProjectService');
       if (projectService) {
         const projects = projectService.getAllProjects();
-        const matched = projects.find(p => p.workspace === workspace || p.id === workspace);
+        const matched = projects.find(p => p.workspace === workspace || p.id === workspace || p.id === projectId);
         if (matched) {
           localStorage.setItem('active_project_id', matched.id);
         }
       }
 
       // 6. Clean up query string from URL & set hash to kanban
-      const cleanUrl = window.location.origin + window.location.pathname + '#/kanban';
+      const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${projectId || workspace}`;
       window.history.replaceState({}, document.title, cleanUrl);
 
-      // 7. Show QR Login Animation and route directly to Kanban
+      // 7. Show QR Login Animation and route directly to Kanban for this project
       const eventBus = this.container.resolve('EventBus');
       const notificationService = this.container.resolve('NotificationService');
 
-      this.showQrLoginSuccessOverlay(userInstance, workspace, jobdeskTitle);
+      this.showQrLoginSuccessOverlay(userInstance, boardTitle || workspace, jobdeskTitle);
 
       setTimeout(() => {
         eventBus.emit('auth:login', userInstance);
@@ -167,10 +170,10 @@ class CreativeOfficeApp {
         eventBus.emit('member:added', { member: newMember, workspace });
         eventBus.emit('board:members_updated', { member: newMember, workspace });
 
-        this.navigateTo('kanban', { projectId: workspace });
+        this.navigateTo('kanban', { projectId: projectId || workspace, workspace: workspace });
 
         if (notificationService) {
-          notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${name}, Anda langsung masuk ke papan Kanban sesuai jobdesk (${jobdeskTitle}).`);
+          notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${name}, Anda langsung masuk ke papan Kanban "${boardTitle || workspace}" (${jobdeskTitle}).`);
         }
       }, 1500);
 
@@ -179,7 +182,7 @@ class CreativeOfficeApp {
     }
   }
 
-  showQrLoginSuccessOverlay(userInstance, workspace, jobdeskTitle) {
+  showQrLoginSuccessOverlay(userInstance, workspaceTitle, jobdeskTitle) {
     const overlay = document.createElement('div');
     overlay.id = 'qr-login-invite-overlay';
     overlay.className = 'fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in';
@@ -217,7 +220,7 @@ class CreativeOfficeApp {
         </div>
 
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
-          Mengarahkan langsung ke papan <strong>Kanban (${workspace})</strong>...
+          Mengarahkan langsung ke papan <strong>Kanban: ${workspaceTitle}</strong>...
         </p>
 
         <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-4">
