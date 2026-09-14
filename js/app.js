@@ -1,6 +1,8 @@
 import { DIContainer } from './core/DIContainer.js';
 import { EventBus } from './core/EventBus.js';
 
+import { User } from './models/User.js';
+import { QRCodeGenerator } from './services/QRCodeGenerator.js';
 import { NotificationService } from './services/NotificationService.js';
 import { AuthService } from './services/AuthService.js';
 import { TaskService } from './services/TaskService.js';
@@ -63,16 +65,55 @@ class CreativeOfficeApp {
 
       const name = urlParams.get('name') || 'Anggota Baru';
       const email = urlParams.get('email') || '';
-      const role = urlParams.get('role') || 'Editor';
-      const workspace = urlParams.get('ws') || 'ruangkreasi';
+      const role = urlParams.get('role') || 'Anggota';
+      const workspace = urlParams.get('ws') || 'workspace-utama';
       const color = urlParams.get('color') || '#2563eb';
 
+      // 1. Map role to internal authorization role and jobdesk title
+      let authRole = 'user';
+      let jobdeskTitle = 'Creative Specialist & Kontributor';
+      const lowerRole = role.toLowerCase();
+      
+      if (lowerRole.includes('admin')) {
+        authRole = 'admin';
+        jobdeskTitle = 'Admin & Pengelola Penuh Proyek';
+      } else if (lowerRole.includes('lead') || lowerRole.includes('manajemen') || lowerRole.includes('pm')) {
+        authRole = 'manajement-project';
+        jobdeskTitle = 'Creative Lead & Project Manager';
+      } else if (lowerRole.includes('pengamat') || lowerRole.includes('viewer') || lowerRole.includes('qa')) {
+        authRole = 'qa';
+        jobdeskTitle = 'Pengamat & Quality Assurance';
+      } else {
+        // Anggota / Editor
+        authRole = 'user';
+        jobdeskTitle = 'Editor & Anggota Tim Proyek';
+      }
+
+      // 2. Create User Model instance
+      const userInstance = new User({
+        id: 'usr-' + Date.now(),
+        name,
+        email: email || `${name.toLowerCase().replace(/\s+/g, '')}@sampulkreativ.id`,
+        role: authRole,
+        title: jobdeskTitle,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color.replace('#','')}&color=fff&bold=true`,
+        workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'layarbaca']
+      });
+
+      // 3. Login to AuthService
+      const authService = this.container.resolve('AuthService');
+      if (authService) {
+        authService.currentUser = userInstance;
+        authService.isAuthenticated = true;
+      }
+
+      // 4. Create new member record
       const newMember = {
         id: 'mem-' + Date.now(),
         name,
-        email,
-        role,
-        roleDescription: role === 'Lead' ? 'Creative Lead' : (role === 'Admin' ? 'Admin & Koordinator' : (role === 'Viewer' ? 'Pemerhati Proyek' : 'Editor Konten')),
+        email: userInstance.email,
+        role: role === 'Anggota' ? 'Editor' : role,
+        roleDescription: jobdeskTitle,
         color,
         initials: name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
         workspace,
@@ -81,7 +122,7 @@ class CreativeOfficeApp {
         acceptedAt: new Date().toISOString()
       };
 
-      // 1. Remove from pending invites
+      // Remove from pending invites & save to board members
       try {
         const pKey = `pending_invites_${workspace}`;
         const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
@@ -89,36 +130,107 @@ class CreativeOfficeApp {
         localStorage.setItem(pKey, JSON.stringify(filtered));
       } catch(e) {}
 
-      // 2. Add to board members
       try {
         const boardKey = `board_members_${workspace}`;
         const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
-        if (!currentBoardMembers.some(m => m.email.toLowerCase() === email.toLowerCase())) {
+        if (!currentBoardMembers.some(m => m.email && m.email.toLowerCase() === userInstance.email.toLowerCase())) {
           currentBoardMembers.push(newMember);
           localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
         }
       } catch (err) {}
 
-      // 3. Clean up URL so query string is removed
-      const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
+      // 5. Set active workspace and project
+      localStorage.setItem('active_workspace', workspace);
+      this.activeWorkspace = workspace;
+      const projectService = this.container.resolve('ProjectService');
+      if (projectService) {
+        const projects = projectService.getAllProjects();
+        const matched = projects.find(p => p.workspace === workspace || p.id === workspace);
+        if (matched) {
+          localStorage.setItem('active_project_id', matched.id);
+        }
+      }
+
+      // 6. Clean up query string from URL & set hash to kanban
+      const cleanUrl = window.location.origin + window.location.pathname + '#/kanban';
       window.history.replaceState({}, document.title, cleanUrl);
 
-      // 4. Emit events & notify
+      // 7. Show QR Login Animation and route directly to Kanban
       const eventBus = this.container.resolve('EventBus');
       const notificationService = this.container.resolve('NotificationService');
-      
+
+      this.showQrLoginSuccessOverlay(userInstance, workspace, jobdeskTitle);
+
       setTimeout(() => {
+        eventBus.emit('auth:login', userInstance);
+        eventBus.emit('workspace:selected', { workspace });
         eventBus.emit('member:added', { member: newMember, workspace });
         eventBus.emit('board:members_updated', { member: newMember, workspace });
-        eventBus.emit('invite:accepted', { member: newMember, workspace });
+
+        this.navigateTo('kanban', { projectId: workspace });
 
         if (notificationService) {
-          notificationService.success(`🎉 Selamat datang, ${name}! Undangan Gmail diterima & otomatis bergabung ke proyek.`);
+          notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${name}, Anda langsung masuk ke papan Kanban sesuai jobdesk (${jobdeskTitle}).`);
         }
-      }, 400);
+      }, 1500);
+
     } catch (e) {
       console.error('Failed to process invite token:', e);
     }
+  }
+
+  showQrLoginSuccessOverlay(userInstance, workspace, jobdeskTitle) {
+    const overlay = document.createElement('div');
+    overlay.id = 'qr-login-invite-overlay';
+    overlay.className = 'fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in';
+    overlay.innerHTML = `
+      <div class="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 flex flex-col items-center text-center animate-in zoom-in-95 duration-300 text-slate-800 dark:text-slate-100 relative overflow-hidden">
+        
+        <!-- Animated Scanner Beam -->
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#ef4444] animate-pulse"></div>
+        
+        <!-- QR Code Container with scanning animation -->
+        <div class="relative w-28 h-28 bg-white p-2.5 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center my-2">
+          ${QRCodeGenerator.generate(\`http://localhost:3000/#/auth?scan=\${userInstance.name}\`, { size: 92, darkColor: '#0b1c30' })}
+          <div class="absolute inset-x-2 h-0.5 bg-rose-500 shadow-[0_0_8px_#ef4444] rounded-full animate-bounce"></div>
+          <div class="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md">
+            <span class="material-symbols-outlined text-[16px]">check</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider mt-3">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>QR Akses Terverifikasi</span>
+        </div>
+
+        <h3 class="text-base font-bold text-slate-900 dark:text-white mt-1">Selamat Datang, ${userInstance.name}!</h3>
+        
+        <!-- User Jobdesk Badge -->
+        <div class="w-full mt-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
+          <div class="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-900">
+            <span class="material-symbols-outlined text-[20px]">badge</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Jobdesk Pengguna</span>
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${jobdeskTitle}</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+          Mengarahkan langsung ke papan <strong>Kanban (${workspace})</strong>...
+        </p>
+
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-4">
+          <div class="bg-rose-600 h-full w-full animate-[pulse_1s_ease-in-out_infinite] rounded-full"></div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+      overlay.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+      setTimeout(() => overlay.remove(), 300);
+    }, 1600);
   }
 
   registerServices() {
