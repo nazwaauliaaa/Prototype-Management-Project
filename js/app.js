@@ -51,7 +51,74 @@ class CreativeOfficeApp {
     this.registerServices();
     this.registerModals();
     this.initShell();
+    this.checkInviteToken();
     this.setupRouter();
+  }
+
+  checkInviteToken() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteToken = urlParams.get('accept_invite');
+      if (!inviteToken) return;
+
+      const name = urlParams.get('name') || 'Anggota Baru';
+      const email = urlParams.get('email') || '';
+      const role = urlParams.get('role') || 'Editor';
+      const workspace = urlParams.get('ws') || 'ruangkreasi';
+      const color = urlParams.get('color') || '#2563eb';
+
+      const newMember = {
+        id: 'mem-' + Date.now(),
+        name,
+        email,
+        role,
+        roleDescription: role === 'Lead' ? 'Creative Lead' : (role === 'Admin' ? 'Admin & Koordinator' : (role === 'Viewer' ? 'Pemerhati Proyek' : 'Editor Konten')),
+        color,
+        initials: name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
+        workspace,
+        joinedViaGmail: true,
+        isOnline: true,
+        acceptedAt: new Date().toISOString()
+      };
+
+      // 1. Remove from pending invites
+      try {
+        const pKey = `pending_invites_${workspace}`;
+        const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
+        const filtered = pending.filter(p => p.email.toLowerCase() !== email.toLowerCase() && p.id !== inviteToken);
+        localStorage.setItem(pKey, JSON.stringify(filtered));
+      } catch(e) {}
+
+      // 2. Add to board members
+      try {
+        const boardKey = `board_members_${workspace}`;
+        const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
+        if (!currentBoardMembers.some(m => m.email.toLowerCase() === email.toLowerCase())) {
+          currentBoardMembers.push(newMember);
+          localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
+        }
+      } catch (err) {}
+
+      // 3. Clean up URL so query string is removed
+      const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+
+      // 4. Emit events & notify
+      const eventBus = this.container.resolve('EventBus');
+      const notificationService = this.container.resolve('NotificationService');
+      
+      setTimeout(() => {
+        eventBus.emit('member:added', { member: newMember, workspace });
+        eventBus.emit('board:members_updated', { member: newMember, workspace });
+        eventBus.emit('invite:accepted', { member: newMember, workspace });
+
+        if (notificationService) {
+          notificationService.success(`🎉 Selamat datang, ${name}! Undangan Gmail diterima & otomatis bergabung ke proyek.`);
+        }
+      }, 400);
+    } catch (e) {
+      console.error('Failed to process invite token:', e);
+    }
   }
 
   registerServices() {

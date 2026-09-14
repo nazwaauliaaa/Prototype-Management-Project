@@ -44,6 +44,26 @@ export class KanbanBoardView extends BaseView {
       }
     };
     this.eventBus.on('tasks:updated', this._onTasksUpdated);
+
+    // Auto-update kanban whenever members change (e.g. Gmail invite accepted)
+    this._onMemberAdded = () => {
+      if (this.element) {
+        this.mount(this.element);
+      }
+    };
+    this.eventBus.on('member:added', this._onMemberAdded);
+    this.eventBus.on('board:members_updated', this._onMemberAdded);
+
+    // Auto-update kanban whenever invites change
+    this._onInvitesUpdated = () => {
+      if (this.element) {
+        this.mount(this.element);
+      }
+    };
+    this.eventBus.on('invite:sent', this._onInvitesUpdated);
+    this.eventBus.on('invite:accepted', this._onInvitesUpdated);
+    this.eventBus.on('invite:rejected', this._onInvitesUpdated);
+    this.eventBus.on('invite:removed', this._onInvitesUpdated);
   }
 
   _initColumns() {
@@ -81,6 +101,16 @@ export class KanbanBoardView extends BaseView {
   unmount() {
     if (this._onTasksUpdated) {
       this.eventBus.off('tasks:updated', this._onTasksUpdated);
+    }
+    if (this._onMemberAdded) {
+      this.eventBus.off('member:added', this._onMemberAdded);
+      this.eventBus.off('board:members_updated', this._onMemberAdded);
+    }
+    if (this._onInvitesUpdated) {
+      this.eventBus.off('invite:sent', this._onInvitesUpdated);
+      this.eventBus.off('invite:accepted', this._onInvitesUpdated);
+      this.eventBus.off('invite:rejected', this._onInvitesUpdated);
+      this.eventBus.off('invite:removed', this._onInvitesUpdated);
     }
     super.unmount();
   }
@@ -121,6 +151,123 @@ export class KanbanBoardView extends BaseView {
     return wsKey.charAt(0).toUpperCase() + wsKey.slice(1);
   }
 
+  getBoardMembers() {
+    const defaultMembers = [
+      {
+        id: 'member-awa',
+        name: 'Awa',
+        email: 'awa@gmail.com',
+        role: 'Admin',
+        roleDescription: 'Admin & Pemilik Papan',
+        initials: 'A',
+        color: '#10b981',
+        online: true,
+        isOwner: true,
+        badgeClass: 'text-purple-700 bg-purple-50 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800/80'
+      },
+      {
+        id: 'member-sari',
+        name: 'Sari Rahmawati',
+        email: 'sari.rahmawati@gmail.com',
+        role: 'Lead',
+        roleDescription: 'Creative Lead',
+        initials: 'SR',
+        color: '#2563eb',
+        online: true,
+        badgeClass: 'text-blue-700 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800/80'
+      },
+      {
+        id: 'member-bagas',
+        name: 'Bagas Wicaksono',
+        email: 'bagas.wicaksono@gmail.com',
+        role: 'Editor',
+        roleDescription: 'Graphic Specialist',
+        initials: 'BW',
+        color: '#9333ea',
+        online: false,
+        badgeClass: 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+      },
+      {
+        id: 'member-farhan',
+        name: 'Farhan Maulana',
+        email: 'farhan.maulana@gmail.com',
+        role: 'Editor',
+        roleDescription: 'AI Researcher',
+        initials: 'FM',
+        color: '#d97706',
+        online: false,
+        badgeClass: 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+      }
+    ];
+
+    const key = `board_members_${this.currentWorkspace}`;
+    const stored = localStorage.getItem(key);
+    if (!stored) {
+      localStorage.setItem(key, JSON.stringify(defaultMembers));
+      return defaultMembers;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        const hasAwa = parsed.some(m => m.id === 'member-awa');
+        if (!hasAwa) {
+          const merged = [...defaultMembers, ...parsed];
+          localStorage.setItem(key, JSON.stringify(merged));
+          return merged;
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load board members:', e);
+    }
+
+    return defaultMembers;
+  }
+
+  removeBoardMember(memberId) {
+    const key = `board_members_${this.currentWorkspace}`;
+    const current = this.getBoardMembers();
+    const target = current.find(m => m.id === memberId);
+    if (!target) return;
+    if (target.isOwner) {
+      if (this.notificationService) {
+        this.notificationService.warning('Pemilik papan (Owner) tidak dapat dihapus.');
+      }
+      return;
+    }
+
+    const filtered = current.filter(m => m.id !== memberId);
+    localStorage.setItem(key, JSON.stringify(filtered));
+
+    try {
+      const teamKey = 'team_members';
+      const teamMembers = JSON.parse(localStorage.getItem(teamKey) || '[]');
+      const filteredTeam = teamMembers.filter(m => m.id !== memberId && m.email !== target.email);
+      localStorage.setItem(teamKey, JSON.stringify(filteredTeam));
+    } catch (e) {}
+
+    this.eventBus.emit('member:removed', { memberId, workspace: this.currentWorkspace });
+    this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace });
+
+    if (this.notificationService) {
+      this.notificationService.success(`Anggota "${target.name}" berhasil dihapus dari proyek.`);
+    }
+
+    if (this.element) {
+      this.mount(this.element);
+    }
+  }
+
+  getPendingInvites() {
+    try {
+      const saved = localStorage.getItem(`pending_invites_${this.currentWorkspace}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   render() {
     // Resolve project if projectId set
     if (this.projectId && !this.project && this.projectService) {
@@ -132,6 +279,8 @@ export class KanbanBoardView extends BaseView {
 
     const currentWsName = this.getWorkspaceName(this.currentWorkspace);
     const boardTitle = this.project ? this.project.name : currentWsName;
+    const boardMembers = this.getBoardMembers();
+    const pendingInvites = this.getPendingInvites();
 
     // Board theme wallpaper
     const savedTheme = localStorage.getItem(`board_theme_${this.currentWorkspace}`);
@@ -332,14 +481,23 @@ export class KanbanBoardView extends BaseView {
           <!-- Right: Trello Toolbar Icons from screenshot -->
           <div class="flex items-center gap-1 sm:gap-2">
             
-            <!-- Member Avatar Badge [ A ] -->
+            <!-- Member Avatar Stack / Badge -->
             <button
               id="btn-board-avatar"
-              class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[13px] flex items-center justify-center border-2 border-white/50 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="Anggota Papan (Awa)"
+              class="flex items-center -space-x-2 hover:space-x-1 p-0.5 rounded-full hover:bg-white/20 transition-all cursor-pointer"
+              title="Anggota Papan (${boardMembers.length} Anggota) - Klik untuk melihat & mengundang"
               type="button"
             >
-              <span>A</span>
+              ${boardMembers.slice(0, 3).map(m => `
+                <div class="w-8 h-8 rounded-full text-white font-bold text-[11px] flex items-center justify-center border-2 border-white/80 shadow-sm transition-transform hover:scale-110" style="background-color: ${m.color || '#10b981'}">
+                  ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
+                </div>
+              `).join('')}
+              ${boardMembers.length > 3 ? `
+                <div class="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white/80 shadow-sm">
+                  +${boardMembers.length - 3}
+                </div>
+              ` : ''}
             </button>
 
             <!-- Power-Ups Icon (Plug) -->
@@ -760,16 +918,6 @@ export class KanbanBoardView extends BaseView {
             <span>Board</span>
             <span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>
           </button>
-
-          <!-- 4. Switch Boards Button -->
-          <button
-            id="btn-dock-switch"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[17px]">dashboard_customize</span>
-            <span>Switch boards</span>
-          </button>
         </nav>
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
@@ -779,49 +927,152 @@ export class KanbanBoardView extends BaseView {
         <!-- 2. Members Popover -->
         <div
           id="popup-board-members"
-          class="hidden absolute top-14 right-44 sm:right-64 z-50 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-3.5 text-slate-800 dark:text-white flex flex-col gap-3"
+          class="hidden absolute top-14 right-4 sm:right-16 md:right-28 z-50 w-80 sm:w-84 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-4 text-slate-800 dark:text-white flex flex-col gap-3.5 transition-all"
         >
-          <div class="flex items-center justify-between">
-            <h4 class="font-bold text-[13.5px]">Anggota Papan ${boardTitle}</h4>
-            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">4 Anggota</span>
-          </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60">
-              <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-[11px] flex items-center justify-center">A</div>
-                <div>
-                  <div class="text-[12px] font-bold">Awa (Anda)</div>
-                  <div class="text-[10.5px] text-slate-500">Admin & Pemilik Papan</div>
-                </div>
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-slate-800">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/60">
+                <span class="material-symbols-outlined text-[19px]">group</span>
               </div>
-              <span class="text-[10px] text-emerald-600 font-bold">Online</span>
-            </div>
-            <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40">
-              <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center">SR</div>
-                <div>
-                  <div class="text-[12px] font-bold">Sari Rahmawati</div>
-                  <div class="text-[10.5px] text-slate-500">Creative Lead</div>
-                </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-[13.5px] text-slate-900 dark:text-white tracking-tight leading-tight truncate">
+                  Anggota Papan
+                </h4>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  ${boardTitle}
+                </p>
               </div>
             </div>
-            <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40">
-              <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-full bg-purple-600 text-white font-bold text-[11px] flex items-center justify-center">BW</div>
-                <div>
-                  <div class="text-[12px] font-bold">Bagas Wicaksono</div>
-                  <div class="text-[10.5px] text-slate-500">Graphic Specialist</div>
-                </div>
-              </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                ${boardMembers.length} Aktif ${pendingInvites.length > 0 ? `• ${pendingInvites.length} Tertunda` : ''}
+              </span>
+              <button class="btn-close-modal w-6 h-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer" title="Tutup">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
             </div>
           </div>
-          <button
-            id="btn-open-invite-member"
-            class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <span class="material-symbols-outlined text-[16px]">person_add</span>
-            <span>Undang Anggota Baru</span>
-          </button>
+
+          <!-- Quick Search Members -->
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+            <input
+              id="input-search-board-members"
+              type="text"
+              placeholder="Cari anggota tim..."
+              class="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[12px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#0c66e4]/20 focus:border-[#0c66e4] focus:outline-none transition-all"
+            />
+          </div>
+
+          <!-- Members List -->
+          <div class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-0.5" id="board-members-list">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5 px-1">
+              Anggota Aktif (${boardMembers.length})
+            </div>
+            ${boardMembers.map(m => `
+              <div class="member-item flex items-center justify-between p-2 rounded-xl ${m.isOwner ? 'bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="relative shrink-0">
+                    <div class="w-8 h-8 rounded-full text-white font-bold text-[11.5px] flex items-center justify-center shadow-xs" style="background-color: ${m.color || '#2563eb'}">
+                      ${m.initials || (m.name ? m.name.slice(0, 2).toUpperCase() : 'U')}
+                    </div>
+                    ${m.online ? `<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>` : ''}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="member-name text-[12px] font-bold text-slate-900 dark:text-white truncate">${m.name}</span>
+                      ${m.isOwner ? `<span class="text-[9.5px] font-semibold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">Anda</span>` : ''}
+                      ${m.joinedViaGmail ? `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">mail</span>Gmail</span>` : ''}
+                    </div>
+                    <div class="member-role text-[10.5px] text-slate-500 dark:text-slate-400 truncate">${m.roleDescription || m.email || m.role}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${m.badgeClass || 'text-blue-700 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800/80'}">
+                    ${m.role || 'Member'}
+                  </span>
+                  ${!m.isOwner ? `
+                    <button
+                      class="btn-delete-board-member w-6 h-6 rounded-md hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/60 dark:hover:text-rose-400 text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
+                      data-member-id="${m.id}"
+                      data-member-name="${m.name}"
+                      title="Hapus ${m.name} dari proyek"
+                      type="button"
+                    >
+                      <span class="material-symbols-outlined text-[15px]">person_remove</span>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+
+            ${pendingInvites.length > 0 ? `
+              <!-- Section: Undangan Tertunda via Gmail -->
+              <div class="mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 px-1">
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_top</span>
+                    <span>Menunggu Diterima via Gmail (${pendingInvites.length})</span>
+                  </span>
+                </div>
+
+                ${pendingInvites.map(inv => `
+                  <div class="p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/70 flex flex-col gap-1.5 transition-all">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-full text-white font-bold text-[10.5px] flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${inv.color || '#2563eb'}">
+                          ${inv.initials || 'U'}
+                        </div>
+                        <div class="min-w-0">
+                          <div class="text-[11.5px] font-bold text-slate-900 dark:text-white truncate">${inv.name}</div>
+                          <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate">${inv.email}</div>
+                        </div>
+                      </div>
+                      <span class="text-[9.5px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-900/60 px-1.5 py-0.2 rounded shrink-0">
+                        ${inv.role || 'Editor'}
+                      </span>
+                    </div>
+
+                    <!-- Action buttons to accept as invited user -->
+                    <div class="flex items-center gap-1.5 pt-1 border-t border-amber-200/60 dark:border-amber-800/50">
+                      <button
+                        class="btn-open-recipient-gmail flex-1 py-1 px-2 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-[10.5px] font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
+                        data-invite-id="${inv.id}"
+                        title="Buka email dari sudut pandang ${inv.name} dan terima undangan"
+                        type="button"
+                      >
+                        <span class="material-symbols-outlined text-[13px]">mail</span>
+                        <span>Buka Gmail & Terima</span>
+                      </button>
+
+                      <button
+                        class="btn-cancel-pending-invite py-1 px-2 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-600 text-[10.5px] font-medium transition-colors cursor-pointer"
+                        data-invite-id="${inv.id}"
+                        title="Batalkan Undangan"
+                        type="button"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Bottom Action: Invite Member Button -->
+          <div class="pt-2 border-t border-slate-200/80 dark:border-slate-800">
+            <button
+              id="btn-open-invite-member"
+              class="w-full py-2.5 px-3.5 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs hover:shadow-md active:scale-98 cursor-pointer"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">person_add</span>
+              <span>Undang Anggota Baru</span>
+            </button>
+          </div>
         </div>
 
         <!-- 3. Power-Ups Modal -->
@@ -1134,79 +1385,7 @@ export class KanbanBoardView extends BaseView {
           </div>
         </div>
 
-        <!-- 9. Switch Boards Modal -->
-        <div
-          id="modal-switch-boards"
-          class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
-        >
-          <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div class="flex items-center gap-2 text-slate-800 dark:text-white">
-                <span class="material-symbols-outlined text-[22px] text-[#0c66e4]">dashboard_customize</span>
-                <h3 class="font-bold text-[15.5px]">Pilih Papan Proyek</h3>
-              </div>
-              <button class="btn-close-modal w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 cursor-pointer">
-                <span class="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-            <div class="flex flex-col gap-2">
-              <button class="btn-switch-ws flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-left transition-all cursor-pointer ${this.currentWorkspace === 'aikreativ' ? 'border-[#0c66e4] bg-blue-50/50' : ''}" data-ws="aikreativ">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-[12px]">AK</div>
-                  <div>
-                    <div class="text-[13px] font-bold text-slate-800 dark:text-white">AIKreativ</div>
-                    <div class="text-[10.5px] text-slate-500">Papan Studio AI & Generatif</div>
-                  </div>
-                </div>
-                ${this.currentWorkspace === 'aikreativ' ? '<span class="text-[10px] font-bold text-[#0c66e4] bg-blue-100 px-2 py-0.5 rounded-full">Aktif</span>' : ''}
-              </button>
 
-              <button class="btn-switch-ws flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-left transition-all cursor-pointer ${this.currentWorkspace === 'ruangkreasi' ? 'border-[#0c66e4] bg-blue-50/50' : ''}" data-ws="ruangkreasi">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[12px]">RK</div>
-                  <div>
-                    <div class="text-[13px] font-bold text-slate-800 dark:text-white">RuangKreasi</div>
-                    <div class="text-[10.5px] text-slate-500">Kampanye OOH & Billboard</div>
-                  </div>
-                </div>
-                ${this.currentWorkspace === 'ruangkreasi' ? '<span class="text-[10px] font-bold text-[#0c66e4] bg-blue-100 px-2 py-0.5 rounded-full">Aktif</span>' : ''}
-              </button>
-
-              <button class="btn-switch-ws flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-left transition-all cursor-pointer ${this.currentWorkspace === 'layarbaca' ? 'border-[#0c66e4] bg-blue-50/50' : ''}" data-ws="layarbaca">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[12px]">LB</div>
-                  <div>
-                    <div class="text-[13px] font-bold text-slate-800 dark:text-white">LayarBaca</div>
-                    <div class="text-[10.5px] text-slate-500">EPUB3 Engine & Penerbitan</div>
-                  </div>
-                </div>
-                ${this.currentWorkspace === 'layarbaca' ? '<span class="text-[10px] font-bold text-[#0c66e4] bg-blue-100 px-2 py-0.5 rounded-full">Aktif</span>' : ''}
-              </button>
-
-              <button class="btn-switch-ws flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-left transition-all cursor-pointer ${this.currentWorkspace === 'panen-kunci' ? 'border-[#0c66e4] bg-blue-50/50' : ''}" data-ws="panen-kunci">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[12px]">PK</div>
-                  <div>
-                    <div class="text-[13px] font-bold text-slate-800 dark:text-white">Panen Kunci</div>
-                    <div class="text-[10.5px] text-slate-500">Security & Key Vault</div>
-                  </div>
-                </div>
-                ${this.currentWorkspace === 'panen-kunci' ? '<span class="text-[10px] font-bold text-[#0c66e4] bg-blue-100 px-2 py-0.5 rounded-full">Aktif</span>' : ''}
-              </button>
-
-              <button class="btn-switch-ws flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-left transition-all cursor-pointer ${this.currentWorkspace === 'sharinginaja' ? 'border-[#0c66e4] bg-blue-50/50' : ''}" data-ws="sharinginaja">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-[12px]">SA</div>
-                  <div>
-                    <div class="text-[13px] font-bold text-slate-800 dark:text-white">Sharinginaja</div>
-                    <div class="text-[10.5px] text-slate-500">File Storage & Kolaborasi</div>
-                  </div>
-                </div>
-                ${this.currentWorkspace === 'sharinginaja' ? '<span class="text-[10px] font-bold text-[#0c66e4] bg-blue-100 px-2 py-0.5 rounded-full">Aktif</span>' : ''}
-              </button>
-            </div>
-          </div>
-        </div>
 
       </div>
     `;
@@ -1505,8 +1684,7 @@ export class KanbanBoardView extends BaseView {
       '#popup-filter',
       '#popup-visibility',
       '#modal-share',
-      '#drawer-more-menu',
-      '#modal-switch-boards'
+      '#drawer-more-menu'
     ];
     popups.forEach(sel => {
       const el = this.element.querySelector(sel);
@@ -1731,10 +1909,80 @@ export class KanbanBoardView extends BaseView {
         e.stopPropagation();
         this._closeAllPopups();
         if (this.modalManager) {
-          this.modalManager.open('add-member', { workspace: this.currentWorkspace });
+          this.modalManager.open('add-member', { 
+            workspace: this.currentWorkspace,
+            boardTitle: this.project ? this.project.name : this.getWorkspaceName(this.currentWorkspace),
+            projectId: this.projectId
+          });
         }
       });
     }
+
+    const searchMembersInput = this.element.querySelector('#input-search-board-members');
+    if (searchMembersInput) {
+      searchMembersInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const memberItems = this.element.querySelectorAll('#board-members-list .member-item');
+        memberItems.forEach(item => {
+          const name = item.querySelector('.member-name')?.textContent.toLowerCase() || '';
+          const role = item.querySelector('.member-role')?.textContent.toLowerCase() || '';
+          if (name.includes(query) || role.includes(query)) {
+            item.style.display = '';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // B.1. Pending Gmail Invite action buttons
+    const openRecipientGmailBtns = this.element.querySelectorAll('.btn-open-recipient-gmail');
+    openRecipientGmailBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const inviteId = btn.getAttribute('data-invite-id');
+        const pending = this.getPendingInvites();
+        const inv = pending.find(i => i.id === inviteId);
+        if (inv && this.modalManager) {
+          this._closeAllPopups();
+          this.modalManager.open('add-member', {
+            mode: 'gmail-inbox',
+            invite: inv,
+            workspace: this.currentWorkspace,
+            boardTitle: this.project ? this.project.name : this.getWorkspaceName(this.currentWorkspace)
+          });
+        }
+      });
+    });
+
+    const cancelPendingBtns = this.element.querySelectorAll('.btn-cancel-pending-invite');
+    cancelPendingBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const inviteId = btn.getAttribute('data-invite-id');
+        const pending = this.getPendingInvites();
+        const filtered = pending.filter(i => i.id !== inviteId);
+        localStorage.setItem(`pending_invites_${this.currentWorkspace}`, JSON.stringify(filtered));
+        this.eventBus.emit('invite:removed', { inviteId });
+        if (this.notificationService) {
+          this.notificationService.info('Undangan Gmail berhasil dibatalkan.');
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // B.2. Delete Board Member button
+    const deleteMemberBtns = this.element.querySelectorAll('.btn-delete-board-member');
+    deleteMemberBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const memberId = btn.getAttribute('data-member-id');
+        const memberName = btn.getAttribute('data-member-name') || 'Anggota';
+        if (confirm(`Hapus "${memberName}" dari daftar anggota papan proyek?`)) {
+          this.removeBoardMember(memberId);
+        }
+      });
+    });
 
     // C. Power-Ups Icon (Plug)
     const powerupsBtn = this.element.querySelector('#btn-board-powerups');
@@ -1868,14 +2116,15 @@ export class KanbanBoardView extends BaseView {
       sendEmailInviteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const emailInput = this.element.querySelector('#input-invite-email');
-        if (emailInput && emailInput.value.trim()) {
-          if (this.notificationService) {
-            this.notificationService.success(`Undangan berhasil dikirimkan ke ${emailInput.value.trim()}!`);
-          }
-          emailInput.value = '';
-          this._closeAllPopups();
-        } else if (this.notificationService) {
-          this.notificationService.warning('Silakan masukkan alamat email yang valid.');
+        const emailVal = emailInput ? emailInput.value.trim() : '';
+        this._closeAllPopups();
+        if (this.modalManager) {
+          this.modalManager.open('add-member', {
+            workspace: this.currentWorkspace,
+            boardTitle: this.project ? this.project.name : this.getWorkspaceName(this.currentWorkspace),
+            projectId: this.projectId,
+            prefillEmail: emailVal
+          });
         }
       });
     }
@@ -1953,8 +2202,8 @@ export class KanbanBoardView extends BaseView {
 
     // Close popups when clicking outside
     this.element.addEventListener('click', (e) => {
-      const isInsidePopup = e.target.closest('#popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu, #modal-switch-boards');
-      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu, #btn-dock-switch');
+      const isInsidePopup = e.target.closest('#popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu');
+      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu');
       if (!isInsidePopup && !isTrigger) {
         this._closeAllPopups();
       }
@@ -2059,31 +2308,7 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // Dock 4: Switch Boards
-    const dockSwitchBtn = this.element.querySelector('#btn-dock-switch');
-    if (dockSwitchBtn) {
-      dockSwitchBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this._togglePopup('#modal-switch-boards');
-      });
-    }
 
-    const switchWsBtns = this.element.querySelectorAll('.btn-switch-ws');
-    switchWsBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetWs = btn.getAttribute('data-ws');
-        this.currentWorkspace = targetWs;
-        localStorage.setItem('active_workspace', targetWs);
-        this.eventBus.emit('workspace:selected', { workspace: targetWs });
-        this.setWorkspace(targetWs);
-        this._closeAllPopups();
-        if (this.notificationService) {
-          this.notificationService.success(`Beralih ke papan "${this.getWorkspaceName(targetWs)}".`);
-        }
-        this.mount(this.element);
-      });
-    });
 
     // ==================== + ADD ANOTHER LIST (TRELLO STYLE) ====================
     const addAnotherListBtn = this.element.querySelector('#btn-add-another-list');
