@@ -116,25 +116,25 @@ export class KanbanBoardView extends BaseView {
           this.columns = parsed;
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Default columns matching modern Trello workflow
     if (this.currentWorkspace.toLowerCase() === 'aikreativ') {
       this.columns = [
-        { id: 'backlog',      title: 'To Do',              color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-700' },
-        { id: 'in-progress',  title: 'Doing',              color: 'border-blue-500',   dot: 'bg-blue-500',     badge: 'bg-blue-100 text-blue-700' },
-        { id: 'review-qa',    title: 'Review QA',          color: 'border-rose-500',   dot: 'bg-rose-500',     badge: 'bg-rose-100 text-rose-700' },
-        { id: 'ready-launch', title: 'Ready to Launch',    color: 'border-purple-500', dot: 'bg-purple-600',   badge: 'bg-purple-100 text-purple-700' },
-        { id: 'done',         title: 'Done',               color: 'border-emerald-500',dot: 'bg-emerald-600',  badge: 'bg-emerald-100 text-emerald-700' }
+        { id: 'backlog', title: 'To Do', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-700' },
+        { id: 'in-progress', title: 'Doing', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
+        { id: 'review-qa', title: 'Review QA', color: 'border-rose-500', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' },
+        { id: 'ready-launch', title: 'Ready to Launch', color: 'border-purple-500', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700' },
+        { id: 'done', title: 'Done', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
       ];
     } else {
       this.columns = [
-        { id: 'backlog',      title: 'Daftar Pekerjaan',   color: 'border-slate-300',  dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-700' },
-        { id: 'in-progress',  title: 'Sedang Berjalan',    color: 'border-blue-500',   dot: 'bg-blue-500',     badge: 'bg-blue-100 text-blue-700' },
-        { id: 'review-qa',    title: 'Review QA Lapangan', color: 'border-rose-500',   dot: 'bg-rose-500',     badge: 'bg-rose-100 text-rose-700' },
-        { id: 'ready-launch', title: 'Siap Launching',     color: 'border-purple-500', dot: 'bg-purple-600',   badge: 'bg-purple-100 text-purple-700' },
-        { id: 'done',         title: 'Selesai',             color: 'border-emerald-500',dot: 'bg-emerald-600',  badge: 'bg-emerald-100 text-emerald-700' }
+        { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-700' },
+        { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
+        { id: 'review-qa', title: 'Review QA Lapangan', color: 'border-rose-500', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' },
+        { id: 'ready-launch', title: 'Siap Launching', color: 'border-purple-500', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700' },
+        { id: 'done', title: 'Selesai', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
       ];
     }
   }
@@ -196,7 +196,7 @@ export class KanbanBoardView extends BaseView {
       const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
       const found = custom.find(w => w.id === wsKey);
       if (found && (found.title || found.name)) return found.title || found.name;
-    } catch (e) {}
+    } catch (e) { }
     return wsKey.charAt(0).toUpperCase() + wsKey.slice(1);
   }
 
@@ -294,7 +294,7 @@ export class KanbanBoardView extends BaseView {
       const teamMembers = JSON.parse(localStorage.getItem(teamKey) || '[]');
       const filteredTeam = teamMembers.filter(m => m.id !== memberId && m.email !== target.email);
       localStorage.setItem(teamKey, JSON.stringify(filteredTeam));
-    } catch (e) {}
+    } catch (e) { }
 
     this.eventBus.emit('member:removed', { memberId, workspace: this.currentWorkspace });
     this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace });
@@ -351,7 +351,7 @@ export class KanbanBoardView extends BaseView {
           });
         }
       });
-    } catch(e) {}
+    } catch (e) { }
 
     // 3. Ensure current workspace/project is represented so the user always sees what's active
     const currentWs = this.currentWorkspace || (this.project?.workspace || 'workspace-utama');
@@ -390,7 +390,7 @@ export class KanbanBoardView extends BaseView {
     const savedTheme = localStorage.getItem(`board_theme_${this.currentWorkspace}`);
     let theme = null;
     if (savedTheme) {
-      try { theme = JSON.parse(savedTheme); } catch(e) {}
+      try { theme = JSON.parse(savedTheme); } catch (e) { }
     }
     if (!theme) {
       theme = this.project?.theme || {
@@ -525,6 +525,109 @@ export class KanbanBoardView extends BaseView {
         .animate-slide-in-left {
           animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
+        /* ── List Actions Popover ── */
+        .list-actions-popover {
+          position: absolute;
+          top: calc(100% + 6px);
+          right: 0;
+          z-index: 200;
+          width: 260px;
+          background: #fff;
+          border-radius: 14px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+          border: 1px solid rgba(0,0,0,0.09);
+          overflow: hidden;
+          animation: popoverFadeIn 0.15s ease-out;
+        }
+        @media (prefers-color-scheme: dark) {
+          .list-actions-popover {
+            background: #1e293b;
+            border-color: rgba(255,255,255,0.1);
+          }
+        }
+        @keyframes popoverFadeIn {
+          from { opacity:0; transform: scale(0.95) translateY(-4px); }
+          to   { opacity:1; transform: scale(1) translateY(0); }
+        }
+        .list-actions-popover.hidden { display: none !important; }
+        .lap-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 14px 8px;
+          border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+        .lap-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: #1e293b;
+        }
+        .dark .lap-title { color: #f1f5f9; }
+        .lap-close {
+          width: 26px;
+          height: 26px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #64748b;
+          cursor: pointer;
+          background: transparent;
+          transition: background 0.15s;
+          border: none;
+          flex-shrink: 0;
+        }
+        .lap-close:hover { background: rgba(0,0,0,0.07); }
+        .lap-body { padding: 6px 0; max-height: 480px; overflow-y: auto; }
+        .lap-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 7px 14px;
+          font-size: 12.5px;
+          color: #334155;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.12s;
+          border-radius: 0;
+        }
+        .lap-item:hover { background: rgba(0,0,0,0.05); }
+        .lap-item .mi { font-size: 17px; color: #64748b; flex-shrink: 0; }
+        .lap-divider { height: 1px; background: rgba(0,0,0,0.07); margin: 4px 0; }
+        .lap-section-title {
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 6px 14px 3px;
+        }
+        .lap-color-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+          padding: 6px 14px 8px;
+        }
+        .lap-color-tile {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          border: 2px solid transparent;
+          cursor: pointer;
+          transition: transform 0.12s, border-color 0.12s;
+          flex-shrink: 0;
+        }
+        .lap-color-tile:hover { transform: scale(1.15); }
+        .lap-color-tile.selected { border-color: #fff; box-shadow: 0 0 0 2px #0c66e4; }
+        .lap-item.danger { color: #dc2626; }
+        .lap-item.danger .mi { color: #dc2626; }
+        .lap-item.danger:hover { background: rgba(220,38,38,0.07); }
+        .lap-watch-active { color: #0c66e4 !important; }
+        .lap-watch-active .mi { color: #0c66e4 !important; }
       </style>
 
       <!-- Ghost badge element for custom drag image -->
@@ -846,18 +949,22 @@ export class KanbanBoardView extends BaseView {
             <div class="flex gap-4 items-start min-w-max pb-8" id="kanban-board">
               
               ${this.columns.map(col => {
-                const colTasks = allTasks.filter(t => t.status === col.id);
+      const colTasks = allTasks.filter(t => t.status === col.id);
 
-                return `
+      const colColor = col.listColor || '';
+      const colHeaderBg = colColor ? `background:${colColor};border-radius:10px 10px 0 0;margin:-12px -12px 8px;padding:8px 12px;` : '';
+
+      return `
                   <div
                     class="kanban-column flex flex-col bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg min-w-[280px] max-w-[280px] flex-shrink-0 transition-all"
                     data-column-id="${col.id}"
+                    style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
                     <!-- Column Header matching Trello with count and action icons -->
-                    <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}">
+                    <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}" style="position:relative;">
                       <div class="flex items-center gap-2 min-w-0">
                         <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
-                        <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate">${col.title}</h3>
+                        <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate" title="Klik 2x untuk ubah nama">${col.title}</h3>
                         <span class="column-count-badge px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold shrink-0">
                           ${colTasks.length}
                         </span>
@@ -872,6 +979,108 @@ export class KanbanBoardView extends BaseView {
                             <svg fill="none" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" fill-rule="evenodd" d="M6.25 8.75H0v-1.5h6.25zm3.5-1.5H16v1.5H9.75z" clip-rule="evenodd"></path><path fill="currentColor" fill-rule="evenodd" d="M5.19 8 2.22 5.03l1.06-1.06 3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5-1.06-1.06zm4.03-.53 3.5-3.5 1.06 1.06L10.81 8l2.97 2.97-1.06 1.06-3.5-3.5a.75.75 0 0 1 0-1.06" clip-rule="evenodd"></path></svg>
                           </span>
                         </button>
+                        <!-- List Actions ··· Button -->
+                        <button
+                          class="btn-list-actions w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/8 transition-colors cursor-pointer"
+                          data-column-id="${col.id}"
+                          title="Tindakan daftar"
+                          type="button"
+                          aria-label="List actions"
+                        >
+                          <span class="material-symbols-outlined text-[16px]">more_horiz</span>
+                        </button>
+                      </div>
+
+                      <!-- List Actions Popover (per column) -->
+                      <div
+                        class="list-actions-popover hidden"
+                        id="lap-${col.id}"
+                        role="dialog"
+                        aria-label="Aksi daftar"
+                      >
+                        <div class="lap-header">
+                          <span class="lap-title">Aksi daftar</span>
+                          <button class="lap-close btn-lap-close" data-column-id="${col.id}" type="button" aria-label="Tutup">
+                            <span class="material-symbols-outlined" style="font-size:18px;pointer-events:none;">close</span>
+                          </button>
+                        </div>
+                        <div class="lap-body">
+                          <!-- Main actions -->
+                          <button class="lap-item btn-lap-add-card" data-column-id="${col.id}" type="button">
+                            <span class="material-symbols-outlined mi">add_card</span>
+                            <span>Tambah kartu</span>
+                          </button>
+                          <button class="lap-item btn-lap-copy-list" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
+                            <span class="material-symbols-outlined mi">content_copy</span>
+                            <span>Salin daftar</span>
+                          </button>
+                          <button class="lap-item btn-lap-move-list" data-column-id="${col.id}" type="button">
+                            <span class="material-symbols-outlined mi">swap_horiz</span>
+                            <span>Pindahkan daftar</span>
+                          </button>
+                          <button class="lap-item btn-lap-move-all-cards" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
+                            <span class="material-symbols-outlined mi">drive_file_move</span>
+                            <span>Pindahkan semua kartu di daftar ini</span>
+                          </button>
+                          <button class="lap-item btn-lap-watch" data-column-id="${col.id}" type="button">
+                            <span class="material-symbols-outlined mi">visibility</span>
+                            <span>Pantau</span>
+                          </button>
+
+                          <div class="lap-divider"></div>
+
+                          <!-- Change list color -->
+                          <div class="lap-section-title">Ubah warna daftar</div>
+                          <div class="lap-color-grid">
+                            <button class="lap-color-tile" style="background:#4ade80;" data-color="#4ade80" data-column-id="${col.id}" title="Hijau" type="button"></button>
+                            <button class="lap-color-tile" style="background:#facc15;" data-color="#facc15" data-column-id="${col.id}" title="Kuning" type="button"></button>
+                            <button class="lap-color-tile" style="background:#fb923c;" data-color="#fb923c" data-column-id="${col.id}" title="Oranye" type="button"></button>
+                            <button class="lap-color-tile" style="background:#f87171;" data-color="#f87171" data-column-id="${col.id}" title="Merah" type="button"></button>
+                            <button class="lap-color-tile" style="background:#c084fc;" data-color="#c084fc" data-column-id="${col.id}" title="Ungu" type="button"></button>
+                            <button class="lap-color-tile" style="background:#60a5fa;" data-color="#60a5fa" data-column-id="${col.id}" title="Biru" type="button"></button>
+                            <button class="lap-color-tile" style="background:#2dd4bf;" data-color="#2dd4bf" data-column-id="${col.id}" title="Teal" type="button"></button>
+                            <button class="lap-color-tile" style="background:#a3e635;" data-color="#a3e635" data-column-id="${col.id}" title="Hijau Muda" type="button"></button>
+                            <button class="lap-color-tile" style="background:#f472b6;" data-color="#f472b6" data-column-id="${col.id}" title="Magenta" type="button"></button>
+                            <button class="lap-color-tile" style="background:#94a3b8;" data-color="#94a3b8" data-column-id="${col.id}" title="Abu-abu" type="button"></button>
+                          </div>
+                          <button class="lap-item btn-lap-remove-color" data-column-id="${col.id}" type="button" style="margin-top:-4px;">
+                            <span class="material-symbols-outlined mi">format_color_reset</span>
+                            <span>Hapus warna</span>
+                          </button>
+
+                          <div class="lap-divider"></div>
+
+                          <!-- Automation -->
+                          <div class="lap-section-title">Otomatisasi</div>
+                          <button class="lap-item btn-lap-auto" data-column-id="${col.id}" data-rule="when-added" type="button">
+                            <span class="material-symbols-outlined mi">bolt</span>
+                            <span>Saat kartu ditambahkan ke daftar</span>
+                          </button>
+                          <button class="lap-item btn-lap-auto" data-column-id="${col.id}" data-rule="sort-daily" type="button">
+                            <span class="material-symbols-outlined mi">today</span>
+                            <span>Setiap hari, urutkan daftar berdasarkan…</span>
+                          </button>
+                          <button class="lap-item btn-lap-auto" data-column-id="${col.id}" data-rule="sort-weekly" type="button">
+                            <span class="material-symbols-outlined mi">date_range</span>
+                            <span>Setiap Senin, urutkan daftar berdasarkan…</span>
+                          </button>
+                          <button class="lap-item btn-lap-create-rule" data-column-id="${col.id}" type="button">
+                            <span class="material-symbols-outlined mi">add_circle</span>
+                            <span>Buat aturan</span>
+                          </button>
+
+                          <div class="lap-divider"></div>
+
+                          <!-- Archive actions -->
+                          <button class="lap-item btn-lap-archive-list" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
+                            <span class="material-symbols-outlined mi">archive</span>
+                            <span>Arsipkan daftar ini</span>
+                          </button>
+                          <button class="lap-item danger btn-lap-archive-all-cards" data-column-id="${col.id}" data-column-title="${col.title}" type="button">
+                            <span class="material-symbols-outlined mi">inventory_2</span>
+                            <span>Arsipkan semua kartu di daftar ini</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -972,7 +1181,7 @@ export class KanbanBoardView extends BaseView {
 
                   </div>
                 `;
-              }).join('')}
+    }).join('')}
 
               <!-- + Add another list (Trello Style) -->
               <div class="flex-shrink-0 min-w-[270px]">
@@ -1134,10 +1343,10 @@ export class KanbanBoardView extends BaseView {
           <!-- List Proyek yang Tersedia -->
           <div class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-0.5" id="header-projects-list">
             ${availableWorkspaces.map(item => {
-              const isCurrent = (this.projectId && item.id === this.projectId) || (!this.projectId && item.workspace === this.currentWorkspace);
-              const taskCount = this.taskService ? this.taskService.getTasks().filter(t => (item.type === 'project' && t.projectId === item.id) || (!t.projectId && t.workspace === item.workspace)).length : 0;
+      const isCurrent = (this.projectId && item.id === this.projectId) || (!this.projectId && item.workspace === this.currentWorkspace);
+      const taskCount = this.taskService ? this.taskService.getTasks().filter(t => (item.type === 'project' && t.projectId === item.id) || (!t.projectId && t.workspace === item.workspace)).length : 0;
 
-              return `
+      return `
                 <button
                   class="btn-header-switch-project-item w-full p-2.5 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${isCurrent ? 'bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 shadow-xs' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'}"
                   data-id="${item.id}"
@@ -1169,7 +1378,7 @@ export class KanbanBoardView extends BaseView {
                   `}
                 </button>
               `;
-            }).join('')}
+    }).join('')}
           </div>
 
           <!-- Bottom Actions: Kembali ke Beranda & Buat Projek Baru -->
@@ -1668,8 +1877,8 @@ export class KanbanBoardView extends BaseView {
   getPriorityBadge(priority) {
     switch (priority) {
       case 'Critical': return 'bg-rose-100 text-rose-700';
-      case 'High':     return 'bg-amber-100 text-amber-700';
-      default:         return 'bg-slate-100 text-slate-700';
+      case 'High': return 'bg-amber-100 text-amber-700';
+      default: return 'bg-slate-100 text-slate-700';
     }
   }
 
@@ -1698,7 +1907,7 @@ export class KanbanBoardView extends BaseView {
         const task = this.taskService.getTask(this._draggedTaskId);
         if (ghost && ghostLabel && task) {
           ghostLabel.textContent = `${task.code || ''} ${task.title.substring(0, 30)}...`;
-          ghost.style.top  = '-999px';
+          ghost.style.top = '-999px';
           ghost.style.left = '-999px';
           document.body.appendChild(ghost);
           e.dataTransfer.setDragImage(ghost, 0, 0);
@@ -1873,7 +2082,7 @@ export class KanbanBoardView extends BaseView {
     const y = touch.clientY;
 
     state.ghost.style.left = `${x - 140}px`;
-    state.ghost.style.top  = `${y - 40}px`;
+    state.ghost.style.top = `${y - 40}px`;
 
     state.ghost.style.display = 'none';
     const elUnder = document.elementFromPoint(x, y);
@@ -1967,6 +2176,8 @@ export class KanbanBoardView extends BaseView {
       const el = this.element.querySelector(sel);
       if (el) el.classList.add('hidden');
     });
+    // Also close all list-actions popovers
+    this.element.querySelectorAll('.list-actions-popover').forEach(p => p.classList.add('hidden'));
   }
 
   _togglePopup(selector) {
@@ -2126,8 +2337,8 @@ export class KanbanBoardView extends BaseView {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const taskId = btn.getAttribute('data-task-id');
-        const dir    = btn.getAttribute('data-dir');
-        const task   = this.taskService.getTask(taskId);
+        const dir = btn.getAttribute('data-dir');
+        const task = this.taskService.getTask(taskId);
         if (task) {
           const currentIndex = columnOrder.indexOf(task.status);
           const newIndex = dir === 'next' ? currentIndex + 1 : currentIndex - 1;
@@ -2270,7 +2481,7 @@ export class KanbanBoardView extends BaseView {
         e.stopPropagation();
         this._closeAllPopups();
         if (this.modalManager) {
-          this.modalManager.open('add-member', { 
+          this.modalManager.open('add-member', {
             workspace: this.currentWorkspace,
             boardTitle: this.project ? this.project.name : this.getWorkspaceName(this.currentWorkspace),
             projectId: this.projectId
@@ -2505,7 +2716,7 @@ export class KanbanBoardView extends BaseView {
         e.stopPropagation();
         const type = btn.getAttribute('data-theme-type');
         const name = btn.getAttribute('data-theme-name');
-        const val  = btn.getAttribute('data-theme-val');
+        const val = btn.getAttribute('data-theme-val');
         const themeObj = { type, name, value: val };
         localStorage.setItem(`board_theme_${this.currentWorkspace}`, JSON.stringify(themeObj));
         this._closeAllPopups();
@@ -2588,9 +2799,296 @@ export class KanbanBoardView extends BaseView {
     this.element.addEventListener('click', (e) => {
       const isInsidePopup = e.target.closest('#popup-board-view-switch, #popup-header-projects, #popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu');
       const isTrigger = e.target.closest('#btn-board-view-switch, #btn-header-switch-project, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu');
-      if (!isInsidePopup && !isTrigger) {
+      const isInsideLap = e.target.closest('.list-actions-popover');
+      const isLapTrigger = e.target.closest('.btn-list-actions');
+      if (!isInsidePopup && !isTrigger && !isInsideLap && !isLapTrigger) {
         this._closeAllPopups();
       }
+    });
+
+    // ==================== LIST ACTIONS POPOVER ====================
+
+    // Open list-actions popover
+    const listActionsBtns = this.element.querySelectorAll('.btn-list-actions');
+    listActionsBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const popover = this.element.querySelector(`#lap-${colId}`);
+        if (!popover) return;
+        const isHidden = popover.classList.contains('hidden');
+        // Close all others first
+        this._closeAllPopups();
+        if (isHidden) {
+          popover.classList.remove('hidden');
+        }
+      });
+    });
+
+    // Close (X) button inside list-actions popover
+    const lapCloseBtns = this.element.querySelectorAll('.btn-lap-close');
+    lapCloseBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const popover = this.element.querySelector(`#lap-${colId}`);
+        if (popover) popover.classList.add('hidden');
+      });
+    });
+
+    // LAP: Add card
+    const lapAddCardBtns = this.element.querySelectorAll('.btn-lap-add-card');
+    lapAddCardBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        this._closeAllPopups();
+        this.modalManager.open('new-task', {
+          workspace: this.currentWorkspace,
+          projectId: this.projectId,
+          status: colId
+        });
+      });
+    });
+
+    // LAP: Copy list
+    const lapCopyListBtns = this.element.querySelectorAll('.btn-lap-copy-list');
+    lapCopyListBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const colTitle = btn.getAttribute('data-column-title');
+        const originalCol = this.columns.find(c => c.id === colId);
+        if (!originalCol) return;
+        const newColId = 'col-' + Date.now();
+        const copiedCol = { ...originalCol, id: newColId, title: `${colTitle} (salinan)` };
+        const insertIdx = this.columns.findIndex(c => c.id === colId) + 1;
+        this.columns.splice(insertIdx, 0, copiedCol);
+        localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.success(`Daftar "${colTitle}" berhasil disalin.`);
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Move list (shift position left/right)
+    const lapMoveListBtns = this.element.querySelectorAll('.btn-lap-move-list');
+    lapMoveListBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const idx = this.columns.findIndex(c => c.id === colId);
+        if (idx < 0) return;
+        this._closeAllPopups();
+        // Cycle: move to end → start → normal
+        const col = this.columns.splice(idx, 1)[0];
+        const newIdx = idx === 0 ? this.columns.length : idx - 1;
+        this.columns.splice(newIdx, 0, col);
+        localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+        if (this.notificationService) {
+          this.notificationService.success(`Daftar "${col.title}" dipindahkan.`);
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Move all cards in list
+    const lapMoveAllCardsBtns = this.element.querySelectorAll('.btn-lap-move-all-cards');
+    lapMoveAllCardsBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const colTitle = btn.getAttribute('data-column-title');
+        // Find next column as target
+        const currentIdx = this.columns.findIndex(c => c.id === colId);
+        const targetCol = this.columns[currentIdx + 1] || this.columns[currentIdx - 1];
+        if (!targetCol) {
+          if (this.notificationService) this.notificationService.warning('Tidak ada kolom lain sebagai tujuan.');
+          return;
+        }
+        const tasks = this.taskService.getTasks().filter(t => {
+          const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && t.workspace === this.currentWorkspace)) : (t.workspace === this.currentWorkspace);
+          return t.status === colId && matchWs;
+        });
+        tasks.forEach(t => this.taskService.updateTaskStatus(t.id, targetCol.id));
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.success(`${tasks.length} kartu dari "${colTitle}" dipindahkan ke "${targetCol.title}".`);
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Watch toggle
+    const lapWatchBtns = this.element.querySelectorAll('.btn-lap-watch');
+    lapWatchBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const watchKey = `watch_col_${this.currentWorkspace}_${colId}`;
+        const isWatching = localStorage.getItem(watchKey) === 'true';
+        localStorage.setItem(watchKey, isWatching ? 'false' : 'true');
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.info(isWatching ? 'Berhenti memantau daftar ini.' : 'Anda sekarang memantau daftar ini.');
+        }
+      });
+    });
+
+    // LAP: Change list color tiles
+    const lapColorTiles = this.element.querySelectorAll('.lap-color-tile');
+    lapColorTiles.forEach(tile => {
+      tile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = tile.getAttribute('data-column-id');
+        const color = tile.getAttribute('data-color');
+        const col = this.columns.find(c => c.id === colId);
+        if (col) {
+          col.listColor = color;
+          localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+        }
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.success('Warna daftar diperbarui.');
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Remove color
+    const lapRemoveColorBtns = this.element.querySelectorAll('.btn-lap-remove-color');
+    lapRemoveColorBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const col = this.columns.find(c => c.id === colId);
+        if (col) {
+          delete col.listColor;
+          localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+        }
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.info('Warna daftar dihapus.');
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Automation rule
+    const lapAutoBtns = this.element.querySelectorAll('.btn-lap-auto');
+    lapAutoBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rule = btn.getAttribute('data-rule');
+        const messages = {
+          'when-added': 'Aturan: Ketika kartu ditambahkan ke daftar ini — tindakan automasi akan dijalankan.',
+          'sort-daily': 'Aturan: Setiap hari, urutkan daftar ini berdasarkan tanggal jatuh tempo.',
+          'sort-weekly': 'Aturan: Setiap Senin, urutkan daftar ini berdasarkan prioritas.'
+        };
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.info(messages[rule] || 'Aturan automasi dipilih.');
+        }
+      });
+    });
+
+    const lapCreateRuleBtns = this.element.querySelectorAll('.btn-lap-create-rule');
+    lapCreateRuleBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.info('Fitur buat aturan automasi kustom akan segera hadir.');
+        }
+      });
+    });
+
+    // LAP: Archive this list
+    const lapArchiveListBtns = this.element.querySelectorAll('.btn-lap-archive-list');
+    lapArchiveListBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const colTitle = btn.getAttribute('data-column-title');
+        this.columns = this.columns.filter(c => c.id !== colId);
+        localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.success(`Daftar "${colTitle}" berhasil diarsipkan.`);
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Archive all cards in list
+    const lapArchiveAllCardsBtns = this.element.querySelectorAll('.btn-lap-archive-all-cards');
+    lapArchiveAllCardsBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        const colTitle = btn.getAttribute('data-column-title');
+        const tasks = this.taskService.getTasks().filter(t => {
+          const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && t.workspace === this.currentWorkspace)) : (t.workspace === this.currentWorkspace);
+          return t.status === colId && matchWs;
+        });
+        const removedItems = [];
+        tasks.forEach(t => {
+          const res = this.taskService.deleteTask(t.id, true);
+          if (res) removedItems.push(res);
+        });
+        this._closeAllPopups();
+        if (this.notificationService && removedItems.length > 0) {
+          this.notificationService.showWithAction(
+            `${removedItems.length} kartu di "${colTitle}" diarsipkan`,
+            {
+              label: 'Undo',
+              onClick: () => {
+                this.taskService.restoreTasks(removedItems);
+                this.mount(this.element);
+              }
+            },
+            'warning',
+            6500
+          );
+        } else if (this.notificationService) {
+          this.notificationService.info(`Kolom "${colTitle}" sudah kosong.`);
+        }
+        this.mount(this.element);
+      });
+    });
+
+    // LAP: Double-click column title to rename
+    const colHeaderTitles = this.element.querySelectorAll('.column-header-title');
+    colHeaderTitles.forEach(titleEl => {
+      titleEl.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const colHeader = titleEl.closest('.column-header-inner');
+        const colDiv = titleEl.closest('.kanban-column');
+        const colId = colDiv?.getAttribute('data-column-id');
+        const col = this.columns.find(c => c.id === colId);
+        if (!col) return;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = col.title;
+        input.className = 'font-bold text-[13.5px] text-text-primary tracking-tight bg-white dark:bg-slate-800 border border-[#0c66e4] rounded px-1 py-0 outline-none w-full min-w-0';
+        input.style.maxWidth = '130px';
+        titleEl.replaceWith(input);
+        input.focus();
+        input.select();
+        const commit = () => {
+          const newTitle = input.value.trim();
+          if (newTitle) col.title = newTitle;
+          localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+          this.mount(this.element);
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (ke) => {
+          if (ke.key === 'Enter') { ke.preventDefault(); commit(); }
+          if (ke.key === 'Escape') { this.mount(this.element); }
+        });
+      });
     });
 
     // ==================== LEFT INBOX DRAWER INTERACTION ====================
