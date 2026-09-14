@@ -2,7 +2,7 @@ import { BaseModal } from '../../core/BaseModal.js';
 
 /**
  * CreateBoardModal - Single Responsibility Principle (SRP)
- * Modal form for creating a new project / board with customizable themes (photos, gradients, solid colors).
+ * Modal form for creating a new project / board with automatic workspace creation and custom themes.
  */
 export class CreateBoardModal extends BaseModal {
   constructor(container) {
@@ -155,222 +155,248 @@ export class CreateBoardModal extends BaseModal {
 
   render(data = {}) {
     this.selectedTheme = this.themes[0];
+    const prefillTitle = data?.prefillTitle || '';
 
     return `
-      <div class="relative w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col modal-content-box animate-in fade-in zoom-in duration-200">
-        <!-- Header -->
-        <div class="px-5 py-3.5 bg-surface-container-low border-b border-surface-border flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-[#0c66e4] text-white flex items-center justify-center shadow-xs">
-              <span class="material-symbols-outlined text-[20px]">dashboard_customize</span>
+      <div class="relative w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 scale-100 translate-y-0 my-auto flex flex-col max-h-[90vh] overflow-y-auto modal-content-box animate-in fade-in zoom-in duration-200">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">create_new_folder</span>
             </div>
             <div>
-              <h3 class="font-headline-md text-[15px] font-bold text-text-primary">Buat Papan Baru</h3>
-              <p class="font-caption-meta text-[11px] text-text-secondary">Atur nama proyek dan tema visual papan</p>
+              <h3 class="text-base font-bold text-slate-900">Tambah Proyek Baru</h3>
+              <p class="text-[11px] text-slate-500">Otomatis membuat ruang kerja baru untuk proyek Anda</p>
             </div>
           </div>
-          <button id="btn-close-create-board" class="w-8 h-8 rounded-lg hover:bg-surface-container text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer" type="button">
-            <span class="material-symbols-outlined text-[18px]">close</span>
+          <button id="btn-close-create-project" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer" type="button" title="Tutup">
+            <span class="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        <!-- Form Body -->
-        <form id="form-create-board" class="p-5 flex flex-col gap-4">
-          
-          <!-- Live Preview Card -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[11px] font-bold text-text-secondary uppercase tracking-wider">Pratinjau Papan</label>
-            <div 
-              id="board-theme-preview" 
-              class="relative w-full h-32 rounded-xl p-4 flex flex-col justify-between shadow-md transition-all duration-300 border border-black/10 overflow-hidden"
-              style="background-image: url('${this.selectedTheme.value}'); background-size: cover; background-position: center;"
-            >
-              <!-- Semi-dark overlay for readability -->
-              <div class="absolute inset-0 bg-black/25 backdrop-blur-[1px] pointer-events-none"></div>
-
-              <!-- Top dummy kanban columns icons -->
-              <div class="relative z-10 flex items-center justify-between text-white/80 text-[11px]">
-                <div class="flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-2 py-0.5 rounded-md font-mono text-[10px]">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span id="preview-theme-badge">Tema: ${this.selectedTheme.name}</span>
-                </div>
-                <div class="flex items-center gap-1">
-                  <div class="w-5 h-5 rounded bg-white/20"></div>
-                  <div class="w-5 h-5 rounded bg-white/20"></div>
-                  <div class="w-5 h-5 rounded bg-white/20"></div>
-                </div>
-              </div>
-
-              <!-- Board Title in Preview -->
-              <div class="relative z-10">
-                <span id="preview-board-title" class="text-white text-[16px] font-bold drop-shadow-md tracking-tight block truncate">
-                  Nama Proyek Baru
-                </span>
-                <span class="text-white/80 text-[11px] drop-shadow-sm block">
-                  Papan Kanban • Sampulkreativ Workspace
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Board Title Input -->
-          <div class="flex flex-col gap-1.5">
-            <label for="board-title-input" class="text-[12px] font-bold text-text-primary flex items-center justify-between">
-              <span>Judul Papan / Nama Proyek <span class="text-rose-500">*</span></span>
-              <span class="text-[11px] text-text-muted font-normal">Wajib diisi</span>
-            </label>
-            <input
-              id="board-title-input"
-              type="text"
-              required
-              placeholder="Contoh: Redesign Aplikasi Mobile, Campaign Q4, dsb."
-              class="w-full px-3 py-2 bg-surface-container-low border border-surface-border rounded-xl text-text-primary placeholder:text-text-muted text-[13px] font-medium focus:outline-none focus:border-[#0c66e4] focus:ring-2 focus:ring-[#0c66e4]/20 transition-all"
+        <!-- Modal Form -->
+        <form id="form-create-project" class="flex flex-col gap-3.5">
+          <!-- Nama Proyek -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Proyek *</label>
+            <input 
+              id="input-ws-project-name" 
+              type="text" 
+              required 
+              value="${prefillTitle}"
+              placeholder="Contoh: Kampanye LED Brand Launch Q4" 
+              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
               autofocus
             />
-            <p id="board-title-error" class="text-rose-600 text-[11px] hidden font-medium">Harap masukkan judul papan terlebih dahulu.</p>
           </div>
 
-          <!-- Theme Selector -->
-          <div class="flex flex-col gap-2">
-            <label class="text-[12px] font-bold text-text-primary flex items-center justify-between">
-              <span>Pilih Tema Latar Belakang</span>
-              <span id="selected-theme-name-label" class="text-[11px] text-[#0c66e4] font-semibold">${this.selectedTheme.name}</span>
-            </label>
-
-            <!-- Wallpapers & Photos -->
-            <span class="text-[10px] text-text-muted font-bold uppercase tracking-wider">Wallpaper Foto</span>
-            <div class="grid grid-cols-6 gap-2">
-              ${this.themes.filter(t => t.type === 'image').map(theme => `
-                <button
-                  type="button"
-                  class="theme-select-btn relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${theme.id === this.selectedTheme.id ? 'border-[#0c66e4] ring-2 ring-[#0c66e4]/40 scale-105' : 'border-transparent opacity-85 hover:opacity-100'}"
-                  data-theme-id="${theme.id}"
-                  title="${theme.name}"
-                  style="background-image: url('${theme.thumb}'); background-size: cover; background-position: center;"
-                >
-                  <span class="sr-only">${theme.name}</span>
-                </button>
-              `).join('')}
+          <!-- Ruang Kerja Baru & Kategori -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <span>Ruang Kerja Baru *</span>
+                <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Otomatis Baru
+                </span>
+              </label>
+              <input 
+                id="input-ws-new-workspace-name" 
+                type="text" 
+                required 
+                placeholder="Nama ruang kerja baru..." 
+                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+              />
             </div>
 
-            <!-- Gradients -->
-            <span class="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-1">Gradien Modern</span>
-            <div class="grid grid-cols-6 gap-2">
-              ${this.themes.filter(t => t.type === 'gradient').map(theme => `
-                <button
-                  type="button"
-                  class="theme-select-btn relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${theme.id === this.selectedTheme.id ? 'border-[#0c66e4] ring-2 ring-[#0c66e4]/40 scale-105' : 'border-transparent opacity-85 hover:opacity-100'}"
-                  data-theme-id="${theme.id}"
-                  title="${theme.name}"
-                  style="background: ${theme.thumb};"
-                >
-                  <span class="sr-only">${theme.name}</span>
-                </button>
-              `).join('')}
-            </div>
-
-            <!-- Colors -->
-            <span class="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-1">Warna Solid</span>
-            <div class="grid grid-cols-4 gap-2">
-              ${this.themes.filter(t => t.type === 'color').map(theme => `
-                <button
-                  type="button"
-                  class="theme-select-btn relative h-7 rounded-lg overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${theme.id === this.selectedTheme.id ? 'border-[#0c66e4] ring-2 ring-[#0c66e4]/40 scale-105' : 'border-transparent opacity-85 hover:opacity-100'}"
-                  data-theme-id="${theme.id}"
-                  title="${theme.name}"
-                  style="background-color: ${theme.thumb};"
-                >
-                  <span class="sr-only">${theme.name}</span>
-                </button>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- Workspace / Visibility Dropdown -->
-          <div class="grid grid-cols-2 gap-3 pt-1 border-t border-surface-border">
-            <div class="flex flex-col gap-1">
-              <label for="board-workspace-select" class="text-[11px] font-semibold text-text-secondary">Ruang Kerja</label>
-              <select
-                id="board-workspace-select"
-                class="w-full px-2.5 py-1.5 bg-surface-container-low border border-surface-border rounded-lg text-text-primary text-[12px] focus:outline-none focus:border-[#0c66e4]"
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
+              <select 
+                id="select-ws-new-workspace-tag" 
+                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
               >
-                <option value="ruangkreasi">RuangKreasi (Studio Dev)</option>
-                <option value="layarbaca">LayarBaca (Produk)</option>
-                <option value="aikreativ">AIKreativ (AI Studio)</option>
-                <option value="panen-kunci">Panen Kunci (SaaS)</option>
-                <option value="sharinginaja">Sharinginaja (Cloud)</option>
-              </select>
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label for="board-visibility-select" class="text-[11px] font-semibold text-text-secondary">Visibilitas</label>
-              <select
-                id="board-visibility-select"
-                class="w-full px-2.5 py-1.5 bg-surface-container-low border border-surface-border rounded-lg text-text-primary text-[12px] focus:outline-none focus:border-[#0c66e4]"
-              >
-                <option value="workspace">Ruang Kerja (Semua Anggota)</option>
-                <option value="private">Privat (Hanya Saya)</option>
-                <option value="public">Publik (Organisasi)</option>
+                <option value="Dev / Creative Hub" selected>Dev / Creative Hub</option>
+                <option value="Produk / Inovasi">Produk / Inovasi</option>
+                <option value="Studio / Digital & AI">Studio / Digital & AI</option>
+                <option value="SaaS / Security & Core">SaaS / Security & Core</option>
+                <option value="Cloud / Infrastruktur">Cloud / Infrastruktur</option>
+                <option value="Marketing / Kampanye">Marketing / Kampanye</option>
               </select>
             </div>
           </div>
 
-          <!-- Footer Actions -->
-          <div class="pt-3 border-t border-surface-border flex items-center justify-end gap-2.5">
-            <button
-              id="btn-cancel-create-board"
-              type="button"
-              class="px-4 py-2 rounded-xl text-text-secondary hover:bg-surface-container text-[13px] font-semibold transition-colors cursor-pointer"
+          <!-- Prioritas & Deadline -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Prioritas</label>
+              <select 
+                id="select-ws-project-priority" 
+                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
+              >
+                <option value="Critical">Critical</option>
+                <option value="High" selected>High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Target Deadline</label>
+              <input 
+                id="input-ws-project-due" 
+                type="text" 
+                placeholder="Contoh: Nov 2026" 
+                value="Des 2026" 
+                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+              />
+            </div>
+          </div>
+
+          <!-- Estimasi Budget -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Estimasi Budget</label>
+            <input 
+              id="input-ws-project-budget" 
+              type="text" 
+              placeholder="Contoh: Rp 75.000.000" 
+              value="Rp 85.000.000" 
+              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+            />
+          </div>
+
+          <!-- Deskripsi Proyek -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
+            <textarea 
+              id="input-ws-project-desc" 
+              rows="2" 
+              placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..." 
+              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Tema Visual Papan & Preview -->
+          <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold text-slate-700">Tema Visual Papan</label>
+              <span id="selected-theme-name-label" class="text-[11px] text-purple-600 font-semibold">${this.selectedTheme.name}</span>
+            </div>
+
+            <!-- Mini Live Preview -->
+            <div 
+              id="board-theme-preview" 
+              class="relative w-full h-20 rounded-xl p-3 flex flex-col justify-between shadow-xs border border-slate-200 overflow-hidden transition-all duration-300"
+              style="background-image: url('${this.selectedTheme.value}'); background-size: cover; background-position: center;"
+            >
+              <div class="relative z-10 flex items-center justify-between text-white/90 text-[10px]">
+                <span id="preview-theme-badge" class="bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded font-medium">Tema: ${this.selectedTheme.name}</span>
+                <span id="preview-workspace-badge" class="bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded font-mono">WORKSPACE</span>
+              </div>
+              <div class="relative z-10">
+                <span id="preview-board-title" class="text-white text-[13px] font-bold drop-shadow-md truncate block">
+                  ${prefillTitle || 'Nama Proyek Baru'}
+                </span>
+              </div>
+            </div>
+
+            <!-- Theme Buttons -->
+            <div class="grid grid-cols-8 sm:grid-cols-8 gap-1.5 mt-0.5">
+              ${this.themes.map(theme => `
+                <button
+                  type="button"
+                  class="theme-select-btn relative aspect-[14/10] rounded-lg overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${theme.id === this.selectedTheme.id ? 'border-purple-600 ring-2 ring-purple-600/30 scale-105' : 'border-transparent opacity-85 hover:opacity-100'}"
+                  data-theme-id="${theme.id}"
+                  title="${theme.name}"
+                  style="${theme.type === 'image' ? `background-image: url('${theme.thumb}'); background-size: cover; background-position: center;` : `background: ${theme.thumb};`}"
+                >
+                  <span class="sr-only">${theme.name}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-slate-100">
+            <button 
+              id="btn-cancel-create-project" 
+              type="button" 
+              class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
             >
               Batal
             </button>
-            <button
-              id="btn-submit-create-board"
-              type="submit"
-              class="px-5 py-2 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[13px] font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            <button 
+              id="btn-submit-create-project" 
+              type="submit" 
+              class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-600/25 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
             >
-              <span class="material-symbols-outlined text-[16px]">add</span>
-              <span>Buat Papan</span>
+              <span class="material-symbols-outlined text-[16px]">save</span>
+              <span>Simpan &amp; Buat Ruang Kerja</span>
             </button>
           </div>
-
         </form>
+
       </div>
     `;
   }
 
   bindEvents(container) {
-    const form = container.querySelector('#form-create-board');
-    const titleInput = container.querySelector('#board-title-input');
-    const titleError = container.querySelector('#board-title-error');
+    const form = container.querySelector('#form-create-project');
+    const projectNameInput = container.querySelector('#input-ws-project-name');
+    const newWorkspaceInput = container.querySelector('#input-ws-new-workspace-name');
+    const workspaceTagSelect = container.querySelector('#select-ws-new-workspace-tag');
+    const prioritySelect = container.querySelector('#select-ws-project-priority');
+    const dueDateInput = container.querySelector('#input-ws-project-due');
+    const budgetInput = container.querySelector('#input-ws-project-budget');
+    const descInput = container.querySelector('#input-ws-project-desc');
+
     const previewEl = container.querySelector('#board-theme-preview');
     const previewTitle = container.querySelector('#preview-board-title');
     const previewBadge = container.querySelector('#preview-theme-badge');
+    const previewWorkspace = container.querySelector('#preview-workspace-badge');
     const themeNameLabel = container.querySelector('#selected-theme-name-label');
     const themeButtons = container.querySelectorAll('.theme-select-btn');
-    const closeBtn = container.querySelector('#btn-close-create-board');
-    const cancelBtn = container.querySelector('#btn-cancel-create-board');
-    const workspaceSelect = container.querySelector('#board-workspace-select');
 
-    // Auto focus title input
+    const closeBtn = container.querySelector('#btn-close-create-project');
+    const cancelBtn = container.querySelector('#btn-cancel-create-project');
+
+    let workspaceUserEdited = false;
+
+    // Focus project name input
     setTimeout(() => {
-      if (titleInput) titleInput.focus();
+      if (projectNameInput) projectNameInput.focus();
     }, 100);
 
-    // Live update preview title
-    if (titleInput) {
-      titleInput.addEventListener('input', () => {
-        const val = titleInput.value.trim();
-        if (previewTitle) {
-          previewTitle.textContent = val || 'Nama Proyek Baru';
-        }
-        if (titleError) {
-          titleError.classList.add('hidden');
+    // Track manual edits on workspace input
+    if (newWorkspaceInput) {
+      newWorkspaceInput.addEventListener('input', () => {
+        workspaceUserEdited = true;
+        if (previewWorkspace) {
+          previewWorkspace.textContent = (newWorkspaceInput.value.trim() || 'WORKSPACE').toUpperCase();
         }
       });
     }
 
-    // Theme buttons click handler
+    // Live update preview title & auto-fill workspace name
+    if (projectNameInput) {
+      projectNameInput.addEventListener('input', () => {
+        const val = projectNameInput.value.trim();
+        if (previewTitle) {
+          previewTitle.textContent = val || 'Nama Proyek Baru';
+        }
+
+        // Auto-suggest workspace title if user hasn't manually overridden it
+        if (!workspaceUserEdited && newWorkspaceInput) {
+          newWorkspaceInput.value = val ? `${val} Hub` : '';
+          if (previewWorkspace) {
+            previewWorkspace.textContent = (newWorkspaceInput.value || 'WORKSPACE').toUpperCase();
+          }
+        }
+      });
+    }
+
+    // Theme selector
     themeButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const themeId = btn.getAttribute('data-theme-id');
@@ -379,20 +405,18 @@ export class CreateBoardModal extends BaseModal {
 
         this.selectedTheme = foundTheme;
 
-        // Update active class on buttons
+        // Active ring
         themeButtons.forEach(b => {
-          b.classList.remove('border-[#0c66e4]', 'ring-2', 'ring-[#0c66e4]/40', 'scale-105');
+          b.classList.remove('border-purple-600', 'ring-2', 'ring-purple-600/30', 'scale-105');
           b.classList.add('border-transparent', 'opacity-85');
         });
-        btn.classList.add('border-[#0c66e4]', 'ring-2', 'ring-[#0c66e4]/40', 'scale-105');
+        btn.classList.add('border-purple-600', 'ring-2', 'ring-purple-600/30', 'scale-105');
         btn.classList.remove('border-transparent', 'opacity-85');
 
         // Update preview styles
         if (previewEl) {
           if (foundTheme.type === 'image') {
             previewEl.style.background = `url('${foundTheme.value}') center/cover no-repeat`;
-          } else if (foundTheme.type === 'gradient') {
-            previewEl.style.background = foundTheme.value;
           } else {
             previewEl.style.background = foundTheme.value;
           }
@@ -401,14 +425,13 @@ export class CreateBoardModal extends BaseModal {
         if (previewBadge) {
           previewBadge.textContent = `Tema: ${foundTheme.name}`;
         }
-
         if (themeNameLabel) {
           themeNameLabel.textContent = foundTheme.name;
         }
       });
     });
 
-    // Close / Cancel handlers
+    // Close & Cancel
     const handleClose = () => {
       this.modalManager.close(this.modalId);
     };
@@ -416,24 +439,73 @@ export class CreateBoardModal extends BaseModal {
     if (closeBtn) closeBtn.addEventListener('click', handleClose);
     if (cancelBtn) cancelBtn.addEventListener('click', handleClose);
 
-    // Form submit
+    // Form submission
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const title = titleInput ? titleInput.value.trim() : '';
 
-        if (!title) {
-          if (titleError) titleError.classList.remove('hidden');
-          if (titleInput) titleInput.focus();
+        const name = projectNameInput ? projectNameInput.value.trim() : '';
+        let wsTitle = newWorkspaceInput ? newWorkspaceInput.value.trim() : '';
+        const wsTag = workspaceTagSelect ? workspaceTagSelect.value : 'Dev / Creative Hub';
+        const priority = prioritySelect ? prioritySelect.value : 'High';
+        const dueDate = dueDateInput ? dueDateInput.value : 'Des 2026';
+        const budget = budgetInput ? budgetInput.value : 'Rp 85.000.000';
+        const description = descInput ? descInput.value.trim() : `Ruang kerja dan deliverable proyek ${name}.`;
+
+        if (!name) {
+          if (projectNameInput) projectNameInput.focus();
           return;
         }
 
-        const workspace = workspaceSelect ? workspaceSelect.value : 'ruangkreasi';
+        if (!wsTitle) {
+          wsTitle = `${name} Hub`;
+        }
 
-        // 1. Create project with theme
+        // Generate unique workspace ID
+        const slugBase = wsTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ws-baru';
+        const newWorkspaceId = `${slugBase}-${Date.now().toString().slice(-4)}`;
+
+        // Color palette for workspace
+        const palette = ['#8b5cf6', '#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6', '#f43f5e'];
+        const chosenColor = palette[Math.floor(Math.random() * palette.length)];
+
+        const newWorkspace = {
+          id: newWorkspaceId,
+          title: wsTitle,
+          tag: wsTag,
+          description: description,
+          color: chosenColor,
+          isCustom: true,
+          iconSvg: `
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              <line x1="12" y1="11" x2="12" y2="17"></line>
+              <line x1="9" y1="14" x2="15" y2="14"></line>
+            </svg>
+          `
+        };
+
+        // Persist to custom workspaces in localStorage
+        try {
+          const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+          custom.unshift(newWorkspace);
+          localStorage.setItem('custom_workspaces', JSON.stringify(custom));
+        } catch (err) {
+          console.error('Error saving custom workspace:', err);
+        }
+
+        // Set active workspace
+        localStorage.setItem('active_workspace', newWorkspaceId);
+
+        // 1. Create project with full metadata & theme
         const newProject = this.projectService.addProject({
-          name: title,
-          workspace: workspace,
+          name: name,
+          workspace: newWorkspaceId,
+          tag: wsTag,
+          priority: priority,
+          dueDate: dueDate,
+          budget: budget,
+          description: description,
           theme: {
             id: this.selectedTheme.id,
             name: this.selectedTheme.name,
@@ -443,49 +515,58 @@ export class CreateBoardModal extends BaseModal {
           },
           status: 'active',
           progress: 0,
-          tasksCount: { total: 3, completed: 0 }
+          tasksCount: { total: 3, completed: 0 },
+          isUserCreated: true
         });
 
-        // 2. Initialize starter cards in TaskService for this project
+        // 2. Initialize starter cards in TaskService
         if (this.taskService) {
-          const starterTasks = [
-            {
-              title: `Riset Kebutuhan & Brief Awal: ${title}`,
-              workspace: workspace,
-              projectId: newProject.id,
-              status: 'backlog',
-              priority: 'High',
-              pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' }
-            },
-            {
-              title: `Desain Mockup & Alur Kerja ${title}`,
-              workspace: workspace,
-              projectId: newProject.id,
-              status: 'in-progress',
-              priority: 'Critical',
-              pic: { name: 'Bagas Wicaksono', initials: 'BW', role: 'Graphic Specialist' }
-            },
-            {
-              title: `Setup Lingkungan & Asset Starter`,
-              workspace: workspace,
-              projectId: newProject.id,
-              status: 'review-qa',
-              priority: 'Medium',
-              pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' }
-            }
-          ];
+          const prefix = wsTitle.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'PRJ';
+          this.taskService.addTask({
+            code: `#${prefix}-101`,
+            title: `Kickoff & Ruang Lingkup: ${name}`,
+            description: description,
+            workspace: newWorkspaceId,
+            board: 'sprint-1',
+            projectId: newProject.id,
+            status: 'in-progress',
+            priority: priority,
+            pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+            timeline: `${dueDate} (Fase Inisiasi)`,
+            hours: 16,
+            qaProgress: { passed: 1, total: 3 },
+            tags: ['Inisiasi', 'Baru']
+          });
 
-          starterTasks.forEach(task => this.taskService.addTask(task));
+          this.taskService.addTask({
+            code: `#${prefix}-102`,
+            title: `Penyusunan Rencana Kerja & Kebutuhan Ruang Kerja ${wsTitle}`,
+            description: 'Setup kebutuhan kolaborasi, pembagian tugas anggota, dan milestone utama.',
+            workspace: newWorkspaceId,
+            board: 'sprint-1',
+            projectId: newProject.id,
+            status: 'backlog',
+            priority: 'Medium',
+            pic: { name: 'Bagas Wicaksono', initials: 'BW', role: 'Design Specialist' },
+            timeline: dueDate,
+            hours: 12,
+            qaProgress: { passed: 0, total: 2 },
+            tags: ['Perencanaan']
+          });
         }
 
         // 3. Close modal
         this.modalManager.close(this.modalId);
 
-        // 4. Immediately navigate directly to the new project's Kanban board!
+        // 4. Emit project & workspace events
+        this.eventBus.emit('workspace:created', { workspace: newWorkspace });
+        this.eventBus.emit('workspace:changed', { workspaceId: newWorkspaceId });
+        this.eventBus.emit('project:created', { project: newProject });
+        this.eventBus.emit('project:added', { project: newProject });
+
+        // 5. Navigate to dashboard so what was newly created immediately appears on dashboard!
         this.eventBus.emit('navigate', {
-          view: 'kanban',
-          projectId: newProject.id,
-          workspace: workspace
+          view: 'dashboard'
         });
       });
     }

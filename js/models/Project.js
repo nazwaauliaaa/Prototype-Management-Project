@@ -19,11 +19,13 @@ export class Project {
     tasksCount = { total: 0, completed: 0 },
     budget = '',
     theme = null,
-    createdAt = new Date().toISOString()
+    createdAt = new Date().toISOString(),
+    isUserCreated = false
   }) {
     this.id = id || 'proj-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     this.code = code || `PRJ-${Math.floor(100 + Math.random() * 900)}`;
     this.name = name;
+    this.isUserCreated = isUserCreated;
     this.theme = theme || {
       id: 'skyline',
       name: 'City Skyline',

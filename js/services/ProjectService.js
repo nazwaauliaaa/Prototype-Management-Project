@@ -353,7 +353,8 @@ export class ProjectService {
       dueDate: data.dueDate || 'Q4 2026',
       budget: data.budget || 'Rp 50.000.000',
       tasksCount: data.tasksCount || { total: 3, completed: 0 },
-      theme: data.theme || null
+      theme: data.theme || null,
+      isUserCreated: data.isUserCreated !== undefined ? data.isUserCreated : true
     });
 
     // Sisipkan di posisi paling atas kategori terkait
@@ -363,6 +364,7 @@ export class ProjectService {
     // Emit event melalui EventBus (DIP / OCP)
     if (this.eventBus) {
       this.eventBus.emit('project:added', { project: newProject });
+      this.eventBus.emit('project:created', { project: newProject });
     }
 
     // Tampilkan notifikasi (SRP)
@@ -371,5 +373,17 @@ export class ProjectService {
     }
 
     return newProject;
+  }
+
+  /**
+   * Menambahkan papan proyek baru oleh pengguna
+   * @param {Object} data
+   * @returns {Project}
+   */
+  addProject(data = {}) {
+    return this.addDummyProject({
+      ...data,
+      isUserCreated: true
+    });
   }
 }

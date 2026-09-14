@@ -31,149 +31,131 @@ export class Header {
     };
 
     return `
-      <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 border-b border-surface-border">
-        <div class="w-full h-topbar-height px-spacing-lg flex items-center justify-between gap-spacing-md">
+      <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+        <div class="w-full h-topbar-height px-3 sm:px-5 flex items-center justify-between gap-3">
 
-          <!-- Hamburger Menu (mobile only) -->
-          <button
-            id="btn-hamburger-menu"
-            aria-label="Buka menu navigasi"
-            class="md:hidden w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors flex-shrink-0"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[22px]">menu</span>
-          </button>
-
-          <!-- Logo & Branding -->
-          <div class="flex items-center gap-spacing-md">
-            <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
-              <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
-              <div class="flex flex-col">
-                <span class="font-headline-md text-[15px] font-bold text-on-surface leading-none">Creative Office</span>
-                <span class="font-badge-micro text-[10px] text-text-muted leading-none mt-1">by Sampulkreativ Technology</span>
+          <!-- Left: Brand Logo -->
+          <div class="flex items-center gap-2.5 shrink-0">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-2 cursor-pointer select-none group" id="header-brand-logo">
+              <div class="w-7 h-7 rounded-lg bg-primary-container p-1 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                <img alt="Creative Office" class="w-full h-full object-contain" src="assets/logo.svg" />
               </div>
-            </div>
-            <div class="header-https-badge hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low text-status-success font-caption-meta text-caption-meta">
-              <span class="w-1.5 h-1.5 rounded-full bg-status-success inline-block animate-pulse"></span>
-              <span class="text-text-secondary text-[11px] font-medium">creativeoffice.app • HTTPS Secure</span>
+              <div class="flex flex-col">
+                <span class="text-[14px] font-bold text-on-surface leading-none tracking-tight">Creative Office</span>
+                <span class="text-[9.5px] text-text-muted leading-none mt-1 font-medium">by Sampulkreativ</span>
+              </div>
             </div>
           </div>
 
-          <!-- Search Bar & Create Button (Trello-style) -->
-          <div class="flex-1 max-w-lg mx-spacing-md hidden md:flex items-center gap-2">
+          <!-- Center: Search Bar & Create Button -->
+          <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center gap-2">
             <div class="relative flex-1 flex items-center">
-              <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[18px] pointer-events-none">search</span>
+              <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[17px] pointer-events-none">search</span>
               <input
                 id="global-search-input"
-                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-xl font-body-default text-body-default text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-[#0c66e4] text-[13px] border border-transparent focus:border-[#0c66e4] transition-all"
+                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-lg text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 text-[13px] border border-surface-border transition-all"
                 placeholder="Search..."
                 type="text"
               />
               <div class="absolute right-2 flex items-center pointer-events-none">
-                <kbd class="px-1.5 py-0.5 rounded bg-surface-container-lowest text-text-muted font-badge-micro text-[10px] shadow-sm border border-surface-border">⌘K</kbd>
+                <kbd class="px-1.5 py-0.5 rounded bg-surface-container-lowest text-text-muted text-[10px] font-mono font-medium shadow-2xs border border-surface-border">⌘K</kbd>
               </div>
             </div>
 
-            <!-- Trello-style Create Button directly next to search -->
+            <!-- Create Button in purple -->
             <button
               id="btn-header-create-board"
-              class="h-8 px-3.5 rounded-lg bg-[#0c66e4] hover:bg-[#0055cc] text-white font-semibold text-[13px] flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
+              class="h-8 px-3.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-[13px] flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
               title="Buat papan / proyek baru"
               type="button"
             >
+              <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Create</span>
             </button>
           </div>
 
-          <!-- Mobile Search & Create Buttons (mobile only) -->
-          <div class="md:hidden flex items-center gap-1.5">
-            <button
-              id="btn-mobile-create-board"
-              aria-label="Buat Papan"
-              class="h-8 px-2.5 rounded-lg bg-[#0c66e4] text-white text-[12px] font-bold flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[16px]">add</span>
-              <span>Create</span>
-            </button>
-            <button
-              id="btn-mobile-search"
-              aria-label="Cari"
-              class="w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container transition-colors"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[20px]">search</span>
-            </button>
-          </div>
-
-          <!-- Actions & User Profile -->
-          <div class="flex items-center gap-spacing-md">
-            <button
-              id="btn-header-new-task"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-body-medium text-[13px] hover:bg-brand-accent transition-colors shadow-sm font-semibold"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[16px]">add</span>
-              <span>Tugas Baru</span>
-            </button>
+          <!-- Right: Mobile Search/Create & Notification & Profile -->
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- Mobile Search & Create Buttons (mobile only) -->
+            <div class="md:hidden flex items-center gap-1">
+              <button
+                id="btn-mobile-create-board"
+                aria-label="Buat Papan"
+                class="h-7.5 px-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11.5px] font-bold flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-colors"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[15px]">add</span>
+                <span>Create</span>
+              </button>
+              <button
+                id="btn-mobile-search"
+                aria-label="Cari"
+                class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container transition-colors cursor-pointer"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[19px]">search</span>
+              </button>
+            </div>
 
             <!-- Notifications Button -->
             <button
               id="btn-header-notif"
               aria-label="Notifikasi"
-              class="w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative"
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative cursor-pointer"
               type="button"
+              title="Notifikasi"
             >
-              <span class="material-symbols-outlined text-[20px]">notifications</span>
+              <span class="material-symbols-outlined text-[19px]">notifications</span>
               <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-urgent"></span>
             </button>
 
             <!-- User Profile Dropdown / Switcher -->
-            <div class="relative">
+            <div class="relative ml-0.5">
               <button
                 id="btn-user-profile"
-                class="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl hover:bg-surface-container transition-colors group text-left"
+                class="flex items-center gap-2 pl-1 pr-1.5 py-1 rounded-lg hover:bg-surface-container transition-colors group cursor-pointer text-left"
                 type="button"
               >
                 <img
                   alt="Profile"
-                  class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+                  class="w-7 h-7 rounded-full object-cover ring-1 ring-black/10"
                   src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
                 />
-                <div class="hidden lg:flex flex-col">
-                  <span class="font-body-medium text-[13px] text-on-surface font-semibold leading-tight">${user.name}</span>
-                  <span class="font-caption-meta text-[11px] text-brand-accent font-medium leading-tight">${user.title}</span>
+                <div class="hidden xl:flex flex-col">
+                  <span class="text-[12.5px] text-on-surface font-semibold leading-tight">${user.name}</span>
+                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${user.role || 'Member'}</span>
                 </div>
-                <span class="material-symbols-outlined text-text-muted text-[16px] group-hover:text-primary transition-colors">expand_more</span>
+                <span class="material-symbols-outlined text-text-muted text-[16px] group-hover:text-text-primary transition-colors">expand_more</span>
               </button>
 
               <!-- Role Switcher Menu Popup -->
               <div
                 id="user-profile-menu"
-                class="hidden absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-2 z-50 flex flex-col gap-1"
+                class="hidden absolute right-0 mt-2 w-60 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-1.5 z-50 flex flex-col gap-0.5"
               >
-                <div class="px-3 py-2 border-b border-surface-border mb-1">
-                  <span class="font-badge-micro text-[10px] text-text-muted uppercase font-bold tracking-wider">Peran Saat Ini</span>
-                  <p class="font-body-medium text-[13px] font-bold text-primary mt-0.5 capitalize">${user.role}</p>
+                <div class="px-2.5 py-1.5 border-b border-surface-border mb-1">
+                  <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Peran Saat Ini</span>
+                  <p class="text-[12.5px] font-bold text-primary mt-0.5 capitalize">${user.role}</p>
                 </div>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="admin">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="admin">
                   <span>Admin</span>
                   <span class="material-symbols-outlined text-[16px] text-tertiary">admin_panel_settings</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="manajement-project">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="manajement-project">
                   <span>Manajement Project</span>
                   <span class="material-symbols-outlined text-[16px] text-primary">assignment</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="qa">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="qa">
                   <span>QA (Quality Assurance)</span>
                   <span class="material-symbols-outlined text-[16px] text-status-success">fact_check</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="user">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="user">
                   <span>User</span>
                   <span class="material-symbols-outlined text-[16px] text-blue-500">person</span>
                 </button>
                 <div class="border-t border-surface-border my-1"></div>
-                <button id="btn-header-logout" class="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium">
+                <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium">
                   <span class="material-symbols-outlined text-[16px]">logout</span>
                   <span>Keluar / Barcode Gate</span>
                 </button>

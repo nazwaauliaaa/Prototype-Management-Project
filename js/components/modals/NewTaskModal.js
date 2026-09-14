@@ -98,7 +98,39 @@ export class NewTaskModal extends BaseModal {
                 ${members.map(m => `
                   <option value="${m.name}|${m.initials}|${m.role}">${m.name} (${m.role})</option>
                 `).join('')}
+                <option value="__new_member__">+ Tambah Orang Baru...</option>
               </select>
+
+              <!-- Formulir Tambah Orang Baru -->
+              <div id="new-pic-field-wrapper" class="hidden mt-2 p-2.5 bg-surface-container-low border border-surface-border rounded-xl flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold text-text-primary flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px] text-purple-600">person_add</span>
+                    Orang / Anggota Baru
+                  </span>
+                  <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Tersimpan ke Tim</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-[10px] font-semibold text-text-secondary block mb-0.5">Nama Lengkap *</label>
+                    <input
+                      type="text"
+                      id="input-new-pic-name"
+                      placeholder="Nama orang baru..."
+                      class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-surface-border rounded-lg text-text-primary text-[11.5px] focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-semibold text-text-secondary block mb-0.5">Peran / Posisi *</label>
+                    <input
+                      type="text"
+                      id="input-new-pic-role"
+                      placeholder="Contoh: Frontend Dev"
+                      class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-surface-border rounded-lg text-text-primary text-[11.5px] focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -199,6 +231,21 @@ export class NewTaskModal extends BaseModal {
     if (closeBtn) closeBtn.addEventListener('click', closeAction);
     if (cancelBtn) cancelBtn.addEventListener('click', closeAction);
 
+    const picSelect = modalRoot.querySelector('#new-task-pic');
+    const newPicWrapper = modalRoot.querySelector('#new-pic-field-wrapper');
+    const newPicNameInput = modalRoot.querySelector('#input-new-pic-name');
+
+    if (picSelect && newPicWrapper) {
+      picSelect.addEventListener('change', () => {
+        if (picSelect.value === '__new_member__') {
+          newPicWrapper.classList.remove('hidden');
+          if (newPicNameInput) newPicNameInput.focus();
+        } else {
+          newPicWrapper.classList.add('hidden');
+        }
+      });
+    }
+
     const form = modalRoot.querySelector('#form-new-task');
     if (form) {
       form.addEventListener('submit', (e) => {
@@ -227,8 +274,47 @@ export class NewTaskModal extends BaseModal {
 
         const timelineStr = `${formatDayMonth(startDate)} – ${formatDayMonth(endDate)}`;
 
-        const picVal = modalRoot.querySelector('#new-task-pic')?.value || 'Sari Rahmawati|SR|Creative Lead';
-        const [picName, picInitials, picRole] = picVal.split('|');
+        let picVal = modalRoot.querySelector('#new-task-pic')?.value || 'Sari Rahmawati|SR|Creative Lead';
+        let picName, picInitials, picRole;
+
+        if (picVal === '__new_member__') {
+          const newPicRoleInput = modalRoot.querySelector('#input-new-pic-role');
+          const customName = newPicNameInput ? newPicNameInput.value.trim() : '';
+          const customRole = newPicRoleInput ? newPicRoleInput.value.trim() : 'Anggota Tim';
+
+          if (customName) {
+            picName = customName;
+            picRole = customRole;
+            picInitials = customName
+              .split(/\s+/)
+              .map(word => word[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2) || 'MB';
+
+            // Simpan ke localStorage agar nama ini tersimpan di tim
+            try {
+              const customMembers = JSON.parse(localStorage.getItem('team_members') || '[]');
+              const newMemberObj = {
+                name: picName,
+                initials: picInitials,
+                role: picRole,
+                email: `${picName.toLowerCase().replace(/[^a-z0-9]/g, '')}@sampulkreativ.id`,
+                workspace: workspace
+              };
+              customMembers.unshift(newMemberObj);
+              localStorage.setItem('team_members', JSON.stringify(customMembers));
+            } catch (err) {
+              console.warn('Gagal menyimpan anggota baru:', err);
+            }
+          } else {
+            picName = 'Sari Rahmawati';
+            picInitials = 'SR';
+            picRole = 'Creative Lead';
+          }
+        } else {
+          [picName, picInitials, picRole] = picVal.split('|');
+        }
 
         const createdTask = this.taskService.addTask({
           title,

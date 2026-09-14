@@ -1,4 +1,4 @@
-﻿/**
+/**
  * BottomNav Component - Mobile Bottom Tab Bar (Dummy)
  * Renders a fixed bottom navigation bar for mobile devices only (hidden via CSS on desktop >=768px).
  * Seluruh fungsi tombol bersifat dummy (visual active toggle saja).
@@ -46,33 +46,7 @@ export class BottomNav {
   }
 
   render() {
-    const tabsHTML = this.tabs.map(tab => {
-      const isActive = this.activeTab === tab.id;
-      return `
-        <button
-          class="bottom-nav-btn ${isActive ? 'active' : ''}"
-          data-route="${tab.id}"
-          type="button"
-          aria-label="${tab.label}"
-          id="bottom-nav-${tab.id}"
-        >
-          <span class="material-symbols-outlined">${tab.icon}</span>
-          <span>${tab.label}</span>
-        </button>
-      `;
-    }).join('');
-
-    return `
-      <nav
-        class="fixed bottom-0 inset-x-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-t border-surface-border flex items-center justify-around px-2 py-1 safe-area-bottom"
-        style="padding-bottom: max(8px, env(safe-area-inset-bottom));"
-        id="bottom-nav-bar"
-        role="navigation"
-        aria-label="Navigasi utama"
-      >
-        ${tabsHTML}
-      </nav>
-    `;
+    return '';
   }
 
   renderToDOM() {
