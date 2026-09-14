@@ -640,12 +640,6 @@ export class KanbanBoardView extends BaseView {
         .lap-watch-active .mi { color: #0c66e4 !important; }
       </style>
 
-      <!-- Ghost badge element for custom drag image -->
-      <div class="drag-ghost-badge" id="kanban-drag-ghost">
-        <span class="material-symbols-outlined" style="font-size:15px">drag_indicator</span>
-        <span id="kanban-drag-ghost-label">Tugas</span>
-      </div>
-
       <!-- Main Kanban Canvas with Theme Background -->
       <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
         
@@ -1904,8 +1898,6 @@ export class KanbanBoardView extends BaseView {
    * HTML5 Drag-and-Drop — Desktop.
    */
   _setupDesktopDragAndDrop() {
-    const ghost = this.element.querySelector('#kanban-drag-ghost');
-    const ghostLabel = this.element.querySelector('#kanban-drag-ghost-label');
     const cards = this.element.querySelectorAll('.kanban-card[draggable]');
     const columns = this.element.querySelectorAll('.kanban-column');
 
@@ -1913,15 +1905,6 @@ export class KanbanBoardView extends BaseView {
       card.addEventListener('dragstart', (e) => {
         this._draggedTaskId = card.getAttribute('data-task-id');
         this._draggedFromCol = card.getAttribute('data-task-status');
-
-        const task = this.taskService.getTask(this._draggedTaskId);
-        if (ghost && ghostLabel && task) {
-          ghostLabel.textContent = `${task.code || ''} ${task.title.substring(0, 30)}...`;
-          ghost.style.top = '-999px';
-          ghost.style.left = '-999px';
-          document.body.appendChild(ghost);
-          e.dataTransfer.setDragImage(ghost, 0, 0);
-        }
 
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', this._draggedTaskId);
