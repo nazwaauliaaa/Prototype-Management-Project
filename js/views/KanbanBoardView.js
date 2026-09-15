@@ -483,11 +483,11 @@ export class KanbanBoardView extends BaseView {
     // Background style according to theme
     let bgStyle = '';
     if (theme.type === 'image') {
-      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat fixed; width: 100%; height: 100%;`;
+      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat; min-height: 100%;`;
     } else if (theme.type === 'gradient') {
-      bgStyle = `background: ${theme.value}; background-attachment: fixed; width: 100%; height: 100%;`;
+      bgStyle = `background: ${theme.value}; min-height: 100%;`;
     } else {
-      bgStyle = `background-color: ${theme.value}; width: 100%; height: 100%;`;
+      bgStyle = `background-color: ${theme.value}; min-height: 100%;`;
     }
 
     return `
@@ -698,7 +698,7 @@ export class KanbanBoardView extends BaseView {
       </style>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full h-[calc(100vh-var(--topbar-height))] sm:h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100vh-var(--topbar-height))] overflow-hidden relative transition-all duration-300 select-none" style="${bgStyle}">
+      <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
         
         <!-- Board Top Header Bar (Trello Toolbar) -->
         <div class="w-full px-3 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-2 sm:gap-3 text-white z-30 relative overflow-x-auto scrollbar-none shrink-0">
