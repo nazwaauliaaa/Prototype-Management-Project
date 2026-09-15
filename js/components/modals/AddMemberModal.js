@@ -253,113 +253,6 @@ export class AddMemberModal extends BaseModal {
       </li>`;
   }
 
-  /**
-   * Renders the join requests panel showing users who joined or requested access via link.
-   */
-  _renderJoinRequestsPanel(allMembers, pendingInvites = []) {
-    const hasItems = allMembers.length > 0 || pendingInvites.length > 0;
-
-    if (!hasItems) {
-      return `
-        <div class="D7yoA6_UXaeC0G py-8 px-4 text-center flex flex-col items-center justify-center">
-          <div class="SrmT8LwuTc56Bn mb-2 opacity-60">
-            <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
-              ${this._svgEmptyUser()}
-            </span>
-          </div>
-          <p class="LcI5UVx0RhWBg1 text-[13.5px] font-semibold text-[#172b4d] dark:text-[#b6c2cf]">
-            Belum ada permintaan bergabung lewat tautan.
-          </p>
-          <p class="text-[12px] text-[#5e6c84] dark:text-[#9fadbc] mt-1">
-            Pengguna yang membuka dan masuk lewat tautan undangan akan muncul di sini.
-          </p>
-        </div>`;
-    }
-
-    return `
-      <div class="flex flex-col gap-3 py-1" id="join-requests-container">
-        <!-- Pengguna yang telah berhasil masuk via link -->
-        ${allMembers.length > 0 ? `
-          <div class="flex flex-col gap-1.5">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 flex items-center justify-between">
-              <span>Pengguna yang Masuk via Tautan (${allMembers.length})</span>
-              <span class="text-emerald-600 dark:text-emerald-400 font-semibold lowercase text-[10.5px]">telah diterima</span>
-            </div>
-            ${allMembers.map(m => {
-              const dName = m.name || m.email?.split('@')[0] || 'Pengguna';
-              const dEmail = m.email || 'tanpa.email@gmail.com';
-              const dateStr = m.acceptedAt ? new Date(m.acceptedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Baru saja';
-              return `
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-[#22272b] border border-slate-200/80 dark:border-[#333c43] transition-all">
-                  <div class="flex items-center gap-3 min-w-0 flex-1">
-                    <div class="w-8 h-8 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${m.color || '#2563eb'}">
-                      ${m.initials || dName.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div class="min-w-0 flex-1">
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-[13px] text-[#172b4d] dark:text-[#b6c2cf] truncate">${dName}</span>
-                        <span class="px-1.5 py-0.2 rounded-full text-[9.5px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-0.5 shrink-0">
-                          <span class="material-symbols-outlined text-[11px]">check_circle</span>
-                          <span>Bergabung via Tautan</span>
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-1.5 text-[11.5px] text-[#5e6c84] dark:text-[#9fadbc] truncate mt-0.5">
-                        <span class="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1 shrink-0">
-                          <span class="material-symbols-outlined text-[13px] text-rose-500">mail</span>
-                          <span>${dEmail}</span>
-                        </span>
-                        <span>&bull;</span>
-                        <span class="truncate">${m.role || 'Member'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-[11px] text-slate-400 dark:text-slate-500 text-right shrink-0 ml-2">
-                    ${dateStr}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        ` : ''}
-
-        <!-- Undangan yang belum diterima (jika ada) -->
-        ${pendingInvites.length > 0 ? `
-          <div class="flex flex-col gap-1.5 mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 px-1 flex items-center justify-between">
-              <span>Menunggu Akses Tautan (${pendingInvites.length})</span>
-            </div>
-            ${pendingInvites.map(inv => `
-              <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/70 transition-all">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-7 h-7 rounded-full text-white font-bold text-[10.5px] flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${inv.color || '#2563eb'}">
-                    ${inv.initials || 'U'}
-                  </div>
-                  <div class="min-w-0">
-                    <div class="font-bold text-[12px] text-slate-900 dark:text-white truncate">${inv.name || inv.email}</div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[11px] text-rose-500">mail</span>
-                      <span>${inv.email || 'Via Tautan Undangan'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-1.5 shrink-0 ml-2">
-                  <button class="btn-accept-join-request px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer" data-invite-id="${inv.id}" type="button" title="Terima Akses">
-                    <span class="material-symbols-outlined text-[13px]">check</span>
-                    <span>Terima</span>
-                  </button>
-                  <button class="btn-reject-join-request px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-rose-100 text-slate-600 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/60 dark:text-slate-300 dark:hover:text-rose-400 text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 cursor-pointer" data-invite-id="${inv.id}" type="button" title="Tolak Akses">
-                    <span class="material-symbols-outlined text-[13px]">close</span>
-                    <span>Tolak</span>
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
-      </div>`;
-  }
-
   // --- Render ---
 
   render(data = {}) {
@@ -368,9 +261,8 @@ export class AddMemberModal extends BaseModal {
     this.projectId        = data?.projectId    || localStorage.getItem('active_project_id') || this.currentWorkspace;
     const prefillEmail    = data?.prefillEmail || '';
 
-    // Hanya anggota yang benar-benar masuk via link (tanpa mock fiktif yang belum masuk)
+    // Hanya anggota yang benar-benar masuk via link
     const allMembers = this.getBoardMembers(this.currentWorkspace);
-    const pendingInvites = this.getPendingInvites(this.currentWorkspace);
     const memberCount = allMembers.length;
 
     let membersHTML = '';
@@ -392,8 +284,6 @@ export class AddMemberModal extends BaseModal {
     } else {
       membersHTML = allMembers.map(m => this._renderMemberItem(m)).join('');
     }
-
-    const joinRequestsHTML = this._renderJoinRequestsPanel(allMembers, pendingInvites);
 
     // Reusable permission-selector button snippet
     const permBtn = (label) => `
@@ -487,67 +377,31 @@ export class AddMemberModal extends BaseModal {
           </div>
         </div>
 
-        <!-- MEMBERS TABS & CONTENT -->
+        <!-- MEMBERS CONTENT -->
         <div class="mPKaQevFgFe1YW">
           <div class="_1e0c1txw _p12f1osq _1tkeidpf _i0dl1osq _2lx21bp4 _16jlkb7n _1c3y1txw _ftfaidpf _18i0kb7n _185bglyw">
 
-            <!-- Tab list -->
-            <div role="tablist" class="flex items-center gap-6 border-b border-[#dfe1e6] dark:border-[#333c43] pb-0 mb-3">
-
-              <!-- Tab: Board members -->
-              <div id="boardInviteModalMembersAndRequests-0"
-                   aria-controls="boardInviteModalMembersAndRequests-0-tab"
-                   aria-posinset="1" aria-selected="true" aria-setsize="2"
-                   role="tab" tabindex="0"
-                   class="tab-trigger pb-2.5 text-[13.5px] font-semibold text-[#0c66e4] dark:text-[#579dff] border-b-2 border-[#0c66e4] dark:border-[#579dff] flex items-center gap-2 cursor-pointer transition-all">
+            <!-- Header: Board members -->
+            <div class="flex items-center justify-between border-b border-[#dfe1e6] dark:border-[#333c43] pb-2.5 mb-3">
+              <div class="flex items-center gap-2 text-[13.5px] font-bold text-[#172b4d] dark:text-[#b6c2cf]">
                 <span>Board members</span>
                 <span class="CMFjDCY2mn2lSV">
-                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-inherit"
-                        id="member-count-badge">
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-inherit" id="member-count-badge">
                     <span>${memberCount}</span>
                   </span>
                 </span>
               </div>
-
-              <!-- Tab: Join requests -->
-              <div id="boardInviteModalMembersAndRequests-1"
-                   aria-controls="boardInviteModalMembersAndRequests-1-tab"
-                   aria-posinset="2" aria-selected="false" aria-setsize="2"
-                   role="tab" tabindex="-1"
-                   class="tab-trigger pb-2.5 text-[13.5px] font-medium text-[#626f86] dark:text-[#8c9bab] hover:text-[#172b4d] dark:hover:text-[#b6c2cf] border-b-2 border-transparent flex items-center gap-2 cursor-pointer transition-all">
-                <span>Join requests</span>
-                <span class="CMFjDCY2mn2lSV">
-                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-inherit"
-                        id="join-requests-count-badge">
-                    <span>${memberCount}</span>
-                  </span>
-                </span>
-              </div>
+              <span class="text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                <span>Otomatis aktif via tautan</span>
+              </span>
             </div>
 
-            <!-- Panel 0: Board members (dynamic) -->
-            <div role="tabpanel"
-                 id="boardInviteModalMembersAndRequests-0-tab"
-                 aria-labelledby="boardInviteModalMembersAndRequests-0"
-                 tabindex="0"
-                 class="tab-panel">
-              <div class="cX7DxBpgEOIOL2 max-h-72 overflow-y-auto pr-1">
-                <ul class="B7nkPJRc6Kdh6U" id="board-members-list">
-                  ${membersHTML}
-                </ul>
-              </div>
-            </div>
-
-            <!-- Panel 1: Join requests (Pengguna yg masuk via link) -->
-            <div role="tabpanel"
-                 id="boardInviteModalMembersAndRequests-1-tab"
-                 aria-labelledby="boardInviteModalMembersAndRequests-1"
-                 tabindex="-1"
-                 class="tab-panel"
-                 hidden="">
-              <div class="cX7DxBpgEOIOL2 max-h-72 overflow-y-auto pr-1" id="join-requests-panel-content">
-                ${joinRequestsHTML}
-              </div>
+            <!-- Board members list (Pengguna langsung aktif via link) -->
+            <div class="cX7DxBpgEOIOL2 max-h-72 overflow-y-auto pr-1">
+              <ul class="B7nkPJRc6Kdh6U" id="board-members-list">
+                ${membersHTML}
+              </ul>
             </div>
 
           </div>
@@ -758,16 +612,12 @@ export class AddMemberModal extends BaseModal {
     // 9. Live member list update when someone joins via invite link
     this.eventBus.on('board:members_updated', ({ workspace }) => {
       if (workspace && workspace !== this.currentWorkspace) return;
-      const list     = modalRoot.querySelector('#board-members-list');
-      const badge    = modalRoot.querySelector('#member-count-badge span');
-      const reqBadge = modalRoot.querySelector('#join-requests-count-badge span');
-      const reqPanel = modalRoot.querySelector('#join-requests-panel-content');
+      const list  = modalRoot.querySelector('#board-members-list');
+      const badge = modalRoot.querySelector('#member-count-badge span');
 
-      const fresh   = this.getBoardMembers(this.currentWorkspace);
-      const pending = this.getPendingInvites(this.currentWorkspace);
+      const fresh = this.getBoardMembers(this.currentWorkspace);
 
       if (badge) badge.textContent = fresh.length;
-      if (reqBadge) reqBadge.textContent = fresh.length;
 
       if (list) {
         if (fresh.length === 0) {
@@ -788,29 +638,6 @@ export class AddMemberModal extends BaseModal {
         } else {
           list.innerHTML = fresh.map(m => this._renderMemberItem(m)).join('');
         }
-      }
-
-      if (reqPanel) {
-        reqPanel.innerHTML = this._renderJoinRequestsPanel(fresh, pending);
-      }
-    });
-
-    // 10. Handle Accept & Reject Join Requests
-    modalRoot.addEventListener('click', (e) => {
-      const acceptBtn = e.target.closest('.btn-accept-join-request');
-      if (acceptBtn) {
-        e.stopPropagation();
-        const inviteId = acceptBtn.getAttribute('data-invite-id');
-        this.acceptJoinRequest(inviteId);
-        return;
-      }
-
-      const rejectBtn = e.target.closest('.btn-reject-join-request');
-      if (rejectBtn) {
-        e.stopPropagation();
-        const inviteId = rejectBtn.getAttribute('data-invite-id');
-        this.rejectJoinRequest(inviteId);
-        return;
       }
     });
   }
