@@ -1,9 +1,9 @@
 import { Task } from '../models/Task.js';
+import { apiService } from './ApiService.js';
 
 /**
  * TaskService - Single Responsibility Principle (SRP)
- * Manages project boards, tasks, statuses, priorities, and calculations.
- * Mock tasks have been purged; tasks now dynamically sync with real projects and local storage.
+ * Manages project boards, tasks, statuses, priorities, with PostgreSQL backend sync & localStorage fallback.
  */
 export class TaskService {
   /**
@@ -15,6 +15,33 @@ export class TaskService {
     this.notifications = notificationService;
     this.tasks = [];
     this.loadFromStorage();
+    this.syncFromBackend();
+  }
+
+  /**
+   * Sinkronisasi data tugas dengan PostgreSQL melalui Backend API
+   */
+  async syncFromBackend() {
+    try {
+      const remoteTasks = await apiService.getTasks();
+      if (Array.isArray(remoteTasks)) {
+        if (remoteTasks.length > 0) {
+          this.tasks = remoteTasks.map(t => new Task(t));
+          this.saveToStorage();
+          if (this.eventBus) {
+            this.eventBus.emit('tasks:updated', this.tasks);
+          }
+          console.log(`[TaskService] ✅ Berhasil menyinkronkan ${remoteTasks.length} tugas dari PostgreSQL.`);
+        } else if (this.tasks.length > 0) {
+          console.log('[TaskService] 🔄 Mengunggah tugas lokal ke database PostgreSQL...');
+          for (const t of this.tasks) {
+            await apiService.createTask(t);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[TaskService] Backend PostgreSQL belum dapat dihubungi, menggunakan cache lokal.');
+    }
   }
 
   loadFromStorage() {
@@ -114,6 +141,12 @@ export class TaskService {
     });
     this.tasks.unshift(newTask);
     this.saveToStorage();
+
+    // Simpan ke PostgreSQL
+    apiService.createTask(newTask).catch(err => {
+      console.warn('[TaskService] Gagal sync task ke PostgreSQL:', err.message);
+    });
+
     this.eventBus.emit('tasks:updated', this.tasks);
     this.notifications.success(`Tugas "${newTask.title}" berhasil ditambahkan.`);
     return newTask;
@@ -130,6 +163,12 @@ export class TaskService {
     if (index !== -1) {
       const removed = this.tasks.splice(index, 1)[0];
       this.saveToStorage();
+
+      // Hapus dari PostgreSQL
+      apiService.deleteTask(taskId).catch(err => {
+        console.warn('[TaskService] Gagal hapus task di PostgreSQL:', err.message);
+      });
+
       this.eventBus.emit('tasks:updated', this.tasks);
       if (!silent) {
         this.notifications.success(`Tugas "${removed.title}" berhasil dihapus.`);
@@ -150,6 +189,9 @@ export class TaskService {
     const insertIndex = Math.min(Math.max(0, index), this.tasks.length);
     this.tasks.splice(insertIndex, 0, task);
     this.saveToStorage();
+
+    apiService.createTask(task).catch(() => {});
+
     this.eventBus.emit('tasks:updated', this.tasks);
     this.notifications.success(`Kartu "${task.title}" berhasil dipulihkan.`);
     return true;
@@ -165,6 +207,7 @@ export class TaskService {
     sorted.forEach(({ task, index }) => {
       const insertIndex = Math.min(Math.max(0, index), this.tasks.length);
       this.tasks.splice(insertIndex, 0, task);
+      apiService.createTask(task).catch(() => {});
     });
     this.saveToStorage();
     this.eventBus.emit('tasks:updated', this.tasks);
@@ -182,6 +225,11 @@ export class TaskService {
       const oldStatus = task.status;
       task.status = newStatus;
       this.saveToStorage();
+
+      apiService.updateTask(taskId, { status: newStatus }).catch(err => {
+        console.warn('[TaskService] Gagal update status di PostgreSQL:', err.message);
+      });
+
       this.eventBus.emit('tasks:updated', this.tasks);
       this.notifications.info(`Status ${task.code || 'tugas'} diubah: ${oldStatus} ➔ ${newStatus}`);
       return true;
@@ -198,6 +246,9 @@ export class TaskService {
     if (task) {
       task.isStarred = !task.isStarred;
       this.saveToStorage();
+
+      apiService.updateTask(taskId, { isStarred: task.isStarred }).catch(() => {});
+
       this.eventBus.emit('tasks:updated', this.tasks);
     }
   }

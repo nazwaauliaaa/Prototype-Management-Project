@@ -226,7 +226,7 @@ class CreativeOfficeApp {
         
         <!-- QR Code Container with scanning animation -->
         <div class="relative w-28 h-28 bg-white p-2.5 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center my-2">
-          ${QRCodeGenerator.generate(\`http://localhost:3000/#/auth?scan=\${userInstance.email || userInstance.name}\`, { size: 92, darkColor: '#0b1c30' })}
+          ${QRCodeGenerator.generate('http://localhost:3000/#/auth?scan=' + encodeURIComponent(userInstance.email || userInstance.name), { size: 92, darkColor: '#0b1c30' })}
           <div class="absolute inset-x-2 h-0.5 bg-rose-500 shadow-[0_0_8px_#ef4444] rounded-full animate-bounce"></div>
           <div class="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md">
             <span class="material-symbols-outlined text-[16px]">check</span>

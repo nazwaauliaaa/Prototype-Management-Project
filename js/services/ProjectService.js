@@ -1,8 +1,9 @@
 import { Project } from '../models/Project.js';
+import { apiService } from './ApiService.js';
 
 /**
  * ProjectService - Single Responsibility Principle (SRP) & Dependency Inversion Principle (DIP)
- * Manages project portfolio data. All default mock projects have been removed.
+ * Manages project portfolio data with PostgreSQL backend integration and localStorage fallback.
  */
 export class ProjectService {
   /**
@@ -14,13 +15,42 @@ export class ProjectService {
     this.notifications = notificationService;
     this.projects = [];
 
-    // Ensure all previous mock projects in browser storage are cleared
+    // Ensure clean state if needed
     if (localStorage.getItem('projects_initialized_clean') !== 'true') {
       localStorage.setItem('creative_office_projects', JSON.stringify([]));
       localStorage.setItem('projects_initialized_clean', 'true');
     }
 
     this.loadFromStorage();
+    this.syncFromBackend();
+  }
+
+  /**
+   * Sinkronisasi data proyek dengan PostgreSQL melalui Backend API
+   */
+  async syncFromBackend() {
+    try {
+      const remoteProjects = await apiService.getProjects();
+      if (Array.isArray(remoteProjects)) {
+        if (remoteProjects.length > 0) {
+          // Sinkron data dari PostgreSQL ke memori & localStorage
+          this.projects = remoteProjects.map(p => new Project(p));
+          this.saveToStorage();
+          if (this.eventBus) {
+            this.eventBus.emit('projects:updated', this.projects);
+          }
+          console.log(`[ProjectService] ✅ Berhasil menyinkronkan ${remoteProjects.length} proyek dari PostgreSQL.`);
+        } else if (this.projects.length > 0) {
+          // Jika di database masih kosong tetapi lokal ada proyek, migrasikan ke database
+          console.log('[ProjectService] 🔄 Mengunggah proyek lokal ke database PostgreSQL...');
+          for (const p of this.projects) {
+            await apiService.createProject(p);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[ProjectService] Backend PostgreSQL belum dapat dihubungi, menggunakan cache lokal.');
+    }
   }
 
   loadFromStorage() {
@@ -56,7 +86,7 @@ export class ProjectService {
   }
 
   /**
-   * Clear all projects from application and storage.
+   * Clear all projects from application, storage, and backend.
    */
   clearAllProjects() {
     this.projects = [];
@@ -64,6 +94,8 @@ export class ProjectService {
     if (this.eventBus) {
       this.eventBus.emit('projects:updated', this.projects);
     }
+    // Hapus di backend jika online
+    fetch('http://localhost:5000/api/projects', { method: 'DELETE' }).catch(() => {});
   }
 
   /**
@@ -130,7 +162,6 @@ export class ProjectService {
 
   /**
    * Menambahkan proyek baru
-   * Mengikuti SRP: memvalidasi, membuat entitas, menyimpan, dan memicu notifikasi & event.
    * @param {Object} data
    * @returns {Project}
    */
@@ -167,6 +198,11 @@ export class ProjectService {
     this.projects.unshift(newProject);
     this.saveToStorage();
 
+    // Simpan ke PostgreSQL di backend secara asynchronous
+    apiService.createProject(newProject).catch(err => {
+      console.warn('[ProjectService] Gagal sync ke PostgreSQL backend:', err.message);
+    });
+
     if (this.eventBus) {
       this.eventBus.emit('project:added', { project: newProject });
       this.eventBus.emit('project:created', { project: newProject });
@@ -190,6 +226,12 @@ export class ProjectService {
     if (index !== -1) {
       const removed = this.projects.splice(index, 1)[0];
       this.saveToStorage();
+
+      // Hapus dari PostgreSQL di backend
+      apiService.deleteProject(projectId).catch(err => {
+        console.warn('[ProjectService] Gagal hapus dari PostgreSQL backend:', err.message);
+      });
+
       if (this.eventBus) {
         this.eventBus.emit('project:deleted', { projectId });
         this.eventBus.emit('projects:updated', this.projects);
