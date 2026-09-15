@@ -123,17 +123,17 @@ export class DeleteTaskModal extends BaseModal {
     return `
       <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[85vh] modal-content-box animate-in fade-in zoom-in duration-200">
         <!-- Header -->
-        <div class="p-spacing-md bg-rose-50/70 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/40 flex items-center justify-between shrink-0">
+        <div class="p-spacing-md bg-purple-50/70 dark:bg-purple-950/30 border-b border-purple-100 dark:border-purple-800/40 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-200/80 dark:border-rose-800/40 flex items-center justify-center shadow-xs shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-700/50 flex items-center justify-center shadow-xs shrink-0">
               <span class="material-symbols-outlined text-[20px]">delete_sweep</span>
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="font-headline-md text-[15px] font-bold text-text-primary">
-                  Kelola & Hapus Tugas <span id="delete-modal-context-title" class="text-rose-600 font-bold">${activeWsTitle && activeWsTitle !== 'Semua' && activeWsTitle !== 'Semua Projek' ? `(${activeWsTitle})` : ''}</span>
+                  Kelola & Hapus Tugas <span id="delete-modal-context-title" class="text-purple-600 dark:text-purple-400 font-bold">${activeWsTitle && activeWsTitle !== 'Semua' && activeWsTitle !== 'Semua Projek' ? `(${activeWsTitle})` : ''}</span>
                 </h3>
-                <span id="delete-modal-task-count" class="text-[10.5px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 px-2 py-0.5 rounded-full shrink-0">
+                <span id="delete-modal-task-count" class="text-[10.5px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 px-2 py-0.5 rounded-full shrink-0">
                   ${initialItems.length} Tugas
                 </span>
               </div>
@@ -142,7 +142,7 @@ export class DeleteTaskModal extends BaseModal {
               </p>
             </div>
           </div>
-          <button id="btn-close-delete-modal" class="w-8 h-8 rounded-lg hover:bg-rose-100/50 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-2" type="button" title="Tutup">
+          <button id="btn-close-delete-modal" class="w-8 h-8 rounded-lg hover:bg-purple-100/50 dark:hover:bg-purple-900/40 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-2" type="button" title="Tutup">
             <span class="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
@@ -154,7 +154,7 @@ export class DeleteTaskModal extends BaseModal {
             <input
               id="input-search-delete-task"
               type="text"
-              class="w-full h-8.5 pl-8 pr-3 bg-surface-container-lowest rounded-lg border border-surface-border text-text-primary placeholder:text-text-muted text-[12.5px] focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition-all"
+              class="w-full h-8.5 pl-8 pr-3 bg-surface-container-lowest rounded-lg border border-surface-border text-text-primary placeholder:text-text-muted text-[12.5px] focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 transition-all"
               placeholder="Cari tugas berdasarkan judul atau PIC..."
             />
           </div>
@@ -162,7 +162,7 @@ export class DeleteTaskModal extends BaseModal {
           <div class="sm:w-56">
             <select
               id="select-ws-delete-task"
-              class="w-full h-8.5 px-2.5 bg-surface-container-lowest rounded-lg border border-surface-border text-text-primary text-[12px] font-medium focus:outline-none focus:border-rose-500 cursor-pointer"
+              class="w-full h-8.5 px-2.5 bg-surface-container-lowest rounded-lg border border-surface-border text-text-primary text-[12px] font-medium focus:outline-none focus:border-purple-500 cursor-pointer"
             >
               ${workspaces.map(w => `
                 <option value="${w.id}" ${w.id === this.selectedWorkspace ? 'selected' : ''}>${w.title}</option>
