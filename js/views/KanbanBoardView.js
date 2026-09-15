@@ -701,15 +701,15 @@ export class KanbanBoardView extends BaseView {
       <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
         
         <!-- Board Top Header Bar (Trello Toolbar) -->
-        <div class="w-full px-4 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-3 text-white z-30 relative">
+        <div class="w-full px-3 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-2 sm:gap-3 text-white z-30 relative overflow-x-auto scrollbar-none">
           
           <!-- Left Section: Back Button + Action Buttons -->
-          <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
             
             ${!perms.isUser ? `
             <button
               id="btn-kanban-back-home"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
               title="Kembali ke Beranda"
               type="button"
             >
@@ -756,14 +756,14 @@ export class KanbanBoardView extends BaseView {
             ` : ''}
 
             <!-- Role Badge Indicator -->
-            <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0 ml-1" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
+            <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
               <span class="material-symbols-outlined text-[15px] ${perms.badgeIconColor}">${perms.badgeIcon}</span>
               <span class="text-[11px] font-bold ${perms.badgeTextColor} tracking-wide">${perms.badgeLabel}</span>
             </div>
 
             <!-- Filter Badge Chip (if filter is active) -->
             ${this.activeFilter !== 'all' ? `
-              <div class="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/50 text-amber-200 text-[11px] font-semibold">
+              <div class="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/50 text-amber-200 text-[11px] font-semibold shrink-0">
                 <span class="material-symbols-outlined text-[13px]">filter_alt</span>
                 <span>Filter: ${this.activeFilter}</span>
                 <button id="btn-reset-filter-chip" class="hover:text-white cursor-pointer ml-1" title="Reset filter">✕</button>
@@ -772,93 +772,96 @@ export class KanbanBoardView extends BaseView {
           </div>
 
           <!-- Right: Trello Toolbar Icons from screenshot -->
-          <div class="flex items-center gap-1 sm:gap-2">
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
-            <!-- Member Avatar Stack / Badge (Hanya tampil jika ada anggota yang bergabung via link) -->
+            <!-- Member Avatar Stack / Badge -->
             ${boardMembers.length > 0 ? `
             <button
               id="btn-board-avatar"
-              class="flex items-center -space-x-2 hover:space-x-1 p-0.5 rounded-full hover:bg-white/20 transition-all cursor-pointer"
+              class="flex items-center -space-x-2 hover:space-x-1 p-0.5 rounded-full hover:bg-white/20 transition-all cursor-pointer shrink-0"
               title="Anggota Papan (${boardMembers.length} Anggota) - Klik untuk melihat detail"
               type="button"
             >
               ${boardMembers.slice(0, 3).map(m => `
-                <div class="w-8 h-8 rounded-full text-white font-bold text-[11px] flex items-center justify-center border-2 border-white/80 shadow-sm transition-transform hover:scale-110" style="background-color: ${m.color || '#10b981'}">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white font-bold text-[10.5px] sm:text-[11px] flex items-center justify-center border-2 border-white/80 shadow-sm transition-transform hover:scale-110" style="background-color: ${m.color || '#10b981'}">
                   ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
                 </div>
               `).join('')}
               ${boardMembers.length > 3 ? `
-                <div class="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white/80 shadow-sm">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white/80 shadow-sm">
                   +${boardMembers.length - 3}
                 </div>
               ` : ''}
             </button>
             ` : ''}
 
-            <!-- Power-Ups Icon (Plug) - Admin only -->
-            ${perms.canPowerUps ? `
-            <button
-              id="btn-board-powerups"
-              class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-              title="Power-Ups"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[20px]">power</span>
-            </button>
-            ` : ''}
+            <!-- Utility Icons Pill Container -->
+            <div class="flex items-center gap-0.5 bg-white/10 p-0.5 rounded-xl border border-white/10 shrink-0">
+              <!-- Power-Ups Icon (Plug) - Admin only -->
+              ${perms.canPowerUps ? `
+              <button
+                id="btn-board-powerups"
+                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                title="Power-Ups"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[19px]">power</span>
+              </button>
+              ` : ''}
 
-            <!-- Automation / Butler Icon (Bolt) - Admin only -->
-            ${perms.canAutomation ? `
-            <button
-              id="btn-board-automation"
-              class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-              title="Automasi Butler"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[20px]">bolt</span>
-            </button>
-            ` : ''}
+              <!-- Automation / Butler Icon (Bolt) - Admin only -->
+              ${perms.canAutomation ? `
+              <button
+                id="btn-board-automation"
+                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                title="Automasi Butler"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[19px]">bolt</span>
+              </button>
+              ` : ''}
 
-            <!-- Filter Icon (Funnel) -->
-            <button
-              id="btn-board-filter"
-              class="w-8 h-8 rounded-lg hover:bg-white/20 ${this.activeFilter !== 'all' ? 'text-amber-300 bg-white/20' : 'text-white/90'} hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-              title="Filter Kartu"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[20px]">filter_list</span>
-            </button>
+              <!-- Filter Icon (Funnel) -->
+              <button
+                id="btn-board-filter"
+                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 ${this.activeFilter !== 'all' ? 'text-amber-300 bg-white/20' : 'text-white/90'} hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                title="Filter Kartu"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[19px]">filter_list</span>
+              </button>
 
-            <!-- Star Favorite Icon -->
-            <button
-              id="btn-star-board"
-              class="w-8 h-8 rounded-lg hover:bg-white/20 ${this.isStarred ? 'text-amber-300' : 'text-white/90'} hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-              title="${this.isStarred ? 'Hapus dari favorit' : 'Bintangi Papan'}"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[20px]">${this.isStarred ? 'star' : 'star_border'}</span>
-            </button>
+              <!-- Star Favorite Icon -->
+              <button
+                id="btn-star-board"
+                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 ${this.isStarred ? 'text-amber-300' : 'text-white/90'} hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                title="${this.isStarred ? 'Hapus dari favorit' : 'Bintangi Papan'}"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[19px]">${this.isStarred ? 'star' : 'star_border'}</span>
+              </button>
 
-            <!-- Workspace Visibility Icon (Group) - Admin only -->
-            ${perms.canChangeVisibility ? `
-            <button
-              id="btn-board-visibility"
-              class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-              title="Visibilitas: ${this.boardVisibility}"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[20px]">group</span>
-            </button>
-            ` : ''}
+              <!-- Workspace Visibility Icon (Group) - Admin only -->
+              ${perms.canChangeVisibility ? `
+              <button
+                id="btn-board-visibility"
+                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                title="Visibilitas: ${this.boardVisibility}"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[19px]">group</span>
+              </button>
+              ` : ''}
+            </div>
 
             <!-- Share Button [+ Share] - Admin & PM only -->
             ${perms.canShare ? `
             <button
               id="btn-board-share"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[12.5px] font-semibold backdrop-blur-md transition-all shadow-xs active:scale-95 cursor-pointer"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-[12px] font-semibold backdrop-blur-md transition-all shadow-xs active:scale-95 cursor-pointer shrink-0"
               type="button"
             >
-              <span class="material-symbols-outlined text-[17px]">person_add</span>
+              <span class="material-symbols-outlined text-[16px]">person_add</span>
               <span class="hidden sm:inline">Share</span>
             </button>
             ` : ''}
@@ -867,11 +870,11 @@ export class KanbanBoardView extends BaseView {
             ${perms.isAdmin || perms.isPM ? `
             <button
               id="btn-board-more-menu"
-              class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+              class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0 border border-white/10"
               title="Menu Pengaturan Papan"
               type="button"
             >
-              <span class="material-symbols-outlined text-[22px]">more_horiz</span>
+              <span class="material-symbols-outlined text-[20px]">more_horiz</span>
             </button>
             ` : ''}
 
@@ -879,7 +882,7 @@ export class KanbanBoardView extends BaseView {
             ${perms.canAddCard ? `
             <button
               id="btn-add-kanban-task"
-              class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer ml-1"
+              class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer shrink-0 ml-0.5"
               type="button"
             >
               <span class="material-symbols-outlined text-[16px]">add</span>
