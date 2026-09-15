@@ -46,6 +46,16 @@ export class TaskDetailModal extends BaseModal {
       this.activeTab = data.tab;
     }
 
+    const authUser = this.container.resolve('AuthService').getCurrentUser();
+    const role = (authUser?.role || 'manajement-project').toLowerCase();
+    const isAdmin = authUser ? authUser.isAdmin() : false;
+    const isPM = authUser ? authUser.isProjectManager() : true;
+    const isQA = authUser ? authUser.isQA() : false;
+    const isUser = authUser ? authUser.isUser() : false;
+
+    // Current QA testing status: 'untested' | 'testing' | 'passed' | 'failed'
+    const qaStatus = task.qaStatus || 'untested';
+
     return `
       <div class="relative w-full max-w-4xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[92vh] modal-content-box">
         
@@ -75,6 +85,7 @@ export class TaskDetailModal extends BaseModal {
             </div>
 
             <div class="flex items-center gap-2">
+              ${!isUser ? `
               <button 
                 id="btn-modal-delete-task" 
                 class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 font-body-medium text-[12px] font-semibold transition-colors cursor-pointer border border-rose-500/20"
@@ -92,6 +103,7 @@ export class TaskDetailModal extends BaseModal {
                 <span class="material-symbols-outlined text-[16px]">schedule</span>
                 <span>Jadwalkan Ulang</span>
               </button>
+              ` : ''}
               <button 
                 id="btn-close-modal" 
                 aria-label="Tutup Modal" 
@@ -113,35 +125,82 @@ export class TaskDetailModal extends BaseModal {
           </div>
         </div>
 
-        <!-- Meta Information Strip -->
-        <div class="p-spacing-md bg-surface-container-lowest border-b border-surface-border grid grid-cols-1 md:grid-cols-3 gap-spacing-md">
-          <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-container-low">
-            <div class="flex items-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
-              <span class="material-symbols-outlined text-[15px] text-brand-accent">calendar_clock</span>
-              <span>Waktu & Sisa Sesi</span>
+        <!-- Meta & QA Status Bar -->
+        <div class="p-spacing-md bg-surface-container-lowest border-b border-surface-border flex flex-col gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-spacing-md">
+            <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-container-low">
+              <div class="flex items-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
+                <span class="material-symbols-outlined text-[15px] text-brand-accent">calendar_clock</span>
+                <span>Waktu & Sisa Sesi</span>
+              </div>
+              <span class="font-body-medium text-[13px] text-text-primary font-semibold">${task.timeline}</span>
+              <span class="font-caption-meta text-[11px] text-primary font-bold">10:00 - 12:00 WIB <span class="text-status-urgent">(Sisa 35 Menit)</span></span>
             </div>
-            <span class="font-body-medium text-[13px] text-text-primary font-semibold">${task.timeline}</span>
-            <span class="font-caption-meta text-[11px] text-primary font-bold">10:00 - 12:00 WIB <span class="text-status-urgent">(Sisa 35 Menit)</span></span>
+
+            <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-container-low">
+              <div class="flex items-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
+                <span class="material-symbols-outlined text-[15px] text-status-planning">pin_drop</span>
+                <span>Lokasi Audit OOH</span>
+              </div>
+              <span class="font-body-medium text-[13px] text-text-primary font-semibold">${task.location || 'Titik Bundaran HI (Mega LED)'}</span>
+              <span class="font-caption-meta text-[11px] text-text-secondary">Posko Satelit Antasari #Slot-02</span>
+            </div>
+
+            <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-container-low">
+              <div class="flex items-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
+                <span class="material-symbols-outlined text-[15px] text-status-success">verified_user</span>
+                <span>Assignee & Penanggung Jawab</span>
+              </div>
+              <span class="font-body-medium text-[13px] text-text-primary font-semibold">${task.assignee || 'Dimas Anggara (User)'}</span>
+              <span class="font-caption-meta text-[11px] text-text-secondary">Status Task: <strong class="capitalize text-primary">${task.status}</strong></span>
+            </div>
           </div>
 
-          <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-container-low">
-            <div class="flex items-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
-              <span class="material-symbols-outlined text-[15px] text-status-planning">pin_drop</span>
-              <span>Lokasi Audit OOH</span>
+          <!-- Status Testing QA Control Panel -->
+          <div class="p-3 rounded-xl bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 border border-slate-700/80 shadow-inner">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-emerald-400">fact_check</span>
+              <div class="flex flex-col">
+                <span class="text-[12px] font-bold text-slate-100">Status Pengujian QA</span>
+                <span class="text-[10.5px] text-slate-400">
+                  ${isQA || isPM || isAdmin ? 'Pilih status testing di bawah untuk memperbarui status pekerjaan:' : 'Status pengujian saat ini oleh tim QA:'}
+                </span>
+              </div>
             </div>
-            <span class="font-body-medium text-[13px] text-text-primary font-semibold">${task.location || 'Titik Bundaran HI (Mega LED)'}</span>
-            <span class="font-caption-meta text-[11px] text-text-secondary">Posko Satelit Antasari #Slot-02</span>
-          </div>
 
-          <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-container-low">
-            <div class="flex items-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
-              <span class="material-symbols-outlined text-[15px] text-status-success">verified_user</span>
-              <span>Izin & Sinkronisasi</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button 
+                type="button"
+                data-qa-status="untested"
+                class="btn-set-qa-status px-2.5 py-1 rounded-lg text-[11.5px] font-bold transition-all flex items-center gap-1 ${qaStatus === 'untested' ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} ${!isQA && !isPM && !isAdmin ? 'opacity-80 cursor-default' : 'cursor-pointer'}"
+              >
+                <span>🔵 Belum diuji</span>
+              </button>
+
+              <button 
+                type="button"
+                data-qa-status="testing"
+                class="btn-set-qa-status px-2.5 py-1 rounded-lg text-[11.5px] font-bold transition-all flex items-center gap-1 ${qaStatus === 'testing' ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} ${!isQA && !isPM && !isAdmin ? 'opacity-80 cursor-default' : 'cursor-pointer'}"
+              >
+                <span>🟡 Testing</span>
+              </button>
+
+              <button 
+                type="button"
+                data-qa-status="passed"
+                class="btn-set-qa-status px-2.5 py-1 rounded-lg text-[11.5px] font-bold transition-all flex items-center gap-1 ${qaStatus === 'passed' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} ${!isQA && !isPM && !isAdmin ? 'opacity-80 cursor-default' : 'cursor-pointer'}"
+              >
+                <span>🟢 Passed</span>
+              </button>
+
+              <button 
+                type="button"
+                data-qa-status="failed"
+                class="btn-set-qa-status px-2.5 py-1 rounded-lg text-[11.5px] font-bold transition-all flex items-center gap-1 ${qaStatus === 'failed' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} ${!isQA && !isPM && !isAdmin ? 'opacity-80 cursor-default' : 'cursor-pointer'}"
+              >
+                <span>🔴 Failed (Ada Bug)</span>
+              </button>
             </div>
-            <div class="flex items-center gap-1.5">
-              <span class="px-1.5 py-0.5 rounded bg-status-success/15 text-status-success font-badge-micro text-[10px] font-semibold">Izin Dishub & Satpol PP #SK-8812</span>
-            </div>
-            <span class="font-caption-meta text-[11px] text-text-secondary">G-Cal Synced • Bot #kampanye-q3 Aktif</span>
           </div>
         </div>
 
@@ -153,7 +212,7 @@ export class TaskDetailModal extends BaseModal {
             type="button"
           >
             <span class="material-symbols-outlined text-[16px]">checklist</span>
-            <span>Checklist QA & Teknis (3/4 Selesai)</span>
+            <span>Checklist QA & Teknis</span>
           </button>
 
           <button 
@@ -162,7 +221,7 @@ export class TaskDetailModal extends BaseModal {
             type="button"
           >
             <span class="material-symbols-outlined text-[16px]">aspect_ratio</span>
-            <span>Pratinjau Visual & Rasio</span>
+            <span>Hasil Pekerjaan & Visual</span>
           </button>
 
           <button 
@@ -171,7 +230,7 @@ export class TaskDetailModal extends BaseModal {
             type="button"
           >
             <span class="material-symbols-outlined text-[16px]">quick_reference_all</span>
-            <span>Log Aktivitas & Catatan Tim</span>
+            <span>Log Aktivitas & Catatan Bug</span>
             <span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-badge-micro text-[10px] font-bold">${this.comments.length}</span>
           </button>
 
@@ -182,7 +241,7 @@ export class TaskDetailModal extends BaseModal {
           >
             <span class="material-symbols-outlined text-[16px]">verified</span>
             <span>Dokumen Legalitas</span>
-            <span class="px-1.5 py-0.2 rounded-full bg-status-success/15 text-status-success font-badge-micro text-[10px] font-bold">4 Berkas Valid</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-status-success/15 text-status-success font-badge-micro text-[10px] font-bold">4 Berkas</span>
           </button>
         </div>
 
@@ -191,17 +250,32 @@ export class TaskDetailModal extends BaseModal {
           ${this.renderActiveTabContent()}
         </div>
 
-        <!-- Modal Footer -->
+        <!-- Modal Footer Actions according to role -->
         <div class="p-spacing-md bg-surface-container-low border-t border-surface-border flex flex-wrap items-center justify-between gap-spacing-sm">
           <div class="flex items-center gap-spacing-xs flex-wrap">
+            ${isUser ? `
+            <button id="btn-user-submit-review" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 text-white font-body-medium text-[13px] hover:bg-sky-700 transition-colors shadow-xs" type="button">
+              <span class="material-symbols-outlined text-[16px]">send</span>
+              <span>Submit ke QA (Review)</span>
+            </button>
+            <button id="btn-user-upload-work" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-slate-100 font-body-medium text-[13px] hover:bg-slate-700 transition-colors" type="button">
+              <span class="material-symbols-outlined text-[16px]">upload_file</span>
+              <span>Unggah Deliverable</span>
+            </button>
+            <button id="btn-escalate-blocker" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300/60 font-body-medium text-[13px] hover:bg-amber-500/25 transition-colors" type="button">
+              <span class="material-symbols-outlined text-[16px]">report_problem</span>
+              <span>Lapor Kendala</span>
+            </button>
+            ` : `
             <button id="btn-mark-all-done" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-status-success text-white font-body-medium text-[13px] hover:opacity-90 transition-opacity shadow-sm" type="button">
               <span class="material-symbols-outlined text-[16px]">task_alt</span>
-              <span>Tandai Semua Selesai</span>
+              <span>Setujui & Selesaikan</span>
             </button>
             <button id="btn-escalate-blocker" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-error-container text-on-error-container font-body-medium text-[13px] hover:bg-error hover:text-white transition-colors" type="button">
               <span class="material-symbols-outlined text-[16px]">report_problem</span>
               <span>Eskalasi Blocker</span>
             </button>
+            `}
           </div>
           <button id="btn-footer-close" class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-text-secondary hover:text-text-primary font-body-medium text-[13px] transition-colors" type="button">
             Tutup
@@ -576,23 +650,130 @@ export class TaskDetailModal extends BaseModal {
       });
     });
 
+    // QA Status Toggle Handlers (🔵 Belum diuji, 🟡 Testing, 🟢 Passed, 🔴 Failed)
+    const qaButtons = modalRoot.querySelectorAll('.btn-set-qa-status');
+    qaButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const authUser = this.container.resolve('AuthService').getCurrentUser();
+        const role = (authUser?.role || '').toLowerCase();
+        const canManageQA = authUser ? (authUser.isQA() || authUser.isProjectManager() || authUser.isAdmin()) : true;
+
+        if (!canManageQA) {
+          if (this.notificationService) {
+            this.notificationService.warning('Hanya QA, Project Manager, atau Admin yang dapat mengubah status testing QA.');
+          }
+          return;
+        }
+
+        const newQaStatus = btn.getAttribute('data-qa-status');
+        if (!this.currentTask) return;
+
+        this.currentTask.qaStatus = newQaStatus;
+
+        if (newQaStatus === 'passed') {
+          this.taskService.updateTaskStatus(this.currentTask.id, 'done');
+          this.comments.unshift({
+            author: authUser ? authUser.name : 'Budi Pratama (QA)',
+            role: 'QA Lead',
+            time: 'Baru saja',
+            text: '🟢 QA PASS: Pengujian berhasil 100%. Task disetujui & ditandai Selesai!'
+          });
+          if (this.notificationService) {
+            this.notificationService.success(`QA Testing PASSED! Task ${this.currentTask.code} disetujui & selesai.`);
+          }
+        } else if (newQaStatus === 'failed') {
+          // Return task to User for fix
+          this.taskService.updateTaskStatus(this.currentTask.id, 'in-progress');
+          this.comments.unshift({
+            author: authUser ? authUser.name : 'Budi Pratama (QA)',
+            role: 'QA Lead',
+            time: 'Baru saja',
+            text: '🔴 QA FAILED: Ditemukan kendala/bug. Task dikembalikan ke User (In Progress) untuk diperbaiki.'
+          });
+          if (this.notificationService) {
+            this.notificationService.warning(`QA Testing FAILED: Task ${this.currentTask.code} dikembalikan ke User.`);
+          }
+        } else if (newQaStatus === 'testing') {
+          this.taskService.updateTaskStatus(this.currentTask.id, 'review');
+          if (this.notificationService) {
+            this.notificationService.info(`Status pengujian QA: 🟡 Sedang Diuji.`);
+          }
+        } else {
+          if (this.notificationService) {
+            this.notificationService.info(`Status pengujian QA: 🔵 Belum Diuji.`);
+          }
+        }
+
+        // Re-open modal to refresh UI
+        this.modalManager.open(this.modalId, { task: this.currentTask, tab: this.activeTab });
+      });
+    });
+
+    // User submission to QA review
+    const submitReviewBtn = modalRoot.querySelector('#btn-user-submit-review');
+    if (submitReviewBtn) {
+      submitReviewBtn.addEventListener('click', () => {
+        if (!this.currentTask) return;
+        this.taskService.updateTaskStatus(this.currentTask.id, 'review');
+        this.currentTask.qaStatus = 'testing';
+        const authUser = this.container.resolve('AuthService').getCurrentUser();
+        this.comments.unshift({
+          author: authUser ? authUser.name : 'Dimas Anggara (User)',
+          role: 'Contributor',
+          time: 'Baru saja',
+          text: '📤 User mengunggah hasil pekerjaan & mengirimkan task ke QA untuk diuji.'
+        });
+        if (this.notificationService) {
+          this.notificationService.success(`Pekerjaan berhasil dikirim ke tim QA untuk dites!`);
+        }
+        this.modalManager.open(this.modalId, { task: this.currentTask, tab: 'logs' });
+      });
+    }
+
+    // User upload deliverable
+    const uploadWorkBtn = modalRoot.querySelector('#btn-user-upload-work');
+    if (uploadWorkBtn) {
+      uploadWorkBtn.addEventListener('click', () => {
+        const authUser = this.container.resolve('AuthService').getCurrentUser();
+        this.comments.unshift({
+          author: authUser ? authUser.name : 'Dimas Anggara (User)',
+          role: 'Contributor',
+          time: 'Baru saja',
+          text: '📎 Berkas deliverables baru telah diunggah: [Final_Render_4K_V2.mp4]'
+        });
+        if (this.notificationService) {
+          this.notificationService.success('Hasil pekerjaan / deliverable berhasil diunggah.');
+        }
+        this.modalManager.open(this.modalId, { task: this.currentTask, tab: 'logs' });
+      });
+    }
+
     // Mark all done button
     const markDoneBtn = modalRoot.querySelector('#btn-mark-all-done');
     if (markDoneBtn) {
       markDoneBtn.addEventListener('click', () => {
         if (this.currentTask) {
           this.taskService.updateTaskStatus(this.currentTask.id, 'done');
+          this.currentTask.qaStatus = 'passed';
           this.notificationService.success(`Semua checklist ${this.currentTask.code} disetujui & ditandai selesai!`);
           this.modalManager.close(this.modalId);
         }
       });
     }
 
-    // Escalate blocker
+    // Escalate blocker / report obstacle
     const escalateBtn = modalRoot.querySelector('#btn-escalate-blocker');
     if (escalateBtn) {
       escalateBtn.addEventListener('click', () => {
-        this.notificationService.warning(`Tiket eskalasi blocker telah dikirim ke tim infrastruktur Sampulkreativ.`);
+        const authUser = this.container.resolve('AuthService').getCurrentUser();
+        this.comments.unshift({
+          author: authUser ? authUser.name : 'Dimas Anggara (User)',
+          role: 'Contributor',
+          time: 'Baru saja',
+          text: '⚠️ LAPORAN KENDALA: Diperlukan bantuan eskalasi teknis pada titik integrasi.'
+        });
+        this.notificationService.warning(`Laporan kendala berhasil dikirim ke Project Manager & tim terkait.`);
+        this.modalManager.open(this.modalId, { task: this.currentTask, tab: 'logs' });
       });
     }
   }
