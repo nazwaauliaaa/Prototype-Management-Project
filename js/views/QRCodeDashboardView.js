@@ -17,9 +17,7 @@ export class QRCodeDashboardView extends BaseView {
     this.notificationService = container.resolve('NotificationService');
     this.eventBus = container.resolve('EventBus');
 
-    this.activeTab = 'scanner'; // 'scanner' | 'catalog' | 'history'
-    this.catalogFilter = 'all'; // 'all' | 'project' | 'task' | 'user'
-    this.catalogSearch = '';
+    this.activeTab = 'scanner'; // 'scanner' | 'history'
     this.videoStream = null;
     this.isScanning = false;
     this.animationFrameId = null;
@@ -55,111 +53,56 @@ export class QRCodeDashboardView extends BaseView {
    * Main render template
    */
   render() {
-    const projects = this.projectService ? this.projectService.getAllProjects() : [];
-    const tasks = this.taskService ? this.taskService.getTasks() : [];
-    const users = this.authService ? this.authService.getAllUsers() : [];
-    const totalItems = projects.length + tasks.length + users.length;
-
     return `
-      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 flex flex-col gap-6 animate-in fade-in duration-300">
+      <div class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 animate-in fade-in duration-300">
         
-        <!-- Top Hero Bar -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden">
-          <div class="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
-          
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
+        <!-- Header & Navigation Toolbar -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
               <span class="material-symbols-outlined text-2xl">qr_code_scanner</span>
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">QR Scanner & Hub Database</h1>
-                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  PostgreSQL Sync
-                </span>
-                <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
-                  ⚡ Auto-Account Creation
+                <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">QR Scanner & Hub Database</h1>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40">
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  PostgreSQL
                 </span>
               </div>
-              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Pindai QR proyek, tugas, atau ID card pengguna. <b>Mendeteksi QR role User otomatis membuat akun baru dengan nama & jobdesk yang sama.</b>
-              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pindai atau kelola kode QR terhubung data proyek, tugas, dan anggota tim</p>
             </div>
           </div>
 
-          <!-- Quick Stats Pills -->
-          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <div class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700">
-              <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-lg">folder</span>
-              <div class="text-left">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Proyek</div>
-                <div class="text-sm font-bold text-slate-800 dark:text-slate-200">${projects.length}</div>
-              </div>
-            </div>
+          <!-- Navigation Tabs & Sync Button -->
+          <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/60 overflow-x-auto">
+              <button
+                class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${this.activeTab === 'scanner' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}"
+                data-tab="scanner"
+              >
+                <span class="material-symbols-outlined text-[17px]">center_focus_strong</span>
+                <span>Pemindai QR</span>
+              </button>
 
-            <div class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700">
-              <span class="material-symbols-outlined text-purple-600 dark:text-purple-400 text-lg">task_alt</span>
-              <div class="text-left">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Tugas</div>
-                <div class="text-sm font-bold text-slate-800 dark:text-slate-200">${tasks.length}</div>
-              </div>
+              <button
+                class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${this.activeTab === 'history' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}"
+                data-tab="history"
+              >
+                <span class="material-symbols-outlined text-[17px]">history</span>
+                <span>Riwayat (${this.scanHistory.length})</span>
+              </button>
             </div>
-
-            <div class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700">
-              <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">group</span>
-              <div class="text-left">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pengguna</div>
-                <div class="text-sm font-bold text-slate-800 dark:text-slate-200">${users.length}</div>
-              </div>
-            </div>
-
-            <div class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700">
-              <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">history</span>
-              <div class="text-left">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Scan</div>
-                <div class="text-sm font-bold text-slate-800 dark:text-slate-200">${this.scanHistory.length}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-          <div class="flex items-center gap-2 overflow-x-auto">
-            <button
-              class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${this.activeTab === 'scanner' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'}"
-              data-tab="scanner"
-            >
-              <span class="material-symbols-outlined text-base">center_focus_strong</span>
-              <span>Pemindai QR (Scanner)</span>
-            </button>
 
             <button
-              class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${this.activeTab === 'catalog' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'}"
-              data-tab="catalog"
+              id="btn-refresh-db-data"
+              class="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-1.5 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer shrink-0"
+              title="Sinkronkan ulang data dari PostgreSQL"
             >
-              <span class="material-symbols-outlined text-base">grid_view</span>
-              <span>Katalog QR Database (${totalItems})</span>
-            </button>
-
-            <button
-              class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${this.activeTab === 'history' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'}"
-              data-tab="history"
-            >
-              <span class="material-symbols-outlined text-base">history</span>
-              <span>Riwayat Scan (${this.scanHistory.length})</span>
+              <span class="material-symbols-outlined text-[16px]">sync</span>
+              <span class="hidden sm:inline">Sync Database</span>
             </button>
           </div>
-
-          <button
-            id="btn-refresh-db-data"
-            class="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center gap-1.5 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
-            title="Sinkronkan ulang data dari PostgreSQL"
-          >
-            <span class="material-symbols-outlined text-[16px]">sync</span>
-            <span class="hidden sm:inline">Sync Database</span>
-          </button>
         </div>
 
         <!-- Dynamic Tab Content -->
@@ -179,8 +122,6 @@ export class QRCodeDashboardView extends BaseView {
   _renderTabContent() {
     if (this.activeTab === 'scanner') {
       return this._renderScannerTab();
-    } else if (this.activeTab === 'catalog') {
-      return this._renderCatalogTab();
     } else {
       return this._renderHistoryTab();
     }
@@ -192,437 +133,108 @@ export class QRCodeDashboardView extends BaseView {
    * ==========================================
    */
   _renderScannerTab() {
-    const projects = this.projectService ? this.projectService.getAllProjects() : [];
-    const tasks = this.taskService ? this.taskService.getTasks() : [];
-    const allUsers = this.authService ? this.authService.getAllUsers() : [];
-
-    // Pre-defined / database user team members with role User & jobdesk
-    const roleUserCandidates = [
-      { id: 'usr-004', name: 'Dimas Anggara', role: 'user', jobdesk: 'Creative Specialist & Konten 3D', email: 'dimas.anggara@sampulkreativ.id' },
-      { id: 'usr-005', name: 'Rizky Firmansyah', role: 'user', jobdesk: 'UI/UX Designer & Prototyper', email: 'rizky.firmansyah@sampulkreativ.id' },
-      { id: 'usr-006', name: 'Dewi Sartika', role: 'user', jobdesk: 'Content Strategist & Copywriter', email: 'dewi.sartika@sampulkreativ.id' },
-      { id: 'usr-007', name: 'Bagas Wicaksono', role: 'user', jobdesk: 'Design System & Brand Identity', email: 'bagas.wicaksono@sampulkreativ.id' },
-      { id: 'usr-008', name: 'Fitri Handayani', role: 'user', jobdesk: 'Frontend Web Developer', email: 'fitri.handayani@sampulkreativ.id' },
-      { id: 'usr-009', name: 'Ahmad Fauzi', role: 'user', jobdesk: 'Motion Graphic & Video Editor', email: 'ahmad.fauzi@sampulkreativ.id' }
-    ];
-
     return `
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div class="max-w-2xl mx-auto w-full flex flex-col gap-4">
         
-        <!-- Left: Live Camera Viewfinder & Image Dropper (7 Cols) -->
-        <div class="lg:col-span-7 flex flex-col gap-4">
-          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-indigo-600">photo_camera</span>
-                <h2 class="font-bold text-slate-900 dark:text-white text-base">Kamera Pemindai Langsung</h2>
+        <!-- Live Camera Viewfinder & Image Dropper Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[18px]">photo_camera</span>
               </div>
-              
-              <!-- Camera Switcher / Status -->
-              <div class="flex items-center gap-2">
-                <button
-                  id="btn-toggle-facing"
-                  class="p-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
-                  title="Ganti kamera depan / belakang"
-                >
-                  <span class="material-symbols-outlined text-[16px]">cameraswitch</span>
-                  <span class="hidden sm:inline">Flip Kamera</span>
-                </button>
+              <div>
+                <h2 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-none">Kamera Pemindai Langsung</h2>
+                <span class="text-[11px] text-slate-400">Arahkan kamera ke kode QR fisik atau digital</span>
               </div>
             </div>
-
-            <!-- Viewfinder Container -->
-            <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center shadow-inner border border-slate-800 group">
-              
-              <video id="qr-video" class="w-full h-full object-cover" playsinline muted></video>
-              <canvas id="qr-canvas" class="hidden"></canvas>
-
-              <!-- Viewfinder Overlay Reticle -->
-              <div id="camera-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
-                <!-- Laser Scanning line (active when scanning) -->
-                <div id="scanner-laser" class="hidden absolute inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e] animate-[bounce_2s_infinite]"></div>
-
-                <!-- 4 Corner Focus Brackets -->
-                <div class="relative w-56 h-56 sm:w-64 sm:h-64 border-2 border-indigo-500/40 rounded-2xl flex items-center justify-center">
-                  <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-indigo-500 rounded-tl-lg"></div>
-                  <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-indigo-500 rounded-tr-lg"></div>
-                  <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-indigo-500 rounded-bl-lg"></div>
-                  <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-indigo-500 rounded-br-lg"></div>
-                  
-                  <div class="text-center text-white/90 text-xs px-4 py-2 bg-black/60 backdrop-blur-xs rounded-lg flex flex-col items-center gap-1">
-                    <span class="font-medium">Tunjukkan kode QR ke kamera</span>
-                    <span class="text-[10px] text-emerald-400 font-bold">QR role User = Otomatis Buat Akun</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Camera Idle / Placeholder State -->
-              <div id="camera-idle-placeholder" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center p-6 text-center text-slate-300 gap-3">
-                <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shadow-lg">
-                  <span class="material-symbols-outlined text-3xl">videocam</span>
-                </div>
-                <div>
-                  <h3 class="font-bold text-white text-sm sm:text-base">Kamera Sedang Tidak Aktif</h3>
-                  <p class="text-xs text-slate-400 max-w-xs mt-1">
-                    Nyalakan kamera untuk memindai QR fisik di dokumen, kartu ID anggota tim, atau layar perangkat lain.
-                  </p>
-                </div>
-                <button
-                  id="btn-start-camera"
-                  class="mt-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-600/30 flex items-center gap-2 transition-all cursor-pointer"
-                >
-                  <span class="material-symbols-outlined text-lg">play_arrow</span>
-                  <span>Mulai Kamera Scanner</span>
-                </button>
-              </div>
-
-              <!-- Camera Active Bar (Bottom) -->
-              <div id="camera-controls-bar" class="hidden absolute bottom-3 inset-x-3 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-2.5 flex items-center justify-between text-white text-xs">
-                <div class="flex items-center gap-2 px-2">
-                  <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                  <span class="font-medium text-slate-200">Memindai real-time...</span>
-                </div>
-                <button
-                  id="btn-stop-camera"
-                  class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <span class="material-symbols-outlined text-[15px]">stop</span>
-                  <span>Hentikan</span>
-                </button>
-              </div>
-
-            </div>
-
-            <!-- Upload QR Image Dropzone -->
-            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-3">
-              <label
-                for="qr-file-input"
-                class="w-full flex-1 py-3 px-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 rounded-xl flex items-center justify-center gap-2.5 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 cursor-pointer transition-all group"
+            
+            <!-- Camera Switcher / Status -->
+            <div class="flex items-center gap-2">
+              <button
+                id="btn-toggle-facing"
+                class="px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer font-medium"
+                title="Ganti kamera depan / belakang"
               >
-                <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-indigo-500 transition-colors">upload_file</span>
-                <span><b>Pilih atau Jatuhkan Gambar QR</b> (PNG, JPG, SVG)</span>
-                <input id="qr-file-input" type="file" accept="image/*" class="hidden" />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Simulator & Manual Input (5 Cols) -->
-        <div class="lg:col-span-5 flex flex-col gap-5">
-          
-          <!-- Quick 1-Click Database Simulator Card -->
-          <div class="bg-gradient-to-br from-white to-emerald-50/20 dark:from-slate-900 dark:to-emerald-950/20 border border-emerald-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-            <div class="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-400 font-bold text-sm">
-              <span class="material-symbols-outlined text-lg text-emerald-600">bolt</span>
-              <h3>Simulator Scan Cepat (Database Item)</h3>
-            </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Pilih item dari database untuk mensimulasikan hasil pemindaian kamera secara langsung:
-            </p>
-
-            <div class="flex flex-col gap-3.5">
-              
-              <!-- User Role QR Simulation (FEATURE UTAMA) -->
-              <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl">
-                <label class="block text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-                  <span class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">person_add</span>
-                    <span>Scan QR Pengguna (Role: User)</span>
-                  </span>
-                  <span class="text-[9px] bg-emerald-200/80 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.2 rounded font-bold">Auto Buat Akun</span>
-                </label>
-                <div class="flex gap-2 mt-1.5">
-                  <select id="sim-user-select" class="flex-1 text-xs bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 rounded-lg px-2.5 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <option value="">-- Pilih ID Card User untuk di-Scan --</option>
-                    ${roleUserCandidates.map(u => `
-                      <option value='${JSON.stringify({ type: "user", role: "user", id: u.id, name: u.name, jobdesk: u.jobdesk, email: u.email })}'>
-                        ${u.name} • ${u.jobdesk}
-                      </option>
-                    `).join('')}
-                  </select>
-                  <button
-                    id="btn-simulate-user"
-                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
-                    title="Simulasikan scan QR role User"
-                  >
-                    Scan
-                  </button>
-                </div>
-              </div>
-
-              <!-- Project Simulation -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pilih Proyek Database</label>
-                <div class="flex gap-2">
-                  <select id="sim-project-select" class="flex-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">-- Pilih Proyek untuk di-Scan --</option>
-                    ${projects.map(p => `<option value="${p.id}">${p.code || 'PRJ'} — ${p.name}</option>`).join('')}
-                  </select>
-                  <button
-                    id="btn-simulate-project"
-                    class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
-                  >
-                    Scan
-                  </button>
-                </div>
-              </div>
-
-              <!-- Task Simulation -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pilih Tugas / Deliverable Database</label>
-                <div class="flex gap-2">
-                  <select id="sim-task-select" class="flex-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">-- Pilih Tugas untuk di-Scan --</option>
-                    ${tasks.map(t => `<option value="${t.id}">${t.code || '#RK'} — ${t.title}</option>`).join('')}
-                  </select>
-                  <button
-                    id="btn-simulate-task"
-                    class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
-                  >
-                    Scan
-                  </button>
-                </div>
-              </div>
-
+                <span class="material-symbols-outlined text-[15px]">cameraswitch</span>
+                <span class="hidden sm:inline">Flip Kamera</span>
+              </button>
             </div>
           </div>
 
-          <!-- Manual Code / Barcode Gun Input Card -->
-          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-            <div class="flex items-center gap-2 mb-2 text-slate-900 dark:text-white font-bold text-sm">
-              <span class="material-symbols-outlined text-slate-600">keyboard</span>
-              <h3>Input Kode Manual / Barcode Scanner</h3>
-            </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
-              Ketikkan ID, kode proyek (<code>PRJ-...</code>), tugas (<code>#RK-...</code>), atau user ID (<code>usr-...</code>).
-            </p>
+          <!-- Viewfinder Container -->
+          <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center shadow-md border border-slate-800 group">
+            
+            <video id="qr-video" class="w-full h-full object-cover" playsinline muted></video>
+            <canvas id="qr-canvas" class="hidden"></canvas>
 
-            <form id="form-manual-qr" class="flex gap-2">
-              <div class="relative flex-1">
-                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
-                <input
-                  id="input-manual-code"
-                  type="text"
-                  placeholder="Ketik kode atau scan barcode..."
-                  class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+            <!-- Viewfinder Overlay Reticle -->
+            <div id="camera-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
+              <!-- Laser Scanning line (active when scanning) -->
+              <div id="scanner-laser" class="hidden absolute inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e] animate-[bounce_2s_infinite]"></div>
+
+              <!-- 4 Corner Focus Brackets -->
+              <div class="relative w-52 h-52 sm:w-60 sm:h-60 border border-indigo-500/30 rounded-2xl flex items-center justify-center">
+                <div class="absolute -top-1 -left-1 w-6 h-6 border-t-3 border-l-3 border-indigo-500 rounded-tl-lg"></div>
+                <div class="absolute -top-1 -right-1 w-6 h-6 border-t-3 border-r-3 border-indigo-500 rounded-tr-lg"></div>
+                <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-3 border-l-3 border-indigo-500 rounded-bl-lg"></div>
+                <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-3 border-r-3 border-indigo-500 rounded-br-lg"></div>
+                
+                <div class="text-center text-white/90 text-xs px-3.5 py-1.5 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1.5 shadow-sm border border-white/10">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span class="font-medium text-[11px]">Arahkan ke kode QR</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Camera Idle / Placeholder State -->
+            <div id="camera-idle-placeholder" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center p-6 text-center text-slate-300 gap-3">
+              <div class="w-16 h-16 rounded-2xl bg-indigo-600/15 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shadow-lg">
+                <span class="material-symbols-outlined text-3xl">videocam</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-white text-sm sm:text-base">Kamera Belum Aktif</h3>
+                <p class="text-xs text-slate-400 max-w-xs mt-1">
+                  Nyalakan kamera untuk memindai kode QR fisik pada kartu anggota tim atau dokumen.
+                </p>
               </div>
               <button
-                type="submit"
-                class="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-semibold text-xs rounded-xl transition-all active:scale-95 cursor-pointer shrink-0"
+                id="btn-start-camera"
+                class="mt-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-600/30 flex items-center gap-2 transition-all cursor-pointer"
               >
-                Cari
+                <span class="material-symbols-outlined text-lg">play_arrow</span>
+                <span>Mulai Kamera Scanner</span>
               </button>
-            </form>
-          </div>
-
-          <!-- Quick Tips Card -->
-          <div class="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 text-xs text-indigo-900 dark:text-indigo-300 flex items-start gap-2.5">
-            <span class="material-symbols-outlined text-indigo-600 text-lg shrink-0">info</span>
-            <div>
-              <span class="font-bold">Otomasi Deteksi QR Role User:</span>
-              <p class="mt-0.5 text-indigo-800/90 dark:text-indigo-400 leading-relaxed">
-                Saat kamera mendeteksi QR dengan <code>role: user</code>, sistem langsung membuatkan akun baru di database dengan <b>nama</b>, <b>role (User)</b>, dan <b>jobdesk</b> persis seperti data pada QR, lalu menyediakan opsi untuk login sebagai akun tersebut seketika!
-              </p>
             </div>
-          </div>
 
-        </div>
-
-      </div>
-    `;
-  }
-
-  /**
-   * ==========================================
-   * TAB 2: KATALOG & GALERI QR DATABASE
-   * ==========================================
-   */
-  _renderCatalogTab() {
-    const allProjects = this.projectService ? this.projectService.getAllProjects() : [];
-    const allTasks = this.taskService ? this.taskService.getTasks() : [];
-    const allUsers = this.authService ? this.authService.getAllUsers() : [];
-
-    let items = [];
-    
-    // Proyek
-    if (this.catalogFilter === 'all' || this.catalogFilter === 'project') {
-      items.push(...allProjects.map(p => ({
-        id: p.id,
-        code: p.code || 'PRJ',
-        title: p.name,
-        type: 'project',
-        status: p.status,
-        progress: p.progress,
-        workspace: p.workspace,
-        meta: `${p.members ? p.members.length : 0} Anggota • ${p.budget || ''}`,
-        payload: p.id
-      })));
-    }
-
-    // Tugas
-    if (this.catalogFilter === 'all' || this.catalogFilter === 'task') {
-      items.push(...allTasks.map(t => ({
-        id: t.id,
-        code: t.code || '#RK',
-        title: t.title,
-        type: 'task',
-        status: t.status,
-        priority: t.priority,
-        workspace: t.workspace,
-        meta: `PIC: ${t.pic ? t.pic.name : 'Unassigned'} • ${t.hours || 0} Jam`,
-        payload: t.id
-      })));
-    }
-
-    // Pengguna / User
-    if (this.catalogFilter === 'all' || this.catalogFilter === 'user') {
-      items.push(...allUsers.map(u => ({
-        id: u.id,
-        code: u.id,
-        title: u.name,
-        type: 'user',
-        role: u.role || 'user',
-        jobdesk: u.jobdesk || u.title || 'Creative Specialist',
-        workspace: 'Semua Ruang',
-        meta: `Role: ${u.role || 'user'} • Jobdesk: ${u.jobdesk || u.title || 'Staff'}`,
-        payload: JSON.stringify({ type: 'user', role: u.role || 'user', id: u.id, name: u.name, jobdesk: u.jobdesk || u.title || 'Creative Specialist', email: u.email })
-      })));
-    }
-
-    // Filter by search query
-    if (this.catalogSearch) {
-      const q = this.catalogSearch.toLowerCase();
-      items = items.filter(i => 
-        i.title.toLowerCase().includes(q) || 
-        i.code.toLowerCase().includes(q) ||
-        i.id.toLowerCase().includes(q)
-      );
-    }
-
-    return `
-      <div class="flex flex-col gap-4">
-        
-        <!-- Filter and Search Header -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
-            <button
-              class="catalog-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors shrink-0 ${this.catalogFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}"
-              data-filter="all"
-            >
-              Semua (${allProjects.length + allTasks.length + allUsers.length})
-            </button>
-            <button
-              class="catalog-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors shrink-0 ${this.catalogFilter === 'project' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}"
-              data-filter="project"
-            >
-              Proyek (${allProjects.length})
-            </button>
-            <button
-              class="catalog-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors shrink-0 ${this.catalogFilter === 'task' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}"
-              data-filter="task"
-            >
-              Tugas (${allTasks.length})
-            </button>
-            <button
-              class="catalog-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors shrink-0 ${this.catalogFilter === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}"
-              data-filter="user"
-            >
-              Pengguna / User (${allUsers.length})
-            </button>
-          </div>
-
-          <!-- Search Input -->
-          <div class="relative w-full sm:w-72">
-            <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-[18px]">search</span>
-            <input
-              id="catalog-search-input"
-              type="text"
-              value="${this.catalogSearch}"
-              placeholder="Cari nama, kode, atau peran..."
-              class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-        </div>
-
-        <!-- Grid of QR Cards -->
-        ${items.length === 0 ? `
-          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-            <span class="material-symbols-outlined text-4xl text-slate-300">qr_code_2</span>
-            <h4 class="font-bold text-slate-700 dark:text-slate-300 text-sm">Tidak Ada Item Ditemukan</h4>
-            <p class="text-xs">Cobalah mengubah kata kunci pencarian atau filter.</p>
-          </div>
-        ` : `
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            ${items.map(item => this._renderCatalogItemCard(item)).join('')}
-          </div>
-        `}
-
-      </div>
-    `;
-  }
-
-  _renderCatalogItemCard(item) {
-    const isProject = item.type === 'project';
-    const isUser = item.type === 'user';
-    const qrPayload = item.payload || item.id;
-    
-    // Generate QR SVG for this item
-    const darkColor = isUser ? '#047857' : isProject ? '#312e81' : '#581c87';
-    const qrSvg = QRCodeGenerator.generate(qrPayload, { size: 100, darkColor });
-
-    let badgeClass = 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400';
-    let badgeText = 'Tugas';
-    if (isProject) {
-      badgeClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400';
-      badgeText = 'Proyek';
-    } else if (isUser) {
-      badgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400';
-      badgeText = 'Pengguna (User)';
-    }
-
-    return `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
-        <div>
-          <!-- Header Tag -->
-          <div class="flex items-center justify-between gap-2 mb-3">
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
-              ${badgeText}
-            </span>
-            <span class="text-[11px] font-mono font-bold text-slate-500">${item.code}</span>
-          </div>
-
-          <!-- QR Code Preview Box -->
-          <div class="w-full aspect-square bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3 flex items-center justify-center mb-3 border border-slate-100 dark:border-slate-700/60 group-hover:border-indigo-200 transition-colors">
-            <div class="w-32 h-32 flex items-center justify-center bg-white p-2 rounded-lg shadow-2xs">
-              ${qrSvg}
+            <!-- Camera Active Bar (Bottom) -->
+            <div id="camera-controls-bar" class="hidden absolute bottom-3 inset-x-3 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-2.5 flex items-center justify-between text-white text-xs">
+              <div class="flex items-center gap-2 px-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                <span class="font-medium text-slate-200 text-xs">Memindai real-time...</span>
+              </div>
+              <button
+                id="btn-stop-camera"
+                class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold rounded-lg flex items-center gap-1 transition-all cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-[15px]">stop</span>
+                <span>Hentikan</span>
+              </button>
             </div>
+
           </div>
 
-          <!-- Title & Meta -->
-          <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm line-clamp-1 mb-1" title="${item.title}">${item.title}</h4>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3 line-clamp-1">${item.meta}</p>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-          <button
-            class="btn-catalog-scan-sim flex-1 py-1.5 px-2 ${isUser ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg font-semibold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
-            data-payload='${qrPayload.replace(/'/g, "&apos;")}'
-            title="Simulasikan pemindaian QR ini"
-          >
-            <span class="material-symbols-outlined text-[14px]">center_focus_strong</span>
-            <span>Scan Ini</span>
-          </button>
-
-          <button
-            class="btn-catalog-download-svg p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs transition-colors cursor-pointer"
-            data-payload='${qrPayload.replace(/'/g, "&apos;")}'
-            data-filename="QR-${item.code || item.id}"
-            title="Download QR SVG"
-          >
-            <span class="material-symbols-outlined text-[16px]">download</span>
-          </button>
+          <!-- Upload QR Image Dropzone -->
+          <div class="mt-4">
+            <label
+              for="qr-file-input"
+              class="w-full py-3 px-4 border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 rounded-xl flex items-center justify-center gap-2.5 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 cursor-pointer transition-all group shadow-2xs"
+            >
+              <span class="material-symbols-outlined text-lg text-slate-400 group-hover:text-indigo-500 transition-colors">upload_file</span>
+              <span><b>Pilih atau Seret Gambar QR</b> (PNG, JPG, SVG)</span>
+              <input id="qr-file-input" type="file" accept="image/*" class="hidden" />
+            </label>
+          </div>
         </div>
       </div>
     `;
@@ -630,7 +242,7 @@ export class QRCodeDashboardView extends BaseView {
 
   /**
    * ==========================================
-   * TAB 3: RIWAYAT SCAN (AUDIT LOG)
+   * TAB 2: RIWAYAT SCAN (AUDIT LOG)
    * ==========================================
    */
   _renderHistoryTab() {
@@ -639,7 +251,7 @@ export class QRCodeDashboardView extends BaseView {
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
           <span class="material-symbols-outlined text-4xl text-slate-300">history</span>
           <h4 class="font-bold text-slate-700 dark:text-slate-300 text-sm">Belum Ada Riwayat Scan</h4>
-          <p class="text-xs">Gunakan tab Pemindai QR atau Simulator untuk mulai memindai data database.</p>
+          <p class="text-xs">Arahkan kamera ke kode QR atau unggah gambar untuk mulai memindai.</p>
         </div>
       `;
     }
@@ -753,10 +365,6 @@ export class QRCodeDashboardView extends BaseView {
       const stopCamBtn = this.element.querySelector('#btn-stop-camera');
       const toggleFacingBtn = this.element.querySelector('#btn-toggle-facing');
       const fileInput = this.element.querySelector('#qr-file-input');
-      const manualForm = this.element.querySelector('#form-manual-qr');
-      const simProjectBtn = this.element.querySelector('#btn-simulate-project');
-      const simTaskBtn = this.element.querySelector('#btn-simulate-task');
-      const simUserBtn = this.element.querySelector('#btn-simulate-user');
 
       if (startCamBtn) startCamBtn.addEventListener('click', () => this._startCamera());
       if (stopCamBtn) stopCamBtn.addEventListener('click', () => this._stopCamera());
@@ -776,78 +384,9 @@ export class QRCodeDashboardView extends BaseView {
           if (file) this._decodeImageFile(file);
         });
       }
-
-      if (manualForm) {
-        manualForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const input = this.element.querySelector('#input-manual-code');
-          if (input && input.value.trim()) {
-            this._processQrCode(input.value.trim());
-          }
-        });
-      }
-
-      if (simUserBtn) {
-        simUserBtn.addEventListener('click', () => {
-          const select = this.element.querySelector('#sim-user-select');
-          if (select && select.value) {
-            this._processQrCode(select.value);
-          } else {
-            this.notificationService.info('Silakan pilih salah satu kartu pengguna terlebih dahulu.');
-          }
-        });
-      }
-
-      if (simProjectBtn) {
-        simProjectBtn.addEventListener('click', () => {
-          const select = this.element.querySelector('#sim-project-select');
-          if (select && select.value) {
-            this._processQrCode(select.value);
-          } else {
-            this.notificationService.info('Silakan pilih salah satu proyek terlebih dahulu.');
-          }
-        });
-      }
-
-      if (simTaskBtn) {
-        simTaskBtn.addEventListener('click', () => {
-          const select = this.element.querySelector('#sim-task-select');
-          if (select && select.value) {
-            this._processQrCode(select.value);
-          } else {
-            this.notificationService.info('Silakan pilih salah satu tugas terlebih dahulu.');
-          }
-        });
-      }
     }
 
-    // 4. Catalog tab specific listeners
-    if (this.activeTab === 'catalog') {
-      const filterBtns = this.element.querySelectorAll('.catalog-filter-btn');
-      filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          this.catalogFilter = btn.getAttribute('data-filter');
-          this.mount(this.element);
-        });
-      });
-
-      const searchInput = this.element.querySelector('#catalog-search-input');
-      if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-          this.catalogSearch = e.target.value;
-          clearTimeout(this._searchTimer);
-          this._searchTimer = setTimeout(() => {
-            const area = this.element.querySelector('#tab-content-area');
-            if (area) area.innerHTML = this._renderCatalogTab();
-            this._bindCatalogItemEvents();
-          }, 200);
-        });
-      }
-
-      this._bindCatalogItemEvents();
-    }
-
-    // 5. History tab specific listeners
+    // 4. History tab specific listeners
     if (this.activeTab === 'history') {
       const clearBtn = this.element.querySelector('#btn-clear-history');
       if (clearBtn) {
@@ -867,28 +406,6 @@ export class QRCodeDashboardView extends BaseView {
         });
       });
     }
-  }
-
-  _bindCatalogItemEvents() {
-    const simBtns = this.element.querySelectorAll('.btn-catalog-scan-sim');
-    simBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const payload = btn.getAttribute('data-payload');
-        if (payload) this._processQrCode(payload);
-      });
-    });
-
-    const downloadBtns = this.element.querySelectorAll('.btn-catalog-download-svg');
-    downloadBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const payload = btn.getAttribute('data-payload');
-        const filename = btn.getAttribute('data-filename') || 'qrcode';
-        if (payload) {
-          QRCodeGenerator.downloadSvg(payload, filename);
-          this.notificationService.success(`Kode QR ${filename} berhasil diunduh.`);
-        }
-      });
-    });
   }
 
   /**
@@ -1281,23 +798,17 @@ export class QRCodeDashboardView extends BaseView {
             <div class="flex items-center gap-2">
               <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center gap-1.5 shadow-2xs">
                 <span class="material-symbols-outlined text-[15px] text-emerald-600">verified_user</span>
-                <span>${isAutoCreated ? 'AKUN BARU BERHASIL DIBUAT OTOMATIS' : 'PROFIL PENGGUNA TERVERIFIKASI'}</span>
+                <span>PROFIL PENGGUNA TERVERIFIKASI</span>
               </span>
+              ${isAutoCreated ? `
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+                  Akun Terdaftar
+                </span>
+              ` : ''}
             </div>
             <button id="btn-close-result-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
               <span class="material-symbols-outlined text-xl">close</span>
             </button>
-          </div>
-
-          <!-- Celebration Info Banner (jika dibuat otomatis) -->
-          <div class="mb-4 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200/80 dark:border-emerald-800/60 flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-300">
-            <span class="material-symbols-outlined text-emerald-600 text-xl shrink-0">check_circle</span>
-            <div>
-              <div class="font-bold">Akun Terdaftar di Sistem & Database!</div>
-              <p class="text-[11px] text-emerald-800/90 dark:text-emerald-400 mt-0.5">
-                Sistem telah meregistrasi akun pengguna dengan <b>Nama</b>, <b>Role (User)</b>, dan <b>Jobdesk</b> yang identik dengan database QR yang ditunjukkan ke kamera.
-              </p>
-            </div>
           </div>
 
           <!-- User Card -->
