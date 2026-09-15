@@ -172,15 +172,21 @@ export class AuthView extends BaseView {
                 <!-- Role 4: User -->
                 <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="user" type="button">
                   <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 text-blue-600">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
                       <span class="material-symbols-outlined text-[20px]">person</span>
                     </div>
                     <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">User</div>
-                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Akses Anggota Tim & Kolaborasi Ruang Kerja</div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-body-medium text-[13px] text-text-primary font-bold truncate">User</span>
+                        <span class="font-badge-micro text-[9.5px] text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 px-1.5 py-0.2 rounded font-semibold">Tautan Saja</span>
+                      </div>
+                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Akses Terbatas: Hanya via Tautan Undangan Kanban</div>
                     </div>
                   </div>
-                  <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
+                  <div class="flex items-center gap-1 text-text-muted group-hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">link</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </div>
                 </button>
               </div>
             </div>
@@ -209,6 +215,85 @@ export class AuthView extends BaseView {
 
           </div>
         </main>
+
+        <!-- User Invite-Only Modal Dialog -->
+        <div id="modal-user-invite-gate" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-4 text-slate-800 dark:text-slate-100">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800">
+                  <span class="material-symbols-outlined text-[20px]">link</span>
+                </div>
+                <div>
+                  <h3 class="font-bold text-[15px] text-slate-900 dark:text-white">Akses Khusus Undangan</h3>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Peran User (Hanya via Tautan Admin/Manajer)</p>
+                </div>
+              </div>
+              <button id="btn-close-user-invite-modal" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors" type="button">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2.5 text-amber-800 dark:text-amber-200 text-[12px] leading-relaxed">
+              <span class="material-symbols-outlined text-[20px] text-amber-600 shrink-0 mt-0.5">lock</span>
+              <div>
+                <span class="font-bold">Akses Terbatas:</span>
+                Pengguna dengan peran <b>User</b> tidak memiliki izin akses ke dashboard utama dan <b>hanya dapat membuka Papan Kanban</b> melalui tautan undangan resmi yang dibagikan oleh Admin atau Manajer Proyek.
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="font-bold text-[11.5px] uppercase tracking-wider text-slate-600 dark:text-slate-400">Tempel Tautan Undangan</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[17px]">link</span>
+                <input
+                  id="input-user-invite-url"
+                  type="text"
+                  placeholder="https://.../?accept_invite=inv-...#/kanban"
+                  class="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[12px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all font-mono"
+                />
+              </div>
+              <p id="user-invite-url-error" class="hidden text-[11px] text-rose-500 font-medium"></p>
+            </div>
+
+            <div class="flex flex-col gap-2 pt-1">
+              <button
+                id="btn-submit-user-invite-url"
+                class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 active:scale-98 transition-all cursor-pointer"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[18px]">login</span>
+                <span>Buka & Masuk via Tautan</span>
+              </button>
+
+              <div id="user-invite-resume-container" class="hidden flex flex-col gap-1">
+                <button
+                  id="btn-resume-invited-session"
+                  class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold text-[12px] flex items-center justify-center gap-2 border border-emerald-200 dark:border-emerald-800 transition-all cursor-pointer"
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-[17px]">check_circle</span>
+                  <span id="btn-resume-invited-label">Lanjutkan ke Papan Terundang</span>
+                </button>
+              </div>
+
+              <div class="relative flex items-center justify-center my-1">
+                <div class="w-full h-px bg-slate-200 dark:bg-slate-800"></div>
+                <span class="absolute px-2 bg-white dark:bg-slate-900 font-badge-micro text-[10px] text-slate-400 uppercase">Atau Uji Coba Demo</span>
+              </div>
+
+              <button
+                id="btn-simulate-manager-invite"
+                class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer"
+                type="button"
+                title="Simulasi tautan undangan dari Manajer Proyek untuk keperluan pengujian"
+              >
+                <span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">mark_email_read</span>
+                <span>Simulasikan Tautan Undangan Manajer (Demo)</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -402,13 +487,112 @@ export class AuthView extends BaseView {
       }
     };
 
-    const handleRoleSelect = (role) => {
+    const inviteModal = this.element.querySelector('#modal-user-invite-gate');
+    const closeInviteModalBtn = this.element.querySelector('#btn-close-user-invite-modal');
+    const inputInviteUrl = this.element.querySelector('#input-user-invite-url');
+    const inviteError = this.element.querySelector('#user-invite-url-error');
+    const submitInviteBtn = this.element.querySelector('#btn-submit-user-invite-url');
+    const simulateInviteBtn = this.element.querySelector('#btn-simulate-manager-invite');
+    const resumeContainer = this.element.querySelector('#user-invite-resume-container');
+    const resumeBtn = this.element.querySelector('#btn-resume-invited-session');
+    const resumeLabel = this.element.querySelector('#btn-resume-invited-label');
+
+    const openInviteModal = () => {
+      const savedWs = localStorage.getItem('user_invited_workspace');
+      if (savedWs && resumeContainer && resumeLabel) {
+        resumeContainer.classList.remove('hidden');
+        resumeLabel.textContent = `Lanjutkan ke Papan Terundang (${savedWs.toUpperCase()})`;
+      } else if (resumeContainer) {
+        resumeContainer.classList.add('hidden');
+      }
+      if (inviteError) inviteError.classList.add('hidden');
+      if (inputInviteUrl) inputInviteUrl.value = '';
+      if (inviteModal) inviteModal.classList.remove('hidden');
+    };
+
+    if (closeInviteModalBtn) {
+      closeInviteModalBtn.addEventListener('click', () => {
+        if (inviteModal) inviteModal.classList.add('hidden');
+      });
+    }
+
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', () => {
+        if (inviteModal) inviteModal.classList.add('hidden');
+        handleRoleSelect('user', true);
+      });
+    }
+
+    if (submitInviteBtn) {
+      submitInviteBtn.addEventListener('click', () => {
+        const rawUrl = inputInviteUrl?.value.trim() || '';
+        if (!rawUrl) {
+          if (inviteError) {
+            inviteError.textContent = 'Harap masukkan tautan undangan yang valid.';
+            inviteError.classList.remove('hidden');
+          }
+          return;
+        }
+
+        try {
+          let targetUrl = rawUrl;
+          if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+            targetUrl = window.location.origin + window.location.pathname + (rawUrl.startsWith('?') ? rawUrl : '?' + rawUrl);
+          }
+          const parsed = new URL(targetUrl);
+          const hasInvite = parsed.searchParams.has('accept_invite') || parsed.searchParams.has('invite');
+          if (!hasInvite) {
+            if (inviteError) {
+              inviteError.textContent = 'Tautan tidak memiliki parameter token undangan (accept_invite / invite).';
+              inviteError.classList.remove('hidden');
+            }
+            return;
+          }
+
+          if (inviteModal) inviteModal.classList.add('hidden');
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Memverifikasi Tautan Undangan...</span> Mengalihkan ke Papan Kanban...`;
+          }
+          window.location.href = targetUrl;
+        } catch (err) {
+          if (inviteError) {
+            inviteError.textContent = 'Format URL tidak valid. Contoh: ' + window.location.origin + '/?accept_invite=inv-123#/kanban';
+            inviteError.classList.remove('hidden');
+          }
+        }
+      });
+    }
+
+    if (simulateInviteBtn) {
+      simulateInviteBtn.addEventListener('click', () => {
+        const targetWs = 'panen-kunci';
+        const targetTitle = 'Panen Kunci';
+        const invId = 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+        const demoLink = `${window.location.origin}${window.location.pathname}?accept_invite=${invId}&name=Dimas%20Anggara&email=dimas.anggara%40gmail.com&role=Editor&ws=${targetWs}&project_id=${targetWs}&board_title=${encodeURIComponent(targetTitle)}&color=%232563eb#/kanban/${targetWs}`;
+        
+        if (inviteModal) inviteModal.classList.add('hidden');
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-emerald-500 font-semibold animate-pulse">Menerima Undangan dari Manajer Proyek...</span> Membuka Papan Kanban ${targetTitle}...`;
+        }
+        setTimeout(() => {
+          window.location.href = demoLink;
+        }, 500);
+      });
+    }
+
+    const handleRoleSelect = (role, isResuming = false) => {
+      if (role === 'user' && !isResuming) {
+        // User cannot enter directly without invite link
+        openInviteModal();
+        return;
+      }
+
       stopCamera();
       if (feedback) {
         feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Autentikasi Terverifikasi!</span> Mengalihkan sesi ke Creative Office...`;
       }
       setTimeout(() => {
-        // loginWithRole emits 'auth:login' which is handled in app.js to navigate to dashboard
+        // loginWithRole emits 'auth:login' which is handled in app.js to navigate to dashboard or kanban
         this.authService.loginWithRole(role);
       }, 700);
     };

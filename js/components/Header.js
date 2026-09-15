@@ -29,6 +29,7 @@ export class Header {
       avatar: '',
       role: 'kreatif'
     };
+    const isUserRole = (user.role || '').toLowerCase() === 'user';
 
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
@@ -36,13 +37,14 @@ export class Header {
 
           <!-- Logo & Branding -->
           <div class="flex items-center gap-spacing-md">
-            <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo">
+            <div class="flex items-center gap-spacing-sm ${isUserRole ? 'cursor-default' : 'cursor-pointer'}" id="header-brand-logo" title="${isUserRole ? 'Creative Office - Papan Kanban' : 'Kembali ke Dashboard'}">
               <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
               <span class="font-headline-md text-[13px] font-bold text-on-surface leading-none">Creative Office</span>
             </div>
           </div>
 
-          <!-- Center: Search Bar & Create Button -->
+          <!-- Center: Search Bar & Create Button (Hidden for User role) -->
+          ${!isUserRole ? `
           <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center gap-2">
             <div class="relative flex-1 flex items-center">
               <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[17px] pointer-events-none">search</span>
@@ -90,10 +92,19 @@ export class Header {
               <span>QR Hub</span>
             </button>
           </div>
+          ` : `
+          <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60">
+              <span class="material-symbols-outlined text-[16px]">view_week</span>
+              <span>Papan Kanban • Akses Anggota Terundang</span>
+            </div>
+          </div>
+          `}
 
           <!-- Right: Mobile Search/Create & Notification & Profile -->
           <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <!-- Mobile Search & Create Buttons (mobile only) -->
+            <!-- Mobile Search & Create Buttons (mobile only, hidden for user role) -->
+            ${!isUserRole ? `
             <div class="md:hidden flex items-center gap-1">
               <button
                 id="btn-mobile-create-board"
@@ -131,6 +142,7 @@ export class Header {
                 <span class="material-symbols-outlined text-[19px]">search</span>
               </button>
             </div>
+            ` : ''}
 
             <!-- Notifications Button -->
             <button
@@ -158,7 +170,7 @@ export class Header {
                 />
                 <div class="hidden xl:flex flex-col">
                   <span class="text-[12.5px] text-on-surface font-semibold leading-tight">${user.name}</span>
-                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${user.role || 'Member'}</span>
+                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${isUserRole ? 'User (Undangan)' : (user.role || 'Member')}</span>
                 </div>
                 <span class="material-symbols-outlined text-text-muted text-[16px] group-hover:text-text-primary transition-colors">expand_more</span>
               </button>
@@ -166,32 +178,48 @@ export class Header {
               <!-- Role Switcher Menu Popup -->
               <div
                 id="user-profile-menu"
-                class="hidden absolute right-0 mt-2 w-60 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-1.5 z-50 flex flex-col gap-0.5"
+                class="hidden absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-2 z-50 flex flex-col gap-1"
               >
-                <div class="px-2.5 py-1.5 border-b border-surface-border mb-1">
-                  <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Peran Saat Ini</span>
-                  <p class="text-[12.5px] font-bold text-primary mt-0.5 capitalize">${user.role}</p>
+                <div class="px-2 py-1.5 border-b border-surface-border mb-1">
+                  <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Profil Anda</span>
+                  <p class="text-[13px] font-bold text-primary mt-0.5">${user.name}</p>
+                  <p class="text-[11px] text-text-secondary">${user.email || 'user@sampulkreativ.id'}</p>
+                  <span class="inline-block mt-1 px-2 py-0.5 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-primary/10 text-primary'} text-[10px] font-bold capitalize">
+                    ${isUserRole ? 'User • Anggota Terundang' : user.role}
+                  </span>
                 </div>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="admin">
+
+                ${!isUserRole ? `
+                <div class="px-2 py-0.5">
+                  <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Ganti Peran</span>
+                </div>
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="admin">
                   <span>Admin</span>
                   <span class="material-symbols-outlined text-[16px] text-tertiary">admin_panel_settings</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="manajement-project">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="manajement-project">
                   <span>Manajement Project</span>
                   <span class="material-symbols-outlined text-[16px] text-primary">assignment</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="qa">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="qa">
                   <span>QA (Quality Assurance)</span>
                   <span class="material-symbols-outlined text-[16px] text-status-success">fact_check</span>
                 </button>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between" data-role="user">
+                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="user">
                   <span>User</span>
                   <span class="material-symbols-outlined text-[16px] text-blue-500">person</span>
                 </button>
                 <div class="border-t border-surface-border my-1"></div>
-                <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium">
+                ` : `
+                <div class="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-800/40 text-[11px] text-sky-800 dark:text-sky-300 mb-1">
+                  <span class="font-semibold block mb-0.5">Akses Terbatas:</span>
+                  Anda hanya memiliki izin akses pada Papan Kanban proyek yang telah diundang.
+                </div>
+                `}
+
+                <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer">
                   <span class="material-symbols-outlined text-[16px]">logout</span>
-                  <span>Keluar / Barcode Gate</span>
+                  <span>Keluar Sesi</span>
                 </button>
               </div>
             </div>
@@ -217,6 +245,11 @@ export class Header {
     const brand = this.element.querySelector('#header-brand-logo');
     if (brand) {
       brand.addEventListener('click', () => {
+        const u = this.authService.getCurrentUser();
+        if (u && u.role === 'user') {
+          // User role cannot access dashboard, remain on Kanban board
+          return;
+        }
         this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }

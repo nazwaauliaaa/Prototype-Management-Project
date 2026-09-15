@@ -184,6 +184,7 @@ class CreativeOfficeApp {
       // 7. Set active workspace and project
       localStorage.setItem('active_workspace', workspace);
       localStorage.setItem('active_project_id', projectId);
+      localStorage.setItem('user_invited_workspace', workspace);
       this.activeWorkspace = workspace;
       const projectService = this.container.resolve('ProjectService');
       let resolvedProjectId = projectId;
@@ -195,6 +196,7 @@ class CreativeOfficeApp {
           localStorage.setItem('active_project_id', matched.id);
         }
       }
+      localStorage.setItem('user_invited_project', resolvedProjectId);
 
       // 8. Clean up query string from URL & set hash to specific kanban project
       const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${resolvedProjectId}`;
@@ -348,6 +350,14 @@ class CreativeOfficeApp {
 
     // Listen to global navigation events
     eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
+      const authService = this.container.resolve('AuthService');
+      const currentUser = authService ? authService.getCurrentUser() : null;
+      if (currentUser && currentUser.role === 'user' && view !== 'kanban' && view !== 'auth') {
+        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        return;
+      }
       if (workspace) {
         this.activeWorkspace = workspace;
         localStorage.setItem('active_workspace', workspace);
@@ -367,10 +377,21 @@ class CreativeOfficeApp {
       this.navigateTo('auth');
     });
 
-    eventBus.on('auth:login', () => {
+    eventBus.on('auth:login', (loggedInUser) => {
       // If an invite link is being processed, skip default dashboard redirect
       // The invite flow will handle navigation to the specific kanban board
       if (this._inviteRedirect) return;
+
+      const authService = this.container.resolve('AuthService');
+      const currentUser = loggedInUser || (authService ? authService.getCurrentUser() : null);
+
+      if (currentUser && currentUser.role === 'user') {
+        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        return;
+      }
+
       const currentHash = window.location.hash.replace('#/', '');
       if (currentHash && currentHash !== 'auth' && currentHash !== 'login') {
         this.handleHashChange();
@@ -394,9 +415,24 @@ class CreativeOfficeApp {
       return;
     }
 
+    const currentUser = authService.getCurrentUser();
+    const isUserRole = currentUser && currentUser.role === 'user';
+
     const parts = hash.split('/');
     const viewName = parts[0];
     const param = parts[1];
+
+    // ROUTE GUARD: Role 'user' only permitted to access 'kanban' and 'auth'
+    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth') {
+      const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+      const notif = this.container.resolve('NotificationService');
+      if (notif) {
+        notif.warning('Akses Terbatas: Sebagai User, Anda hanya dapat mengakses Papan Kanban proyek.');
+      }
+      this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+      return;
+    }
 
     if (viewName === 'workspace') {
       this.navigateTo('project-table', { workspace: param });
@@ -420,6 +456,18 @@ class CreativeOfficeApp {
     const headerHost = document.getElementById('app-header');
     const sidebarHost = document.getElementById('app-sidebar');
     const eventBus = this.container.resolve('EventBus');
+    const authService = this.container.resolve('AuthService');
+
+    const currentUser = authService ? authService.getCurrentUser() : null;
+    const isUserRole = currentUser && currentUser.role === 'user';
+
+    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban or auth
+    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth') {
+      const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+      viewName = 'kanban';
+      params = { projectId: allowedProj, workspace: allowedWs };
+    }
 
     // Update URL hash without triggering double reload
     const targetHash = params.projectId ? `/${viewName}/${params.projectId}` : `/${viewName}`;

@@ -705,6 +705,7 @@ export class KanbanBoardView extends BaseView {
           
           <!-- Left: Back to Home + Board Title + Project Switcher Icon -->
           <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+            ${!perms.isUser ? `
             <button
               id="btn-kanban-back-home"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10"
@@ -716,12 +717,14 @@ export class KanbanBoardView extends BaseView {
             </button>
 
             <span class="text-white/30 hidden sm:inline">|</span>
+            ` : ''}
 
             <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate">
                 ${boardTitle}
               </h1>
 
+              ${!perms.isUser ? `
               <!-- Trello View Switcher Button -->
               <button
                 id="btn-board-view-switch"
@@ -758,6 +761,7 @@ export class KanbanBoardView extends BaseView {
                 <span class="hidden md:inline font-medium">Pilih Projek</span>
                 <span class="material-symbols-outlined text-[15px]">expand_more</span>
               </button>
+              ` : ''}
             </div>
 
             <!-- Role Badge Indicator -->
@@ -1387,6 +1391,7 @@ export class KanbanBoardView extends BaseView {
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
 
+        ${!perms.isUser ? `
         <!-- Views Switcher Popover (Trello Style) -->
         <div
           id="popup-board-view-switch"
@@ -1530,6 +1535,7 @@ export class KanbanBoardView extends BaseView {
             </button>
           </div>
         </div>
+        ` : ''}
 
 
 
