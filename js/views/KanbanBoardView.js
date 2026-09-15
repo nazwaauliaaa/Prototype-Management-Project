@@ -14,6 +14,7 @@ export class KanbanBoardView extends BaseView {
     this.projectService = container.resolve('ProjectService');
     this.modalManager = container.resolve('ModalManager');
     this.notificationService = container.resolve('NotificationService');
+    this.authService = container.resolve('AuthService');
 
     const storedWs = localStorage.getItem('active_workspace');
     const storedProjId = localStorage.getItem('active_project_id');
@@ -106,6 +107,14 @@ export class KanbanBoardView extends BaseView {
       }
     };
     this.eventBus.on('projects:updated', this._onProjectsUpdated);
+
+    // Auto-update kanban whenever auth user/role switches
+    this._onAuthChanged = () => {
+      if (this.element) {
+        this.mount(this.element);
+      }
+    };
+    this.eventBus.on('auth:login', this._onAuthChanged);
   }
 
   _initColumns() {
@@ -156,6 +165,9 @@ export class KanbanBoardView extends BaseView {
     }
     if (this._onProjectsUpdated) {
       this.eventBus.off('projects:updated', this._onProjectsUpdated);
+    }
+    if (this._onAuthChanged) {
+      this.eventBus.off('auth:login', this._onAuthChanged);
     }
     super.unmount();
   }
@@ -338,6 +350,93 @@ export class KanbanBoardView extends BaseView {
     return list;
   }
 
+  getCurrentUser() {
+    if (this.authService && typeof this.authService.getCurrentUser === 'function') {
+      const u = this.authService.getCurrentUser();
+      if (u) return u;
+    }
+    return {
+      name: 'Dr. Hendra Wijaya',
+      role: 'admin',
+      title: 'Admin & Managing Director',
+      isAdmin: () => true,
+      isProjectManager: () => false,
+      isQA: () => false,
+      isUser: () => false
+    };
+  }
+
+  getPermissions() {
+    const user = this.getCurrentUser();
+    const role = (user.role || 'manajement-project').toLowerCase();
+    const isAdmin = typeof user.isAdmin === 'function' ? user.isAdmin() : (role === 'admin' || role === 'eksekutif');
+    const isPM = typeof user.isProjectManager === 'function' ? user.isProjectManager() : (role === 'manajement-project' || role === 'kreatif');
+    const isQA = typeof user.isQA === 'function' ? user.isQA() : (role === 'qa' || role === 'teknis');
+    const isUser = typeof user.isUser === 'function' ? user.isUser() : (role === 'user');
+
+    // Visual badge styles for board toolbar
+    let badgeLabel = 'Manajer Proyek';
+    let badgeIcon = 'assignment';
+    let badgeBg = 'bg-blue-500/25';
+    let badgeBorder = 'border border-blue-400/50';
+    let badgeIconColor = 'text-blue-300';
+    let badgeTextColor = 'text-blue-100';
+
+    if (isAdmin) {
+      badgeLabel = 'Admin';
+      badgeIcon = 'admin_panel_settings';
+      badgeBg = 'bg-purple-500/30';
+      badgeBorder = 'border border-purple-400/50';
+      badgeIconColor = 'text-purple-300';
+      badgeTextColor = 'text-purple-100';
+    } else if (isQA) {
+      badgeLabel = 'QA Lead';
+      badgeIcon = 'fact_check';
+      badgeBg = 'bg-emerald-500/30';
+      badgeBorder = 'border border-emerald-400/50';
+      badgeIconColor = 'text-emerald-300';
+      badgeTextColor = 'text-emerald-100';
+    } else if (isUser) {
+      badgeLabel = 'Kontributor';
+      badgeIcon = 'person';
+      badgeBg = 'bg-sky-500/30';
+      badgeBorder = 'border border-sky-400/50';
+      badgeIconColor = 'text-sky-300';
+      badgeTextColor = 'text-sky-100';
+    }
+
+    return {
+      role,
+      user,
+      isAdmin,
+      isPM,
+      isQA,
+      isUser,
+      badgeLabel,
+      badgeIcon,
+      badgeBg,
+      badgeBorder,
+      badgeIconColor,
+      badgeTextColor,
+      roleTitle: user.title || badgeLabel,
+      // Granular capabilities
+      canShare: isAdmin || isPM,
+      canPowerUps: isAdmin,
+      canAutomation: isAdmin,
+      canChangeVisibility: isAdmin,
+      canAddList: isAdmin || isPM,
+      canDeleteList: isAdmin || isPM,
+      canRenameList: isAdmin || isPM,
+      canListActions: isAdmin || isPM,
+      canClearColumn: isAdmin || isPM,
+      canAddCard: isAdmin || isPM || isQA,
+      canDeleteCard: isAdmin || isPM,
+      canShiftColumns: true,
+      canManageMembers: isAdmin || isPM,
+      canChangeTheme: isAdmin || isPM
+    };
+  }
+
   render() {
     // Resolve project if projectId set
     if (this.projectId && !this.project && this.projectService) {
@@ -347,6 +446,7 @@ export class KanbanBoardView extends BaseView {
       }
     }
 
+    const perms = this.getPermissions();
     const currentWsName = this.getWorkspaceName(this.currentWorkspace);
     const boardTitle = this.project ? this.project.name : currentWsName;
     const boardMembers = this.getBoardMembers();
@@ -660,6 +760,12 @@ export class KanbanBoardView extends BaseView {
               </button>
             </div>
 
+            <!-- Role Badge Indicator -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
+              <span class="material-symbols-outlined text-[15px] ${perms.badgeIconColor}">${perms.badgeIcon}</span>
+              <span class="text-[11px] font-bold ${perms.badgeTextColor} tracking-wide">${perms.badgeLabel}</span>
+            </div>
+
             <!-- Filter Badge Chip (if filter is active) -->
             ${this.activeFilter !== 'all' ? `
               <div class="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/50 text-amber-200 text-[11px] font-semibold">
@@ -694,7 +800,8 @@ export class KanbanBoardView extends BaseView {
             </button>
             ` : ''}
 
-            <!-- Power-Ups Icon (Plug) -->
+            <!-- Power-Ups Icon (Plug) - Admin only -->
+            ${perms.canPowerUps ? `
             <button
               id="btn-board-powerups"
               class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
@@ -703,8 +810,10 @@ export class KanbanBoardView extends BaseView {
             >
               <span class="material-symbols-outlined text-[20px]">power</span>
             </button>
+            ` : ''}
 
-            <!-- Automation / Butler Icon (Bolt) -->
+            <!-- Automation / Butler Icon (Bolt) - Admin only -->
+            ${perms.canAutomation ? `
             <button
               id="btn-board-automation"
               class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
@@ -713,6 +822,7 @@ export class KanbanBoardView extends BaseView {
             >
               <span class="material-symbols-outlined text-[20px]">bolt</span>
             </button>
+            ` : ''}
 
             <!-- Filter Icon (Funnel) -->
             <button
@@ -734,7 +844,8 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[20px]">${this.isStarred ? 'star' : 'star_border'}</span>
             </button>
 
-            <!-- Workspace Visibility Icon (Group) -->
+            <!-- Workspace Visibility Icon (Group) - Admin only -->
+            ${perms.canChangeVisibility ? `
             <button
               id="btn-board-visibility"
               class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
@@ -743,8 +854,10 @@ export class KanbanBoardView extends BaseView {
             >
               <span class="material-symbols-outlined text-[20px]">group</span>
             </button>
+            ` : ''}
 
-            <!-- Share Button [+ Share] -->
+            <!-- Share Button [+ Share] - Admin & PM only -->
+            ${perms.canShare ? `
             <button
               id="btn-board-share"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[12.5px] font-semibold backdrop-blur-md transition-all shadow-xs active:scale-95 cursor-pointer"
@@ -753,8 +866,10 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[17px]">person_add</span>
               <span class="hidden sm:inline">Share</span>
             </button>
+            ` : ''}
 
-            <!-- More Menu Icon [...] -->
+            <!-- More Menu Icon [...] - Admin & PM only -->
+            ${perms.isAdmin || perms.isPM ? `
             <button
               id="btn-board-more-menu"
               class="w-8 h-8 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
@@ -763,8 +878,10 @@ export class KanbanBoardView extends BaseView {
             >
               <span class="material-symbols-outlined text-[22px]">more_horiz</span>
             </button>
+            ` : ''}
 
-            <!-- Quick Add Task Button -->
+            <!-- Quick Add Task Button - Admin, PM, QA -->
+            ${perms.canAddCard ? `
             <button
               id="btn-add-kanban-task"
               class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer ml-1"
@@ -773,6 +890,7 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Kartu Baru</span>
             </button>
+            ` : ''}
 
           </div>
 
@@ -808,6 +926,7 @@ export class KanbanBoardView extends BaseView {
               </div>
 
               <!-- Quick Add Card Input in Inbox -->
+              ${perms.canAddCard ? `
               <div class="p-3 border-b border-slate-200/80 dark:border-slate-800">
                 <form id="form-inbox-add-card" class="flex flex-col gap-2">
                   <div class="relative">
@@ -828,6 +947,7 @@ export class KanbanBoardView extends BaseView {
                   </button>
                 </form>
               </div>
+              ` : ''}
 
               <!-- Graphic Illustration Section: Consolidate your to-dos -->
               <div class="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center text-center">
@@ -909,6 +1029,39 @@ export class KanbanBoardView extends BaseView {
 
           <!-- Kanban Columns Stream (Full Height, Swipeable/Scrollable) -->
           <div class="flex-1 w-full overflow-x-auto p-4 sm:p-6 pb-24" id="kanban-scroll-area">
+
+            <!-- Role-Specific Banner: QA Review Mode -->
+            ${perms.isQA ? `
+              <div class="mb-4 px-4 py-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-100 flex items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-8 h-8 rounded-xl bg-emerald-500/30 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[20px] text-emerald-300">fact_check</span>
+                  </div>
+                  <div class="min-w-0 text-[12.5px]">
+                    <span class="font-bold text-white">Mode Quality Assurance (QA)</span>
+                    <span class="text-emerald-200/90 ml-1.5 hidden md:inline">— Tinjau, uji, dan validasi kartu pada kolom <strong>Review QA</strong> sebelum siap diluncurkan.</span>
+                  </div>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-600/90 text-white text-[10.5px] font-bold tracking-wider shrink-0 uppercase shadow-xs">QA Reviewer</span>
+              </div>
+            ` : ''}
+
+            <!-- Role-Specific Banner: User / Contributor Mode -->
+            ${perms.isUser ? `
+              <div class="mb-4 px-4 py-2.5 rounded-2xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md text-sky-100 flex items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-8 h-8 rounded-xl bg-sky-500/30 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[20px] text-sky-300">person</span>
+                  </div>
+                  <div class="min-w-0 text-[12.5px]">
+                    <span class="font-bold text-white">Mode Kontributor</span>
+                    <span class="text-sky-200/90 ml-1.5 hidden md:inline">— Tampilan terfokus untuk mengerjakan tugas Anda dan memantau status deliverable.</span>
+                  </div>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10.5px] font-bold tracking-wider shrink-0 uppercase shadow-xs">Member</span>
+              </div>
+            ` : ''}
+
             <div class="flex gap-4 items-start min-w-max pb-8" id="kanban-board">
               
               ${this.columns.map(col => {
@@ -927,22 +1080,25 @@ export class KanbanBoardView extends BaseView {
                     <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}" style="position:relative;">
                       <div class="flex items-center gap-2 min-w-0">
                         <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
-                        <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate" title="Klik 2x untuk ubah nama">${col.title}</h3>
+                        <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate" ${perms.canRenameList ? 'title="Klik 2x untuk ubah nama"' : ''}>${col.title}</h3>
                         <span class="column-count-badge px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold shrink-0">
                           ${colTasks.length}
                         </span>
                       </div>
 
                       <div class="flex items-center gap-1 shrink-0">
+                        ${perms.canClearColumn ? `
                         <button class="btn-clear-kanban-col w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" data-column-id="${col.id}" data-column-title="${col.title}" title="Bersihkan/hapus semua kartu di kolom ini" type="button">
                           <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
                         </button>
+                        ` : ''}
                         <button class="HWSXYBl9AjpaH2 bqDBTa8KAMX3yi fHETqJ4siBv5Ok" type="button" data-testid="list-collapse-button" title="Ciutkan daftar">
                           <span role="img" aria-label="Collapse list" class="text-slate-400 hover:text-slate-700 flex items-center">
                             <svg fill="none" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" fill-rule="evenodd" d="M6.25 8.75H0v-1.5h6.25zm3.5-1.5H16v1.5H9.75z" clip-rule="evenodd"></path><path fill="currentColor" fill-rule="evenodd" d="M5.19 8 2.22 5.03l1.06-1.06 3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5-1.06-1.06zm4.03-.53 3.5-3.5 1.06 1.06L10.81 8l2.97 2.97-1.06 1.06-3.5-3.5a.75.75 0 0 1 0-1.06" clip-rule="evenodd"></path></svg>
                           </span>
                         </button>
                         <!-- List Actions ··· Button -->
+                        ${perms.canListActions ? `
                         <button
                           class="btn-list-actions w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/8 transition-colors cursor-pointer"
                           data-column-id="${col.id}"
@@ -952,6 +1108,7 @@ export class KanbanBoardView extends BaseView {
                         >
                           <span class="material-symbols-outlined text-[16px]">more_horiz</span>
                         </button>
+                        ` : ''}
                       </div>
 
                       <!-- List Actions Popover (per column) -->
@@ -1071,6 +1228,7 @@ export class KanbanBoardView extends BaseView {
                               <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
                                 ${task.priority}
                               </span>
+                              ${perms.canDeleteCard ? `
                               <button
                                 class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
                                 data-task-id="${task.id}"
@@ -1079,6 +1237,7 @@ export class KanbanBoardView extends BaseView {
                               >
                                 <span class="material-symbols-outlined text-[15px]">delete</span>
                               </button>
+                              ` : ''}
                             </div>
                           </div>
 
@@ -1133,6 +1292,7 @@ export class KanbanBoardView extends BaseView {
                     </div>
 
                     <!-- Quick Add Card Button in Column -->
+                    ${perms.canAddCard ? `
                     <button
                       class="btn-quick-add-col mt-2.5 py-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       data-column-id="${col.id}"
@@ -1141,12 +1301,14 @@ export class KanbanBoardView extends BaseView {
                       <span class="material-symbols-outlined text-[16px]">add</span>
                       <span>Tambah kartu</span>
                     </button>
+                    ` : ''}
 
                   </div>
                 `;
     }).join('')}
 
               <!-- + Add another list (Trello Style) -->
+              ${perms.canAddList ? `
               <div class="flex-shrink-0 min-w-[270px]">
                 ${this.isAddingList ? `
                   <div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg flex flex-col gap-2.5">
@@ -1185,6 +1347,7 @@ export class KanbanBoardView extends BaseView {
                   </button>
                 `}
               </div>
+              ` : ''}
 
             </div>
           </div>
@@ -1445,7 +1608,7 @@ export class KanbanBoardView extends BaseView {
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${m.badgeClass || 'text-blue-700 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800/80'}">
                     ${m.role || 'Member'}
                   </span>
-                  ${!m.isOwner ? `
+                  ${perms.canManageMembers && !m.isOwner ? `
                     <button
                       class="btn-delete-board-member w-6 h-6 rounded-md hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/60 dark:hover:text-rose-400 text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
                       data-member-id="${m.id}"
@@ -1514,7 +1677,8 @@ export class KanbanBoardView extends BaseView {
             ` : ''}
           </div>
 
-          <!-- Bottom Action: Invite Member Button -->
+          <!-- Bottom Action: Invite Member Button (Admin & PM only) -->
+          ${perms.canShare ? `
           <div class="pt-2 border-t border-slate-200/80 dark:border-slate-800">
             <button
               id="btn-open-invite-member"
@@ -1525,6 +1689,7 @@ export class KanbanBoardView extends BaseView {
               <span>Undang Anggota Baru</span>
             </button>
           </div>
+          ` : ''}
         </div>
 
         <!-- 3. Power-Ups Modal -->
@@ -2928,36 +3093,39 @@ export class KanbanBoardView extends BaseView {
     });
 
     // LAP: Double-click column title to rename
-    const colHeaderTitles = this.element.querySelectorAll('.column-header-title');
-    colHeaderTitles.forEach(titleEl => {
-      titleEl.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        const colHeader = titleEl.closest('.column-header-inner');
-        const colDiv = titleEl.closest('.kanban-column');
-        const colId = colDiv?.getAttribute('data-column-id');
-        const col = this.columns.find(c => c.id === colId);
-        if (!col) return;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = col.title;
-        input.className = 'font-bold text-[13.5px] text-text-primary tracking-tight bg-white dark:bg-slate-800 border border-[#0c66e4] rounded px-1 py-0 outline-none w-full min-w-0';
-        input.style.maxWidth = '130px';
-        titleEl.replaceWith(input);
-        input.focus();
-        input.select();
-        const commit = () => {
-          const newTitle = input.value.trim();
-          if (newTitle) col.title = newTitle;
-          localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
-          this.mount(this.element);
-        };
-        input.addEventListener('blur', commit);
-        input.addEventListener('keydown', (ke) => {
-          if (ke.key === 'Enter') { ke.preventDefault(); commit(); }
-          if (ke.key === 'Escape') { this.mount(this.element); }
+    const perms = this.getPermissions();
+    if (perms.canRenameList) {
+      const colHeaderTitles = this.element.querySelectorAll('.column-header-title');
+      colHeaderTitles.forEach(titleEl => {
+        titleEl.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          const colHeader = titleEl.closest('.column-header-inner');
+          const colDiv = titleEl.closest('.kanban-column');
+          const colId = colDiv?.getAttribute('data-column-id');
+          const col = this.columns.find(c => c.id === colId);
+          if (!col) return;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = col.title;
+          input.className = 'font-bold text-[13.5px] text-text-primary tracking-tight bg-white dark:bg-slate-800 border border-[#0c66e4] rounded px-1 py-0 outline-none w-full min-w-0';
+          input.style.maxWidth = '130px';
+          titleEl.replaceWith(input);
+          input.focus();
+          input.select();
+          const commit = () => {
+            const newTitle = input.value.trim();
+            if (newTitle) col.title = newTitle;
+            localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+            this.mount(this.element);
+          };
+          input.addEventListener('blur', commit);
+          input.addEventListener('keydown', (ke) => {
+            if (ke.key === 'Enter') { ke.preventDefault(); commit(); }
+            if (ke.key === 'Escape') { this.mount(this.element); }
+          });
         });
       });
-    });
+    }
 
     // ==================== LEFT INBOX DRAWER INTERACTION ====================
     const closeInboxBtn = this.element.querySelector('#btn-close-inbox');

@@ -371,7 +371,12 @@ class CreativeOfficeApp {
       // If an invite link is being processed, skip default dashboard redirect
       // The invite flow will handle navigation to the specific kanban board
       if (this._inviteRedirect) return;
-      this.navigateTo('dashboard');
+      const currentHash = window.location.hash.replace('#/', '');
+      if (currentHash && currentHash !== 'auth' && currentHash !== 'login') {
+        this.handleHashChange();
+      } else {
+        this.navigateTo('dashboard');
+      }
     });
   }
 
