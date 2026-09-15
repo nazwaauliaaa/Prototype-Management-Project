@@ -1032,8 +1032,8 @@ export class KanbanBoardView extends BaseView {
             </aside>
           ` : ''}
 
-          <!-- Kanban Columns Stream (Full Height, Swipeable/Scrollable) -->
-          <div class="flex-1 w-full overflow-x-auto p-4 sm:p-6 pb-24" id="kanban-scroll-area">
+          <!-- Kanban Columns Stream (Responsive Full Fit - Tanpa Geser Kanan Kiri) -->
+          <div class="flex-1 w-full max-w-full overflow-x-hidden p-3 sm:p-5 pb-24" id="kanban-scroll-area">
 
             <!-- Role-Specific Banner: QA Review Mode -->
             ${perms.isQA ? `
@@ -1067,7 +1067,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex gap-4 items-start min-w-max pb-8" id="kanban-board">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5 items-start w-full max-w-full pb-8" id="kanban-board">
               
               ${this.columns.map(col => {
       const colTasks = allTasks.filter(t => t.status === col.id);
@@ -1077,7 +1077,7 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg min-w-[280px] max-w-[280px] flex-shrink-0 transition-all"
+                    class="kanban-column flex flex-col bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/20 shadow-lg w-full max-w-full min-w-0 transition-all"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
@@ -1314,7 +1314,7 @@ export class KanbanBoardView extends BaseView {
 
               <!-- + Add another list (Trello Style) -->
               ${perms.canAddList ? `
-              <div class="flex-shrink-0 min-w-[270px]">
+              <div class="w-full min-w-0 col-span-full sm:col-span-1">
                 ${this.isAddingList ? `
                   <div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg flex flex-col gap-2.5">
                     <input
