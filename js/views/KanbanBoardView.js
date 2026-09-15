@@ -1067,7 +1067,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 items-stretch w-full max-w-full flex-1 min-h-0 h-full overflow-hidden" id="kanban-board">
+            <div class="flex flex-row items-stretch gap-3.5 sm:gap-4 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden pb-2.5 custom-scrollbar snap-x snap-mandatory sm:snap-none" id="kanban-board">
               
               ${this.columns.map(col => {
       const colTasks = allTasks.filter(t => t.status === col.id);
@@ -1077,7 +1077,7 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col h-full max-h-full min-h-0 bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-2.5 border border-white/20 shadow-lg w-full max-w-full min-w-0 transition-all overflow-hidden"
+                    class="kanban-column flex flex-col h-full max-h-full min-h-0 bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg w-[285px] sm:w-[315px] shrink-0 transition-all overflow-hidden snap-start"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
@@ -1314,7 +1314,7 @@ export class KanbanBoardView extends BaseView {
 
               <!-- + Add another list (Trello Style) -->
               ${perms.canAddList ? `
-              <div class="w-full min-w-0 col-span-full sm:col-span-1">
+              <div class="w-[285px] sm:w-[315px] shrink-0 snap-start">
                 ${this.isAddingList ? `
                   <div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg flex flex-col gap-2.5">
                     <input
