@@ -211,77 +211,34 @@ export class KanbanBoardView extends BaseView {
   }
 
   getBoardMembers() {
-    const defaultMembers = [
-      {
-        id: 'member-awa',
-        name: 'Awa',
-        email: 'awa@gmail.com',
-        role: 'Admin',
-        roleDescription: 'Admin & Pemilik Papan',
-        initials: 'A',
-        color: '#10b981',
-        online: true,
-        isOwner: true,
-        badgeClass: 'text-purple-700 bg-purple-50 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800/80'
-      },
-      {
-        id: 'member-sari',
-        name: 'Sari Rahmawati',
-        email: 'sari.rahmawati@gmail.com',
-        role: 'Lead',
-        roleDescription: 'Creative Lead',
-        initials: 'SR',
-        color: '#2563eb',
-        online: true,
-        badgeClass: 'text-blue-700 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800/80'
-      },
-      {
-        id: 'member-bagas',
-        name: 'Bagas Wicaksono',
-        email: 'bagas.wicaksono@gmail.com',
-        role: 'Editor',
-        roleDescription: 'Graphic Specialist',
-        initials: 'BW',
-        color: '#9333ea',
-        online: false,
-        badgeClass: 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-      },
-      {
-        id: 'member-farhan',
-        name: 'Farhan Maulana',
-        email: 'farhan.maulana@gmail.com',
-        role: 'Editor',
-        roleDescription: 'AI Researcher',
-        initials: 'FM',
-        color: '#d97706',
-        online: false,
-        badgeClass: 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-      }
-    ];
-
     const key = `board_members_${this.currentWorkspace}`;
     const stored = localStorage.getItem(key);
     if (!stored) {
-      localStorage.setItem(key, JSON.stringify(defaultMembers));
-      return defaultMembers;
+      return [];
     }
 
     try {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        const hasAwa = parsed.some(m => m.id === 'member-awa');
-        if (!hasAwa) {
-          const merged = [...defaultMembers, ...parsed];
-          localStorage.setItem(key, JSON.stringify(merged));
-          return merged;
+        // Filter keluar mock/dummy fiktif yang belum masuk via link
+        const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
+        const clean = parsed.filter(m => {
+          if (!m) return false;
+          if (dummyIds.includes(m.id)) return false;
+          if (m.email && m.email.endsWith('@workspace')) return false;
+          return true;
+        });
+
+        if (clean.length !== parsed.length) {
+          localStorage.setItem(key, JSON.stringify(clean));
         }
-        return parsed;
+        return clean;
       }
     } catch (e) {
       console.error('Failed to load board members:', e);
     }
 
-    return defaultMembers;
+    return [];
   }
 
   removeBoardMember(memberId) {
@@ -716,11 +673,12 @@ export class KanbanBoardView extends BaseView {
           <!-- Right: Trello Toolbar Icons from screenshot -->
           <div class="flex items-center gap-1 sm:gap-2">
             
-            <!-- Member Avatar Stack / Badge -->
+            <!-- Member Avatar Stack / Badge (Hanya tampil jika ada anggota yang bergabung via link) -->
+            ${boardMembers.length > 0 ? `
             <button
               id="btn-board-avatar"
               class="flex items-center -space-x-2 hover:space-x-1 p-0.5 rounded-full hover:bg-white/20 transition-all cursor-pointer"
-              title="Anggota Papan (${boardMembers.length} Anggota) - Klik untuk melihat & mengundang"
+              title="Anggota Papan (${boardMembers.length} Anggota) - Klik untuk melihat detail"
               type="button"
             >
               ${boardMembers.slice(0, 3).map(m => `
@@ -734,6 +692,7 @@ export class KanbanBoardView extends BaseView {
                 </div>
               ` : ''}
             </button>
+            ` : ''}
 
             <!-- Power-Ups Icon (Plug) -->
             <button
@@ -1458,7 +1417,13 @@ export class KanbanBoardView extends BaseView {
             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5 px-1">
               Anggota Aktif (${boardMembers.length})
             </div>
-            ${boardMembers.map(m => `
+            ${boardMembers.length === 0 ? `
+              <div class="py-5 px-3 text-center flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+                <span class="material-symbols-outlined text-[26px] opacity-40 mb-1">group_off</span>
+                <p class="text-[12px] font-medium text-slate-600 dark:text-slate-300">Belum ada anggota di papan ini.</p>
+                <p class="text-[10.5px] text-slate-400 dark:text-slate-500 mt-0.5">Hanya pengguna yang bergabung melalui tautan undangan yang akan terdaftar di sini.</p>
+              </div>
+            ` : boardMembers.map(m => `
               <div class="member-item flex items-center justify-between p-2 rounded-xl ${m.isOwner ? 'bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="relative shrink-0">

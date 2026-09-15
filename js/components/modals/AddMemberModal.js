@@ -1,4 +1,4 @@
-﻿import { BaseModal } from '../../core/BaseModal.js';
+import { BaseModal } from '../../core/BaseModal.js';
 
 /**
  * AddMemberModal - Single Responsibility Principle (SRP)
@@ -50,8 +50,28 @@ export class AddMemberModal extends BaseModal {
   /** Returns confirmed board members from localStorage (joined via invite link). */
   getBoardMembers(ws) {
     try {
-      const saved = localStorage.getItem(`board_members_${ws || this.currentWorkspace}`);
-      return saved ? JSON.parse(saved) : [];
+      const key = `board_members_${ws || this.currentWorkspace}`;
+      const saved = localStorage.getItem(key);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+
+      // Filter: Hanya anggota yang benar-benar masuk/bergabung via link
+      // Hapus mock fiktif lama: member-awa, member-sari, member-bagas, member-farhan, dan email @workspace
+      const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
+      const clean = parsed.filter(m => {
+        if (!m) return false;
+        if (dummyIds.includes(m.id)) return false;
+        if (m.email && m.email.endsWith('@workspace')) return false;
+        return true;
+      });
+
+      // Update localStorage agar data bersih permanen
+      if (clean.length !== parsed.length) {
+        localStorage.setItem(key, JSON.stringify(clean));
+      }
+
+      return clean;
     } catch (e) { return []; }
   }
 
@@ -99,17 +119,17 @@ export class AddMemberModal extends BaseModal {
 
   /**
    * Renders a single member list item.
-   * @param {object} m - { name, email, role, roleDescription, color, initials, avatar, isYou }
+   * @param {object} m - { id, name, email, role, roleDescription, color, initials, avatar, isYou }
    */
   _renderMemberItem(m) {
     const displayName = m.name || m.email || 'Unknown';
     const handle      = m.email ? '@' + m.email.split('@')[0] : '';
     const badge       = m.role || 'Member';
-    const roleLabel   = m.roleDescription || (m.isYou ? 'Workspace admin' : 'Workspace guest');
+    const roleLabel   = m.roleDescription || (m.isYou ? 'Workspace admin' : 'Workspace member');
     const youLabel    = m.isYou ? ' (you)' : '';
 
     const avatarStyle = m.avatar
-      ? `background-image: url("${m.avatar}"); height: 32px; width: 32px; line-height: 30px;`
+      ? `background-image: url("${m.avatar}"); background-size: cover; background-position: center; height: 32px; width: 32px; line-height: 30px;`
       : `background-color: ${m.color || '#2563eb'}; height: 32px; width: 32px; line-height: 32px;`;
 
     const avatarInner = m.avatar
@@ -117,40 +137,51 @@ export class AddMemberModal extends BaseModal {
       : `<span style="color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%">${m.initials || displayName.slice(0,2).toUpperCase()}</span>`;
 
     return `
-      <li class="tNfnRxYxdIqnQH">
-        <div class="AulaCcEkdJa7N3" data-testid="member-item">
+      <li class="tNfnRxYxdIqnQH" data-member-id="${m.id || ''}" data-member-email="${m.email || ''}">
+        <div class="AulaCcEkdJa7N3 flex items-center justify-between py-2 px-1 hover:bg-slate-50 dark:hover:bg-[#22272b] rounded-lg transition-colors" data-testid="member-item">
 
-          <div class="Aoxwv99qpKH22F i1rCadx_dtKkIk" title="${displayName}" data-testid="member-list-item-avatar">
-            <span aria-hidden="true" title="${displayName}"
-                  class="psQPZQLycPps__ Rdfy6Tx7M0juuA Wp3W9lV8hmoyRa uMjimbgi4OEl61"
-                  style="${avatarStyle}">${avatarInner}</span>
-          </div>
-
-          <div class="SCS1NQH7aiuMRS">
-            <div class="NIQPWvypMos65h">
-              <span data-testid="member-list-item-full-name">${displayName}${youLabel}</span>
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="Aoxwv99qpKH22F i1rCadx_dtKkIk shrink-0" title="${displayName}" data-testid="member-list-item-avatar">
+              <span aria-hidden="true" title="${displayName}"
+                    class="psQPZQLycPps__ Rdfy6Tx7M0juuA Wp3W9lV8hmoyRa uMjimbgi4OEl61 rounded-full overflow-hidden block shadow-xs"
+                    style="${avatarStyle}">${avatarInner}</span>
             </div>
-            <div class="pHyphbJngjmhaP">
-              <div class="c86PnW9jzpEPgX">
-                <div>${handle}&nbsp;&bull;&nbsp;${roleLabel}</div>
+
+            <div class="SCS1NQH7aiuMRS min-w-0 flex-1">
+              <div class="NIQPWvypMos65h">
+                <span class="font-semibold text-[13px] text-[#172b4d] dark:text-[#b6c2cf] truncate block" data-testid="member-list-item-full-name">${displayName}${youLabel}</span>
+              </div>
+              <div class="pHyphbJngjmhaP">
+                <div class="c86PnW9jzpEPgX text-[11px] text-[#5e6c84] dark:text-[#9fadbc] truncate">
+                  <div>${handle}&nbsp;&bull;&nbsp;${roleLabel}</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <div data-testid="board-permission-selector"><div>
-              <button aria-expanded="false" aria-haspopup="true" aria-live="polite"
-                      aria-label="Share board with permission: ${badge}" type="button"
-                      class="_ymio1r31 _ypr0glyw _zcxs1o36 _mizu194a _1ah3dkaa _ra3xnqa1 _128mdkaa _1cvmnqa1 _4davt94y _19itglyw _vchhusvi _r06hglyw _80omtlke _2rko1qi0 _11c8fhey _v5649dqc _189eidpf _1rjc12x7 _1e0c116y _1bsb1wug _p12f1osq _kqswh2mm _4cvr1q9y _1bah1h6o _gy1p12x7 _1o9zidpf _4t3iviql _k48p1wq8 _y4tiutpp _bozgutpp _y3gn1h6o _s7n4nkob _14mj1kw7 _9v7aze3t _1tv3nqa1 _39yqe4h9 _11fnglyw _18postnw _bfhksm61 _syazazsu _8l3m1l7x _aetrb3bt _1053azsu _f8pjazsu _30l3azsu _9h8hazsu _irr31dpa _1di6fcek _4bfu1r31 _1hmsglyw _ajmmnqa1 _1a3b1r31 _4fprglyw _5goinqa1 _9oik1r31 _1bnxglyw _jf4cnqa1 _1nrm1r31 _c2waglyw _1iohnqa1"
-                      data-testid="board-permission-selector-dropdown--trigger">
-                <span class="_v564g17y _1reo15vq _18m915vq _16jlkb7n _1o9zkb7n _1bto1l2s _o5721q9c">${badge}</span>
-                <span class="_v564g17y _1e0c1txw _16jlidpf _1o9zidpf _1wpz1h6o _1wybidpf _vwz4idpf _uiztglyw">
-                  <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4utpp _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
-                    ${this._svgChevron()}
+          <div class="flex items-center gap-2 shrink-0">
+            <div data-testid="board-permission-selector">
+              <div>
+                <button aria-expanded="false" aria-haspopup="true" aria-live="polite"
+                        aria-label="Share board with permission: ${badge}" type="button"
+                        class="btn-change-member-permission _ymio1r31 _ypr0glyw _zcxs1o36 _mizu194a _1ah3dkaa _ra3xnqa1 _128mdkaa _1cvmnqa1 _4davt94y _19itglyw _vchhusvi _r06hglyw _80omtlke _2rko1qi0 _11c8fhey _v5649dqc _189eidpf _1rjc12x7 _1e0c116y _1bsb1wug _p12f1osq _kqswh2mm _4cvr1q9y _1bah1h6o _gy1p12x7 _1o9zidpf _4t3iviql _k48p1wq8 _y4tiutpp _bozgutpp _y3gn1h6o _s7n4nkob _14mj1kw7 _9v7aze3t _1tv3nqa1 _39yqe4h9 _11fnglyw _18postnw _bfhksm61 _syazazsu _8l3m1l7x _aetrb3bt _1053azsu _f8pjazsu _30l3azsu _9h8hazsu _irr31dpa _1di6fcek _4bfu1r31 _1hmsglyw _ajmmnqa1 _1a3b1r31 _4fprglyw _5goinqa1 _9oik1r31 _1bnxglyw _jf4cnqa1 _1nrm1r31 _c2waglyw _1iohnqa1 cursor-pointer"
+                        data-testid="board-permission-selector-dropdown--trigger"
+                        title="Klik untuk mengubah izin">
+                  <span class="_v564g17y _1reo15vq _18m915vq _16jlkb7n _1o9zkb7n _1bto1l2s _o5721q9c member-perm-text">${badge}</span>
+                  <span class="_v564g17y _1e0c1txw _16jlidpf _1o9zidpf _1wpz1h6o _1wybidpf _vwz4idpf _uiztglyw">
+                    <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4utpp _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
+                      ${this._svgChevron()}
+                    </span>
                   </span>
-                </span>
-              </button>
-            </div></div>
+                </button>
+              </div>
+            </div>
+
+            <button type="button"
+                    class="btn-remove-board-member w-7 h-7 rounded-md hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                    title="Hapus ${displayName} dari papan">
+              <span class="material-symbols-outlined text-[16px]">close</span>
+            </button>
           </div>
 
         </div>
@@ -165,38 +196,29 @@ export class AddMemberModal extends BaseModal {
     this.projectId        = data?.projectId    || localStorage.getItem('active_project_id') || this.currentWorkspace;
     const prefillEmail    = data?.prefillEmail || '';
 
-    // Load dynamic members from localStorage
-    const savedMembers = this.getBoardMembers(this.currentWorkspace);
-
-    // Default members always shown first (owner + initial member)
-    const defaultMembers = [
-      {
-        name: 'awa14', email: 'awa14@workspace', role: 'Admin',
-        roleDescription: 'Workspace admin', color: '#2563eb', initials: 'AW',
-        avatar: 'https://trello-members.s3.amazonaws.com/6aa761ae4e924387c64d823e/a48d398af1cd5fee89ad2f6485e35313/50.png',
-        isYou: true,
-      },
-      {
-        name: 'Siti Asti Nurjanah', email: 'sitiastinurjanah@workspace', role: 'Member',
-        roleDescription: 'Workspace guest', color: '#7c3aed', initials: 'SA',
-        avatar: 'https://trello-members.s3.amazonaws.com/6aa7b6f045f457a682213bc0/0f9dbc51202322adb2bd3a72f3553f9b/50.png',
-        isYou: false,
-      },
-    ];
-
-    // Merge: avoid duplicates by email/name
-    const allMembers = [...defaultMembers];
-    for (const m of savedMembers) {
-      const emailKey = (m.email || '').toLowerCase();
-      const alreadyIn = allMembers.some(d =>
-        (d.email || '').toLowerCase() === emailKey ||
-        (d.name  || '').toLowerCase() === (m.name || '').toLowerCase()
-      );
-      if (!alreadyIn) allMembers.push({ ...m, isYou: false });
-    }
-
+    // Hanya anggota yang benar-benar masuk via link (tanpa mock fiktif yang belum masuk)
+    const allMembers = this.getBoardMembers(this.currentWorkspace);
     const memberCount = allMembers.length;
-    const membersHTML = allMembers.map(m => this._renderMemberItem(m)).join('');
+
+    let membersHTML = '';
+    if (memberCount === 0) {
+      membersHTML = `
+        <div class="D7yoA6_UXaeC0G py-8 px-4 text-center flex flex-col items-center justify-center">
+          <div class="SrmT8LwuTc56Bn mb-3 opacity-60">
+            <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
+              ${this._svgEmptyUser()}
+            </span>
+          </div>
+          <p class="LcI5UVx0RhWBg1 text-[13px] font-medium text-[#5e6c84] dark:text-[#9fadbc]">
+            Belum ada anggota yang bergabung.
+          </p>
+          <p class="text-[12px] text-[#5e6c84]/80 dark:text-[#9fadbc]/80 mt-1">
+            Bagikan tautan di atas untuk mengundang anggota ke papan ini.
+          </p>
+        </div>`;
+    } else {
+      membersHTML = allMembers.map(m => this._renderMemberItem(m)).join('');
+    }
 
     // Reusable permission-selector button snippet
     const permBtn = (label) => `
@@ -501,32 +523,89 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 8. Live member list update when someone joins via invite link
+    // 8. Member item permission cycle & remove member
+    const membersList = modalRoot.querySelector('#board-members-list');
+    if (membersList) {
+      membersList.addEventListener('click', (e) => {
+        // Change Permission
+        const permBtn = e.target.closest('.btn-change-member-permission');
+        if (permBtn) {
+          e.stopPropagation();
+          const li = permBtn.closest('li[data-member-id]');
+          if (!li) return;
+          const memberId = li.getAttribute('data-member-id');
+          const email = li.getAttribute('data-member-email');
+          const labelSpan = permBtn.querySelector('.member-perm-text');
+
+          const key = `board_members_${this.currentWorkspace}`;
+          const members = this.getBoardMembers(this.currentWorkspace);
+          const idx = members.findIndex(m => (memberId && m.id === memberId) || (email && m.email === email));
+          if (idx >= 0) {
+            const roles = ['Member', 'Admin', 'Observer'];
+            const curRole = members[idx].role || 'Member';
+            const nextRole = roles[(roles.indexOf(curRole) + 1) % roles.length];
+            members[idx].role = nextRole;
+            localStorage.setItem(key, JSON.stringify(members));
+            if (labelSpan) labelSpan.textContent = nextRole;
+            if (this.notificationService) {
+              this.notificationService.success(`Izin untuk ${members[idx].name || 'anggota'} diubah menjadi ${nextRole}`);
+            }
+            this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace });
+          }
+          return;
+        }
+
+        // Remove Member from Board
+        const removeBtn = e.target.closest('.btn-remove-board-member');
+        if (removeBtn) {
+          e.stopPropagation();
+          const li = removeBtn.closest('li[data-member-id]');
+          if (!li) return;
+          const memberId = li.getAttribute('data-member-id');
+          const email = li.getAttribute('data-member-email');
+
+          const key = `board_members_${this.currentWorkspace}`;
+          let members = this.getBoardMembers(this.currentWorkspace);
+          const target = members.find(m => (memberId && m.id === memberId) || (email && m.email === email));
+          members = members.filter(m => (memberId ? m.id !== memberId : true) && (email ? m.email !== email : true));
+          localStorage.setItem(key, JSON.stringify(members));
+
+          if (this.notificationService) {
+            this.notificationService.info(`Anggota ${target?.name || ''} telah dihapus dari papan.`);
+          }
+          this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace });
+        }
+      });
+    }
+
+    // 9. Live member list update when someone joins via invite link
     this.eventBus.on('board:members_updated', ({ workspace }) => {
-      if (workspace !== this.currentWorkspace) return;
+      if (workspace && workspace !== this.currentWorkspace) return;
       const list  = modalRoot.querySelector('#board-members-list');
-      const badge = modalRoot.querySelector('#member-count-badge span:last-child');
+      const badge = modalRoot.querySelector('#member-count-badge span');
       if (!list) return;
 
-      const defaultEmails = ['awa14@workspace', 'sitiastinurjanah@workspace'];
-      const fresh = this.getBoardMembers(this.currentWorkspace)
-        .filter(m => !defaultEmails.includes((m.email || '').toLowerCase()));
+      const fresh = this.getBoardMembers(this.currentWorkspace);
+      if (badge) badge.textContent = fresh.length;
 
-      // Append only new rows (no DOM duplicates)
-      for (const m of fresh) {
-        const key = (m.email || '').toLowerCase();
-        if (!list.querySelector(`[data-member-email="${key}"]`)) {
-          const wrap = document.createElement('div');
-          wrap.innerHTML = this._renderMemberItem({ ...m, isYou: false });
-          const li = wrap.firstElementChild;
-          li.setAttribute('data-member-email', key);
-          list.appendChild(li);
-        }
+      if (fresh.length === 0) {
+        list.innerHTML = `
+          <div class="D7yoA6_UXaeC0G py-8 px-4 text-center flex flex-col items-center justify-center">
+            <div class="SrmT8LwuTc56Bn mb-3 opacity-60">
+              <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
+                ${this._svgEmptyUser()}
+              </span>
+            </div>
+            <p class="LcI5UVx0RhWBg1 text-[13px] font-medium text-[#5e6c84] dark:text-[#9fadbc]">
+              Belum ada anggota yang bergabung.
+            </p>
+            <p class="text-[12px] text-[#5e6c84]/80 dark:text-[#9fadbc]/80 mt-1">
+              Bagikan tautan di atas untuk mengundang anggota ke papan ini.
+            </p>
+          </div>`;
+      } else {
+        list.innerHTML = fresh.map(m => this._renderMemberItem(m)).join('');
       }
-
-      // Update badge count
-      const total = list.querySelectorAll('.tNfnRxYxdIqnQH').length;
-      if (badge) badge.textContent = total;
     });
   }
 }
