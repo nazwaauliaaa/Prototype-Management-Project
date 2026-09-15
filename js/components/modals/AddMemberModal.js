@@ -47,6 +47,51 @@ export class AddMemberModal extends BaseModal {
     } catch (e) { console.error('Error removing pending invite:', e); }
   }
 
+  acceptJoinRequest(inviteId, ws) {
+    const currentWs = ws || this.currentWorkspace;
+    const pending = this.getPendingInvites(currentWs);
+    const invite = pending.find(i => i.id === inviteId);
+    if (!invite) return;
+
+    // Remove from pending
+    this.removePendingInvite(inviteId, currentWs);
+
+    // Save as active board member
+    const key = `board_members_${currentWs}`;
+    let members = this.getBoardMembers(currentWs);
+    const name = invite.name || (invite.email ? invite.email.split('@')[0] : 'Anggota Baru');
+    const newMember = {
+      id: `user-${Date.now()}`,
+      name: name,
+      email: invite.email || '',
+      role: invite.role || 'Member',
+      color: invite.color || '#2563eb',
+      initials: invite.initials || (name ? name.slice(0, 2).toUpperCase() : 'U'),
+      joinedAt: new Date().toISOString()
+    };
+    members.unshift(newMember);
+    localStorage.setItem(key, JSON.stringify(members));
+
+    if (this.notificationService) {
+      this.notificationService.success(`Permintaan ${newMember.name} telah DITERIMA & ditambahkan ke Board Members!`);
+    }
+
+    this.eventBus.emit('board:members_updated', { workspace: currentWs });
+  }
+
+  rejectJoinRequest(inviteId, ws) {
+    const currentWs = ws || this.currentWorkspace;
+    const pending = this.getPendingInvites(currentWs);
+    const invite = pending.find(i => i.id === inviteId);
+    this.removePendingInvite(inviteId, currentWs);
+
+    if (this.notificationService) {
+      this.notificationService.info(`Permintaan akses dari ${invite?.name || invite?.email || 'pengguna'} DITOLAK.`);
+    }
+
+    this.eventBus.emit('board:members_updated', { workspace: currentWs });
+  }
+
   /** Returns confirmed board members from localStorage (joined via invite link). */
   getBoardMembers(ws) {
     try {
@@ -272,11 +317,11 @@ export class AddMemberModal extends BaseModal {
         <!-- Undangan yang belum diterima (jika ada) -->
         ${pendingInvites.length > 0 ? `
           <div class="flex flex-col gap-1.5 mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 px-1">
-              Menunggu Akses Tautan (${pendingInvites.length})
+            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 px-1 flex items-center justify-between">
+              <span>Menunggu Akses Tautan (${pendingInvites.length})</span>
             </div>
             ${pendingInvites.map(inv => `
-              <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/70">
+              <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/70 transition-all">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="w-7 h-7 rounded-full text-white font-bold text-[10.5px] flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${inv.color || '#2563eb'}">
                     ${inv.initials || 'U'}
@@ -285,13 +330,21 @@ export class AddMemberModal extends BaseModal {
                     <div class="font-bold text-[12px] text-slate-900 dark:text-white truncate">${inv.name || inv.email}</div>
                     <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
                       <span class="material-symbols-outlined text-[11px] text-rose-500">mail</span>
-                      <span>${inv.email}</span>
+                      <span>${inv.email || 'Via Tautan Undangan'}</span>
                     </div>
                   </div>
                 </div>
-                <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
-                  Menunggu
-                </span>
+
+                <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                  <button class="btn-accept-join-request px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer" data-invite-id="${inv.id}" type="button" title="Terima Akses">
+                    <span class="material-symbols-outlined text-[13px]">check</span>
+                    <span>Terima</span>
+                  </button>
+                  <button class="btn-reject-join-request px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-rose-100 text-slate-600 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/60 dark:text-slate-300 dark:hover:text-rose-400 text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 cursor-pointer" data-invite-id="${inv.id}" type="button" title="Tolak Akses">
+                    <span class="material-symbols-outlined text-[13px]">close</span>
+                    <span>Tolak</span>
+                  </button>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -731,6 +784,25 @@ export class AddMemberModal extends BaseModal {
 
       if (reqPanel) {
         reqPanel.innerHTML = this._renderJoinRequestsPanel(fresh, pending);
+      }
+    });
+
+    // 10. Handle Accept & Reject Join Requests
+    modalRoot.addEventListener('click', (e) => {
+      const acceptBtn = e.target.closest('.btn-accept-join-request');
+      if (acceptBtn) {
+        e.stopPropagation();
+        const inviteId = acceptBtn.getAttribute('data-invite-id');
+        this.acceptJoinRequest(inviteId);
+        return;
+      }
+
+      const rejectBtn = e.target.closest('.btn-reject-join-request');
+      if (rejectBtn) {
+        e.stopPropagation();
+        const inviteId = rejectBtn.getAttribute('data-invite-id');
+        this.rejectJoinRequest(inviteId);
+        return;
       }
     });
   }
