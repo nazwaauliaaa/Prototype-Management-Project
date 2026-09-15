@@ -63,6 +63,7 @@ export class AddMemberModal extends BaseModal {
     const currentProjId = invite?.projectId || this.projectId || localStorage.getItem('active_project_id') || currentWs;
     const currentTitle = invite?.boardTitle || this.boardTitle || currentWs;
 
+    // Build invite params — project_id drives the kanban route
     const params = new URLSearchParams({
       accept_invite: invite?.id || 'inv-' + Date.now(),
       name: invite?.name || 'Anggota Baru',
@@ -73,7 +74,10 @@ export class AddMemberModal extends BaseModal {
       board_title: currentTitle,
       color: invite?.color || '#2563eb'
     });
-    return `${origin}${pathname}?${params.toString()}#/kanban`;
+
+    // URL format: ?params#/kanban/projectId
+    // This ensures the user lands directly on the specific project's kanban board
+    return `${origin}${pathname}?${params.toString()}#/kanban/${currentProjId}`;
   }
 
   render(data = {}) {

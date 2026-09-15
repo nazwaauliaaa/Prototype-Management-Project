@@ -64,6 +64,9 @@ class CreativeOfficeApp {
       const inviteToken = urlParams.get('accept_invite');
       if (!inviteToken) return;
 
+      // Mark invite redirect as active — prevents auth:login from redirecting to dashboard
+      this._inviteRedirect = true;
+
       const rawName = urlParams.get('name') || 'Anggota Baru';
       const rawEmail = urlParams.get('email') || '';
       const role = urlParams.get('role') || 'Anggota';
@@ -90,6 +93,7 @@ class CreativeOfficeApp {
         }
         const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${projectId || workspace}`;
         window.history.replaceState({}, document.title, cleanUrl);
+        this._inviteRedirect = false;
         return;
       }
 
@@ -182,16 +186,18 @@ class CreativeOfficeApp {
       localStorage.setItem('active_project_id', projectId);
       this.activeWorkspace = workspace;
       const projectService = this.container.resolve('ProjectService');
+      let resolvedProjectId = projectId;
       if (projectService) {
         const projects = projectService.getAllProjects();
         const matched = projects.find(p => p.workspace === workspace || p.id === workspace || p.id === projectId);
         if (matched) {
+          resolvedProjectId = matched.id;
           localStorage.setItem('active_project_id', matched.id);
         }
       }
 
-      // 8. Clean up query string from URL & set hash to kanban
-      const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${projectId || workspace}`;
+      // 8. Clean up query string from URL & set hash to specific kanban project
+      const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${resolvedProjectId}`;
       window.history.replaceState({}, document.title, cleanUrl);
 
       // 9. Show QR Login Animation displaying user email and route directly to Kanban
@@ -203,7 +209,11 @@ class CreativeOfficeApp {
         eventBus.emit('member:added', { member: newMember, workspace });
         eventBus.emit('board:members_updated', { member: newMember, workspace });
 
-        this.navigateTo('kanban', { projectId: projectId || workspace, workspace: workspace });
+        // Navigate directly to the specific kanban project board
+        this.navigateTo('kanban', { projectId: resolvedProjectId, workspace: workspace });
+
+        // Clear invite redirect flag after navigation
+        this._inviteRedirect = false;
 
         if (notificationService) {
           notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${finalName} (${finalEmail}), Anda langsung masuk ke papan Kanban "${boardTitle || workspace}" (${jobdeskTitle}).`);
@@ -212,6 +222,7 @@ class CreativeOfficeApp {
 
     } catch (e) {
       console.error('Failed to process invite token:', e);
+      this._inviteRedirect = false;
     }
   }
 
@@ -357,6 +368,9 @@ class CreativeOfficeApp {
     });
 
     eventBus.on('auth:login', () => {
+      // If an invite link is being processed, skip default dashboard redirect
+      // The invite flow will handle navigation to the specific kanban board
+      if (this._inviteRedirect) return;
       this.navigateTo('dashboard');
     });
   }
