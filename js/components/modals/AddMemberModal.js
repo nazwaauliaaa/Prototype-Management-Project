@@ -338,16 +338,12 @@ export class AddMemberModal extends BaseModal {
     const permBtn = (label) => `
       <button aria-expanded="false" aria-haspopup="true" aria-live="polite"
               aria-label="Share board with permission: ${label}" type="button"
-              class="_ymio1r31 _ypr0glyw _zcxs1o36 _mizu194a _1ah3dkaa _ra3xnqa1 _128mdkaa _1cvmnqa1 _4davt94y _19itglyw _vchhusvi _r06hglyw _80omtlke _2rko1qi0 _11c8fhey _v5649dqc _189eidpf _1rjc12x7 _1e0c116y _1bsb1wug _p12f1osq _kqswh2mm _4cvr1q9y _1bah1h6o _gy1p12x7 _1o9zidpf _4t3iviql _k48p1wq8 _y4tiutpp _bozgutpp _y3gn1h6o _s7n4nkob _14mj1kw7 _9v7aze3t _1tv3nqa1 _39yqe4h9 _11fnglyw _18postnw _bfhksm61 _syazazsu _8l3m1l7x _aetrb3bt _1053azsu _f8pjazsu _30l3azsu _9h8hazsu _irr31dpa _1di6fcek _4bfu1r31 _1hmsglyw _ajmmnqa1 _1a3b1r31 _4fprglyw _5goinqa1 _9oik1r31 _1bnxglyw _jf4cnqa1 _1nrm1r31 _c2waglyw _1iohnqa1 cursor-pointer"
+              class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
               data-testid="${label === 'Member' ? 'board-permission-selector-dropdown--trigger' : 'board-invite-type-selector-dropdown--trigger'}">
-        <span class="_v564g17y _1reo15vq _18m915vq _16jlkb7n _1o9zkb7n _1bto1l2s _o5721q9c ${label === 'Member' ? 'permission-label-text' : ''}">
+        <span class="${label === 'Member' ? 'permission-label-text' : ''}">
           ${label === 'Member' ? 'Member' : 'Change permissions'}
         </span>
-        <span class="_v564g17y _1e0c1txw _16jlidpf _1o9zidpf _1wpz1h6o _1wybidpf _vwz4idpf _uiztglyw">
-          <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4utpp _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
-            ${this._svgChevron()}
-          </span>
-        </span>
+        <span class="material-symbols-outlined text-[16px] text-slate-400">expand_more</span>
       </button>`;
 
     return `
@@ -398,32 +394,35 @@ export class AddMemberModal extends BaseModal {
         </div>
 
         <!-- LINK SHARING SECTION -->
-        <div class="HCQ1HNtXelc9z5">
-          <div class="AgqNgq2vl3Cl7n">
-            <div class="QoPC4_0NHi4CSp">
-              <div class="H_Q5rPPtw5JNhd">
-                <div class="QUue44UQyAa3y_">
-                  <span data-testid="board-share-link-icon" aria-hidden="true"
-                        class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n"
-                        style="color: currentcolor;">${this._svgLink()}</span>
-                </div>
-                <div class="bPh30IIvkhqqXa">
-                  <p data-testid="board-share-link-label" class="Ml9BEm63ZDv2mn">
-                    Anyone with the link can join as a member
-                  </p>
-                  <div class="ssaeEGuU5Va6Qf">
-                    <button class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM"
-                            type="button" data-testid="board-invite-link-copy-button">Copy link</button>
-                    <span>&middot;</span>
-                    <button class="NZmKhQsKSVH04B bqDBTa8KAMX3yi PiiL4Q6khpDUHM"
-                            type="button" data-testid="board-invite-link-delete-button">Delete link</button>
-                  </div>
-                </div>
-              </div>
-              <div data-testid="board-invite-link-select-menu" class="FpfymAlOJKvXJd">
-                ${permBtn('Change permissions')}
+        <div class="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-y border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <!-- Icon Link -->
+            <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-center shrink-0 shadow-xs">
+              <span class="material-symbols-outlined text-[19px]">link</span>
+            </div>
+
+            <!-- Content & Actions -->
+            <div class="min-w-0">
+              <p data-testid="board-share-link-label" class="text-[12.5px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+                Anyone with the link can join as a member
+              </p>
+              <div class="flex items-center gap-2 mt-0.5 text-[11.5px] font-semibold text-blue-600 dark:text-blue-400">
+                <button class="hover:underline flex items-center gap-1 cursor-pointer" type="button" data-testid="board-invite-link-copy-button">
+                  <span class="material-symbols-outlined text-[13px]">content_copy</span>
+                  <span>Copy link</span>
+                </button>
+                <span class="text-slate-300 dark:text-slate-600">&middot;</span>
+                <button class="hover:underline text-rose-600 dark:text-rose-400 flex items-center gap-1 cursor-pointer" type="button" data-testid="board-invite-link-delete-button">
+                  <span class="material-symbols-outlined text-[13px]">delete</span>
+                  <span>Delete link</span>
+                </button>
               </div>
             </div>
+          </div>
+
+          <!-- Permission Selector Menu -->
+          <div data-testid="board-invite-link-select-menu" class="shrink-0">
+            ${permBtn('Change permissions')}
           </div>
         </div>
 
