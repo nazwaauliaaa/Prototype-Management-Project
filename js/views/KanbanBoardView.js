@@ -719,10 +719,29 @@ export class KanbanBoardView extends BaseView {
             <span class="text-white/30 hidden sm:inline">|</span>
             ` : ''}
 
-            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate">
-                ${boardTitle}
-              </h1>
+            <div class="flex flex-col min-w-0">
+              <!-- Context Breadcrumb: Ruang Kerja & Projek -->
+              <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-medium text-white/80 shrink-0 mb-0.5">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/15 border border-white/15 backdrop-blur-md text-[10.5px] font-bold text-amber-200">
+                  <span class="material-symbols-outlined text-[12px]">workspaces</span>
+                  <span>Ruang Kerja: ${currentWsName}</span>
+                </span>
+                ${this.project ? `
+                <span class="text-white/40 font-bold">•</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/15 border border-white/15 backdrop-blur-md text-[10.5px] font-bold text-blue-200">
+                  <span class="material-symbols-outlined text-[12px]">folder_open</span>
+                  <span>Projek: ${this.project.name}</span>
+                </span>
+                ` : ''}
+              </div>
+
+              <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <h1 class="text-[17px] sm:text-[19px] font-bold text-white tracking-tight drop-shadow-sm truncate flex items-center gap-2">
+                  <span>${boardTitle}</span>
+                  <span class="text-[10.5px] font-semibold bg-white/15 text-white/90 px-2 py-0.5 rounded-full border border-white/15 backdrop-blur-md shrink-0">
+                    Papan Tugas Kanban
+                  </span>
+                </h1>
 
               ${!perms.isUser ? `
               <!-- Trello View Switcher Button -->
