@@ -69,10 +69,12 @@ class CreativeOfficeApp {
 
       const rawName = urlParams.get('name') || 'Anggota Baru';
       const rawEmail = urlParams.get('email') || '';
-      const role = urlParams.get('role') || 'Anggota';
-      const workspace = urlParams.get('ws') || urlParams.get('workspace') || 'panen-kunci';
+      const role = urlParams.get('role') || 'user';
+      const workspace = urlParams.get('ws') || urlParams.get('workspace') || 'aikreativ';
       const projectId = urlParams.get('project_id') || urlParams.get('projectId') || workspace;
       const boardTitle = urlParams.get('board_title') || workspace;
+      const inviterName = urlParams.get('inviter_name') || urlParams.get('inviter') || 'awaa';
+      const inviterRole = urlParams.get('inviter_role') || 'admin';
       const color = urlParams.get('color') || '#2563eb';
 
       const eventBus = this.container.resolve('EventBus');
@@ -112,7 +114,17 @@ class CreativeOfficeApp {
         finalName = finalEmail.split('@')[0];
       }
 
-      // 3. Map role to internal authorization role and jobdesk title
+      // 3. Format Workspace Display Name & Inviter Notice (e.g., "awaa(admin) mengundang anda ke Ruang AIKreativ")
+      let cleanWsTitle = boardTitle || workspace;
+      if (cleanWsTitle.toLowerCase() === 'aikreativ') cleanWsTitle = 'AIKreativ';
+      else if (cleanWsTitle.toLowerCase() === 'ruangkreasi') cleanWsTitle = 'Kreasi';
+      else if (cleanWsTitle.toLowerCase() === 'layarbaca') cleanWsTitle = 'Layar Baca';
+      else if (cleanWsTitle.toLowerCase() === 'panen-kunci') cleanWsTitle = 'Panen Kunci';
+
+      const targetRuangName = cleanWsTitle.toLowerCase().startsWith('ruang') ? cleanWsTitle : `Ruang ${cleanWsTitle}`;
+      const inviterNotice = `${inviterName}(${inviterRole}) mengundang anda ke ${targetRuangName}`;
+
+      // 4. Map role to internal authorization role and jobdesk title (Default: User)
       let authRole = 'user';
       let jobdeskTitle = 'Creative Specialist & Kontributor';
       const lowerRole = role.toLowerCase();
@@ -131,7 +143,7 @@ class CreativeOfficeApp {
         jobdeskTitle = 'Editor & Anggota Tim Proyek';
       }
 
-      // 4. Create User Model instance with valid email
+      // 5. Create User Model instance with valid email
       const userInstance = new User({
         id: 'usr-' + Date.now(),
         name: finalName,
@@ -139,17 +151,17 @@ class CreativeOfficeApp {
         role: authRole,
         title: jobdeskTitle,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=${color.replace('#','')}&color=fff&bold=true`,
-        workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca']
+        workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca', 'aikreativ']
       });
 
-      // 5. Login to AuthService
+      // 6. Login to AuthService
       const authService = this.container.resolve('AuthService');
       if (authService) {
         authService.currentUser = userInstance;
         authService.isAuthenticated = true;
       }
 
-      // 6. Create new member record with confirmed email
+      // 7. Create new member record with confirmed email
       const newMember = {
         id: 'mem-' + Date.now(),
         name: finalName,
@@ -181,7 +193,7 @@ class CreativeOfficeApp {
         }
       } catch (err) {}
 
-      // 7. Set active workspace and project
+      // 8. Set active workspace and project
       localStorage.setItem('active_workspace', workspace);
       localStorage.setItem('active_project_id', projectId);
       localStorage.setItem('user_invited_workspace', workspace);
@@ -198,12 +210,12 @@ class CreativeOfficeApp {
       }
       localStorage.setItem('user_invited_project', resolvedProjectId);
 
-      // 8. Clean up query string from URL & set hash to specific kanban project
+      // 9. Clean up query string from URL & set hash to specific kanban project
       const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${resolvedProjectId}`;
       window.history.replaceState({}, document.title, cleanUrl);
 
-      // 9. Show QR Login Animation displaying user email and route directly to Kanban
-      this.showQrLoginSuccessOverlay(userInstance, boardTitle || workspace, jobdeskTitle);
+      // 10. Show QR Login Animation displaying invitation text and route directly to Kanban
+      this.showQrLoginSuccessOverlay(userInstance, targetRuangName, jobdeskTitle, inviterNotice);
 
       setTimeout(() => {
         eventBus.emit('auth:login', userInstance);
@@ -218,7 +230,7 @@ class CreativeOfficeApp {
         this._inviteRedirect = false;
 
         if (notificationService) {
-          notificationService.success(`🎉 Otentikasi QR Berhasil! Selamat datang ${finalName} (${finalEmail}), Anda langsung masuk ke papan Kanban "${boardTitle || workspace}" (${jobdeskTitle}).`);
+          notificationService.success(`🎉 ${inviterNotice} — Langsung masuk ke papan Kanban sebagai User!`);
         }
       }, 1500);
 
@@ -228,7 +240,7 @@ class CreativeOfficeApp {
     }
   }
 
-  showQrLoginSuccessOverlay(userInstance, workspaceTitle, jobdeskTitle) {
+  showQrLoginSuccessOverlay(userInstance, workspaceTitle, jobdeskTitle, inviterNotice = '') {
     const overlay = document.createElement('div');
     overlay.id = 'qr-login-invite-overlay';
     overlay.className = 'fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in';
@@ -236,42 +248,50 @@ class CreativeOfficeApp {
       <div class="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 flex flex-col items-center text-center animate-in zoom-in-95 duration-300 text-slate-800 dark:text-slate-100 relative overflow-hidden">
         
         <!-- Animated Scanner Beam -->
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#ef4444] animate-pulse"></div>
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_12px_#a855f7] animate-pulse"></div>
         
-        <!-- QR Code Container with scanning animation -->
-        <div class="relative w-28 h-28 bg-white p-2.5 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center my-2">
-          ${QRCodeGenerator.generate('http://localhost:3000/#/auth?scan=' + encodeURIComponent(userInstance.email || userInstance.name), { size: 92, darkColor: '#0b1c30' })}
-          <div class="absolute inset-x-2 h-0.5 bg-rose-500 shadow-[0_0_8px_#ef4444] rounded-full animate-bounce"></div>
+        <!-- Inviter Banner Notification -->
+        ${inviterNotice ? `
+        <div class="w-full mb-3 px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200/80 dark:border-purple-800/80 text-[12.5px] font-bold text-purple-700 dark:text-purple-300 flex items-center justify-center gap-1.5 shadow-2xs">
+          <span class="material-symbols-outlined text-[16px] text-purple-600 dark:text-purple-400">mark_email_read</span>
+          <span>${inviterNotice}</span>
+        </div>
+        ` : ''}
+
+        <!-- Avatar / QR Code Container -->
+        <div class="relative w-24 h-24 bg-white p-2 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center my-1">
+          ${QRCodeGenerator.generate('http://localhost:3000/#/auth?scan=' + encodeURIComponent(userInstance.email || userInstance.name), { size: 80, darkColor: '#0b1c30' })}
+          <div class="absolute inset-x-2 h-0.5 bg-purple-500 shadow-[0_0_8px_#a855f7] rounded-full animate-bounce"></div>
           <div class="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md">
             <span class="material-symbols-outlined text-[16px]">check</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider mt-3">
+        <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider mt-2">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          <span>QR Akses Terverifikasi</span>
+          <span>Akses Undangan Terverifikasi</span>
         </div>
 
         <h3 class="text-base font-bold text-slate-900 dark:text-white mt-1">Selamat Datang, ${userInstance.name}!</h3>
-        <p class="text-xs text-rose-600 dark:text-rose-400 font-medium">${userInstance.email}</p>
+        <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">${userInstance.email}</p>
         
         <!-- User Jobdesk Badge -->
-        <div class="w-full mt-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
-          <div class="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-900">
-            <span class="material-symbols-outlined text-[20px]">badge</span>
+        <div class="w-full mt-2.5 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
+          <div class="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-200 dark:border-purple-900">
+            <span class="material-symbols-outlined text-[18px]">badge</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Jobdesk Pengguna</span>
-            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${jobdeskTitle}</span>
+            <span class="text-[9.5px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Role & Hak Akses</span>
+            <span class="text-[12px] font-bold text-slate-800 dark:text-slate-200 truncate">User (${jobdeskTitle})</span>
           </div>
         </div>
 
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
-          Mengarahkan langsung ke papan <strong>Kanban: ${workspaceTitle}</strong>...
+        <p class="text-[11.5px] text-slate-500 dark:text-slate-400 mt-2.5">
+          Langsung mengarahkan ke <strong>Papan Kanban: ${workspaceTitle}</strong>...
         </p>
 
-        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-4">
-          <div class="bg-rose-600 h-full w-full animate-[pulse_1s_ease-in-out_infinite] rounded-full"></div>
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-3">
+          <div class="bg-purple-600 h-full w-full animate-[pulse_1s_ease-in-out_infinite] rounded-full"></div>
         </div>
       </div>
     `;

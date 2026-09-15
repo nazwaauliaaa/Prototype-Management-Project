@@ -123,18 +123,26 @@ export class AddMemberModal extends BaseModal {
   generateInviteLink(invite) {
     const origin   = window.location.origin;
     const pathname = window.location.pathname;
-    const currentWs     = invite?.workspace  || this.currentWorkspace || localStorage.getItem('active_workspace')  || 'panen-kunci';
+    const currentWs     = invite?.workspace  || this.currentWorkspace || localStorage.getItem('active_workspace')  || 'aikreativ';
     const currentProjId = invite?.projectId  || this.projectId        || localStorage.getItem('active_project_id') || currentWs;
     const currentTitle  = invite?.boardTitle || this.boardTitle       || currentWs;
+
+    // Get inviter (Admin/PM) details
+    const authService = this.container.resolve('AuthService');
+    const authUser = authService ? authService.getCurrentUser() : null;
+    const inviterName = authUser?.name || 'awaa';
+    const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
 
     const params = new URLSearchParams({
       accept_invite: invite?.id    || 'inv-' + Date.now(),
       name:          invite?.name  || 'Anggota Baru',
       email:         invite?.email || '',
-      role:          invite?.role  || 'Anggota',
+      role:          invite?.role  || 'user',
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
+      inviter_name:  inviterName,
+      inviter_role:  inviterRole,
       color:         invite?.color || '#2563eb',
     });
 

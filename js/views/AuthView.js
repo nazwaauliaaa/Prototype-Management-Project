@@ -565,14 +565,14 @@ export class AuthView extends BaseView {
 
     if (simulateInviteBtn) {
       simulateInviteBtn.addEventListener('click', () => {
-        const targetWs = 'panen-kunci';
-        const targetTitle = 'Panen Kunci';
+        const targetWs = 'aikreativ';
+        const targetTitle = 'AIKreativ';
         const invId = 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
-        const demoLink = `${window.location.origin}${window.location.pathname}?accept_invite=${invId}&name=Dimas%20Anggara&email=dimas.anggara%40gmail.com&role=Editor&ws=${targetWs}&project_id=${targetWs}&board_title=${encodeURIComponent(targetTitle)}&color=%232563eb#/kanban/${targetWs}`;
+        const demoLink = `${window.location.origin}${window.location.pathname}?accept_invite=${invId}&name=Dimas%20Anggara&email=dimas.anggara%40gmail.com&role=user&ws=${targetWs}&project_id=${targetWs}&board_title=${encodeURIComponent(targetTitle)}&inviter_name=awaa&inviter_role=admin&color=%232563eb#/kanban/${targetWs}`;
         
         if (inviteModal) inviteModal.classList.add('hidden');
         if (feedback) {
-          feedback.innerHTML = `<span class="text-emerald-500 font-semibold animate-pulse">Menerima Undangan dari Manajer Proyek...</span> Membuka Papan Kanban ${targetTitle}...`;
+          feedback.innerHTML = `<span class="text-emerald-500 font-semibold animate-pulse">awaa(admin) mengundang anda ke Ruang AIKreativ...</span> Membuka Papan Kanban...`;
         }
         setTimeout(() => {
           window.location.href = demoLink;
