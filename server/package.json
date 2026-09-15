@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "creative-office-portal": "file:..",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "pg": "^8.13.3"

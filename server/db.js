@@ -21,7 +21,7 @@ const requiresSsl =
 const poolConfig = connectionString
   ? {
       connectionString,
-      ssl: requiresSsl ? { rejectUnauthorized: false } : false
+      ssl: { rejectUnauthorized: false }
     }
   : {
       host: process.env.DB_HOST || 'localhost',
