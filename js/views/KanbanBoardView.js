@@ -483,11 +483,11 @@ export class KanbanBoardView extends BaseView {
     // Background style according to theme
     let bgStyle = '';
     if (theme.type === 'image') {
-      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat; min-height: 100%;`;
+      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat; height: 100%;`;
     } else if (theme.type === 'gradient') {
-      bgStyle = `background: ${theme.value}; min-height: 100%;`;
+      bgStyle = `background: ${theme.value}; height: 100%;`;
     } else {
-      bgStyle = `background-color: ${theme.value}; min-height: 100%;`;
+      bgStyle = `background-color: ${theme.value}; height: 100%;`;
     }
 
     return `
@@ -698,10 +698,10 @@ export class KanbanBoardView extends BaseView {
       </style>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
+      <div class="flex flex-col w-full h-[calc(100vh-var(--topbar-height))] sm:h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100vh-var(--topbar-height))] overflow-hidden relative transition-all duration-300 select-none" style="${bgStyle}">
         
         <!-- Board Top Header Bar (Trello Toolbar) -->
-        <div class="w-full px-3 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-2 sm:gap-3 text-white z-30 relative overflow-x-auto scrollbar-none">
+        <div class="w-full px-3 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-2 sm:gap-3 text-white z-30 relative overflow-x-auto scrollbar-none shrink-0">
           
           <!-- Left Section: Back Button + Action Buttons -->
           <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
@@ -1032,17 +1032,17 @@ export class KanbanBoardView extends BaseView {
             </aside>
           ` : ''}
 
-          <!-- Kanban Columns Stream (Responsive Full Fit - Tanpa Geser Kanan Kiri) -->
-          <div class="flex-1 w-full max-w-full overflow-x-hidden p-3 sm:p-5 pb-24" id="kanban-scroll-area">
+          <!-- Kanban Columns Stream (Responsive Full 1-Screen Fit) -->
+          <div class="flex-1 w-full max-w-full overflow-hidden p-2.5 sm:p-3 flex flex-col min-h-0 h-full" id="kanban-scroll-area">
 
             <!-- Role-Specific Banner: QA Review Mode -->
             ${perms.isQA ? `
-              <div class="mb-4 px-4 py-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-100 flex items-center justify-between gap-3 shadow-md">
+              <div class="mb-2 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-8 h-8 rounded-xl bg-emerald-500/30 flex items-center justify-center shrink-0">
-                    <span class="material-symbols-outlined text-[20px] text-emerald-300">fact_check</span>
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/30 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[18px] text-emerald-300">fact_check</span>
                   </div>
-                  <div class="min-w-0 text-[12.5px]">
+                  <div class="min-w-0 text-[12px]">
                     <span class="font-bold text-white">Mode Quality Assurance (QA)</span>
                     <span class="text-emerald-200/90 ml-1.5 hidden md:inline">— Tinjau, uji, dan validasi kartu pada kolom <strong>Review QA</strong> sebelum siap diluncurkan.</span>
                   </div>
@@ -1053,12 +1053,12 @@ export class KanbanBoardView extends BaseView {
 
             <!-- Role-Specific Banner: User / Contributor Mode -->
             ${perms.isUser ? `
-              <div class="mb-4 px-4 py-2.5 rounded-2xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md text-sky-100 flex items-center justify-between gap-3 shadow-md">
+              <div class="mb-2 py-1.5 px-3 rounded-xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md text-sky-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-8 h-8 rounded-xl bg-sky-500/30 flex items-center justify-center shrink-0">
-                    <span class="material-symbols-outlined text-[20px] text-sky-300">person</span>
+                  <div class="w-7 h-7 rounded-lg bg-sky-500/30 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[18px] text-sky-300">person</span>
                   </div>
-                  <div class="min-w-0 text-[12.5px]">
+                  <div class="min-w-0 text-[12px]">
                     <span class="font-bold text-white">Mode Kontributor</span>
                     <span class="text-sky-200/90 ml-1.5 hidden md:inline">— Tampilan terfokus untuk mengerjakan tugas Anda dan memantau status deliverable.</span>
                   </div>
@@ -1067,7 +1067,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5 items-start w-full max-w-full pb-8" id="kanban-board">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 items-stretch w-full max-w-full flex-1 min-h-0 h-full overflow-hidden" id="kanban-board">
               
               ${this.columns.map(col => {
       const colTasks = allTasks.filter(t => t.status === col.id);
@@ -1077,12 +1077,12 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/20 shadow-lg w-full max-w-full min-w-0 transition-all"
+                    class="kanban-column flex flex-col h-full max-h-full min-h-0 bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-2.5 border border-white/20 shadow-lg w-full max-w-full min-w-0 transition-all overflow-hidden"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
                     <!-- Column Header matching Trello with count and action icons -->
-                    <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color}" style="position:relative;">
+                    <div class="column-header-inner flex items-center justify-between pb-1.5 mb-2 border-b-2 ${col.color} shrink-0" style="position:relative;">
                       <div class="flex items-center gap-2 min-w-0">
                         <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
                         <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate" ${perms.canRenameList ? 'title="Klik 2x untuk ubah nama"' : ''}>${col.title}</h3>
@@ -1216,7 +1216,7 @@ export class KanbanBoardView extends BaseView {
                     </div>
 
                     <!-- Cards List Container -->
-                    <div class="flex flex-col gap-2.5 min-h-[140px]" data-cards-area="${col.id}">
+                    <div class="flex-1 min-h-0 overflow-y-auto pr-0.5 flex flex-col gap-2.5 custom-scrollbar" data-cards-area="${col.id}">
                       ${colTasks.map(task => `
                         <div
                           class="kanban-card p-3.5 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-[#0c66e4] hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99]"
@@ -1299,7 +1299,7 @@ export class KanbanBoardView extends BaseView {
                     <!-- Quick Add Card Button in Column -->
                     ${perms.canAddCard ? `
                     <button
-                      class="btn-quick-add-col mt-2.5 py-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      class="btn-quick-add-col shrink-0 mt-2 py-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       data-column-id="${col.id}"
                       type="button"
                     >
