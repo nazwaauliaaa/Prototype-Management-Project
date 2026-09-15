@@ -158,6 +158,59 @@ export class ApiService {
       return false;
     }
   }
+
+  // ==================== QR LOOKUP & INVENTORY ====================
+
+  /**
+   * Cari entitas database berdasarkan kode QR yang dipindai
+   * @param {string} code
+   */
+  async lookupQr(code) {
+    try {
+      const res = await fetch(`${this.baseUrl}/qr/lookup?code=${encodeURIComponent(code)}`);
+      if (!res.ok) {
+        if (res.status === 404) return { found: false, error: 'Tidak ditemukan di database' };
+        throw new Error(`HTTP ${res.status}`);
+      }
+      return await res.json();
+    } catch (err) {
+      console.warn('[ApiService] Gagal mencari kode QR di backend:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Ambil semua entitas yang memiliki QR dari database
+   */
+  async getQrInventory() {
+    try {
+      const res = await fetch(`${this.baseUrl}/qr/all`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn('[ApiService] Gagal mengambil inventaris QR dari backend:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Daftarkan akun baru ke database PostgreSQL via API
+   * @param {Object} userData
+   */
+  async registerUser(userData) {
+    try {
+      const res = await fetch(`${this.baseUrl}/qr/register-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn('[ApiService] Gagal mendaftarkan user ke backend:', err.message);
+      return null;
+    }
+  }
 }
 
 export const apiService = new ApiService();

@@ -30,6 +30,9 @@ export class BottomNav {
       } else if (route === 'workspaces' || route === 'ruang-kerja') {
         this.activeTab = 'ruang-kerja';
         this._updateActiveState();
+      } else if (route === 'qr' || route === 'qr-dashboard' || route === 'qr-scanner') {
+        this.activeTab = 'qr';
+        this._updateActiveState();
       }
     });
   }
@@ -42,6 +45,7 @@ export class BottomNav {
       { id: 'ruang-kerja', icon: 'workspaces',      label: 'Ruang Kerja' },
       { id: 'kanban',      icon: 'view_kanban',     label: 'Kanban'      },
       { id: 'dokumen',     icon: 'description',     label: 'Dokumen'     },
+      { id: 'qr',          icon: 'qr_code_scanner', label: 'QR Scan'     },
     ];
   }
 
@@ -98,6 +102,8 @@ export class BottomNav {
           this.eventBus.emit('navigate', { view: 'docs-sheets' });
         } else if (route === 'ruang-kerja') {
           this.eventBus.emit('navigate', { view: 'workspaces' });
+        } else if (route === 'qr') {
+          this.eventBus.emit('navigate', { view: 'qr' });
         } else {
           console.log(`[BottomNav Dummy] Tombol "${route}" diklik.`);
         }

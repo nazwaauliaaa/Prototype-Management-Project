@@ -124,6 +124,14 @@ export class DashboardView extends BaseView {
           </div>
 
           <div class="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <button
+              id="btn-dash-open-qr"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+              title="Buka QR Scanner & Database Hub"
+            >
+              <span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+              <span>QR Hub</span>
+            </button>
             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-low border border-surface-border text-[11px] text-text-secondary font-medium">
               <span class="w-1.5 h-1.5 rounded-full bg-status-success inline-block"></span>
               <span>Portal Aktif</span>
@@ -224,5 +232,12 @@ export class DashboardView extends BaseView {
         }
       });
     });
+
+    const qrBtn = this.element ? this.element.querySelector('#btn-dash-open-qr') : null;
+    if (qrBtn) {
+      qrBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'qr' });
+      });
+    }
   }
 }

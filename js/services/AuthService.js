@@ -69,6 +69,99 @@ export class AuthService {
     // Default: not logged in — user must authenticate via AuthView
     this.currentUser = null;
     this.isAuthenticated = false;
+
+    // Load custom users registered via QR or database
+    this.customUsers = [];
+    this.loadCustomUsers();
+  }
+
+  loadCustomUsers() {
+    try {
+      const stored = localStorage.getItem('creative_office_custom_users');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          this.customUsers = parsed.map(u => new User(u));
+        }
+      }
+    } catch (e) {
+      console.warn('Gagal memuat custom users:', e);
+    }
+  }
+
+  saveCustomUsers() {
+    try {
+      localStorage.setItem('creative_office_custom_users', JSON.stringify(this.customUsers));
+    } catch (e) {
+      console.warn('Gagal menyimpan custom users:', e);
+    }
+  }
+
+  /**
+   * Mendaftarkan akun baru secara otomatis dari data QR
+   * @param {Object} userData
+   * @returns {User}
+   */
+  registerNewUser({ id, name, role = 'user', title, jobdesk, email, avatar, workspaceAccess }) {
+    const finalId = id || `usr-${Date.now().toString().slice(-6)}`;
+    const finalJobdesk = jobdesk || title || 'Creative Specialist';
+    const finalTitle = title || finalJobdesk;
+    const finalEmail = email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
+    const finalAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+
+    // Cek apakah akun dengan nama atau email ini sudah terdaftar
+    let existingIndex = this.customUsers.findIndex(u => u.id === finalId || u.email === finalEmail);
+    
+    const newUser = new User({
+      id: finalId,
+      name,
+      role: (role || 'user').toLowerCase(),
+      title: finalTitle,
+      jobdesk: finalJobdesk,
+      avatar: finalAvatar,
+      email: finalEmail,
+      workspaceAccess: workspaceAccess || ['ruangkreasi', 'layarbaca']
+    });
+
+    if (existingIndex !== -1) {
+      this.customUsers[existingIndex] = newUser;
+    } else {
+      this.customUsers.unshift(newUser);
+    }
+
+    this.saveCustomUsers();
+    this.eventBus.emit('auth:user-registered', { user: newUser });
+    return newUser;
+  }
+
+  /**
+   * Login langsung menggunakan objek User spesifik
+   * @param {User} user
+   */
+  loginAsUser(user) {
+    if (!user) return false;
+    this.currentUser = user instanceof User ? user : new User(user);
+    this.isAuthenticated = true;
+    this.eventBus.emit('auth:login', this.currentUser);
+    this.notifications.success(`Masuk sebagai ${this.currentUser.name} (${this.currentUser.title || this.currentUser.role})`);
+    return true;
+  }
+
+  /**
+   * Mengambil semua daftar pengguna (role dasar + akun baru dari QR)
+   * @returns {User[]}
+   */
+  getAllUsers() {
+    const baseUsers = [
+      this.roleProfiles['admin'],
+      this.roleProfiles['manajement-project'],
+      this.roleProfiles['qa'],
+      this.roleProfiles['user']
+    ];
+    // Gabungkan dengan custom users, hindari duplikat ID
+    const baseIds = new Set(baseUsers.map(u => u.id));
+    const custom = this.customUsers.filter(u => !baseIds.has(u.id));
+    return [...baseUsers, ...custom];
   }
 
   getCurrentUser() {

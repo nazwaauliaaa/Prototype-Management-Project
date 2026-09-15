@@ -34,6 +34,7 @@ import { GanttTimelineView } from './views/GanttTimelineView.js';
 import { ProjectListView } from './views/ProjectListView.js';
 import { ProjectService } from './services/ProjectService.js';
 import { WorkspacesView } from './views/WorkspacesView.js';
+import { QRCodeDashboardView } from './views/QRCodeDashboardView.js';
 
 /**
  * CreativeOfficeApp - Bootstrap & Dependency Injection Root
@@ -514,6 +515,11 @@ class CreativeOfficeApp {
       case 'workspaces':
       case 'ruang-kerja':
         this.currentView = new WorkspacesView(this.container);
+        break;
+      case 'qr':
+      case 'qr-dashboard':
+      case 'qr-scanner':
+        this.currentView = new QRCodeDashboardView(this.container);
         break;
       default:
         this.currentView = new DashboardView(this.container);

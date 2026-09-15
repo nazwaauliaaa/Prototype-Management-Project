@@ -42,6 +42,27 @@ export class QRCodeGenerator {
   }
 
   /**
+   * Unduh QR code sebagai file SVG
+   */
+  static downloadSvg(data, filename = 'qrcode.svg', options = {}) {
+    const svgStr = this.generate(data, { 
+      size: 300, 
+      lightColor: '#ffffff', 
+      darkColor: '#0b1c30',
+      ...options 
+    });
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename.endsWith('.svg') ? filename : `${filename}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
    * Create a QR-like matrix from data
    * @param {string} data
    * @returns {boolean[][]}

@@ -52,3 +52,20 @@ CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_workspace ON tasks(workspace);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+
+-- 3. Tabel Pengguna (Users & Anggota Tim)
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(100) PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
+    title VARCHAR(150) DEFAULT 'Creative Staff',
+    jobdesk VARCHAR(255) DEFAULT 'Anggota Tim & Kontributor',
+    avatar TEXT DEFAULT '',
+    email VARCHAR(150) UNIQUE,
+    workspace_access JSONB DEFAULT '["ruangkreasi"]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
