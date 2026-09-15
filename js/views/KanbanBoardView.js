@@ -483,11 +483,11 @@ export class KanbanBoardView extends BaseView {
     // Background style according to theme
     let bgStyle = '';
     if (theme.type === 'image') {
-      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat; height: 100%;`;
+      bgStyle = `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${theme.value}') center center / cover no-repeat fixed; width: 100%; height: 100%;`;
     } else if (theme.type === 'gradient') {
-      bgStyle = `background: ${theme.value}; height: 100%;`;
+      bgStyle = `background: ${theme.value}; background-attachment: fixed; width: 100%; height: 100%;`;
     } else {
-      bgStyle = `background-color: ${theme.value}; height: 100%;`;
+      bgStyle = `background-color: ${theme.value}; width: 100%; height: 100%;`;
     }
 
     return `
