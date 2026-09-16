@@ -414,60 +414,92 @@ export class AddMemberModal extends BaseModal {
           </div>
         </div>
 
-        <!-- LINK SHARING SECTION -->
-        <div class="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-y border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <!-- Icon Link -->
-            <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-center shrink-0 shadow-xs">
-              <span class="material-symbols-outlined text-[19px]">link</span>
-            </div>
+        <!-- LINK SHARING & QR ACCESS CARD (Refined & Tidy Layout) -->
+        <div class="px-5 py-3.5 bg-slate-50/90 dark:bg-[#161a1d] border-y border-[#dfe1e6] dark:border-[#333c43]">
+          
+          <!-- Top Row: Icon + Info & Role Dropdown -->
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <!-- Icon Link Badge with modern rounded container -->
+              <div class="w-9 h-9 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center justify-center shrink-0 shadow-xs">
+                <span class="material-symbols-outlined text-[20px]">share</span>
+              </div>
 
-            <!-- Content & Actions -->
-            <div class="min-w-0">
-              <p data-testid="board-share-link-label" class="text-[12.5px] font-semibold text-slate-800 dark:text-slate-200 truncate">
-                Anyone with the link can join as a member
-              </p>
-              <div class="flex items-center gap-2 mt-0.5 text-[11.5px] font-semibold text-blue-600 dark:text-blue-400 flex-wrap">
-                <button class="hover:underline flex items-center gap-1 cursor-pointer" type="button" data-testid="board-invite-link-copy-button">
-                  <span class="material-symbols-outlined text-[13px]">content_copy</span>
-                  <span>Copy link</span>
-                </button>
-                <span class="text-slate-300 dark:text-slate-600">&middot;</span>
-                <button class="hover:underline flex items-center gap-1 text-purple-600 dark:text-purple-400 cursor-pointer" type="button" id="btn-toggle-board-qr">
-                  <span class="material-symbols-outlined text-[13px]">qr_code_2</span>
-                  <span>QR Code Papan</span>
-                </button>
-                <span class="text-slate-300 dark:text-slate-600">&middot;</span>
-                <button class="hover:underline text-rose-600 dark:text-rose-400 flex items-center gap-1 cursor-pointer" type="button" data-testid="board-invite-link-delete-button">
-                  <span class="material-symbols-outlined text-[13px]">delete</span>
-                  <span>Delete link</span>
-                </button>
+              <!-- Title & Description -->
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[13px] font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                    Tautan &amp; QR Akses Papan
+                  </span>
+                  <span id="board-share-link-role-badge" class="px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/60 shrink-0">
+                    ${this._linkPermission || 'Member'}
+                  </span>
+                </div>
+                <p data-testid="board-share-link-label" class="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 truncate leading-tight">
+                  Anyone with the link can join as a member
+                </p>
               </div>
             </div>
+
+            <!-- Permission Selector Dropdown -->
+            <div data-testid="board-invite-link-select-menu" class="shrink-0">
+              <button aria-expanded="false" aria-haspopup="true" aria-live="polite"
+                      aria-label="Share board with permission: Change permissions" type="button"
+                      class="h-8 px-2.5 rounded-xl bg-white dark:bg-[#22272b] hover:bg-slate-100 dark:hover:bg-[#2c333a] text-slate-700 dark:text-slate-200 border border-[#dfe1e6] dark:border-[#333c43] text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+                      data-testid="board-invite-type-selector-dropdown--trigger"
+                      title="Ubah izin akses tautan">
+                <span class="text-slate-400 dark:text-slate-500 text-[11px] font-normal">Izin:</span>
+                <span id="link-permission-text" class="text-blue-600 dark:text-blue-400 font-bold">${this._linkPermission || 'Member'}</span>
+                <span class="material-symbols-outlined text-[15px] text-slate-400">expand_more</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Permission Selector Menu -->
-          <div data-testid="board-invite-link-select-menu" class="shrink-0">
-            ${permBtn('Change permissions')}
+          <!-- Bottom Row: Sleek Action Buttons (Copy Link, QR Code, Delete Link) -->
+          <div class="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-slate-200/70 dark:border-slate-800/80">
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Copy Link Button (Primary Pill) -->
+              <button type="button" data-testid="board-invite-link-copy-button"
+                      class="h-7.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
+                <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                <span>Copy link</span>
+              </button>
+
+              <!-- QR Code Toggle Button (Purple Pill) -->
+              <button type="button" id="btn-toggle-board-qr"
+                      class="h-7.5 px-3 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95">
+                <span class="material-symbols-outlined text-[15px] text-purple-600 dark:text-purple-400">qr_code_2</span>
+                <span>QR Code Papan</span>
+              </button>
+            </div>
+
+            <!-- Delete / Reset Link Button (Subtle Ghost) -->
+            <button type="button" data-testid="board-invite-link-delete-button"
+                    class="h-7.5 px-2.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 active:scale-95"
+                    title="Reset dan batalkan tautan undangan ini">
+              <span class="material-symbols-outlined text-[14px]">delete</span>
+              <span>Reset</span>
+            </button>
           </div>
+
         </div>
 
         <!-- COLLAPSIBLE QR CODE CONTAINER -->
-        <div id="board-qr-panel" class="hidden px-5 py-3.5 bg-purple-50/50 dark:bg-purple-950/20 border-b border-purple-100 dark:border-purple-900/40 animate-in fade-in duration-200">
+        <div id="board-qr-panel" class="hidden px-5 py-4 bg-purple-50/60 dark:bg-purple-950/30 border-b border-purple-200/70 dark:border-purple-900/50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div class="flex items-center gap-4">
-            <div class="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-purple-200 dark:border-purple-800/60 shrink-0">
+            <div class="p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-purple-200 dark:border-purple-800/60 shrink-0">
               ${qrSvg}
             </div>
             <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 text-purple-700 dark:text-purple-300 font-bold text-[13px]">
-                <span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+              <div class="flex items-center gap-1.5 text-purple-800 dark:text-purple-200 font-bold text-[13px]">
+                <span class="material-symbols-outlined text-[17px] text-purple-600 dark:text-purple-400">qr_code_scanner</span>
                 <span>Pindai QR untuk Masuk ke Papan Ini</span>
               </div>
               <p class="text-[11.5px] text-slate-600 dark:text-slate-400 mt-1 leading-snug">
                 Siapapun yang memindai QR code ini melalui kamera ponsel atau pemindai aplikasi akan otomatis bergabung ke <strong>${this.boardTitle}</strong> dan langsung tercatat di Board members.
               </p>
-              <div class="flex items-center gap-2 mt-2">
-                <button type="button" id="btn-copy-qr-link" class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+              <div class="flex items-center gap-2 mt-2.5">
+                <button type="button" id="btn-copy-qr-link" class="h-7.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11.5px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95">
                   <span class="material-symbols-outlined text-[13px]">content_copy</span>
                   <span>Salin Tautan QR</span>
                 </button>
@@ -579,9 +611,14 @@ export class AddMemberModal extends BaseModal {
     if (linkPermTrigger) {
       linkPermTrigger.addEventListener('click', () => {
         linkPermIdx = (linkPermIdx + 1) % linkPerms.length;
-        this._linkPermission = linkPermIdx === 0 ? 'Member' : 'Observer';
+        const roleName = linkPermIdx === 0 ? 'Member' : 'Observer';
+        this._linkPermission = roleName;
         if (linkLabel) linkLabel.textContent = linkPerms[linkPermIdx];
-        if (this.notificationService) this.notificationService.info(`Izin link diubah: ${linkPerms[linkPermIdx]}`);
+        const badgeEl = modalRoot.querySelector('#board-share-link-role-badge');
+        if (badgeEl) badgeEl.textContent = roleName;
+        const permTextEl = modalRoot.querySelector('#link-permission-text');
+        if (permTextEl) permTextEl.textContent = roleName;
+        if (this.notificationService) this.notificationService.info(`Izin link diubah: ${roleName}`);
       });
     }
 
