@@ -354,16 +354,14 @@ export class WorkspacesView extends BaseView {
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Estimasi Budget</label>
-                <input
-                  id="input-ws-project-budget"
-                  type="text"
-                  placeholder="Contoh: Rp 75.000.000"
-                  value="Rp 85.000.000"
-                  class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                />
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
+                <textarea
+                  id="input-ws-project-desc"
+                  rows="2"
+                  placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..."
+                  class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+                ></textarea>
               </div>
-
 
               <!-- Modal Footer Actions -->
               <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-slate-100">
@@ -650,41 +648,20 @@ export class WorkspacesView extends BaseView {
       });
     }
 
-    // Auto-fill new workspace name based on project name if not manually modified
-    const projectNameInput = this.element.querySelector('#input-ws-project-name');
-    const wsNameInput = this.element.querySelector('#input-ws-new-workspace-name');
-    let wsNameManuallyEdited = false;
-
-    if (wsNameInput) {
-      wsNameInput.addEventListener('input', () => {
-        wsNameManuallyEdited = true;
-      });
-    }
-
-    if (projectNameInput && wsNameInput) {
-      projectNameInput.addEventListener('input', (e) => {
-        if (!wsNameManuallyEdited) {
-          const val = e.target.value.trim();
-          wsNameInput.value = val ? `${val} Hub` : '';
-        }
-      });
-    }
-
     // Submit Tambah Proyek Form (Otomatis Buat Ruang Kerja Baru)
     const form = this.element.querySelector('#form-create-project');
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const name = this.element.querySelector('#input-ws-project-name')?.value.trim();
-        let wsTitle = this.element.querySelector('#input-ws-new-workspace-name')?.value.trim();
+        const wsTitle = `${name} Hub`;
         const wsTag = this.element.querySelector('#select-ws-new-workspace-tag')?.value || 'Dev / Creative Hub';
         const priority = this.element.querySelector('#select-ws-project-priority')?.value || 'High';
         const dueDate = this.element.querySelector('#input-ws-project-due')?.value || 'Des 2026';
-        const budget = this.element.querySelector('#input-ws-project-budget')?.value || 'Rp 85.000.000';
+        const budget = 'Rp 85.000.000';
         const description = this.element.querySelector('#input-ws-project-desc')?.value.trim() || `Ruang kerja dan deliverable proyek ${name}.`;
 
         if (!name) return;
-        if (!wsTitle) wsTitle = `${name} Hub`;
 
         // Generate unique workspace ID
         const slugBase = wsTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ws-baru';

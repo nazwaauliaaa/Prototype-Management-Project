@@ -235,18 +235,16 @@ export class CreateBoardModal extends BaseModal {
             </div>
           </div>
 
-          <!-- Estimasi Budget -->
+          <!-- Deskripsi Proyek -->
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Estimasi Budget</label>
-            <input 
-              id="input-ws-project-budget" 
-              type="text" 
-              placeholder="Contoh: Rp 75.000.000" 
-              value="Rp 85.000.000" 
-              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-            />
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
+            <textarea 
+              id="input-ws-project-desc" 
+              rows="2" 
+              placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..." 
+              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+            ></textarea>
           </div>
-
 
           <!-- Tema Visual Papan & Preview -->
           <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
@@ -339,16 +337,6 @@ export class CreateBoardModal extends BaseModal {
       if (projectNameInput) projectNameInput.focus();
     }, 100);
 
-    // Track manual edits on workspace input
-    if (newWorkspaceInput) {
-      newWorkspaceInput.addEventListener('input', () => {
-        workspaceUserEdited = true;
-        if (previewWorkspace) {
-          previewWorkspace.textContent = (newWorkspaceInput.value.trim() || 'WORKSPACE').toUpperCase();
-        }
-      });
-    }
-
     // Live update preview title & auto-fill workspace name
     if (projectNameInput) {
       projectNameInput.addEventListener('input', () => {
@@ -357,12 +345,8 @@ export class CreateBoardModal extends BaseModal {
           previewTitle.textContent = val || 'Nama Proyek Baru';
         }
 
-        // Auto-suggest workspace title if user hasn't manually overridden it
-        if (!workspaceUserEdited && newWorkspaceInput) {
-          newWorkspaceInput.value = val ? `${val} Hub` : '';
-          if (previewWorkspace) {
-            previewWorkspace.textContent = (newWorkspaceInput.value || 'WORKSPACE').toUpperCase();
-          }
+        if (previewWorkspace) {
+          previewWorkspace.textContent = (val ? `${val} Hub` : 'WORKSPACE').toUpperCase();
         }
       });
     }
@@ -416,20 +400,16 @@ export class CreateBoardModal extends BaseModal {
         e.preventDefault();
 
         const name = projectNameInput ? projectNameInput.value.trim() : '';
-        let wsTitle = newWorkspaceInput ? newWorkspaceInput.value.trim() : '';
+        const wsTitle = `${name} Hub`;
         const wsTag = workspaceTagSelect ? workspaceTagSelect.value : 'Dev / Creative Hub';
         const priority = prioritySelect ? prioritySelect.value : 'High';
         const dueDate = dueDateInput ? dueDateInput.value : 'Des 2026';
-        const budget = budgetInput ? budgetInput.value : 'Rp 85.000.000';
+        const budget = 'Rp 85.000.000';
         const description = descInput ? descInput.value.trim() : `Ruang kerja dan deliverable proyek ${name}.`;
 
         if (!name) {
           if (projectNameInput) projectNameInput.focus();
           return;
-        }
-
-        if (!wsTitle) {
-          wsTitle = `${name} Hub`;
         }
 
         // Generate unique workspace ID
