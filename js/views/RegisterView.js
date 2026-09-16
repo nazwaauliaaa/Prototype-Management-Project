@@ -371,10 +371,13 @@ export class RegisterView extends BaseView {
               this.notificationService.success(`🎉 Selamat datang, ${savedUser.name}! Akun dan QR Anda telah resmi terdaftar di database.`);
             }
 
+            sessionStorage.setItem('auth_login_method', 'qr');
             const userInstance = this.authService.registerNewUser({
               ...savedUser,
               boundDeviceId: apiService.getDeviceId(),
-              boundDeviceName: apiService.getDeviceName()
+              boundDeviceName: apiService.getDeviceName(),
+              loginMethod: 'qr',
+              qr_data: this.qrCode
             });
 
             setTimeout(() => {

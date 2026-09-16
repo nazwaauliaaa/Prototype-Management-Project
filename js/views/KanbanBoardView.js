@@ -238,7 +238,13 @@ export class KanbanBoardView extends BaseView {
 
   getBoardMembers() {
     const key = `board_members_${this.currentWorkspace}`;
-    const stored = localStorage.getItem(key);
+    let stored = localStorage.getItem(key);
+    if (!stored && this.projectId && this.projectId !== this.currentWorkspace) {
+      stored = localStorage.getItem(`board_members_${this.projectId}`);
+      if (stored) localStorage.setItem(key, stored);
+    } else if (stored && this.projectId && this.projectId !== this.currentWorkspace && !localStorage.getItem(`board_members_${this.projectId}`)) {
+      localStorage.setItem(`board_members_${this.projectId}`, stored);
+    }
     if (!stored) {
       return [];
     }
@@ -246,7 +252,7 @@ export class KanbanBoardView extends BaseView {
     try {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        // Filter keluar mock/dummy fiktif yang belum masuk via link
+        // Filter keluar mock/dummy fiktif yang belum masuk via link atau QR
         const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
         const clean = parsed.filter(m => {
           if (!m) return false;
@@ -257,6 +263,9 @@ export class KanbanBoardView extends BaseView {
 
         if (clean.length !== parsed.length) {
           localStorage.setItem(key, JSON.stringify(clean));
+          if (this.projectId && this.projectId !== this.currentWorkspace) {
+            localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(clean));
+          }
         }
         return clean;
       }
@@ -265,6 +274,60 @@ export class KanbanBoardView extends BaseView {
     }
 
     return [];
+  }
+
+  _ensureCurrentUserInBoardMembers() {
+    try {
+      const authService = this.container ? this.container.resolve('AuthService') : null;
+      const currentUser = authService ? authService.getCurrentUser() : null;
+      if (!currentUser) return;
+
+      const isQrUser = sessionStorage.getItem('auth_login_method') === 'qr' ||
+                       currentUser.loginMethod === 'qr' ||
+                       Boolean(currentUser.qr_data);
+
+      if (!isQrUser) return;
+
+      const currentWs = this.currentWorkspace || 'panen-kunci';
+      const key = `board_members_${currentWs}`;
+      let members = this.getBoardMembers();
+
+      const userEmail = (currentUser.email || '').toLowerCase();
+      const existingIdx = members.findIndex(m =>
+        (m.id && m.id === currentUser.id) ||
+        (m.email && userEmail && m.email.toLowerCase() === userEmail)
+      );
+
+      if (existingIdx === -1) {
+        const displayName = currentUser.name || 'Pengguna QR';
+        const displayEmail = currentUser.email || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+        const newMember = {
+          id: currentUser.id || 'mem-' + Date.now(),
+          name: displayName,
+          email: displayEmail,
+          role: currentUser.role === 'admin' ? 'Admin' : (currentUser.isProjectManager?.() ? 'PM' : 'Member'),
+          roleDescription: currentUser.title || currentUser.jobdesk || 'Anggota Tim',
+          color: '#059669',
+          initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'QR',
+          workspace: currentWs,
+          projectId: this.projectId || currentWs,
+          joinedVia: 'qr',
+          isOnline: true,
+          joinedAt: new Date().toISOString()
+        };
+        members.unshift(newMember);
+        localStorage.setItem(key, JSON.stringify(members));
+        if (this.projectId && this.projectId !== currentWs) {
+          localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(members));
+        }
+        localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+        if (this.eventBus) {
+          this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
+        }
+      }
+    } catch (e) {
+      console.warn('Error syncing QR user to board members:', e);
+    }
   }
 
   removeBoardMember(memberId) {
@@ -281,6 +344,9 @@ export class KanbanBoardView extends BaseView {
 
     const filtered = current.filter(m => m.id !== memberId);
     localStorage.setItem(key, JSON.stringify(filtered));
+    if (this.projectId && this.projectId !== this.currentWorkspace) {
+      localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(filtered));
+    }
 
     try {
       const teamKey = 'team_members';
@@ -463,6 +529,7 @@ export class KanbanBoardView extends BaseView {
     const perms = this.getPermissions();
     const currentWsName = this.getWorkspaceName(this.currentWorkspace);
     const boardTitle = this.project ? this.project.name : currentWsName;
+    this._ensureCurrentUserInBoardMembers();
     const boardMembers = this.getBoardMembers();
     const pendingInvites = this.getPendingInvites();
     const availableWorkspaces = this.getAvailableWorkspacesAndProjects();

@@ -500,6 +500,34 @@ export class AuthView extends BaseView {
       const cleanCode = String(rawCode).trim();
       console.log('[AuthView] Kode QR terdeteksi:', cleanCode, forceSwitch ? '(forceSwitch)' : '');
 
+      sessionStorage.setItem('auth_login_method', 'qr');
+
+      // 0. Deteksi jika kode QR adalah tautan undangan proyek (misal scan QR dari AddMemberModal)
+      if (cleanCode.includes('accept_invite') || (cleanCode.includes('#/kanban/') && cleanCode.includes('?'))) {
+        stopCamera();
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">QR Papan Proyek Terdeteksi!</span> Mengalihkan ke Papan...`;
+        }
+        if (this.notificationService) {
+          this.notificationService.success('Papan terverifikasi via QR! Membuka proyek...');
+        }
+
+        let targetUrl = cleanCode;
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+          targetUrl = window.location.origin + window.location.pathname + (targetUrl.startsWith('?') ? targetUrl : '?' + targetUrl);
+        }
+        try {
+          const parsed = new URL(targetUrl);
+          parsed.searchParams.set('via', 'qr');
+          targetUrl = parsed.toString();
+        } catch (e) {}
+
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 400);
+        return;
+      }
+
       if (feedback) {
         feedback.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">Memverifikasi ke Supabase & Memvalidasi Perangkat...</span>`;
       }
@@ -643,7 +671,9 @@ export class AuthView extends BaseView {
           const userInstance = this.authService.registerNewUser({
             ...userFromDb,
             boundDeviceId: apiService.getDeviceId(),
-            boundDeviceName: apiService.getDeviceName()
+            boundDeviceName: apiService.getDeviceName(),
+            loginMethod: 'qr',
+            qr_data: cleanCode
           });
 
           setTimeout(() => {

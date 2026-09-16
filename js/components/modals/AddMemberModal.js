@@ -1,8 +1,9 @@
 import { BaseModal } from '../../core/BaseModal.js';
+import { QRCodeGenerator } from '../../services/QRCodeGenerator.js';
 
 /**
  * AddMemberModal - Single Responsibility Principle (SRP)
- * Trello-style Share board modal with link sharing, member management, and join requests.
+ * Trello-style Share board modal with link sharing, QR Code access, member management, and join requests.
  */
 export class AddMemberModal extends BaseModal {
   constructor(container) {
@@ -28,21 +29,33 @@ export class AddMemberModal extends BaseModal {
 
   savePendingInvite(invite) {
     try {
-      const key = `pending_invites_${invite.workspace || this.currentWorkspace}`;
-      const list = this.getPendingInvites(invite.workspace);
+      const targetWs = invite.workspace || this.currentWorkspace;
+      const key = `pending_invites_${targetWs}`;
+      const list = this.getPendingInvites(targetWs);
       const idx = list.findIndex(i => i.id === invite.id);
       if (idx >= 0) list[idx] = invite;
       else list.unshift(invite);
       localStorage.setItem(key, JSON.stringify(list));
+
+      if (invite.projectId && invite.projectId !== targetWs) {
+        localStorage.setItem(`pending_invites_${invite.projectId}`, JSON.stringify(list));
+      }
+
       this.eventBus.emit('invite:sent', { invite });
     } catch (e) { console.error('Error saving pending invite:', e); }
   }
 
   removePendingInvite(inviteId, ws) {
     try {
-      const key = `pending_invites_${ws || this.currentWorkspace}`;
-      const filtered = this.getPendingInvites(ws).filter(i => i.id !== inviteId);
+      const targetWs = ws || this.currentWorkspace;
+      const key = `pending_invites_${targetWs}`;
+      const filtered = this.getPendingInvites(targetWs).filter(i => i.id !== inviteId);
       localStorage.setItem(key, JSON.stringify(filtered));
+
+      if (this.projectId && this.projectId !== targetWs) {
+        localStorage.setItem(`pending_invites_${this.projectId}`, JSON.stringify(filtered));
+      }
+
       this.eventBus.emit('invite:removed', { inviteId });
     } catch (e) { console.error('Error removing pending invite:', e); }
   }
@@ -67,10 +80,17 @@ export class AddMemberModal extends BaseModal {
       role: invite.role || 'Member',
       color: invite.color || '#2563eb',
       initials: invite.initials || (name ? name.slice(0, 2).toUpperCase() : 'U'),
+      workspace: currentWs,
+      projectId: this.projectId || currentWs,
+      joinedVia: invite.via || 'link',
       joinedAt: new Date().toISOString()
     };
     members.unshift(newMember);
     localStorage.setItem(key, JSON.stringify(members));
+
+    if (this.projectId && this.projectId !== currentWs) {
+      localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(members));
+    }
 
     if (this.notificationService) {
       this.notificationService.success(`Permintaan ${newMember.name} telah DITERIMA & ditambahkan ke Board Members!`);
@@ -92,17 +112,23 @@ export class AddMemberModal extends BaseModal {
     this.eventBus.emit('board:members_updated', { workspace: currentWs });
   }
 
-  /** Returns confirmed board members from localStorage (joined via invite link). */
+  /** Returns confirmed board members from localStorage (joined via invite link or QR). */
   getBoardMembers(ws) {
     try {
-      const key = `board_members_${ws || this.currentWorkspace}`;
-      const saved = localStorage.getItem(key);
+      const currentWs = ws || this.currentWorkspace;
+      const key = `board_members_${currentWs}`;
+      let saved = localStorage.getItem(key);
+
+      // Fallback check under projectId if different from workspace
+      if (!saved && this.projectId && this.projectId !== currentWs) {
+        saved = localStorage.getItem(`board_members_${this.projectId}`);
+      }
+
       if (!saved) return [];
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return [];
 
-      // Filter: Hanya anggota yang benar-benar masuk/bergabung via link
-      // Hapus mock fiktif lama: member-awa, member-sari, member-bagas, member-farhan, dan email @workspace
+      // Filter: Hanya anggota yang benar-benar masuk/bergabung via link atau QR
       const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
       const clean = parsed.filter(m => {
         if (!m) return false;
@@ -114,6 +140,9 @@ export class AddMemberModal extends BaseModal {
       // Update localStorage agar data bersih permanen
       if (clean.length !== parsed.length) {
         localStorage.setItem(key, JSON.stringify(clean));
+        if (this.projectId && this.projectId !== currentWs) {
+          localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(clean));
+        }
       }
 
       return clean;
@@ -137,16 +166,44 @@ export class AddMemberModal extends BaseModal {
       accept_invite: invite?.id    || 'inv-' + Date.now(),
       name:          invite?.name  || 'Anggota Baru',
       email:         invite?.email || '',
-      role:          invite?.role  || 'user',
+      role:          invite?.role  || 'Member',
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
       inviter_name:  inviterName,
       inviter_role:  inviterRole,
       color:         invite?.color || '#2563eb',
+      via:           invite?.via   || 'link'
     });
 
     // Directly routes to the specific kanban project board
+    return `${origin}${pathname}?${params.toString()}#/kanban/${currentProjId}`;
+  }
+
+  generateQrLink() {
+    const origin   = window.location.origin;
+    const pathname = window.location.pathname;
+    const currentWs     = this.currentWorkspace || localStorage.getItem('active_workspace')  || 'panen-kunci';
+    const currentProjId = this.projectId        || localStorage.getItem('active_project_id') || currentWs;
+    const currentTitle  = this.boardTitle       || currentWs;
+
+    const authService = this.container.resolve('AuthService');
+    const authUser = authService ? authService.getCurrentUser() : null;
+    const inviterName = authUser?.name || 'awaa';
+    const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
+
+    const params = new URLSearchParams({
+      accept_invite: 'inv-qr-' + Date.now(),
+      name:          'Pengguna QR',
+      role:          'Member',
+      ws:            currentWs,
+      project_id:    currentProjId,
+      board_title:   currentTitle,
+      inviter_name:  inviterName,
+      inviter_role:  inviterRole,
+      via:           'qr'
+    });
+
     return `${origin}${pathname}?${params.toString()}#/kanban/${currentProjId}`;
   }
 
@@ -172,7 +229,7 @@ export class AddMemberModal extends BaseModal {
 
   /**
    * Renders a single member list item showing name, complete gmail, role, and actions.
-   * @param {object} m - { id, name, email, role, roleDescription, color, initials, avatar, isYou }
+   * @param {object} m - { id, name, email, role, roleDescription, color, initials, avatar, isYou, joinedVia }
    */
   _renderMemberItem(m) {
     const displayName = m.name || m.email?.split('@')[0] || 'Pengguna';
@@ -180,14 +237,27 @@ export class AddMemberModal extends BaseModal {
     const badge       = m.role || 'Member';
     const roleLabel   = m.roleDescription || (m.isYou ? 'Workspace admin' : 'Anggota Tim');
     const youLabel    = m.isYou ? ' (you)' : '';
+    const isViaQr     = m.joinedVia === 'qr' || m.via === 'qr';
 
     const avatarStyle = m.avatar
       ? `background-image: url("${m.avatar}"); background-size: cover; background-position: center; height: 36px; width: 36px;`
-      : `background-color: ${m.color || '#2563eb'}; height: 36px; width: 36px;`;
+      : `background-color: ${m.color || '#059669'}; height: 36px; width: 36px;`;
 
     const avatarInner = m.avatar
       ? ''
-      : `<span style="color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%">${m.initials || displayName.slice(0,2).toUpperCase()}</span>`;
+      : `<span style="color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%">${m.initials || displayName.slice(0, 1).toUpperCase()}</span>`;
+
+    const badgeHtml = isViaQr ? `
+      <span class="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 flex items-center gap-0.5 shrink-0">
+        <span class="material-symbols-outlined text-[11px]">qr_code_2</span>
+        <span>Masuk via QR</span>
+      </span>
+    ` : `
+      <span class="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 flex items-center gap-0.5 shrink-0">
+        <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M8.22 2.22a3.932 3.932 0 1 1 5.56 5.56l-2.25 2.25-1.06-1.06 2.25-2.25a2.432 2.432 0 0 0-3.44-3.44L7.03 5.53 5.97 4.47zm3.06 3.56-5.5 5.5-1.06-1.06 5.5-5.5zM2.22 8.22l2.25-2.25 1.06 1.06-2.25 2.25a2.432 2.432 0 0 0 3.44 3.44l2.25-2.25 1.06 1.06-2.25 2.25a3.932 3.932 0 1 1-5.56-5.56" clip-rule="evenodd"/></svg>
+        <span>Masuk via tautan</span>
+      </span>
+    `;
 
     return `
       <li class="tNfnRxYxdIqnQH" data-member-id="${m.id || ''}" data-member-email="${displayEmail}">
@@ -202,15 +272,12 @@ export class AddMemberModal extends BaseModal {
             </div>
 
             <div class="SCS1NQH7aiuMRS min-w-0 flex-1">
-              <!-- Nama Orang + Badge Masuk via Tautan -->
+              <!-- Nama Orang + Badge Masuk via Tautan / QR -->
               <div class="NIQPWvypMos65h flex items-center gap-2">
                 <span class="font-bold text-[13.5px] text-[#172b4d] dark:text-[#b6c2cf] truncate" data-testid="member-list-item-full-name">
                   ${displayName}${youLabel}
                 </span>
-                <span class="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 flex items-center gap-0.5 shrink-0">
-                  <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M8.22 2.22a3.932 3.932 0 1 1 5.56 5.56l-2.25 2.25-1.06-1.06 2.25-2.25a2.432 2.432 0 0 0-3.44-3.44L7.03 5.53 5.97 4.47zm3.06 3.56-5.5 5.5-1.06-1.06 5.5-5.5zM2.22 8.22l2.25-2.25 1.06 1.06-2.25 2.25a2.432 2.432 0 0 0 3.44 3.44l2.25-2.25 1.06 1.06-2.25 2.25a3.932 3.932 0 1 1-5.56-5.56" clip-rule="evenodd"/></svg>
-                  <span>Masuk via tautan</span>
-                </span>
+                ${badgeHtml}
               </div>
 
               <!-- Gmail Lengkap + Role -->
@@ -261,7 +328,7 @@ export class AddMemberModal extends BaseModal {
     this.projectId        = data?.projectId    || localStorage.getItem('active_project_id') || this.currentWorkspace;
     const prefillEmail    = data?.prefillEmail || '';
 
-    // Hanya anggota yang benar-benar masuk via link
+    // Hanya anggota yang benar-benar masuk via link atau QR
     const allMembers = this.getBoardMembers(this.currentWorkspace);
     const memberCount = allMembers.length;
 
@@ -278,7 +345,7 @@ export class AddMemberModal extends BaseModal {
             Belum ada anggota yang bergabung.
           </p>
           <p class="text-[12px] text-[#5e6c84] dark:text-[#9fadbc] mt-1">
-            Bagikan tautan di atas untuk mengundang anggota ke papan ini.
+            Bagikan tautan atau tampilkan QR Code di atas untuk mengundang anggota ke papan ini.
           </p>
         </div>`;
     } else {
@@ -296,6 +363,9 @@ export class AddMemberModal extends BaseModal {
         </span>
         <span class="material-symbols-outlined text-[16px] text-slate-400">expand_more</span>
       </button>`;
+
+    const qrUrl = this.generateQrLink();
+    const qrSvg = QRCodeGenerator.generate(qrUrl, { size: 104, darkColor: '#0f172a' });
 
     return `
       <div class="relative w-full max-w-[580px] bg-white dark:bg-[#1d2125]
@@ -357,10 +427,15 @@ export class AddMemberModal extends BaseModal {
               <p data-testid="board-share-link-label" class="text-[12.5px] font-semibold text-slate-800 dark:text-slate-200 truncate">
                 Anyone with the link can join as a member
               </p>
-              <div class="flex items-center gap-2 mt-0.5 text-[11.5px] font-semibold text-blue-600 dark:text-blue-400">
+              <div class="flex items-center gap-2 mt-0.5 text-[11.5px] font-semibold text-blue-600 dark:text-blue-400 flex-wrap">
                 <button class="hover:underline flex items-center gap-1 cursor-pointer" type="button" data-testid="board-invite-link-copy-button">
                   <span class="material-symbols-outlined text-[13px]">content_copy</span>
                   <span>Copy link</span>
+                </button>
+                <span class="text-slate-300 dark:text-slate-600">&middot;</span>
+                <button class="hover:underline flex items-center gap-1 text-purple-600 dark:text-purple-400 cursor-pointer" type="button" id="btn-toggle-board-qr">
+                  <span class="material-symbols-outlined text-[13px]">qr_code_2</span>
+                  <span>QR Code Papan</span>
                 </button>
                 <span class="text-slate-300 dark:text-slate-600">&middot;</span>
                 <button class="hover:underline text-rose-600 dark:text-rose-400 flex items-center gap-1 cursor-pointer" type="button" data-testid="board-invite-link-delete-button">
@@ -374,6 +449,30 @@ export class AddMemberModal extends BaseModal {
           <!-- Permission Selector Menu -->
           <div data-testid="board-invite-link-select-menu" class="shrink-0">
             ${permBtn('Change permissions')}
+          </div>
+        </div>
+
+        <!-- COLLAPSIBLE QR CODE CONTAINER -->
+        <div id="board-qr-panel" class="hidden px-5 py-3.5 bg-purple-50/50 dark:bg-purple-950/20 border-b border-purple-100 dark:border-purple-900/40 animate-in fade-in duration-200">
+          <div class="flex items-center gap-4">
+            <div class="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-purple-200 dark:border-purple-800/60 shrink-0">
+              ${qrSvg}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 text-purple-700 dark:text-purple-300 font-bold text-[13px]">
+                <span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+                <span>Pindai QR untuk Masuk ke Papan Ini</span>
+              </div>
+              <p class="text-[11.5px] text-slate-600 dark:text-slate-400 mt-1 leading-snug">
+                Siapapun yang memindai QR code ini melalui kamera ponsel atau pemindai aplikasi akan otomatis bergabung ke <strong>${this.boardTitle}</strong> dan langsung tercatat di Board members.
+              </p>
+              <div class="flex items-center gap-2 mt-2">
+                <button type="button" id="btn-copy-qr-link" class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                  <span class="material-symbols-outlined text-[13px]">content_copy</span>
+                  <span>Salin Tautan QR</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -393,7 +492,7 @@ export class AddMemberModal extends BaseModal {
               </div>
               <span class="text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                 <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                <span>Otomatis aktif via tautan</span>
+                <span>Otomatis aktif via tautan / QR</span>
               </span>
             </div>
 
@@ -480,12 +579,14 @@ export class AddMemberModal extends BaseModal {
     if (linkPermTrigger) {
       linkPermTrigger.addEventListener('click', () => {
         linkPermIdx = (linkPermIdx + 1) % linkPerms.length;
+        this._linkPermission = linkPermIdx === 0 ? 'Member' : 'Observer';
         if (linkLabel) linkLabel.textContent = linkPerms[linkPermIdx];
         if (this.notificationService) this.notificationService.info(`Izin link diubah: ${linkPerms[linkPermIdx]}`);
       });
     }
 
-    // 5. Share button + Enter key
+    // 5. Share button + Enter key: HANYA membuat link undangan pending (TIDAK langsung masuk ke board members)
+    // Pengguna baru masuk ke board members SETELAH mengklik link tersebut
     const inputField = modalRoot.querySelector('[data-testid="add-members-input"]');
     const shareBtn   = modalRoot.querySelector('[data-testid="team-invite-submit-button"]');
 
@@ -509,7 +610,7 @@ export class AddMemberModal extends BaseModal {
                 Belum ada anggota yang bergabung.
               </p>
               <p class="text-[12px] text-[#5e6c84] dark:text-[#9fadbc] mt-1">
-                Bagikan tautan di atas untuk mengundang anggota ke papan ini.
+                Bagikan tautan atau tampilkan QR Code di atas untuk mengundang anggota ke papan ini.
               </p>
             </div>`;
         } else {
@@ -535,7 +636,6 @@ export class AddMemberModal extends BaseModal {
       if (rawVal.includes('@')) {
         email = rawVal.toLowerCase();
         const userPart = rawVal.split('@')[0];
-        // Capitalize words from username part (e.g. dimas.anggara -> Dimas Anggara)
         name = userPart
           .replace(/[._-]+/g, ' ')
           .split(' ')
@@ -543,7 +643,6 @@ export class AddMemberModal extends BaseModal {
           .map(w => w.charAt(0).toUpperCase() + w.slice(1))
           .join(' ') || userPart;
       } else {
-        // User typed a name (e.g. "Dimas Anggara")
         name = rawVal
           .split(' ')
           .filter(Boolean)
@@ -554,90 +653,36 @@ export class AddMemberModal extends BaseModal {
       }
 
       const selectedRole = this._selectedPermission || 'Member';
-      let roleDesc = 'Anggota Tim';
-      if (selectedRole === 'Admin') roleDesc = 'Workspace admin';
-      else if (selectedRole === 'Observer') roleDesc = 'Pengamat & Kontributor';
-
       const colors = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#db2777'];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || name.slice(0, 2).toUpperCase() || 'MB';
 
       const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'aikreativ';
-      const key = `board_members_${currentWs}`;
-      let members = this.getBoardMembers(currentWs);
+      const currentProj = this.projectId || currentWs;
 
-      const existingIdx = members.findIndex(m => m.email && m.email.toLowerCase() === email.toLowerCase());
-      const memberObj = {
-        id: existingIdx >= 0 ? members[existingIdx].id : 'mem-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-        name: name,
-        email: email,
-        role: selectedRole,
-        roleDescription: roleDesc,
-        color: existingIdx >= 0 && members[existingIdx].color ? members[existingIdx].color : randomColor,
-        initials: initials,
-        workspace: currentWs,
-        projectId: this.projectId || currentWs,
-        joinedViaGmail: true,
-        isOnline: true,
-        joinedAt: existingIdx >= 0 && members[existingIdx].joinedAt ? members[existingIdx].joinedAt : new Date().toISOString()
-      };
-
-      if (existingIdx >= 0) {
-        members[existingIdx] = { ...members[existingIdx], ...memberObj };
-      } else {
-        members.unshift(memberObj);
-      }
-
-      // Save to board members
-      localStorage.setItem(key, JSON.stringify(members));
-
-      // Also register to team_members for task assignment
-      try {
-        const teamKey = 'team_members';
-        const team = JSON.parse(localStorage.getItem(teamKey) || '[]');
-        const tIdx = team.findIndex(t => t.email && t.email.toLowerCase() === email.toLowerCase());
-        if (tIdx >= 0) {
-          team[tIdx] = { ...team[tIdx], name, role: selectedRole };
-        } else {
-          team.push({
-            id: memberObj.id,
-            name: memberObj.name,
-            email: memberObj.email,
-            role: memberObj.role,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(memberObj.name)}&background=${memberObj.color.replace('#','')}&color=fff&bold=true`
-          });
-        }
-        localStorage.setItem(teamKey, JSON.stringify(team));
-      } catch (e) {}
-
-      // Save pending invite for link tracking
+      // 1. Simpan sebagai PENDING INVITE (Bukan langsung Board Members)
+      // Pengguna baru masuk ke Board Members setelah mengklik tautan undangan
       const invite = {
-        id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2,7),
+        id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
         name,
         email,
         role: selectedRole,
         workspace: currentWs,
+        projectId: currentProj,
         boardTitle: this.boardTitle,
-        color: memberObj.color,
+        color: randomColor,
+        via: 'link',
+        createdAt: new Date().toISOString()
       };
       this.savePendingInvite(invite);
 
-      // Generate invite link & copy to clipboard
+      // 2. Generate tautan undangan & salin otomatis ke clipboard
       const link = this.generateInviteLink(invite);
       try {
         await navigator.clipboard.writeText(link);
       } catch (e) {}
 
-      // Broadcast updates
-      localStorage.setItem('board_members_updated_trigger', Date.now().toString());
-      this.eventBus.emit('board:members_updated', { workspace: currentWs, member: memberObj });
-      this.eventBus.emit('member:added', { workspace: currentWs, member: memberObj });
-
-      // Immediate UI update in modal
-      refreshMembersListUI();
-
       if (this.notificationService) {
-        this.notificationService.success(`✅ ${name} (${email}) berhasil ditambahkan ke Board members! Tautan disalin.`);
+        this.notificationService.success(`🔗 Tautan undangan untuk ${name} (${email}) disalin! Anggota akan masuk ke Board members setelah mengklik tautan.`);
       }
 
       if (inputField) inputField.value = '';
@@ -646,26 +691,57 @@ export class AddMemberModal extends BaseModal {
     if (shareBtn)   shareBtn.addEventListener('click', handleShareAction);
     if (inputField) inputField.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); handleShareAction(); } });
 
-    // 6. Copy Link
+    // 6. Copy Link General
     const copyLinkBtn = modalRoot.querySelector('[data-testid="board-invite-link-copy-button"]');
     if (copyLinkBtn) {
       copyLinkBtn.addEventListener('click', async () => {
         const inv = {
-          id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2,7),
-          name: 'Anggota Baru', email: '', role: 'Member',
-          workspace: this.currentWorkspace, boardTitle: this.boardTitle, color: '#2563eb',
+          id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+          name: 'Anggota Baru',
+          email: '',
+          role: this._linkPermission || 'Member',
+          workspace: this.currentWorkspace,
+          projectId: this.projectId || this.currentWorkspace,
+          boardTitle: this.boardTitle,
+          color: '#2563eb',
+          via: 'link',
+          createdAt: new Date().toISOString()
         };
         this.savePendingInvite(inv);
         const link = this.generateInviteLink(inv);
         try {
           await navigator.clipboard.writeText(link);
-          const orig = copyLinkBtn.textContent.trim();
-          copyLinkBtn.textContent = 'Copied!';
-          setTimeout(() => { copyLinkBtn.textContent = orig; }, 2000);
-          if (this.notificationService) this.notificationService.success('Tautan papan berhasil disalin!');
+          const orig = copyLinkBtn.innerHTML;
+          copyLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">check</span><span>Copied!</span>`;
+          setTimeout(() => { copyLinkBtn.innerHTML = orig; }, 2000);
+          if (this.notificationService) this.notificationService.success('Tautan papan berhasil disalin! Pengguna akan masuk ke Board members setelah membuka tautan.');
         } catch {
-          if (this.notificationService) this.notificationService.success('Tautan berhasil dibuat!');
+          if (this.notificationService) this.notificationService.success('Tautan berhasil disalin!');
         }
+      });
+    }
+
+    // 6b. Toggle QR Code Papan & Copy QR Link
+    const toggleQrBtn = modalRoot.querySelector('#btn-toggle-board-qr');
+    const qrPanel = modalRoot.querySelector('#board-qr-panel');
+    if (toggleQrBtn && qrPanel) {
+      toggleQrBtn.addEventListener('click', () => {
+        qrPanel.classList.toggle('hidden');
+      });
+    }
+
+    const copyQrLinkBtn = modalRoot.querySelector('#btn-copy-qr-link');
+    if (copyQrLinkBtn) {
+      copyQrLinkBtn.addEventListener('click', async () => {
+        const qrUrl = this.generateQrLink();
+        try {
+          await navigator.clipboard.writeText(qrUrl);
+          copyQrLinkBtn.textContent = 'Tautan QR Disalin!';
+          setTimeout(() => {
+            copyQrLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">content_copy</span><span>Salin Tautan QR</span>`;
+          }, 2000);
+          if (this.notificationService) this.notificationService.success('Tautan QR berhasil disalin ke clipboard!');
+        } catch (e) {}
       });
     }
 
@@ -703,6 +779,9 @@ export class AddMemberModal extends BaseModal {
             const nextRole = roles[(roles.indexOf(curRole) + 1) % roles.length];
             members[idx].role = nextRole;
             localStorage.setItem(key, JSON.stringify(members));
+            if (this.projectId && this.projectId !== this.currentWorkspace) {
+              localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(members));
+            }
             if (labelSpan) labelSpan.textContent = nextRole;
             if (this.notificationService) {
               this.notificationService.success(`Izin untuk ${members[idx].name || 'anggota'} diubah menjadi ${nextRole}`);
@@ -726,18 +805,22 @@ export class AddMemberModal extends BaseModal {
           const target = members.find(m => (memberId && m.id === memberId) || (email && m.email === email));
           members = members.filter(m => (memberId ? m.id !== memberId : true) && (email ? m.email !== email : true));
           localStorage.setItem(key, JSON.stringify(members));
+          if (this.projectId && this.projectId !== this.currentWorkspace) {
+            localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(members));
+          }
 
           if (this.notificationService) {
             this.notificationService.info(`Anggota ${target?.name || ''} telah dihapus dari papan.`);
           }
           this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace });
+          refreshMembersListUI();
         }
       });
     }
 
-    // 9. Live member list update when someone joins via invite link or other tabs
-    const onMembersUpdated = ({ workspace } = {}) => {
-      if (workspace && workspace !== this.currentWorkspace) return;
+    // 9. Live member list update when someone joins via invite link, QR, or other tabs
+    const onMembersUpdated = ({ workspace, projectId } = {}) => {
+      if (workspace && workspace !== this.currentWorkspace && projectId !== this.projectId) return;
       refreshMembersListUI();
     };
 
@@ -747,7 +830,9 @@ export class AddMemberModal extends BaseModal {
     // Cross-tab real-time sync via storage event
     const storageHandler = (e) => {
       if (!e.key) return;
-      if (e.key === `board_members_${this.currentWorkspace}` || e.key === 'board_members_updated_trigger') {
+      if (e.key === `board_members_${this.currentWorkspace}` ||
+          (this.projectId && e.key === `board_members_${this.projectId}`) ||
+          e.key === 'board_members_updated_trigger') {
         refreshMembersListUI();
       }
     };

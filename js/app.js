@@ -75,6 +75,7 @@ class CreativeOfficeApp {
       const inviterName = urlParams.get('inviter_name') || urlParams.get('inviter') || 'awaa';
       const inviterRole = urlParams.get('inviter_role') || 'admin';
       const color = urlParams.get('color') || '#2563eb';
+      const via = urlParams.get('via') || (inviteToken.startsWith('inv-qr-') ? 'qr' : 'link');
 
       const eventBus = this.container.resolve('EventBus');
       const notificationService = this.container.resolve('NotificationService');
@@ -160,39 +161,74 @@ class CreativeOfficeApp {
         authService.isAuthenticated = true;
       }
 
-      // 7. Create new member record with confirmed email
+      // 8. Set active workspace and project first to resolve ID
+      localStorage.setItem('active_workspace', workspace);
+      localStorage.setItem('active_project_id', projectId);
+      localStorage.setItem('user_invited_workspace', workspace);
+      this.activeWorkspace = workspace;
+      const projectService = this.container.resolve('ProjectService');
+      let resolvedProjectId = projectId;
+      if (projectService) {
+        const projects = projectService.getAllProjects();
+        const matched = projects.find(p => p.workspace === workspace || p.id === workspace || p.id === projectId);
+        if (matched) {
+          resolvedProjectId = matched.id;
+          localStorage.setItem('active_project_id', matched.id);
+        }
+      }
+      localStorage.setItem('user_invited_project', resolvedProjectId);
+
+      // 7. Create new member record with confirmed email & save to board members
       const newMember = {
         id: 'mem-' + Date.now(),
         name: finalName,
         email: finalEmail,
-        role: role === 'Anggota' ? 'Editor' : role,
+        role: role === 'Anggota' ? 'Editor' : (role.toLowerCase() === 'admin' ? 'Admin' : (role.toLowerCase() === 'observer' ? 'Observer' : 'Member')),
         roleDescription: jobdeskTitle,
         color,
         initials: finalName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
         workspace,
-        joinedViaGmail: true,
+        projectId: resolvedProjectId || projectId || workspace,
+        joinedVia: via === 'qr' ? 'qr' : 'link',
         isOnline: true,
-        acceptedAt: new Date().toISOString()
+        acceptedAt: new Date().toISOString(),
+        joinedAt: new Date().toISOString()
       };
 
-      // Remove from pending invites & save to board members
+      // Remove from pending invites
       try {
         const pKey = `pending_invites_${workspace}`;
         const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
-        const filtered = pending.filter(p => p.email.toLowerCase() !== finalEmail && p.id !== inviteToken);
+        const filtered = pending.filter(p => (p.email && p.email.toLowerCase() !== finalEmail) && p.id !== inviteToken);
         localStorage.setItem(pKey, JSON.stringify(filtered));
+
+        if (resolvedProjectId && resolvedProjectId !== workspace) {
+          const pKey2 = `pending_invites_${resolvedProjectId}`;
+          const pending2 = JSON.parse(localStorage.getItem(pKey2) || '[]');
+          localStorage.setItem(pKey2, JSON.stringify(pending2.filter(p => (p.email && p.email.toLowerCase() !== finalEmail) && p.id !== inviteToken)));
+        }
       } catch(e) {}
 
+      // Save as active member in board_members_${workspace} and board_members_${resolvedProjectId}
       try {
-        const boardKey = `board_members_${workspace}`;
-        const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
-        const exIdx = currentBoardMembers.findIndex(m => m.email && m.email.toLowerCase() === finalEmail);
-        if (exIdx >= 0) {
-          currentBoardMembers[exIdx] = { ...currentBoardMembers[exIdx], ...newMember, isOnline: true };
-        } else {
-          currentBoardMembers.unshift(newMember);
+        const updateBoardList = (k) => {
+          const currentBoardMembers = JSON.parse(localStorage.getItem(k) || '[]');
+          const exIdx = currentBoardMembers.findIndex(m => m.email && m.email.toLowerCase() === finalEmail);
+          if (exIdx >= 0) {
+            currentBoardMembers[exIdx] = { ...currentBoardMembers[exIdx], ...newMember, isOnline: true };
+          } else {
+            currentBoardMembers.unshift(newMember);
+          }
+          localStorage.setItem(k, JSON.stringify(currentBoardMembers));
+        };
+
+        updateBoardList(`board_members_${workspace}`);
+        if (resolvedProjectId && resolvedProjectId !== workspace) {
+          updateBoardList(`board_members_${resolvedProjectId}`);
         }
-        localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
+        if (projectId && projectId !== workspace && projectId !== resolvedProjectId) {
+          updateBoardList(`board_members_${projectId}`);
+        }
         localStorage.setItem('board_members_updated_trigger', Date.now().toString());
 
         // Also add/sync in team_members
@@ -213,23 +249,6 @@ class CreativeOfficeApp {
         localStorage.setItem(teamKey, JSON.stringify(team));
       } catch (err) {}
 
-      // 8. Set active workspace and project
-      localStorage.setItem('active_workspace', workspace);
-      localStorage.setItem('active_project_id', projectId);
-      localStorage.setItem('user_invited_workspace', workspace);
-      this.activeWorkspace = workspace;
-      const projectService = this.container.resolve('ProjectService');
-      let resolvedProjectId = projectId;
-      if (projectService) {
-        const projects = projectService.getAllProjects();
-        const matched = projects.find(p => p.workspace === workspace || p.id === workspace || p.id === projectId);
-        if (matched) {
-          resolvedProjectId = matched.id;
-          localStorage.setItem('active_project_id', matched.id);
-        }
-      }
-      localStorage.setItem('user_invited_project', resolvedProjectId);
-
       // 9. Clean up query string from URL & set hash to specific kanban project
       const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${resolvedProjectId}`;
       window.history.replaceState({}, document.title, cleanUrl);
@@ -240,8 +259,8 @@ class CreativeOfficeApp {
       setTimeout(() => {
         eventBus.emit('auth:login', userInstance);
         eventBus.emit('workspace:selected', { workspace });
-        eventBus.emit('member:added', { member: newMember, workspace });
-        eventBus.emit('board:members_updated', { member: newMember, workspace });
+        eventBus.emit('member:added', { member: newMember, workspace, projectId: resolvedProjectId });
+        eventBus.emit('board:members_updated', { member: newMember, workspace, projectId: resolvedProjectId });
 
         // Navigate directly to the specific kanban project board
         this.navigateTo('kanban', { projectId: resolvedProjectId, workspace: workspace });
@@ -250,7 +269,8 @@ class CreativeOfficeApp {
         this._inviteRedirect = false;
 
         if (notificationService) {
-          notificationService.success(`🎉 ${inviterNotice} — Langsung masuk ke papan Kanban sebagai User!`);
+          const viaText = via === 'qr' ? 'via QR Code' : 'via Tautan Undangan';
+          notificationService.success(`🎉 ${inviterNotice} — Berhasil bergabung ${viaText} ke papan Kanban!`);
         }
       }, 1500);
 
