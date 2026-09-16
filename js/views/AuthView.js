@@ -123,10 +123,22 @@ export class AuthView extends BaseView {
               </p>
             </div>
 
-
+            <!-- Direct to Beranda / Dashboard Button -->
+            <div class="relative z-10 w-full flex flex-col gap-2 mt-2">
+              <button
+                id="btn-direct-to-home"
+                type="button"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold text-[13px] shadow-md shadow-purple-500/25 hover:shadow-purple-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-purple-400/30"
+                title="Langsung masuk ke halaman beranda tanpa scan QR"
+              >
+                <span class="material-symbols-outlined text-[18px]">home</span>
+                <span>Langsung Masuk ke Halaman Beranda</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </button>
+            </div>
 
             <!-- Security Verification Footer -->
-            <div class="mt-spacing-lg pt-spacing-sm flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
+            <div class="mt-spacing-md pt-spacing-xs flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
               <span class="material-symbols-outlined text-[16px] text-status-success">verified_user</span>
               <span>256-Bit SSL Enkripsi • Keamanan Terverifikasi</span>
             </div>
@@ -849,6 +861,26 @@ export class AuthView extends BaseView {
             stopCamera();
           }, 600);
         });
+      });
+    }
+
+    // Direct to Home/Beranda button handler
+    const btnDirectToHome = this.element.querySelector('#btn-direct-to-home');
+    if (btnDirectToHome) {
+      btnDirectToHome.addEventListener('click', (e) => {
+        e.preventDefault();
+        stopCamera();
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Memverifikasi akses... Langsung mengalihkan ke Beranda!</span>`;
+        }
+
+        // Login as Admin if not currently logged in so dashboard access is fully granted
+        if (!this.authService.isLoggedIn()) {
+          this.authService.loginWithRole('admin');
+        } else {
+          window.location.hash = '#/dashboard';
+        }
       });
     }
 
