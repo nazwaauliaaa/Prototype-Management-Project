@@ -506,7 +506,23 @@ export class KanbanBoardView extends BaseView {
 
     return `
       <style>
-        /* ── Drag-and-Drop Styles ── */
+        /* ── Drag-and-Drop & Board Layout Styles ── */
+        #kanban-board::-webkit-scrollbar {
+          height: 7px;
+        }
+        #kanban-board::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.18);
+          border-radius: 999px;
+          margin: 0 28px;
+        }
+        #kanban-board::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.35);
+          border-radius: 999px;
+        }
+        #kanban-board::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.6);
+        }
+
         .kanban-card[draggable="true"] {
           cursor: grab;
           user-select: none;
@@ -1023,11 +1039,11 @@ export class KanbanBoardView extends BaseView {
           ` : ''}
 
           <!-- Kanban Columns Stream (Responsive Full 1-Screen Fit) -->
-          <div class="flex-1 w-full max-w-full overflow-hidden p-2.5 sm:p-3 flex flex-col min-h-0 h-full" id="kanban-scroll-area">
+          <div class="flex-1 w-full max-w-full overflow-hidden flex flex-col min-h-0 h-full" id="kanban-scroll-area">
 
             <!-- Role-Specific Banner: QA Review Mode -->
             ${perms.isQA ? `
-              <div class="mb-2 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
+              <div class="mx-3 sm:mx-6 mb-2 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="w-7 h-7 rounded-lg bg-emerald-500/30 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-[18px] text-emerald-300">fact_check</span>
@@ -1043,7 +1059,7 @@ export class KanbanBoardView extends BaseView {
 
             <!-- Role-Specific Banner: User / Contributor Mode -->
             ${perms.isUser ? `
-              <div class="mb-2 py-1.5 px-3 rounded-xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md text-sky-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
+              <div class="mx-3 sm:mx-6 mb-2 py-1.5 px-3 rounded-xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md text-sky-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="w-7 h-7 rounded-lg bg-sky-500/30 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-[18px] text-sky-300">person</span>
@@ -1059,7 +1075,7 @@ export class KanbanBoardView extends BaseView {
 
             <!-- Banner Indikator Filter Berdasarkan -->
             ${this.activeFilter !== 'all' ? `
-              <div class="mb-4 px-4 py-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 backdrop-blur-md text-indigo-100 flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-200">
+              <div class="mx-3 sm:mx-6 mb-3 px-4 py-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 backdrop-blur-md text-indigo-100 flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-200">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-200">
                     <span class="material-symbols-outlined text-[20px]">filter_alt</span>
@@ -1086,7 +1102,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-stretch gap-3.5 sm:gap-4 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden pb-2.5 custom-scrollbar snap-x snap-mandatory sm:snap-none" id="kanban-board">
+            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-1 pb-20 sm:pb-24 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
               ${this.columns.map(col => {
       const colTasks = allTasks.filter(t => t.status === col.id);
@@ -1096,7 +1112,7 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col h-full max-h-full min-h-0 bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg w-[285px] sm:w-[315px] shrink-0 transition-all overflow-hidden snap-start"
+                    class="kanban-column flex flex-col h-full max-h-full min-h-0 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/25 shadow-lg w-[265px] sm:w-[285px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
@@ -1253,10 +1269,10 @@ export class KanbanBoardView extends BaseView {
                     </div>
 
                     <!-- Cards List Container -->
-                    <div class="flex-1 min-h-0 overflow-y-auto pr-0.5 flex flex-col gap-2.5 custom-scrollbar" data-cards-area="${col.id}">
+                    <div class="flex-1 min-h-0 overflow-y-auto px-1 py-1 flex flex-col gap-2.5 custom-scrollbar" data-cards-area="${col.id}">
                       ${colTasks.map(task => `
                         <div
-                          class="kanban-card p-3.5 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-[#0c66e4] hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99]"
+                          class="kanban-card p-3 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-[#0c66e4] hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border"
                           data-task-id="${task.id}"
                           data-task-status="${task.status}"
                           draggable="true"
@@ -1284,7 +1300,7 @@ export class KanbanBoardView extends BaseView {
                           </div>
 
                           <!-- Title -->
-                          <h4 class="text-[13px] font-semibold text-text-primary group-hover:text-primary transition-colors leading-snug">
+                          <h4 class="text-[12.5px] sm:text-[13px] font-semibold text-text-primary group-hover:text-primary transition-colors leading-snug break-words">
                             ${task.title}
                           </h4>
 
@@ -1351,7 +1367,7 @@ export class KanbanBoardView extends BaseView {
 
               <!-- + Add another list (Trello Style) -->
               ${perms.canAddList ? `
-              <div class="w-[285px] sm:w-[315px] shrink-0 snap-start">
+              <div class="w-[260px] sm:w-[280px] lg:w-[260px] shrink-0">
                 ${this.isAddingList ? `
                   <div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg flex flex-col gap-2.5">
                     <input

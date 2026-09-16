@@ -262,8 +262,16 @@ export class AuthView extends BaseView {
 
             <div class="w-full flex flex-col gap-2">
               <button
+                id="btn-switch-device-login"
+                class="w-full py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md shadow-purple-500/30 flex items-center justify-center gap-1.5"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[16px]">phonelink_ring</span>
+                <span>Pindahkan Akun ke Perangkat Ini & Masuk</span>
+              </button>
+              <button
                 id="btn-close-locked-modal"
-                class="w-full py-2.5 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 text-white dark:text-slate-900 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md"
+                class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition-all cursor-pointer"
                 type="button"
               >
                 Tutup & Kembali
@@ -487,10 +495,10 @@ export class AuthView extends BaseView {
      * INTI FITUR: PEMROSESAN QR, SINKRONISASI KE SUPABASE & DEVICE LOCKING
      * =========================================================================
      */
-    const handleQrAuthentication = async (rawCode) => {
+    const handleQrAuthentication = async (rawCode, forceSwitch = false) => {
       if (!rawCode) return;
       const cleanCode = String(rawCode).trim();
-      console.log('[AuthView] Kode QR terdeteksi:', cleanCode);
+      console.log('[AuthView] Kode QR terdeteksi:', cleanCode, forceSwitch ? '(forceSwitch)' : '');
 
       if (feedback) {
         feedback.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">Memverifikasi ke Supabase & Memvalidasi Perangkat...</span>`;
@@ -561,6 +569,8 @@ export class AuthView extends BaseView {
       let payloadToSend = parsedUser;
       const handleDeviceLocked = (lockedRes, fallbackUser) => {
         console.warn('[AuthView] Akses Ditolak: Terkunci di perangkat lain', lockedRes);
+        this.lastScannedLockedCode = cleanCode;
+
         if (feedback) {
           feedback.innerHTML = `<span class="text-rose-500 font-bold">❌ Akses Ditolak: Akun Terkunci di Perangkat Lain!</span>`;
         }
@@ -605,7 +615,10 @@ export class AuthView extends BaseView {
 
       try {
         // HANYA LOOKUP KE DATABASE! JANGAN PERNAH OTOMATIS INSERT PADA PROSES SCAN!
-        const lookupUrl = `${apiService.baseUrl}/qr/lookup?code=${encodeURIComponent(cleanCode)}&deviceId=${encodeURIComponent(apiService.getDeviceId())}&deviceName=${encodeURIComponent(apiService.getDeviceName())}`;
+        let lookupUrl = `${apiService.baseUrl}/qr/lookup?code=${encodeURIComponent(cleanCode)}&deviceId=${encodeURIComponent(apiService.getDeviceId())}&deviceName=${encodeURIComponent(apiService.getDeviceName())}`;
+        if (forceSwitch) {
+          lookupUrl += '&forceSwitch=true';
+        }
         const lookupRes = await fetch(lookupUrl);
         const lookupData = await lookupRes.json();
 
@@ -728,6 +741,19 @@ export class AuthView extends BaseView {
     if (closeLockedModalBtn && lockedModal) {
       closeLockedModalBtn.addEventListener('click', () => {
         lockedModal.classList.add('hidden');
+      });
+    }
+
+    const switchDeviceBtn = this.element.querySelector('#btn-switch-device-login');
+    if (switchDeviceBtn && lockedModal) {
+      switchDeviceBtn.addEventListener('click', async () => {
+        lockedModal.classList.add('hidden');
+        if (this.lastScannedLockedCode) {
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-semibold animate-pulse">Memindahkan akun ke perangkat ini & membuka sesi...</span>`;
+          }
+          await handleQrAuthentication(this.lastScannedLockedCode, true);
+        }
       });
     }
 

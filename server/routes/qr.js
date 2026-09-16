@@ -275,6 +275,7 @@ router.get('/lookup', async (req, res) => {
     const rawCode = req.query.code || req.query.q || '';
     const deviceId = req.query.deviceId || null;
     const deviceName = req.query.deviceName || 'Perangkat Ini';
+    const forceSwitch = req.query.forceSwitch === 'true' || req.query.transfer === 'true' || req.query.force === 'true';
     const code = sanitizeCode(rawCode);
 
     if (!code) {
@@ -310,24 +311,24 @@ router.get('/lookup', async (req, res) => {
         const row = userResult.rows[0];
 
         // Cek single-device lock perangkat user yang sudah ada
-        if (row.bound_device_id && deviceId && row.bound_device_id !== deviceId) {
+        if (row.bound_device_id && deviceId && row.bound_device_id !== deviceId && !forceSwitch) {
           return res.status(403).json({
             success: false,
             locked: true,
             type: 'user',
-            error: `Akses ditolak: Akun "${row.name}" sedang terhubung di perangkat "${row.bound_device_name || 'Perangkat Lain'}". Perangkat lain tidak diizinkan masuk!`,
+            error: `Akses ditolak: Akun "${row.name}" sedang terhubung di perangkat "${row.bound_device_name || 'Perangkat Lain'}".`,
             boundDeviceName: row.bound_device_name,
             boundAt: row.bound_at,
             data: row
           });
         }
 
-        // Ikat perangkat saat ini jika belum terikat
+        // Ikat perangkat saat ini (atau alihkan jika forceSwitch)
         const updateRes = await pool.query(`
           UPDATE users 
           SET bound_device_id = COALESCE($1, bound_device_id),
               bound_device_name = COALESCE($2, bound_device_name),
-              bound_at = CASE WHEN bound_device_id IS NULL THEN NOW() ELSE bound_at END,
+              bound_at = CASE WHEN bound_device_id IS NULL OR bound_device_id != $1 THEN NOW() ELSE bound_at END,
               qr_data = COALESCE(qr_data, $4),
               updated_at = NOW()
           WHERE id = $3
