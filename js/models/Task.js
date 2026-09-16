@@ -15,6 +15,7 @@ export class Task {
     timeline = '19 - 25 Ags',
     hours = 8,
     assets = [],
+    attachments = [],
     qaProgress = { passed: 0, total: 4 },
     isStarred = false,
     tags = [],
@@ -33,7 +34,8 @@ export class Task {
     this.pic = pic;
     this.timeline = timeline;
     this.hours = hours;
-    this.assets = assets;
+    this.attachments = attachments.length > 0 ? attachments : assets;
+    this.assets = this.attachments;
     this.qaProgress = qaProgress;
     this.isStarred = isStarred;
     this.tags = tags;

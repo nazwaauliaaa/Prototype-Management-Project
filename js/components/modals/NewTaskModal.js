@@ -49,6 +49,7 @@ export class NewTaskModal extends BaseModal {
 
   render(data = {}) {
     this._modalData = data || {};
+    this.uploadedAttachments = [];
     const activeWs = data?.workspace || localStorage.getItem('active_workspace') || 'ruangkreasi';
     const activeStatus = data?.status || 'in-progress';
     const workspaces = this.getWorkspacesList();
@@ -74,6 +75,7 @@ export class NewTaskModal extends BaseModal {
 
         <!-- Form -->
         <form id="form-new-task" class="p-spacing-lg flex flex-col gap-3.5 text-[13px]">
+          <!-- Judul Tugas -->
           <div>
             <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Judul Tugas *</label>
             <input 
@@ -84,25 +86,15 @@ export class NewTaskModal extends BaseModal {
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Pilar Workspace</label>
-              <select id="new-task-workspace" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
-                ${workspaces.map(w => `
-                  <option value="${w.id}" ${w.id === activeWs ? 'selected' : ''}>${w.title}</option>
-                `).join('')}
-              </select>
-            </div>
-
-            <div>
-              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Penanggung Jawab (PIC)</label>
-              <select id="new-task-pic" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
-                ${members.map(m => `
-                  <option value="${m.name}|${m.initials}|${m.role}">${m.name} (${m.role})</option>
-                `).join('')}
-                <option value="__new_member__">+ Tambah Orang Baru...</option>
-              </select>
-            </div>
+          <!-- Penanggung Jawab (PIC) -->
+          <div>
+            <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Penanggung Jawab (PIC)</label>
+            <select id="new-task-pic" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
+              ${members.map(m => `
+                <option value="${m.name}|${m.initials}|${m.role}">${m.name} (${m.role})</option>
+              `).join('')}
+              <option value="__new_member__">+ Tambah Orang Baru...</option>
+            </select>
           </div>
 
           <!-- Formulir Tambah Orang Baru (Full-Width Card) -->
@@ -151,7 +143,8 @@ export class NewTaskModal extends BaseModal {
             </p>
           </div>
 
-          <div class="grid grid-cols-3 gap-3">
+          <!-- Prioritas & Status Awal -->
+          <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Prioritas</label>
               <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
@@ -160,18 +153,6 @@ export class NewTaskModal extends BaseModal {
                 <option value="Critical">Kritis (Critical)</option>
                 <option value="Low">Rendah (Low)</option>
               </select>
-            </div>
-
-            <div>
-              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Estimasi Beban</label>
-              <input 
-                id="new-task-hours" 
-                type="number" 
-                min="1" 
-                max="100" 
-                value="8" 
-                class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium"
-              />
             </div>
 
             <div>
@@ -219,6 +200,7 @@ export class NewTaskModal extends BaseModal {
             </p>
           </div>
 
+          <!-- Deskripsi Singkat -->
           <div>
             <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Deskripsi Singkat</label>
             <textarea 
@@ -227,6 +209,34 @@ export class NewTaskModal extends BaseModal {
               rows="2" 
               placeholder="Jelaskan kebutuhan teknis deliverable ini..."
             ></textarea>
+          </div>
+
+          <!-- Lampiran / Attachment -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase">Lampiran / Attachment</label>
+              <span id="attachment-file-count" class="text-[10.5px] text-text-muted font-medium">0 file dipilih</span>
+            </div>
+
+            <div class="relative border-2 border-dashed border-surface-border hover:border-primary/60 dark:hover:border-primary/60 rounded-xl p-3.5 bg-surface-container-lowest transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group text-center">
+              <input 
+                type="file" 
+                id="new-task-attachment" 
+                multiple
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+              />
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform pointer-events-none">
+                <span class="material-symbols-outlined text-[20px]">attach_file</span>
+              </div>
+              <div class="pointer-events-none">
+                <span class="text-[12.5px] font-semibold text-text-primary">Unggah atau seret file ke sini</span>
+                <span class="text-[10.5px] text-text-muted block mt-0.5">Mendukung gambar, dokumen, PDF, spreadsheet, atau arsip</span>
+              </div>
+            </div>
+
+            <!-- List Preview Lampiran -->
+            <div id="attachment-preview-list" class="hidden flex flex-col gap-1.5 mt-2 max-h-36 overflow-y-auto pr-1"></div>
           </div>
 
           <div class="pt-2 border-t border-surface-border flex items-center justify-end gap-2">
@@ -264,14 +274,107 @@ export class NewTaskModal extends BaseModal {
       });
     }
 
+    // Attachment file handling
+    const attachmentInput = modalRoot.querySelector('#new-task-attachment');
+    const attachmentCount = modalRoot.querySelector('#attachment-file-count');
+    const previewList = modalRoot.querySelector('#attachment-preview-list');
+
+    const formatSize = (bytes) => {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    const getIconForType = (mime = '', name = '') => {
+      const ext = name.split('.').pop().toLowerCase();
+      if (mime?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return 'image';
+      if (mime?.includes('pdf') || ext === 'pdf') return 'picture_as_pdf';
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'folder_zip';
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'table_chart';
+      if (['doc', 'docx', 'txt', 'md'].includes(ext)) return 'description';
+      return 'attach_file';
+    };
+
+    const renderAttachmentPreviews = () => {
+      if (!previewList || !attachmentCount) return;
+      if (this.uploadedAttachments.length === 0) {
+        previewList.classList.add('hidden');
+        previewList.innerHTML = '';
+        attachmentCount.textContent = '0 file dipilih';
+        return;
+      }
+
+      previewList.classList.remove('hidden');
+      attachmentCount.textContent = `${this.uploadedAttachments.length} file dipilih`;
+
+      previewList.innerHTML = this.uploadedAttachments.map((att, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low border border-surface-border text-[11.5px] animate-in fade-in duration-150">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="material-symbols-outlined text-[18px] text-primary shrink-0">${getIconForType(att.type, att.name)}</span>
+            <span class="font-medium text-text-primary truncate max-w-[220px]" title="${att.name}">${att.name}</span>
+            <span class="text-text-muted text-[10px] shrink-0 font-mono">(${att.formattedSize})</span>
+          </div>
+          <button type="button" data-index="${idx}" class="btn-remove-attachment w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer" title="Hapus lampiran">
+            <span class="material-symbols-outlined text-[15px] pointer-events-none">close</span>
+          </button>
+        </div>
+      `).join('');
+
+      previewList.querySelectorAll('.btn-remove-attachment').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const index = parseInt(btn.dataset.index, 10);
+          this.uploadedAttachments.splice(index, 1);
+          renderAttachmentPreviews();
+        });
+      });
+    };
+
+    if (attachmentInput) {
+      attachmentInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files || []);
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (readEvent) => {
+            this.uploadedAttachments.push({
+              name: file.name,
+              size: file.size,
+              formattedSize: formatSize(file.size),
+              type: file.type,
+              url: readEvent.target.result
+            });
+            renderAttachmentPreviews();
+          };
+          if (file.size <= 5 * 1024 * 1024) {
+            reader.readAsDataURL(file);
+          } else {
+            this.uploadedAttachments.push({
+              name: file.name,
+              size: file.size,
+              formattedSize: formatSize(file.size),
+              type: file.type,
+              url: ''
+            });
+            renderAttachmentPreviews();
+          }
+        });
+        attachmentInput.value = '';
+      });
+    }
+
     const form = modalRoot.querySelector('#form-new-task');
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const title = modalRoot.querySelector('#new-task-title').value;
-        const workspace = modalRoot.querySelector('#new-task-workspace').value;
+        const workspace = this._modalData?.workspace || localStorage.getItem('active_workspace') || 'ruangkreasi';
         const priority = modalRoot.querySelector('#new-task-priority').value;
-        const hours = parseInt(modalRoot.querySelector('#new-task-hours').value, 10) || 8;
+        const hours = modalRoot.querySelector('#new-task-hours')?.value
+          ? parseInt(modalRoot.querySelector('#new-task-hours').value, 10)
+          : 8;
         const status = modalRoot.querySelector('#new-task-status').value;
         const description = modalRoot.querySelector('#new-task-desc').value;
         const startDate = modalRoot.querySelector('#new-task-start-date').value || '2026-09-11';
@@ -347,7 +450,9 @@ export class NewTaskModal extends BaseModal {
           deadline: endDate,
           timeline: timelineStr,
           pic: { name: picName, initials: picInitials || 'PIC', role: picRole || 'Specialist' },
-          qaProgress: { passed: 0, total: 3 }
+          qaProgress: { passed: 0, total: 3 },
+          attachments: [...(this.uploadedAttachments || [])],
+          assets: [...(this.uploadedAttachments || [])]
         });
 
         // Also add to CalendarService if available

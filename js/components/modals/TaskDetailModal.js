@@ -223,7 +223,46 @@ export class TaskDetailModal extends BaseModal {
   }
 
   renderActiveTabContent() {
+    const taskAttachments = this.currentTask?.attachments || this.currentTask?.assets || [];
     return `
+      ${taskAttachments.length > 0 ? `
+      <section id="section-task-attachments" class="flex flex-col gap-3 pb-4 border-b border-surface-border">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px] text-primary">attach_file</span>
+          <h3 class="font-headline-md text-[14px] font-bold text-text-primary">Lampiran & File Tugas (${taskAttachments.length})</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+          ${taskAttachments.map(att => {
+            const ext = (att.name || '').split('.').pop().toLowerCase();
+            let icon = 'attach_file';
+            if (att.type?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) icon = 'image';
+            else if (att.type?.includes('pdf') || ext === 'pdf') icon = 'picture_as_pdf';
+            else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = 'folder_zip';
+            else if (['xls', 'xlsx', 'csv'].includes(ext)) icon = 'table_chart';
+            else if (['doc', 'docx', 'txt', 'md'].includes(ext)) icon = 'description';
+
+            return `
+              <div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-border flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">${icon}</span>
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-[12px] font-semibold text-text-primary truncate" title="${att.name || 'Dokumen'}">${att.name || 'Dokumen'}</span>
+                    <span class="text-[10px] text-text-muted">${att.formattedSize || att.size || 'File Lampiran'}</span>
+                  </div>
+                </div>
+                ${att.url ? `
+                <a href="${att.url}" download="${att.name || 'lampiran'}" class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center text-text-secondary hover:text-primary transition-colors shrink-0" title="Unduh File">
+                  <span class="material-symbols-outlined text-[16px]">download</span>
+                </a>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </section>
+      ` : ''}
+
       <section id="section-visual" class="flex flex-col gap-4">
         ${this.renderVisualTab()}
       </section>
