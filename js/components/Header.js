@@ -149,33 +149,12 @@ export class Header {
                   </span>
                 </div>
 
-                ${!isUserRole ? `
-                <div class="px-2 py-0.5">
-                  <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Ganti Peran</span>
-                </div>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="admin">
-                  <span>Admin</span>
-                  <span class="material-symbols-outlined text-[16px] text-tertiary">admin_panel_settings</span>
-                </button>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="manajement-project">
-                  <span>Manajement Project</span>
-                  <span class="material-symbols-outlined text-[16px] text-primary">assignment</span>
-                </button>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="qa">
-                  <span>QA (Quality Assurance)</span>
-                  <span class="material-symbols-outlined text-[16px] text-status-success">fact_check</span>
-                </button>
-                <button class="role-switch-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-[12px] flex items-center justify-between cursor-pointer" data-role="user">
-                  <span>User</span>
-                  <span class="material-symbols-outlined text-[16px] text-blue-500">person</span>
-                </button>
-                <div class="border-t border-surface-border my-1"></div>
-                ` : `
+                ${isUserRole ? `
                 <div class="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-800/40 text-[11px] text-sky-800 dark:text-sky-300 mb-1">
                   <span class="font-semibold block mb-0.5">Akses Terbatas:</span>
                   Anda hanya memiliki izin akses pada Papan Kanban proyek yang telah diundang.
                 </div>
-                `}
+                ` : ''}
 
                 <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer">
                   <span class="material-symbols-outlined text-[16px]">logout</span>
@@ -267,14 +246,6 @@ export class Header {
       });
     }
 
-    const roleButtons = this.element.querySelectorAll('.role-switch-btn');
-    roleButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const role = btn.getAttribute('data-role');
-        this.authService.loginWithRole(role);
-        if (profileMenu) profileMenu.classList.add('hidden');
-      });
-    });
 
     const logoutBtn = this.element.querySelector('#btn-header-logout');
     if (logoutBtn) {
