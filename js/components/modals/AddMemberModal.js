@@ -414,7 +414,7 @@ export class AddMemberModal extends BaseModal {
           </div>
         </div>
 
-        <!-- LINK SHARING & QR ACCESS CARD (Refined & Tidy Layout) -->
+        <!-- LINK SHARING CARD (Refined & Tidy Layout) -->
         <div class="px-5 py-3.5 bg-slate-50/90 dark:bg-[#161a1d] border-y border-[#dfe1e6] dark:border-[#333c43]">
           
           <!-- Top Row: Icon + Info & Role Dropdown -->
@@ -429,7 +429,7 @@ export class AddMemberModal extends BaseModal {
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-[13px] font-bold text-slate-900 dark:text-slate-100 leading-tight">
-                    Tautan &amp; QR Akses Papan
+                    Tautan Akses Papan
                   </span>
                   <span id="board-share-link-role-badge" class="px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/60 shrink-0">
                     ${this._linkPermission || 'Member'}
@@ -455,7 +455,7 @@ export class AddMemberModal extends BaseModal {
             </div>
           </div>
 
-          <!-- Bottom Row: Sleek Action Buttons (Copy Link, QR Code, Delete Link) -->
+          <!-- Bottom Row: Sleek Action Buttons (Copy Link, Delete Link) -->
           <div class="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-slate-200/70 dark:border-slate-800/80">
             <div class="flex items-center gap-2 flex-wrap">
               <!-- Copy Link Button (Primary Pill) -->
@@ -463,13 +463,6 @@ export class AddMemberModal extends BaseModal {
                       class="h-7.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
                 <span class="material-symbols-outlined text-[14px]">content_copy</span>
                 <span>Copy link</span>
-              </button>
-
-              <!-- QR Code Toggle Button (Purple Pill) -->
-              <button type="button" id="btn-toggle-board-qr"
-                      class="h-7.5 px-3 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95">
-                <span class="material-symbols-outlined text-[15px] text-purple-600 dark:text-purple-400">qr_code_2</span>
-                <span>QR Code Papan</span>
               </button>
             </div>
 
@@ -482,30 +475,6 @@ export class AddMemberModal extends BaseModal {
             </button>
           </div>
 
-        </div>
-
-        <!-- COLLAPSIBLE QR CODE CONTAINER -->
-        <div id="board-qr-panel" class="hidden px-5 py-4 bg-purple-50/60 dark:bg-purple-950/30 border-b border-purple-200/70 dark:border-purple-900/50 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div class="flex items-center gap-4">
-            <div class="p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-purple-200 dark:border-purple-800/60 shrink-0">
-              ${qrSvg}
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 text-purple-800 dark:text-purple-200 font-bold text-[13px]">
-                <span class="material-symbols-outlined text-[17px] text-purple-600 dark:text-purple-400">qr_code_scanner</span>
-                <span>Pindai QR untuk Masuk ke Papan Ini</span>
-              </div>
-              <p class="text-[11.5px] text-slate-600 dark:text-slate-400 mt-1 leading-snug">
-                Siapapun yang memindai QR code ini melalui kamera ponsel atau pemindai aplikasi akan otomatis bergabung ke <strong>${this.boardTitle}</strong> dan langsung tercatat di Board members.
-              </p>
-              <div class="flex items-center gap-2 mt-2.5">
-                <button type="button" id="btn-copy-qr-link" class="h-7.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11.5px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95">
-                  <span class="material-symbols-outlined text-[13px]">content_copy</span>
-                  <span>Salin Tautan QR</span>
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- MEMBERS CONTENT -->
@@ -758,29 +727,7 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 6b. Toggle QR Code Papan & Copy QR Link
-    const toggleQrBtn = modalRoot.querySelector('#btn-toggle-board-qr');
-    const qrPanel = modalRoot.querySelector('#board-qr-panel');
-    if (toggleQrBtn && qrPanel) {
-      toggleQrBtn.addEventListener('click', () => {
-        qrPanel.classList.toggle('hidden');
-      });
-    }
 
-    const copyQrLinkBtn = modalRoot.querySelector('#btn-copy-qr-link');
-    if (copyQrLinkBtn) {
-      copyQrLinkBtn.addEventListener('click', async () => {
-        const qrUrl = this.generateQrLink();
-        try {
-          await navigator.clipboard.writeText(qrUrl);
-          copyQrLinkBtn.textContent = 'Tautan QR Disalin!';
-          setTimeout(() => {
-            copyQrLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">content_copy</span><span>Salin Tautan QR</span>`;
-          }, 2000);
-          if (this.notificationService) this.notificationService.success('Tautan QR berhasil disalin ke clipboard!');
-        } catch (e) {}
-      });
-    }
 
     // 7. Delete / Reset Link
     const deleteLinkBtn = modalRoot.querySelector('[data-testid="board-invite-link-delete-button"]');
