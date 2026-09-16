@@ -22,7 +22,6 @@ import { NewTaskModal } from './components/modals/NewTaskModal.js';
 import { SearchModal } from './components/modals/SearchModal.js';
 import { AddMemberModal } from './components/modals/AddMemberModal.js';
 import { CreateBoardModal } from './components/modals/CreateBoardModal.js';
-import { DeleteTaskModal } from './components/modals/DeleteTaskModal.js';
 
 import { AuthView } from './views/AuthView.js';
 import { DashboardView } from './views/DashboardView.js';
@@ -366,7 +365,6 @@ class CreativeOfficeApp {
     modalManager.register('search', new SearchModal(this.container));
     modalManager.register('add-member', new AddMemberModal(this.container));
     modalManager.register('create-board', new CreateBoardModal(this.container));
-    modalManager.register('delete-task', new DeleteTaskModal(this.container));
   }
 
   initShell() {

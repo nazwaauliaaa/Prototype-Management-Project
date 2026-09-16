@@ -69,17 +69,6 @@ export class Header {
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Create</span>
             </button>
-
-            <!-- Delete Task Button in rose -->
-            <button
-              id="btn-header-delete-task"
-              class="h-8 px-2.5 sm:px-3 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 hover:border-rose-300 font-semibold text-[12.5px] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0 shadow-2xs"
-              title="Hapus deliverable / tugas dari sistem"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[16px] text-rose-600">delete</span>
-              <span>Hapus Tugas</span>
-            </button>
           </div>
           ` : `
           <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center">
@@ -103,15 +92,6 @@ export class Header {
               >
                 <span class="material-symbols-outlined text-[15px]">add</span>
                 <span>Create</span>
-              </button>
-              <button
-                id="btn-mobile-delete-task"
-                aria-label="Hapus Tugas"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                type="button"
-                title="Hapus Tugas"
-              >
-                <span class="material-symbols-outlined text-[18px]">delete</span>
               </button>
               <button
                 id="btn-mobile-search"
@@ -248,35 +228,6 @@ export class Header {
       });
     }
 
-    const openDeleteTaskModal = () => {
-      const projectService = this.container.resolve('ProjectService');
-      const projects = projectService ? projectService.getAllProjects() : [];
-      const activeProjectId = localStorage.getItem('active_project_id');
-      const latestProject = projects.length > 0 ? projects[projects.length - 1] : null;
-
-      let targetProjectId = null;
-      let targetWorkspace = localStorage.getItem('active_workspace') || 'ruangkreasi';
-
-      if (activeProjectId && projects.some(p => p.id === activeProjectId)) {
-        targetProjectId = activeProjectId;
-        const found = projects.find(p => p.id === activeProjectId);
-        if (found) targetWorkspace = found.workspace || targetWorkspace;
-      } else if (latestProject) {
-        targetProjectId = latestProject.id;
-        targetWorkspace = latestProject.workspace || targetWorkspace;
-      }
-
-      this.modalManager.open('delete-task', {
-        workspace: targetWorkspace,
-        projectId: targetProjectId
-      });
-    };
-
-    const deleteTaskBtn = this.element.querySelector('#btn-header-delete-task');
-    if (deleteTaskBtn) {
-      deleteTaskBtn.addEventListener('click', openDeleteTaskModal);
-    }
-
     const mobileCreateBoardBtn = this.element.querySelector('#btn-mobile-create-board');
     if (mobileCreateBoardBtn) {
       mobileCreateBoardBtn.addEventListener('click', () => {
@@ -284,10 +235,7 @@ export class Header {
       });
     }
 
-    const mobileDeleteTaskBtn = this.element.querySelector('#btn-mobile-delete-task');
-    if (mobileDeleteTaskBtn) {
-      mobileDeleteTaskBtn.addEventListener('click', openDeleteTaskModal);
-    }
+
 
     const newTaskBtn = this.element.querySelector('#btn-header-new-task');
     if (newTaskBtn) {
