@@ -52,38 +52,69 @@ export class TaskDetailModal extends BaseModal {
     const isQA = authUser ? authUser.isQA() : false;
     const isUser = authUser ? authUser.isUser() : false;
 
-    // Current QA testing status: 'untested' | 'testing' | 'passed' | 'failed'
-    const qaStatus = task.qaStatus || 'untested';
+    // Format status label and color badge
+    const statusMap = {
+      'backlog': { label: 'Daftar Pekerjaan', badgeClass: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-300/70 dark:border-slate-700', dotClass: 'bg-slate-500' },
+      'in-progress': { label: 'Sedang Berjalan', badgeClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300/70 dark:border-blue-700', dotClass: 'bg-blue-500' },
+      'review-qa': { label: 'Review QA Lapangan', badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300/70 dark:border-amber-700', dotClass: 'bg-amber-500' },
+      'ready-launch': { label: 'Siap Launching', badgeClass: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-300/70 dark:border-purple-700', dotClass: 'bg-purple-500' },
+      'done': { label: 'Selesai', badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300/70 dark:border-emerald-700', dotClass: 'bg-emerald-500' }
+    };
+    const currentStatusInfo = statusMap[task.status] || { 
+      label: task.status || 'Aktif', 
+      badgeClass: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-300/70 dark:border-slate-700', 
+      dotClass: 'bg-blue-500' 
+    };
+
+    // Format priority label and color badge
+    const priorityMap = {
+      'Critical': { label: 'Kritis', badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-300/70 dark:border-rose-700' },
+      'High': { label: 'Tinggi', badgeClass: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-300/70 dark:border-orange-700' },
+      'Medium': { label: 'Sedang', badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300/70 dark:border-amber-700' },
+      'Low': { label: 'Rendah', badgeClass: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-300/70 dark:border-slate-700' }
+    };
+    const currentPriorityInfo = priorityMap[task.priority] || { 
+      label: task.priority || 'Normal', 
+      badgeClass: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-300/70 dark:border-slate-700' 
+    };
 
     return `
       <div class="relative w-full max-w-4xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[92vh] modal-content-box">
         
         <!-- Modal Header -->
-        <div class="px-5 py-4 bg-surface-container-low border-b border-surface-border">
-          <div class="flex items-start justify-between gap-4">
-            <!-- Left: Task Code / Status & Title & Description -->
+        <div class="px-6 py-5 bg-surface-container-low/90 dark:bg-slate-900/90 border-b border-surface-border">
+          <div class="flex items-start justify-between gap-4 sm:gap-6">
+            <!-- Left: Task Code, Badges, Title & Description -->
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary font-mono text-[11px] font-bold tracking-wide">
+              <!-- Meta Badges -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Task ID -->
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 font-mono text-[11px] font-bold tracking-wider">
+                  <span class="material-symbols-outlined text-[13px] opacity-70">tag</span>
                   ${task.code || '#RK-304'}
                 </span>
-                <span class="text-text-muted text-[10px]">•</span>
-                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-text-secondary">
-                  <span class="w-1.5 h-1.5 rounded-full ${task.status === 'done' ? 'bg-emerald-500' : task.status === 'review-qa' ? 'bg-amber-500' : 'bg-blue-500'}"></span>
-                  <span class="capitalize">${task.status === 'in-progress' ? 'Sedang Berjalan' : task.status === 'done' ? 'Selesai' : task.status === 'review-qa' ? 'Review QA' : (task.status || 'Aktif')}</span>
+
+                <!-- Status Badge -->
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border text-[11px] font-semibold ${currentStatusInfo.badgeClass}">
+                  <span class="w-1.5 h-1.5 rounded-full ${currentStatusInfo.dotClass}"></span>
+                  <span>${currentStatusInfo.label}</span>
                 </span>
-                ${task.priority ? `
-                <span class="text-text-muted text-[10px]">•</span>
-                <span class="text-[11px] font-medium text-text-muted">
-                  Prioritas: <strong class="text-text-primary font-semibold">${task.priority}</strong>
-                </span>` : ''}
+
+                <!-- Priority Badge -->
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md border text-[11px] font-medium ${currentPriorityInfo.badgeClass}">
+                  <span class="material-symbols-outlined text-[13px] opacity-75">flag</span>
+                  <span>Prioritas: <strong>${currentPriorityInfo.label}</strong></span>
+                </span>
               </div>
 
-              <h2 class="font-headline-lg text-[17px] sm:text-[19px] text-text-primary font-bold tracking-tight leading-snug break-words">
+              <!-- Title -->
+              <h2 class="text-[19px] sm:text-[22px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug break-words mt-2.5 mb-1.5">
                 ${task.title}
               </h2>
-              <p class="font-body-default text-[12.5px] sm:text-[13px] text-text-secondary mt-1 leading-relaxed line-clamp-2">
-                ${task.description || 'Audit lapangan langsung uji keterbacaan, kecerahan siang hari, sinkronisasi controller Novastar, dan failover stream transmisi 4K.'}
+
+              <!-- Description -->
+              <p class="text-[13px] sm:text-[13.5px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                ${task.description ? task.description : '<span class="italic text-slate-400">Tidak ada deskripsi tambahan untuk tugas ini.</span>'}
               </p>
             </div>
 
@@ -92,9 +123,9 @@ export class TaskDetailModal extends BaseModal {
               ${!isUser ? `
               <button 
                 id="btn-modal-reschedule" 
-                class="h-8 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-secondary hover:text-text-primary font-body-medium text-[12px] font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                class="h-8.5 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-secondary hover:text-text-primary text-[12px] font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
                 type="button"
-                title="Jadwalkan Ulang"
+                title="Jadwalkan Ulang Tugas"
               >
                 <span class="material-symbols-outlined text-[16px] text-text-muted">schedule</span>
                 <span class="hidden sm:inline">Jadwalkan Ulang</span>
@@ -102,7 +133,7 @@ export class TaskDetailModal extends BaseModal {
 
               <button 
                 id="btn-modal-delete-task" 
-                class="h-8 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-body-medium text-[12px] font-semibold transition-colors cursor-pointer border border-rose-500/20 flex items-center gap-1.5 shadow-2xs"
+                class="h-8.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
                 type="button"
                 title="Hapus tugas ini"
               >
@@ -110,17 +141,17 @@ export class TaskDetailModal extends BaseModal {
                 <span>Hapus</span>
               </button>
 
-              <div class="w-px h-5 bg-surface-border mx-0.5 hidden sm:block"></div>
+              <div class="w-px h-5 bg-surface-border mx-1 hidden sm:block"></div>
               ` : ''}
 
               <button 
                 id="btn-close-modal" 
                 aria-label="Tutup Modal" 
-                class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high hover:text-rose-500 text-text-muted flex items-center justify-center transition-colors cursor-pointer"
+                class="w-8.5 h-8.5 rounded-xl bg-surface-container/60 hover:bg-surface-container-high hover:text-rose-500 text-text-muted flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-surface-border/50"
                 type="button"
-                title="Tutup"
+                title="Tutup Modal"
               >
-                <span class="material-symbols-outlined text-[18px]">close</span>
+                <span class="material-symbols-outlined text-[19px]">close</span>
               </button>
             </div>
           </div>
