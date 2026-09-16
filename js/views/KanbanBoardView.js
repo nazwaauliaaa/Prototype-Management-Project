@@ -499,8 +499,48 @@ export class KanbanBoardView extends BaseView {
     }
     this.saveBoardMembers(members);
 
+    // Simpan ke daftar approved_board_users & daftarkan ke AuthService agar bisa masuk kapan saja tanpa link lagi
+    try {
+      const approvedKey = 'approved_board_users';
+      const approved = JSON.parse(localStorage.getItem(approvedKey) || '[]');
+      const exAppIdx = approved.findIndex(u => (u.email && u.email.toLowerCase() === email.toLowerCase()) || (u.id && u.id === newMember.id));
+      const approvedRecord = {
+        id: newMember.id,
+        name: newMember.name,
+        email: newMember.email,
+        role: 'user',
+        title: newMember.roleDescription || 'Anggota Tim Proyek',
+        color: newMember.color,
+        initials: newMember.initials,
+        workspace: this.currentWorkspace,
+        projectId: this.projectId || this.currentWorkspace,
+        boardTitle: this.project ? this.project.name : (this.getWorkspaceName ? this.getWorkspaceName(this.currentWorkspace) : this.currentWorkspace),
+        acceptedAt: newMember.acceptedAt
+      };
+      if (exAppIdx >= 0) {
+        approved[exAppIdx] = { ...approved[exAppIdx], ...approvedRecord };
+      } else {
+        approved.unshift(approvedRecord);
+      }
+      localStorage.setItem(approvedKey, JSON.stringify(approved));
+    } catch(e) {}
+
+    try {
+      const authService = this.container ? this.container.resolve('AuthService') : null;
+      if (authService) {
+        authService.registerNewUser({
+          id: newMember.id,
+          name: newMember.name,
+          email: newMember.email,
+          role: 'user',
+          title: newMember.roleDescription || 'Member',
+          workspaceAccess: [this.currentWorkspace, this.projectId || this.currentWorkspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci']
+        });
+      }
+    } catch(e) {}
+
     if (this.notificationService) {
-      this.notificationService.success(`✅ Permintaan ${newMember.name} (${newMember.email}) telah DISETUJUI & resmi masuk ke Board members!`);
+      this.notificationService.success(`✅ Permintaan ${newMember.name} (${newMember.email}) telah DISETUJUI! Pengguna kini dapat masuk kapan saja tanpa tautan.`);
     }
 
     this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace, projectId: this.projectId });

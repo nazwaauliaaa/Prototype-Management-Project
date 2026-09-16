@@ -2,6 +2,7 @@ import { BaseView } from '../core/BaseView.js';
 import { QRCodeGenerator } from '../services/QRCodeGenerator.js';
 import { apiService } from '../services/ApiService.js';
 import { getDeviceId, getDeviceName, simulateSwitchDevice } from '../utils/deviceHelper.js';
+import { User } from '../models/User.js';
 import jsQR from 'jsqr';
 
 /**
@@ -14,6 +15,204 @@ export class AuthView extends BaseView {
     super(container);
     this.authService = container.resolve('AuthService');
     this.notificationService = container.resolve('NotificationService');
+  }
+
+  getApprovedUsers() {
+    try {
+      const approvedMap = new Map();
+
+      // 1. Dari approved_board_users di localStorage
+      const rawApproved = localStorage.getItem('approved_board_users');
+      if (rawApproved) {
+        const list = JSON.parse(rawApproved);
+        if (Array.isArray(list)) {
+          list.forEach(u => {
+            if (u && (u.email || u.name)) {
+              const key = (u.email || u.name).toLowerCase().trim();
+              approvedMap.set(key, u);
+            }
+          });
+        }
+      }
+
+      // 2. Cari dari semua board_members_* di localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('board_members_')) {
+          try {
+            const rawMembers = localStorage.getItem(k);
+            if (rawMembers) {
+              const members = JSON.parse(rawMembers);
+              if (Array.isArray(members)) {
+                members.forEach(m => {
+                  if (m && m.email && !m.email.endsWith('@workspace') && m.id !== 'usr-001') {
+                    const key = m.email.toLowerCase().trim();
+                    if (!approvedMap.has(key)) {
+                      approvedMap.set(key, {
+                        id: m.id || `usr-${Date.now()}`,
+                        name: m.name || m.email.split('@')[0],
+                        email: m.email,
+                        role: 'user',
+                        title: m.roleDescription || m.role || 'Anggota Tim',
+                        color: m.color || '#2563eb',
+                        initials: m.initials || (m.name ? m.name.slice(0, 2).toUpperCase() : 'U'),
+                        workspace: m.workspace || k.replace('board_members_', ''),
+                        projectId: m.projectId || m.workspace || k.replace('board_members_', '')
+                      });
+                    }
+                  }
+                });
+              }
+            }
+          } catch (e) {}
+        }
+      }
+
+      return Array.from(approvedMap.values());
+    } catch (e) {
+      return [];
+    }
+  }
+
+  _renderApprovedUsersSection() {
+    const users = this.getApprovedUsers();
+    if (!users || users.length === 0) return '';
+
+    return `
+      <div class="relative z-10 w-full mt-3 pt-3 border-t border-purple-400/30 flex flex-col gap-2 animate-in fade-in duration-200">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+            <span class="material-symbols-outlined text-[15px]">verified</span>
+            <span>Anggota Terverifikasi (Di-ACC)</span>
+          </div>
+          <span class="text-[9px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.2 rounded-full">
+            Bisa Masuk Kapan Saja
+          </span>
+        </div>
+
+        <p class="text-[10.5px] text-purple-200/80 px-1 text-left">
+          Akun di bawah sudah disetujui oleh Admin. Anda dapat langsung masuk ke papan tanpa perlu meminta link lagi:
+        </p>
+
+        <div class="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-0.5">
+          ${users.map(u => `
+            <div
+              class="btn-direct-approved-login flex items-center justify-between p-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 hover:border-emerald-400/70 transition-all cursor-pointer group shadow-xs active:scale-[0.99]"
+              data-user-email="${u.email}"
+              data-user-name="${u.name}"
+              data-user-ws="${u.workspace || ''}"
+              data-user-proj="${u.projectId || ''}"
+              title="Masuk langsung sebagai ${u.name} (${u.email})"
+            >
+              <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                <div class="w-8 h-8 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-xs border border-white/20" style="background-color: ${u.color || '#2563eb'}">
+                  ${u.initials || (u.name ? u.name.slice(0, 2).toUpperCase() : 'U')}
+                </div>
+                <div class="min-w-0 flex-1 text-left">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-[12px] text-white group-hover:text-emerald-300 transition-colors truncate">${u.name}</span>
+                    <span class="text-[8.5px] font-bold px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">DI-ACC</span>
+                  </div>
+                  <div class="text-[10px] text-purple-200/70 truncate flex items-center gap-1 mt-0.5">
+                    <span class="material-symbols-outlined text-[11px] text-rose-400 shrink-0">mail</span>
+                    <span class="truncate font-mono">${u.email}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 shrink-0 text-emerald-400 group-hover:translate-x-0.5 transition-transform text-[11px] font-bold ml-2">
+                <span>Masuk</span>
+                <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  _renderModalApprovedUsersBanner() {
+    const users = this.getApprovedUsers();
+    if (!users || users.length === 0) return '';
+
+    return `
+      <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-800 dark:text-emerald-300">
+            <span class="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+            <span>Akun Sudah Di-ACC Admin</span>
+          </div>
+          <span class="text-[9.5px] font-semibold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded">
+            Masuk Kapan Saja
+          </span>
+        </div>
+        <p class="text-[11px] text-emerald-700 dark:text-emerald-400 leading-tight">
+          Akun Anda telah disetujui sebelumnya. Anda tidak perlu meminta link lagi, klik tombol di bawah untuk langsung membuka papan:
+        </p>
+        <div class="flex flex-col gap-1.5 mt-0.5">
+          ${users.map(u => `
+            <button
+              type="button"
+              class="btn-modal-quick-login-approved w-full p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-[11.5px] font-bold flex items-center justify-between shadow-xs transition-all cursor-pointer"
+              data-user-email="${u.email}"
+              data-user-name="${u.name}"
+              data-user-ws="${u.workspace || ''}"
+              data-user-proj="${u.projectId || ''}"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="material-symbols-outlined text-[16px]">account_circle</span>
+                <span class="truncate">${u.name} (${u.email})</span>
+              </div>
+              <span class="flex items-center gap-0.5 text-[10.5px] shrink-0 font-medium">
+                <span>Buka Papan</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  loginAsApprovedMember({ email, name, workspace, projectId }) {
+    try {
+      const cleanWs = workspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const cleanProj = projectId || localStorage.getItem('active_project_id') || cleanWs;
+      const cleanName = name || email.split('@')[0];
+      const cleanEmail = (email || '').toLowerCase().trim();
+
+      const userInstance = new User({
+        id: 'usr-' + Date.now(),
+        name: cleanName,
+        email: cleanEmail,
+        role: 'user',
+        title: 'Editor & Anggota Tim Proyek',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=2563eb&color=fff&bold=true`,
+        workspaceAccess: [cleanWs, cleanProj, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca', 'aikreativ']
+      });
+
+      if (this.authService) {
+        this.authService.loginAsUser(userInstance);
+      }
+
+      localStorage.setItem('active_workspace', cleanWs);
+      localStorage.setItem('active_project_id', cleanProj);
+      localStorage.setItem('user_invited_workspace', cleanWs);
+      localStorage.setItem('user_invited_project', cleanProj);
+
+      if (this.notificationService) {
+        this.notificationService.success(`🎉 Selamat datang kembali, ${cleanName}! Anda langsung masuk ke Papan.`);
+      }
+
+      const eventBus = this.container ? this.container.resolve('EventBus') : null;
+      if (eventBus) {
+        eventBus.emit('board:members_updated', { workspace: cleanWs, projectId: cleanProj });
+        eventBus.emit('auth:login', userInstance);
+      }
+
+      window.location.hash = `#/kanban/${cleanProj}`;
+    } catch (e) {
+      console.error('Error loginAsApprovedMember:', e);
+    }
   }
 
   render() {
@@ -137,6 +336,9 @@ export class AuthView extends BaseView {
               </button>
             </div>
 
+            <!-- Approved Members (Bisa Masuk Kapan Saja Tanpa Minta Link Lagi) -->
+            ${this._renderApprovedUsersSection()}
+
             <!-- Security Verification Footer -->
             <div class="mt-spacing-md pt-spacing-xs flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
               <span class="material-symbols-outlined text-[16px] text-status-success">verified_user</span>
@@ -163,6 +365,9 @@ export class AuthView extends BaseView {
                 <span class="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
+
+            <!-- Banner Akun yang Sudah Di-ACC (Bebas Masuk Kapan Saja) -->
+            ${this._renderModalApprovedUsersBanner()}
 
             <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2.5 text-amber-800 dark:text-amber-200 text-[12px] leading-relaxed">
               <span class="material-symbols-outlined text-[20px] text-amber-600 shrink-0 mt-0.5">lock</span>
@@ -847,9 +1052,23 @@ export class AuthView extends BaseView {
     if (submitInviteBtn) {
       submitInviteBtn.addEventListener('click', () => {
         const rawUrl = inputInviteUrl?.value.trim() || '';
+        const customName = this.element.querySelector('#input-user-invite-name')?.value.trim();
+        const customEmail = this.element.querySelector('#input-user-invite-email')?.value.trim();
+
+        // Khusus buat user yg sudah di-ACC sebelumnya: bisa masuk kapan aja hanya dengan email!
+        if (customEmail) {
+          const approved = this.getApprovedUsers();
+          const matched = approved.find(u => u.email.toLowerCase() === customEmail.toLowerCase());
+          if (matched) {
+            if (inviteModal) inviteModal.classList.add('hidden');
+            this.loginAsApprovedMember(matched);
+            return;
+          }
+        }
+
         if (!rawUrl) {
           if (inviteError) {
-            inviteError.textContent = 'Harap masukkan tautan undangan yang valid.';
+            inviteError.textContent = 'Harap masukkan tautan undangan, atau masukkan alamat email Anda yang telah disetujui Admin.';
             inviteError.classList.remove('hidden');
           }
           return;
@@ -870,8 +1089,6 @@ export class AuthView extends BaseView {
             return;
           }
 
-          const customName = this.element.querySelector('#input-user-invite-name')?.value.trim();
-          const customEmail = this.element.querySelector('#input-user-invite-email')?.value.trim();
           if (customName) parsed.searchParams.set('name', customName);
           if (customEmail) parsed.searchParams.set('email', customEmail);
 
@@ -906,8 +1123,28 @@ export class AuthView extends BaseView {
       });
     }
 
+    // Tombol login instan untuk akun yang sudah di-ACC (bisa masuk kapan aja tanpa minta link lagi)
+    const approvedBtns = this.element.querySelectorAll('.btn-direct-approved-login, .btn-modal-quick-login-approved');
+    approvedBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const email = btn.getAttribute('data-user-email');
+        const name = btn.getAttribute('data-user-name');
+        const ws = btn.getAttribute('data-user-ws');
+        const proj = btn.getAttribute('data-user-proj');
+        if (inviteModal) inviteModal.classList.add('hidden');
+        this.loginAsApprovedMember({ email, name, workspace: ws, projectId: proj });
+      });
+    });
+
     const handleRoleSelect = (role, isResuming = false) => {
       if (role === 'user' && !isResuming) {
+        // Cek jika pengguna sudah di-ACC sebelumnya: langsung masuk tanpa link lagi!
+        const approved = this.getApprovedUsers();
+        if (approved.length > 0) {
+          this.loginAsApprovedMember(approved[0]);
+          return;
+        }
         // User cannot enter directly without invite link
         openInviteModal();
         return;

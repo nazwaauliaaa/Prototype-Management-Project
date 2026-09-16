@@ -146,8 +146,48 @@ export class AddMemberModal extends BaseModal {
     });
     localStorage.setItem('board_members_updated_trigger', Date.now().toString());
 
+    // Simpan ke approved_board_users agar bisa masuk kapan saja tanpa link lagi
+    try {
+      const approvedKey = 'approved_board_users';
+      const approved = JSON.parse(localStorage.getItem(approvedKey) || '[]');
+      const exAppIdx = approved.findIndex(u => (u.email && u.email.toLowerCase() === email.toLowerCase()) || (u.id && u.id === newMember.id));
+      const approvedRecord = {
+        id: newMember.id,
+        name: newMember.name,
+        email: newMember.email,
+        role: 'user',
+        title: newMember.roleDescription || 'Member & Anggota Tim',
+        color: newMember.color,
+        initials: newMember.initials,
+        workspace: currentWs,
+        projectId: curProjId,
+        boardTitle: this.boardTitle || currentWs,
+        acceptedAt: newMember.acceptedAt
+      };
+      if (exAppIdx >= 0) {
+        approved[exAppIdx] = { ...approved[exAppIdx], ...approvedRecord };
+      } else {
+        approved.unshift(approvedRecord);
+      }
+      localStorage.setItem(approvedKey, JSON.stringify(approved));
+    } catch(e) {}
+
+    try {
+      const authService = this.container ? this.container.resolve('AuthService') : null;
+      if (authService) {
+        authService.registerNewUser({
+          id: newMember.id,
+          name: newMember.name,
+          email: newMember.email,
+          role: 'user',
+          title: newMember.roleDescription || 'Member',
+          workspaceAccess: [currentWs, curProjId, 'workspace-utama', 'ruangkreasi', 'panen-kunci']
+        });
+      }
+    } catch(e) {}
+
     if (this.notificationService) {
-      this.notificationService.success(`✅ Permintaan ${newMember.name} telah DISETUJUI & masuk ke Board members!`);
+      this.notificationService.success(`✅ Permintaan ${newMember.name} telah DISETUJUI! Pengguna kini dapat masuk kapan saja tanpa tautan.`);
     }
 
     this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: curProjId });

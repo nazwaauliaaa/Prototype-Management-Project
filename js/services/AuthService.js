@@ -66,9 +66,19 @@ export class AuthService {
       teknis: qaUser
     };
 
-    // Default: not logged in — user must authenticate via AuthView
+    // Session state: restore from localStorage if present
     this.currentUser = null;
     this.isAuthenticated = false;
+    try {
+      const saved = localStorage.getItem('creative_office_auth_user');
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u && (u.name || u.id)) {
+          this.currentUser = new User(u);
+          this.isAuthenticated = true;
+        }
+      }
+    } catch (e) {}
 
     // Load custom users registered via QR or database
     this.customUsers = [];
@@ -146,6 +156,9 @@ export class AuthService {
     if (!user) return false;
     this.currentUser = user instanceof User ? user : new User(user);
     this.isAuthenticated = true;
+    try {
+      localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+    } catch (e) {}
     this.eventBus.emit('auth:login', this.currentUser);
     this.notifications.success(`Masuk sebagai ${this.currentUser.name} (${this.currentUser.title || this.currentUser.role})`);
     return true;
@@ -184,6 +197,9 @@ export class AuthService {
     if (this.roleProfiles[role]) {
       this.currentUser = this.roleProfiles[role];
       this.isAuthenticated = true;
+      try {
+        localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+      } catch (e) {}
       this.eventBus.emit('auth:login', this.currentUser);
       this.notifications.success(`Selamat datang, ${this.currentUser.name} (${this.currentUser.title})`);
       return true;
@@ -210,9 +226,11 @@ export class AuthService {
    * Logout user and return to barcode gate
    */
   logout() {
-    const prevUser = this.currentUser;
     this.currentUser = null;
     this.isAuthenticated = false;
+    try {
+      localStorage.removeItem('creative_office_auth_user');
+    } catch (e) {}
     this.eventBus.emit('auth:logout');
     this.notifications.info('Sesi Anda telah diakhiri.');
   }
