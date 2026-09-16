@@ -123,12 +123,6 @@ export class DashboardView extends BaseView {
             </div>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0 self-start sm:self-center">
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-low border border-surface-border text-[11px] text-text-secondary font-medium">
-              <span class="w-1.5 h-1.5 rounded-full bg-status-success inline-block"></span>
-              <span>Portal Aktif</span>
-            </div>
-          </div>
         </section>
 
         ${userProjects.length > 0 ? `
