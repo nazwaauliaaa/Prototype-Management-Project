@@ -16,6 +16,7 @@ export class TaskDetailModal extends BaseModal {
     this.modalManager = container.resolve('ModalManager');
     this.activeTab = 'visual'; // 'visual' | 'logs' | 'legal'
     this.currentTask = null;
+    this.isEditing = false;
     this.comments = [
       {
         author: 'Sari Rahmawati',
@@ -38,13 +39,35 @@ export class TaskDetailModal extends BaseModal {
     ];
   }
 
+  getRegisteredMembers() {
+    const defaultMembers = [
+      { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+      { name: 'Bagas Wicaksono', initials: 'BW', role: 'Graphic Specialist' },
+      { name: 'Farhan Maulana', initials: 'FM', role: 'AI Researcher' },
+      { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+      { name: 'Dina Lestari', initials: 'DL', role: 'UI Specialist' },
+      { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+      { name: 'Dimas Anggara', initials: 'DA', role: 'Creative Specialist' }
+    ];
+    try {
+      const custom = JSON.parse(localStorage.getItem('team_members') || '[]');
+      return [...custom, ...defaultMembers];
+    } catch (e) {
+      return defaultMembers;
+    }
+  }
+
   render(data) {
     const task = (data && data.task) ? data.task : (this.taskService.getTask('#RK-304') || this.taskService.getTasks()[0]);
     this.currentTask = task;
     if (data && data.tab) {
       this.activeTab = data.tab;
     }
+    if (data && data.isEditing !== undefined) {
+      this.isEditing = !!data.isEditing;
+    }
 
+    const members = this.getRegisteredMembers();
     const authUser = this.container.resolve('AuthService').getCurrentUser();
     const role = (authUser?.role || 'manajement-project').toLowerCase();
     const isAdmin = authUser ? authUser.isAdmin() : false;
@@ -84,9 +107,92 @@ export class TaskDetailModal extends BaseModal {
         <!-- Modal Header -->
         <div class="px-6 py-5 bg-surface-container-low/90 dark:bg-slate-900/90 border-b border-surface-border">
           <div class="flex items-start justify-between gap-4 sm:gap-6">
-            <!-- Left: Task Code, Badges, Title & Description -->
+            <!-- Left: Task Code, Badges, Title & Description OR Edit Form -->
             <div class="flex-1 min-w-0">
-              <!-- Meta Badges -->
+              ${this.isEditing ? `
+              <!-- Mode Edit Tugas -->
+              <form id="form-edit-task" class="flex flex-col gap-3 bg-surface-container-lowest p-4 rounded-xl border border-primary/40 shadow-xs animate-in fade-in duration-150">
+                <div class="flex items-center justify-between pb-2 border-b border-surface-border">
+                  <span class="text-[12px] font-bold text-primary flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                    <span>Edit Tugas: ${task.code || '#TASK'}</span>
+                  </span>
+                  <span class="text-[10.5px] text-text-muted">Perubahan langsung tersimpan ke papan</span>
+                </div>
+
+                <div>
+                  <label class="text-[10.5px] font-bold text-text-muted uppercase tracking-wider block mb-1">Judul Tugas *</label>
+                  <input 
+                    id="input-edit-task-title" 
+                    type="text" 
+                    value="${task.title || ''}" 
+                    class="w-full px-3 py-2 rounded-lg bg-surface-container-low border border-surface-border text-text-primary text-[13px] font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30" 
+                    required 
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label class="text-[10.5px] font-bold text-text-muted uppercase tracking-wider block mb-1">Status Papan</label>
+                    <select id="select-edit-task-status" class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-surface-border text-text-primary text-[12px] font-medium focus:outline-none focus:border-primary cursor-pointer">
+                      <option value="backlog" ${task.status === 'backlog' ? 'selected' : ''}>Daftar Pekerjaan</option>
+                      <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>Sedang Berjalan</option>
+                      <option value="review-qa" ${task.status === 'review-qa' ? 'selected' : ''}>Review QA Lapangan</option>
+                      <option value="ready-launch" ${task.status === 'ready-launch' ? 'selected' : ''}>Siap Launching</option>
+                      <option value="done" ${task.status === 'done' ? 'selected' : ''}>Selesai</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="text-[10.5px] font-bold text-text-muted uppercase tracking-wider block mb-1">Prioritas</label>
+                    <select id="select-edit-task-priority" class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-surface-border text-text-primary text-[12px] font-medium focus:outline-none focus:border-primary cursor-pointer">
+                      <option value="Critical" ${task.priority === 'Critical' ? 'selected' : ''}>Kritis (Critical)</option>
+                      <option value="High" ${task.priority === 'High' ? 'selected' : ''}>Tinggi (High)</option>
+                      <option value="Medium" ${task.priority === 'Medium' ? 'selected' : ''}>Sedang (Medium)</option>
+                      <option value="Low" ${task.priority === 'Low' ? 'selected' : ''}>Rendah (Low)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="text-[10.5px] font-bold text-text-muted uppercase tracking-wider block mb-1">Penanggung Jawab (PIC)</label>
+                    <select id="select-edit-task-pic" class="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-surface-border text-text-primary text-[12px] font-medium focus:outline-none focus:border-primary cursor-pointer">
+                      ${members.map(m => `
+                        <option value="${m.name}|${m.initials}|${m.role}" ${(task.pic?.name === m.name) ? 'selected' : ''}>${m.name} (${m.role})</option>
+                      `).join('')}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-[10.5px] font-bold text-text-muted uppercase tracking-wider block mb-1">Deskripsi Tugas</label>
+                  <textarea 
+                    id="input-edit-task-desc" 
+                    rows="2" 
+                    class="w-full px-3 py-1.5 rounded-lg bg-surface-container-low border border-surface-border text-text-primary text-[12px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    placeholder="Tulis instruksi atau rincian pekerjaan..."
+                  >${task.description || ''}</textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-1 border-t border-surface-border">
+                  <button 
+                    type="button" 
+                    id="btn-cancel-edit-task" 
+                    class="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-text-secondary text-[12px] font-medium transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit" 
+                    id="btn-save-edit-task" 
+                    class="px-4 py-1.5 rounded-lg bg-primary text-on-primary hover:bg-brand-accent text-[12px] font-bold flex items-center gap-1 shadow-sm transition-colors cursor-pointer active:scale-95"
+                  >
+                    <span class="material-symbols-outlined text-[15px]">check</span>
+                    <span>Simpan Perubahan</span>
+                  </button>
+                </div>
+              </form>
+              ` : `
+              <!-- Tampilan Normal -->
               <div class="flex items-center gap-2 flex-wrap">
                 <!-- Task ID -->
                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 font-mono text-[11px] font-bold tracking-wider">
@@ -107,20 +213,43 @@ export class TaskDetailModal extends BaseModal {
                 </span>
               </div>
 
-              <!-- Title -->
-              <h2 class="text-[19px] sm:text-[22px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug break-words mt-2.5 mb-1.5">
-                ${task.title}
-              </h2>
+              <!-- Title with quick edit trigger -->
+              <div class="flex items-start justify-between gap-2 mt-2.5 mb-1.5 group/title">
+                <h2 class="text-[19px] sm:text-[22px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug break-words">
+                  ${task.title}
+                </h2>
+                ${!isUser ? `
+                <button 
+                  id="btn-quick-edit-title" 
+                  class="opacity-60 group-hover/title:opacity-100 transition-opacity p-1 rounded-md hover:bg-surface-container text-text-muted hover:text-primary cursor-pointer shrink-0" 
+                  title="Edit judul & detail tugas" 
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-[16px]">edit</span>
+                </button>
+                ` : ''}
+              </div>
 
               <!-- Description -->
               <p class="text-[13px] sm:text-[13.5px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                 ${task.description ? task.description : '<span class="italic text-slate-400">Tidak ada deskripsi tambahan untuk tugas ini.</span>'}
               </p>
+              `}
             </div>
 
             <!-- Right: Action Buttons & Close Button -->
             <div class="flex items-center gap-2 shrink-0 pt-0.5">
               ${!isUser ? `
+              <button 
+                id="btn-modal-edit-task" 
+                class="h-8.5 px-3 rounded-xl ${this.isEditing ? 'bg-surface-container hover:bg-surface-container-high text-text-secondary border border-surface-border' : 'bg-primary text-on-primary hover:bg-brand-accent'} text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
+                type="button"
+                title="${this.isEditing ? 'Batal Edit' : 'Edit Tugas'}"
+              >
+                <span class="material-symbols-outlined text-[16px]">${this.isEditing ? 'close' : 'edit'}</span>
+                <span class="hidden sm:inline">${this.isEditing ? 'Batal Edit' : 'Edit Tugas'}</span>
+              </button>
+
               <button 
                 id="btn-modal-reschedule" 
                 class="h-8.5 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-secondary hover:text-text-primary text-[12px] font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
@@ -515,6 +644,66 @@ export class TaskDetailModal extends BaseModal {
   }
 
   bindEvents(modalRoot) {
+    // Edit task mode handlers
+    const editBtn = modalRoot.querySelector('#btn-modal-edit-task');
+    const quickEditBtn = modalRoot.querySelector('#btn-quick-edit-title');
+    const cancelEditBtn = modalRoot.querySelector('#btn-cancel-edit-task');
+    const formEditTask = modalRoot.querySelector('#form-edit-task');
+
+    const toggleEditMode = (enable) => {
+      this.isEditing = enable;
+      this.modalManager.open(this.modalId, { task: this.currentTask, isEditing: this.isEditing, tab: this.activeTab });
+    };
+
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        toggleEditMode(!this.isEditing);
+      });
+    }
+    if (quickEditBtn) {
+      quickEditBtn.addEventListener('click', () => {
+        toggleEditMode(true);
+      });
+    }
+    if (cancelEditBtn) {
+      cancelEditBtn.addEventListener('click', () => {
+        toggleEditMode(false);
+      });
+    }
+
+    if (formEditTask) {
+      formEditTask.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newTitle = modalRoot.querySelector('#input-edit-task-title')?.value.trim();
+        const newDesc = modalRoot.querySelector('#input-edit-task-desc')?.value.trim();
+        const newStatus = modalRoot.querySelector('#select-edit-task-status')?.value;
+        const newPriority = modalRoot.querySelector('#select-edit-task-priority')?.value;
+        const picVal = modalRoot.querySelector('#select-edit-task-pic')?.value;
+
+        if (!newTitle) return;
+
+        let picObj = this.currentTask.pic;
+        if (picVal) {
+          const [name, initials, role] = picVal.split('|');
+          picObj = { name, initials, role };
+        }
+
+        const updated = this.taskService.updateTask(this.currentTask.id, {
+          title: newTitle,
+          description: newDesc,
+          status: newStatus,
+          priority: newPriority,
+          pic: picObj
+        });
+
+        if (updated) {
+          this.currentTask = updated;
+          this.isEditing = false;
+          this.modalManager.open(this.modalId, { task: this.currentTask, isEditing: false, tab: this.activeTab });
+        }
+      });
+    }
+
     // Close button handlers
     const closeBtn = modalRoot.querySelector('#btn-close-modal');
     const footerCloseBtn = modalRoot.querySelector('#btn-footer-close');

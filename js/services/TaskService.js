@@ -262,6 +262,29 @@ export class TaskService {
   }
 
   /**
+   * Update task fields (title, description, priority, status, pic, etc.)
+   * @param {string} taskId
+   * @param {Object} updates
+   * @returns {Task|null}
+   */
+  updateTask(taskId, updates) {
+    const task = this.tasks.find(t => t.id === taskId);
+    if (task && updates) {
+      Object.assign(task, updates);
+      this.saveToStorage();
+
+      apiService.updateTask(taskId, updates).catch(err => {
+        console.warn('[TaskService] Gagal update task di PostgreSQL:', err.message);
+      });
+
+      this.eventBus.emit('tasks:updated', this.tasks);
+      this.notifications.success(`Tugas "${task.title}" berhasil diperbarui.`);
+      return task;
+    }
+    return null;
+  }
+
+  /**
    * Toggle star/favorite on a task
    * @param {string} taskId
    */
