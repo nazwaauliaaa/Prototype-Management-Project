@@ -18,17 +18,30 @@ export class AuthView extends BaseView {
 
   render() {
     return `
-      <div class="min-h-screen bg-canvas-bg flex items-center justify-center p-spacing-lg">
-        <main class="w-full max-w-md">
-          <div class="relative w-full bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden p-spacing-xl flex flex-col items-center border border-surface-border">
+      <div class="min-h-screen relative overflow-hidden flex items-center justify-center p-spacing-lg" style="background: radial-gradient(circle at 50% 15%, #581c87 0%, #3b0764 35%, #1e0538 70%, #0c0117 100%);">
+        
+        <!-- Glowing Neon Purple Cyber Aura & Animated Ambient Orbs -->
+        <div class="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-purple-600/35 blur-[120px] pointer-events-none animate-pulse"></div>
+        <div class="absolute -bottom-32 -right-32 w-[520px] h-[520px] rounded-full bg-fuchsia-600/30 blur-[130px] pointer-events-none animate-pulse"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] rounded-full bg-violet-600/25 blur-[140px] pointer-events-none"></div>
+        
+        <!-- Futuristic Neon Dot Grid Overlay -->
+        <div class="absolute inset-0 pointer-events-none opacity-25" style="background-image: radial-gradient(rgba(216, 180, 254, 0.45) 1.2px, transparent 1.2px); background-size: 28px 28px;"></div>
+
+        <!-- Ambient Neon Horizontal Glow Streaks -->
+        <div class="absolute top-1/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent pointer-events-none"></div>
+        <div class="absolute bottom-1/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent pointer-events-none"></div>
+
+        <main class="w-full max-w-md relative z-10">
+          <div class="relative w-full bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.35),0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden p-spacing-xl flex flex-col items-center border border-purple-400/40">
             
-            <!-- Atmospheric top accent gradients -->
-            <div class="absolute -top-12 -left-12 w-48 h-48 bg-brand-subdued rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -top-12 -right-12 w-48 h-48 bg-secondary-container/40 rounded-full blur-2xl pointer-events-none"></div>
+            <!-- Atmospheric top accent gradients (Neon Purple & Magenta Glow) -->
+            <div class="absolute -top-12 -left-12 w-48 h-48 bg-purple-500/30 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -top-12 -right-12 w-48 h-48 bg-fuchsia-500/30 rounded-full blur-2xl pointer-events-none"></div>
 
             <!-- Header & Brand -->
             <div class="relative z-10 flex flex-col items-center text-center mb-spacing-md">
-              <div class="w-16 h-16 rounded-2xl bg-surface-container-low shadow-sm p-spacing-xs flex items-center justify-center mb-spacing-sm">
+              <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 shadow-sm p-spacing-xs flex items-center justify-center mb-spacing-sm">
                 <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-xl" src="assets/logo.svg" />
               </div>
               
@@ -44,7 +57,7 @@ export class AuthView extends BaseView {
 
             <!-- Scanner Viewfinder Component (Portrait) -->
             <div class="relative z-10 w-full mb-spacing-md">
-              <div class="relative w-full max-w-[280px] mx-auto aspect-[3/4] min-h-[300px] max-h-[380px] bg-slate-950 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-spacing-md group">
+              <div class="relative w-full max-w-[280px] mx-auto aspect-[3/4] min-h-[300px] max-h-[380px] bg-slate-950 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-spacing-md group border border-purple-500/30">
                 
                 <!-- Live Camera Video Feed (strictly mirrored by default, portrait orientation) -->
                 <video id="camera-video-stream" class="absolute inset-0 w-full h-full object-cover hidden z-10" playsinline autoplay muted style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></video>
@@ -57,22 +70,22 @@ export class AuthView extends BaseView {
                   <span id="camera-badge-mode">KAMERA AKTIF (MIRROR)</span>
                 </div>
 
-                <!-- Viewfinder Corner Reticles -->
+                <!-- Viewfinder Corner Reticles (Neon Purple Glow) -->
                 <div class="absolute top-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none z-20">
-                  <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
-                  <div class="w-0.5 h-4 bg-brand-accent rounded-full -mt-0.5"></div>
+                  <div class="w-5 h-0.5 bg-purple-400 rounded-full shadow-[0_0_8px_#c084fc]"></div>
+                  <div class="w-0.5 h-4 bg-purple-400 rounded-full -mt-0.5 shadow-[0_0_8px_#c084fc]"></div>
                 </div>
                 <div class="absolute top-3 right-3 w-5 h-5 flex flex-col items-end justify-between pointer-events-none z-20">
-                  <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
-                  <div class="w-0.5 h-4 bg-brand-accent rounded-full -mt-0.5"></div>
+                  <div class="w-5 h-0.5 bg-purple-400 rounded-full shadow-[0_0_8px_#c084fc]"></div>
+                  <div class="w-0.5 h-4 bg-purple-400 rounded-full -mt-0.5 shadow-[0_0_8px_#c084fc]"></div>
                 </div>
                 <div class="absolute bottom-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none z-20">
-                  <div class="w-0.5 h-4 bg-brand-accent rounded-full mb-[-2px]"></div>
-                  <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
+                  <div class="w-0.5 h-4 bg-purple-400 rounded-full mb-[-2px] shadow-[0_0_8px_#c084fc]"></div>
+                  <div class="w-5 h-0.5 bg-purple-400 rounded-full shadow-[0_0_8px_#c084fc]"></div>
                 </div>
                 <div class="absolute bottom-3 right-3 w-5 h-5 flex flex-col items-end justify-between pointer-events-none z-20">
-                  <div class="w-0.5 h-4 bg-brand-accent rounded-full mb-[-2px]"></div>
-                  <div class="w-5 h-0.5 bg-brand-accent rounded-full"></div>
+                  <div class="w-0.5 h-4 bg-purple-400 rounded-full mb-[-2px] shadow-[0_0_8px_#c084fc]"></div>
+                  <div class="w-5 h-0.5 bg-purple-400 rounded-full shadow-[0_0_8px_#c084fc]"></div>
                 </div>
 
                 <!-- Animated Laser Beam Line -->
@@ -534,119 +547,91 @@ export class AuthView extends BaseView {
 
       // 2. Jika bukan JSON langsung, lakukan lookup via backend
       let payloadToSend = parsedUser;
-      if (!payloadToSend) {
-        payloadToSend = {
-          rawCode: cleanCode,
-          name: cleanCode.includes('usr-') ? null : cleanCode
-        };
-      }
+      const handleDeviceLocked = (lockedRes, fallbackUser) => {
+        console.warn('[AuthView] Akses Ditolak: Terkunci di perangkat lain', lockedRes);
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-rose-500 font-bold">❌ Akses Ditolak: Akun Terkunci di Perangkat Lain!</span>`;
+        }
 
-      // 3. Kirim ke API Supabase dengan identitas perangkat ini
+        const lockedModal = this.element.querySelector('#modal-device-locked');
+        const titleEl = this.element.querySelector('#locked-user-title');
+        const descEl = this.element.querySelector('#locked-user-description');
+        const boundDevEl = this.element.querySelector('#locked-bound-device');
+
+        const boundName = lockedRes.boundDeviceName || 'Perangkat Utama Lain';
+        const userName = (lockedRes.data && lockedRes.data.name) || (fallbackUser && fallbackUser.name) || 'Pengguna';
+
+        if (titleEl) titleEl.textContent = `Akun "${userName}" Terkunci`;
+        if (descEl) {
+          descEl.innerHTML = `Akun <b>${userName}</b> saat ini sudah tersambung di <b>${boundName}</b>. Sesuai kebijakan keamanan, <b>perangkat ini tidak dapat mengakses akun tersebut</b> selama masih terikat pada perangkat resmi.`;
+        }
+        if (boundDevEl) boundDevEl.textContent = boundName;
+
+        if (lockedModal) lockedModal.classList.remove('hidden');
+        if (this.notificationService) {
+          this.notificationService.error(`Akses ditolak: Akun ${userName} terkunci di perangkat "${boundName}"!`);
+        }
+      };
+
+      // Helper: Alihkan ke halaman register jika QR belum ada di database
+      const redirectToRegister = (codeToReg, prefilled) => {
+        stopCamera();
+        sessionStorage.setItem('pending_registration_qr', codeToReg);
+        if (prefilled) {
+          sessionStorage.setItem('pending_registration_parsed', JSON.stringify(prefilled));
+        }
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">🔍 Kode QR belum terdaftar di database. Mengalihkan ke pendaftaran akun...</span>`;
+        }
+        if (this.notificationService) {
+          this.notificationService.info('Kode QR belum terdaftar. Mengalihkan ke form pendaftaran QR...');
+        }
+        setTimeout(() => {
+          window.location.hash = `#/register?qr=${encodeURIComponent(codeToReg)}`;
+        }, 450);
+      };
+
       try {
-        const result = await apiService.registerUser(payloadToSend);
+        // HANYA LOOKUP KE DATABASE! JANGAN PERNAH OTOMATIS INSERT PADA PROSES SCAN!
+        const lookupUrl = `${apiService.baseUrl}/qr/lookup?code=${encodeURIComponent(cleanCode)}&deviceId=${encodeURIComponent(apiService.getDeviceId())}&deviceName=${encodeURIComponent(apiService.getDeviceName())}`;
+        const lookupRes = await fetch(lookupUrl);
+        const lookupData = await lookupRes.json();
 
-        // KASUS A: PERANGKAT LAIN TERKUNCI (SINGLE DEVICE LOCK TERPICU!)
-        if (result && result.locked) {
-          console.warn('[AuthView] Akses Ditolak: Terkunci di perangkat lain', result);
-          if (feedback) {
-            feedback.innerHTML = `<span class="text-rose-500 font-bold">❌ Akses Ditolak: Akun Terkunci di Perangkat Lain!</span>`;
-          }
-
-          const lockedModal = this.element.querySelector('#modal-device-locked');
-          const titleEl = this.element.querySelector('#locked-user-title');
-          const descEl = this.element.querySelector('#locked-user-description');
-          const boundDevEl = this.element.querySelector('#locked-bound-device');
-
-          const boundName = result.boundDeviceName || 'Perangkat Utama Lain';
-          const userName = (result.data && result.data.name) || (parsedUser && parsedUser.name) || 'Pengguna';
-
-          if (titleEl) titleEl.textContent = `Akun "${userName}" Terkunci`;
-          if (descEl) {
-            descEl.innerHTML = `Akun <b>${userName}</b> saat ini sudah tersambung di <b>${boundName}</b>. Sesuai kebijakan keamanan, <b>perangkat ini tidak dapat mengakses akun tersebut</b> selama masih terikat pada perangkat resmi.`;
-          }
-          if (boundDevEl) boundDevEl.textContent = boundName;
-
-          if (lockedModal) lockedModal.classList.remove('hidden');
-          if (this.notificationService) {
-            this.notificationService.error(`Akses ditolak: Akun ${userName} terkunci di perangkat "${boundName}"!`);
-          }
+        // 1. Jika akun terdaftar dan terkunci di perangkat lain
+        if (lookupData && lookupData.locked) {
+          handleDeviceLocked(lookupData, parsedUser);
           return;
         }
 
-        // KASUS B: BERHASIL LOGIN & TERIKAT KE PERANGKAT INI
-        if (result && result.success && result.data) {
-          const savedUser = result.data;
+        // 2. Jika akun sudah terdaftar di database PostgreSQL
+        if (lookupRes.ok && lookupData && lookupData.success && lookupData.type === 'user' && lookupData.data) {
+          const userFromDb = lookupData.data;
           stopCamera();
 
           if (feedback) {
-            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">Autentikasi Supabase Sukses!</span> Mengunci perangkat & masuk...`;
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">QR Dikenali!</span> Mengunci perangkat & masuk...`;
           }
-
           if (this.notificationService) {
-            this.notificationService.success(`🎉 Selamat datang, ${savedUser.name}! Akun terhubung ke Supabase dan perangkat ini telah terkunci secara resmi.`);
+            this.notificationService.success(`🎉 Selamat datang kembali, ${userFromDb.name}!`);
           }
 
-          // Daftarkan dan masuki akun
           const userInstance = this.authService.registerNewUser({
-            ...savedUser,
+            ...userFromDb,
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName()
           });
 
           setTimeout(() => {
             this.authService.loginAsUser(userInstance);
-          }, 600);
+          }, 500);
           return;
         }
 
-        // KASUS C: BACKEND OFFLINE ATAU KONEKSI TERPUTUS TAPI IDENTITAS QR LENGKAP (GRACEFUL SESSION FALLBACK)
-        if (parsedUser && parsedUser.name) {
-          stopCamera();
-          if (feedback) {
-            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">QR Terverifikasi!</span> Masuk ke sesi...`;
-          }
-          if (this.notificationService) {
-            this.notificationService.success(`🎉 Selamat datang, ${parsedUser.name}! Berhasil masuk sebagai ${(parsedUser.role || 'user').toUpperCase()}.`);
-          }
-
-          const userInstance = this.authService.registerNewUser({
-            ...parsedUser,
-            boundDeviceId: apiService.getDeviceId(),
-            boundDeviceName: apiService.getDeviceName()
-          });
-
-          setTimeout(() => {
-            this.authService.loginAsUser(userInstance);
-          }, 600);
-          return;
-        }
-
-        // KASUS D: JIKA SERVER MENGEMBALIKAN ERROR SPESIFIK
-        if (result && result.error) {
-          if (feedback) {
-            feedback.innerHTML = `<span class="text-rose-500 font-semibold">⚠️ ${result.error}</span>`;
-          }
-          return;
-        }
-
-        // KASUS E: KODE QR BENAR-BENAR TIDAK DIKENALI
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-amber-500 font-semibold">Kode QR tidak dikenali di database.</span>`;
-        }
-      } catch (err) {
-        console.error('Error saat login QR:', err);
-
-        // Fallback jika terjadi exception tapi parsedUser ada
-        if (parsedUser && parsedUser.name) {
-          stopCamera();
-          const userInstance = this.authService.registerNewUser(parsedUser);
-          this.authService.loginAsUser(userInstance);
-          return;
-        }
-
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-rose-500 font-semibold">Gagal memvalidasi QR: ${err.message}</span>`;
-        }
+        // 3. Jika TIDAK ADA di database PostgreSQL -> Langsung arahkan ke view register!
+        redirectToRegister(cleanCode, parsedUser);
+      } catch (lookupErr) {
+        console.warn('[AuthView] Error lookup database, alihkan ke register:', lookupErr);
+        redirectToRegister(cleanCode, parsedUser);
       }
     };
 

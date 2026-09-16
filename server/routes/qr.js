@@ -123,6 +123,7 @@ router.post('/register-user', async (req, res) => {
     const email = extracted.email || req.body.email || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id` : '');
     const avatar = extracted.avatar || req.body.avatar || (name ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}` : '');
     const userId = extracted.id || req.body.id || `usr-${Date.now().toString().slice(-6)}`;
+    const qrData = req.body.qr_data || req.body.rawCode || extracted.qr_data || (typeof req.body === 'string' ? req.body : null);
     
     // Perangkat pengakses
     const deviceId = req.body.deviceId || req.headers['x-device-id'] || null;
@@ -133,15 +134,16 @@ router.post('/register-user', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Nama pengguna wajib diisi dari QR' });
     }
 
-    // 1. Cek apakah user sudah terdaftar di Supabase
+    // 1. Cek apakah user sudah terdaftar di Supabase / PostgreSQL
     const checkUserQuery = `
       SELECT * FROM users 
       WHERE id = $1 
          OR (LOWER(name) = LOWER($2) AND LOWER(role) = LOWER($3)) 
          OR (email IS NOT NULL AND LOWER(email) = LOWER($4))
+         OR ($5::text IS NOT NULL AND qr_data = $5::text)
       LIMIT 1
     `;
-    const checkUserRes = await pool.query(checkUserQuery, [userId, name, role, email]);
+    const checkUserRes = await pool.query(checkUserQuery, [userId, name, role, email, qrData]);
 
     if (checkUserRes.rows.length > 0) {
       const existing = checkUserRes.rows[0];
@@ -176,11 +178,12 @@ router.post('/register-user', async (req, res) => {
             title = COALESCE($4, title),
             email = COALESCE($5, email),
             avatar = COALESCE($6, avatar),
+            qr_data = COALESCE($8, qr_data),
             updated_at = NOW()
         WHERE id = $7
         RETURNING *
       `;
-      const updateRes = await pool.query(updateQuery, [deviceId, deviceName, name, jobdesk, email, avatar, existing.id]);
+      const updateRes = await pool.query(updateQuery, [deviceId, deviceName, name, jobdesk, email, avatar, existing.id, qrData]);
       const savedUser = updateRes.rows[0];
 
       return res.json({
@@ -194,8 +197,8 @@ router.post('/register-user', async (req, res) => {
 
     // 2. Akun Baru: Masukkan ke Supabase dan kunci langsung ke perangkat ini
     const insertQuery = `
-      INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, bound_device_id, bound_device_name, bound_at, is_locked_to_device)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), true)
+      INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, bound_device_id, bound_device_name, bound_at, is_locked_to_device, qr_data)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), true, $11)
       RETURNING *
     `;
 
@@ -209,7 +212,8 @@ router.post('/register-user', async (req, res) => {
       avatar,
       JSON.stringify(['ruangkreasi', 'panen-kunci']),
       deviceId,
-      deviceName
+      deviceName,
+      qrData
     ];
 
     const result = await pool.query(insertQuery, values);
@@ -277,133 +281,69 @@ router.get('/lookup', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Parameter kode QR wajib disertakan' });
     }
 
-    // A. Periksa apakah kode QR berupa JSON yang membawa informasi User
-    const jsonUser = extractUserFromPayload(code);
-
-    // Jika QR secara eksplisit memuat data user, otomatis buat/sinkronkan akun baru di database Supabase
-    if (jsonUser && jsonUser.name) {
-      const newId = jsonUser.id || `usr-${Date.now().toString().slice(-6)}`;
-      const jobdesk = jsonUser.jobdesk || 'Creative Staff';
-      const email = jsonUser.email || `${jsonUser.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
-
-      try {
-        // Cek lock perangkat user yang sudah ada
-        const existingCheck = await pool.query(`
-          SELECT * FROM users 
-          WHERE id = $1 
-             OR (LOWER(name) = LOWER($2) AND LOWER(role) = LOWER($3)) 
-             OR (email IS NOT NULL AND LOWER(email) = LOWER($4))
-             OR qr_data = $5
-             OR (qr_data IS NOT NULL AND qr_data ILIKE '%' || $5 || '%')
-          LIMIT 1
-        `, [newId, jsonUser.name, jsonUser.role || 'user', email, code]);
-
-        if (existingCheck.rows.length > 0) {
-          const row = existingCheck.rows[0];
-          if (row.bound_device_id && deviceId && row.bound_device_id !== deviceId) {
-            return res.status(403).json({
-              success: false,
-              locked: true,
-              type: 'user',
-              error: `Akses ditolak: Akun "${row.name}" sedang terhubung di perangkat "${row.bound_device_name || 'Perangkat Lain'}". Perangkat lain tidak diizinkan masuk!`,
-              boundDeviceName: row.bound_device_name,
-              boundAt: row.bound_at,
-              data: row
-            });
-          }
-
-          // Update bound device and preserve qr_data
-          const updateRes = await pool.query(`
-            UPDATE users 
-            SET bound_device_id = COALESCE($1, bound_device_id),
-                bound_device_name = COALESCE($2, bound_device_name),
-                bound_at = CASE WHEN bound_device_id IS NULL THEN NOW() ELSE bound_at END,
-                qr_data = COALESCE(qr_data, $4),
-                updated_at = NOW()
-            WHERE id = $3
-            RETURNING *
-          `, [deviceId, deviceName, row.id, code]);
-
-          return res.json({
-            success: true,
-            type: 'user',
-            autoCreated: false,
-            bound: true,
-            matchedBy: 'supabase-users',
-            data: updateRes.rows[0]
-          });
-        }
-
-        const insertQuery = `
-          INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, bound_device_id, bound_device_name, bound_at, is_locked_to_device, qr_data)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), true, $11)
-          RETURNING *
-        `;
-        const result = await pool.query(insertQuery, [
-          newId,
-          jsonUser.name,
-          jsonUser.role || 'user',
-          jobdesk,
-          jobdesk,
-          email,
-          jsonUser.avatar || '',
-          JSON.stringify(['ruangkreasi', 'panen-kunci']),
-          deviceId,
-          deviceName,
-          code
-        ]);
-
-        return res.json({
-          success: true,
-          type: 'user',
-          autoCreated: true,
-          bound: true,
-          matchedBy: 'qr-json-auto-create',
-          data: result.rows[0]
-        });
-      } catch (dbErr) {
-        console.warn('Gagal simpan user ke Supabase:', dbErr.message);
-      }
-    }
-
-    // B. Cek apakah ada di tabel users di database PostgreSQL
+    // A. Cek apakah pengguna sudah terdaftar di tabel users di database PostgreSQL
     try {
+      const jsonUser = extractUserFromPayload(code);
+      const jsonName = jsonUser ? jsonUser.name : null;
+      const jsonRole = jsonUser ? jsonUser.role : null;
+      const jsonEmail = jsonUser ? jsonUser.email : null;
+      const jsonId = jsonUser ? jsonUser.id : null;
+
       const userQuery = `
         SELECT * FROM users 
         WHERE id = $1 
-           OR LOWER(name) = LOWER($1) 
-           OR LOWER(email) = LOWER($1)
            OR qr_data = $1
-           OR LOWER(qr_data) = LOWER($1)
            OR (qr_data IS NOT NULL AND qr_data ILIKE '%' || $1 || '%')
            OR (qr_data IS NOT NULL AND $1 ILIKE '%' || qr_data || '%')
-           OR $1 ILIKE '%' || id || '%'
-           OR $1 ILIKE '%' || name || '%'
+           OR LOWER(name) = LOWER($1) 
+           OR LOWER(email) = LOWER($1)
+           OR ($2::text IS NOT NULL AND (
+                id = $2::text 
+                OR (LOWER(name) = LOWER($3::text) AND LOWER(role) = LOWER($4::text))
+                OR (email IS NOT NULL AND LOWER(email) = LOWER($5::text))
+              ))
         LIMIT 1
       `;
-      const userResult = await pool.query(userQuery, [code]);
+      const userResult = await pool.query(userQuery, [code, jsonId, jsonName, jsonRole, jsonEmail]);
 
       if (userResult.rows.length > 0) {
         const row = userResult.rows[0];
-        const isUserRole = (row.role || '').toLowerCase() === 'user';
+
+        // Cek single-device lock perangkat user yang sudah ada
+        if (row.bound_device_id && deviceId && row.bound_device_id !== deviceId) {
+          return res.status(403).json({
+            success: false,
+            locked: true,
+            type: 'user',
+            error: `Akses ditolak: Akun "${row.name}" sedang terhubung di perangkat "${row.bound_device_name || 'Perangkat Lain'}". Perangkat lain tidak diizinkan masuk!`,
+            boundDeviceName: row.bound_device_name,
+            boundAt: row.bound_at,
+            data: row
+          });
+        }
+
+        // Ikat perangkat saat ini jika belum terikat
+        const updateRes = await pool.query(`
+          UPDATE users 
+          SET bound_device_id = COALESCE($1, bound_device_id),
+              bound_device_name = COALESCE($2, bound_device_name),
+              bound_at = CASE WHEN bound_device_id IS NULL THEN NOW() ELSE bound_at END,
+              qr_data = COALESCE(qr_data, $4),
+              updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `, [deviceId, deviceName, row.id, code]);
+
+        const savedUser = updateRes.rows[0];
 
         return res.json({
           success: true,
           type: 'user',
-          autoCreated: isUserRole,
+          found: true,
+          autoCreated: false,
+          bound: true,
           matchedBy: 'database-users',
-          data: {
-            id: row.id,
-            name: row.name,
-            role: row.role || 'user',
-            title: row.title || row.jobdesk,
-            jobdesk: row.jobdesk || row.title || 'Anggota Tim & Kontributor',
-            email: row.email,
-            avatar: row.avatar || '',
-            workspaceAccess: row.workspace_access || ['ruangkreasi'],
-            qr_data: row.qr_data,
-            createdAt: row.created_at
-          }
+          data: savedUser
         });
       }
     } catch (userErr) {

@@ -238,6 +238,30 @@ export class TaskService {
   }
 
   /**
+   * Update task title with storage & PostgreSQL sync
+   * @param {string} taskId
+   * @param {string} newTitle
+   * @returns {boolean}
+   */
+  updateTaskTitle(taskId, newTitle) {
+    const task = this.tasks.find(t => t.id === taskId);
+    if (task && newTitle && newTitle.trim()) {
+      const trimmed = newTitle.trim();
+      const oldTitle = task.title;
+      task.title = trimmed;
+      this.saveToStorage();
+
+      apiService.updateTask(taskId, { title: trimmed }).catch(err => {
+        console.warn('[TaskService] Gagal update judul tugas di PostgreSQL:', err.message);
+      });
+
+      this.eventBus.emit('tasks:updated', this.tasks);
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Toggle star/favorite on a task
    * @param {string} taskId
    */

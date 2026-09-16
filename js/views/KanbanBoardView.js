@@ -440,7 +440,7 @@ export class KanbanBoardView extends BaseView {
       canChangeVisibility: isAdmin,
       canAddList: isAdmin || isPM,
       canDeleteList: isAdmin || isPM,
-      canRenameList: isAdmin || isPM,
+      canRenameList: true,
       canListActions: isAdmin || isPM,
       canClearColumn: isAdmin || isPM,
       canAddCard: isAdmin || isPM || isQA,
@@ -1126,9 +1126,23 @@ export class KanbanBoardView extends BaseView {
                   >
                     <!-- Column Header matching Trello with count and action icons -->
                     <div class="column-header-inner flex items-center justify-between pb-1.5 mb-2 border-b-2 ${col.color} shrink-0" style="position:relative;">
-                      <div class="flex items-center gap-2 min-w-0">
+                      <div class="flex items-center gap-1.5 min-w-0 flex-1 group/col-header">
                         <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
-                        <h3 class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate" ${perms.canRenameList ? 'title="Klik 2x untuk ubah nama"' : ''}>${col.title}</h3>
+                        <div class="column-title-wrapper flex items-center gap-1 min-w-0 flex-1">
+                          <h3 
+                            class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate cursor-pointer hover:text-primary transition-colors" 
+                            data-column-id="${col.id}"
+                            title="Klik untuk ubah nama daftar"
+                          >${col.title}</h3>
+                          <button
+                            class="btn-edit-column-title w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-80 sm:opacity-0 group-hover/col-header:opacity-100 cursor-pointer shrink-0"
+                            data-column-id="${col.id}"
+                            title="Ubah nama daftar (${col.title})"
+                            type="button"
+                          >
+                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                          </button>
+                        </div>
                         <span class="column-count-badge px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold shrink-0">
                           ${colTasks.length}
                         </span>
@@ -1174,6 +1188,10 @@ export class KanbanBoardView extends BaseView {
                         </div>
                         <div class="lap-body">
                           <!-- Main actions -->
+                          <button class="lap-item btn-lap-rename-list" data-column-id="${col.id}" type="button">
+                            <span class="material-symbols-outlined mi">edit</span>
+                            <span>Ubah nama daftar</span>
+                          </button>
                           <button class="lap-item btn-lap-add-card" data-column-id="${col.id}" type="button">
                             <span class="material-symbols-outlined mi">add_card</span>
                             <span>Tambah kartu</span>
@@ -2437,7 +2455,13 @@ export class KanbanBoardView extends BaseView {
     // 4. Card click opens Task Detail
     const cards = this.element.querySelectorAll('.kanban-card');
     cards.forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (
+          e.target.closest('.btn-delete-kanban-card') ||
+          e.target.closest('.btn-shift-col')
+        ) {
+          return;
+        }
         const taskId = card.getAttribute('data-task-id');
         const task = this.taskService.getTask(taskId);
         if (task && this.modalManager) {
@@ -3148,40 +3172,96 @@ export class KanbanBoardView extends BaseView {
       });
     });
 
-    // LAP: Double-click column title to rename
-    const perms = this.getPermissions();
-    if (perms.canRenameList) {
-      const colHeaderTitles = this.element.querySelectorAll('.column-header-title');
-      colHeaderTitles.forEach(titleEl => {
-        titleEl.addEventListener('dblclick', (e) => {
-          e.stopPropagation();
-          const colHeader = titleEl.closest('.column-header-inner');
-          const colDiv = titleEl.closest('.kanban-column');
-          const colId = colDiv?.getAttribute('data-column-id');
-          const col = this.columns.find(c => c.id === colId);
-          if (!col) return;
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = col.title;
-          input.className = 'font-bold text-[13.5px] text-text-primary tracking-tight bg-white dark:bg-slate-800 border border-[#0c66e4] rounded px-1 py-0 outline-none w-full min-w-0';
-          input.style.maxWidth = '130px';
-          titleEl.replaceWith(input);
-          input.focus();
-          input.select();
-          const commit = () => {
-            const newTitle = input.value.trim();
-            if (newTitle) col.title = newTitle;
-            localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
-            this.mount(this.element);
-          };
-          input.addEventListener('blur', commit);
-          input.addEventListener('keydown', (ke) => {
-            if (ke.key === 'Enter') { ke.preventDefault(); commit(); }
-            if (ke.key === 'Escape') { this.mount(this.element); }
-          });
-        });
+    // Column title renaming (via pencil button, click/dblclick title, or 'Ubah nama daftar' popover menu)
+    const startRenameColumn = (colId) => {
+      const colDiv = this.element.querySelector(`.kanban-column[data-column-id="${colId}"]`);
+      if (!colDiv) return;
+      const titleWrapper = colDiv.querySelector('.column-title-wrapper');
+      const col = this.columns.find(c => c.id === colId);
+      if (!titleWrapper || !col) return;
+
+      // If already has an input, focus it
+      const existingInput = titleWrapper.querySelector('input');
+      if (existingInput) {
+        existingInput.focus();
+        existingInput.select();
+        return;
+      }
+
+      this._closeAllPopups();
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = col.title;
+      input.className = 'font-bold text-[13.5px] text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border-2 border-[#0c66e4] rounded-lg px-2 py-0.5 outline-none shadow-sm focus:ring-2 focus:ring-[#0c66e4]/30 w-full min-w-0';
+      input.style.maxWidth = '180px';
+      input.placeholder = 'Nama daftar...';
+
+      titleWrapper.innerHTML = '';
+      titleWrapper.appendChild(input);
+
+      input.focus();
+      input.select();
+
+      let committed = false;
+      const commit = () => {
+        if (committed) return;
+        committed = true;
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== col.title) {
+          col.title = newTitle;
+          localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+        }
+        this.mount(this.element);
+      };
+
+      input.addEventListener('click', (ev) => ev.stopPropagation());
+      input.addEventListener('dblclick', (ev) => ev.stopPropagation());
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', (ke) => {
+        ke.stopPropagation();
+        if (ke.key === 'Enter') {
+          ke.preventDefault();
+          commit();
+        } else if (ke.key === 'Escape') {
+          ke.preventDefault();
+          committed = true;
+          this.mount(this.element);
+        }
       });
-    }
+    };
+
+    const editColBtns = this.element.querySelectorAll('.btn-edit-column-title');
+    editColBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        startRenameColumn(colId);
+      });
+    });
+
+    const colHeaderTitles = this.element.querySelectorAll('.column-header-title');
+    colHeaderTitles.forEach(titleEl => {
+      titleEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = titleEl.getAttribute('data-column-id');
+        startRenameColumn(colId);
+      });
+      titleEl.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const colId = titleEl.getAttribute('data-column-id');
+        startRenameColumn(colId);
+      });
+    });
+
+    const lapRenameListBtns = this.element.querySelectorAll('.btn-lap-rename-list');
+    lapRenameListBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id');
+        startRenameColumn(colId);
+      });
+    });
 
     // ==================== LEFT INBOX DRAWER INTERACTION ====================
     const closeInboxBtn = this.element.querySelector('#btn-close-inbox');

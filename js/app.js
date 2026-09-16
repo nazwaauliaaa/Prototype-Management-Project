@@ -24,6 +24,7 @@ import { AddMemberModal } from './components/modals/AddMemberModal.js';
 import { CreateBoardModal } from './components/modals/CreateBoardModal.js';
 
 import { AuthView } from './views/AuthView.js';
+import { RegisterView } from './views/RegisterView.js';
 import { DashboardView } from './views/DashboardView.js';
 import { ProjectTableView } from './views/ProjectTableView.js';
 import { KanbanBoardView } from './views/KanbanBoardView.js';
@@ -446,10 +447,11 @@ class CreativeOfficeApp {
   }
 
   handleHashChange() {
-    const hash = window.location.hash.replace('#/', '') || 'dashboard';
+    const rawHash = window.location.hash.replace('#/', '') || 'dashboard';
+    const cleanHash = rawHash.split('?')[0];
     const authService = this.container.resolve('AuthService');
 
-    if (!authService.isLoggedIn() && hash !== 'auth') {
+    if (!authService.isLoggedIn() && cleanHash !== 'auth' && cleanHash !== 'register') {
       this.navigateTo('auth');
       return;
     }
@@ -457,12 +459,12 @@ class CreativeOfficeApp {
     const currentUser = authService.getCurrentUser();
     const isUserRole = currentUser && currentUser.role === 'user';
 
-    const parts = hash.split('/');
+    const parts = cleanHash.split('/');
     const viewName = parts[0];
     const param = parts[1];
 
-    // ROUTE GUARD: Role 'user' only permitted to access 'kanban' and 'auth'
-    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth') {
+    // ROUTE GUARD: Role 'user' only permitted to access 'kanban', 'auth', and 'register'
+    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'register') {
       const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
       const notif = this.container.resolve('NotificationService');
@@ -500,8 +502,8 @@ class CreativeOfficeApp {
     const currentUser = authService ? authService.getCurrentUser() : null;
     const isUserRole = currentUser && currentUser.role === 'user';
 
-    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban or auth
-    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth') {
+    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban, auth, register
+    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'register') {
       const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
       viewName = 'kanban';
@@ -510,12 +512,12 @@ class CreativeOfficeApp {
 
     // Update URL hash without triggering double reload
     const targetHash = params.projectId ? `/${viewName}/${params.projectId}` : `/${viewName}`;
-    if (window.location.hash !== `#${targetHash}`) {
+    if (window.location.hash !== `#${targetHash}` && !window.location.hash.startsWith(`#/${viewName}?`)) {
       history.replaceState(null, '', `#${targetHash}`);
     }
 
-    if (viewName === 'auth') {
-      // Hide header, sidebar, workspace bar, and bottom nav in auth gate
+    if (viewName === 'auth' || viewName === 'register') {
+      // Hide header, sidebar, workspace bar, and bottom nav in auth/register gate
       if (headerHost) headerHost.classList.add('hidden');
       if (sidebarHost) sidebarHost.classList.add('hidden');
       const bottomNavHost = document.getElementById('app-bottom-nav');
@@ -527,11 +529,15 @@ class CreativeOfficeApp {
         shellLayout.style.paddingTop = '';
       }
 
-      // Unmount previous view before mounting auth
+      // Unmount previous view before mounting
       if (this.currentView) {
         this.currentView.unmount();
       }
-      this.currentView = new AuthView(this.container);
+      if (viewName === 'register') {
+        this.currentView = new RegisterView(this.container);
+      } else {
+        this.currentView = new AuthView(this.container);
+      }
       this.currentView.mount(mainHost);
       return;
     }
