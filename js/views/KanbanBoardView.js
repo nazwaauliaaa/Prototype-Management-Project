@@ -115,6 +115,17 @@ export class KanbanBoardView extends BaseView {
       }
     };
     this.eventBus.on('auth:login', this._onAuthChanged);
+
+    // Auto-update kanban whenever board members change across tabs or background
+    this._onStorageUpdate = (e) => {
+      if (!e.key) return;
+      if (e.key.startsWith('board_members_') || e.key === 'board_members_updated_trigger') {
+        if (this.element) {
+          this.mount(this.element);
+        }
+      }
+    };
+    window.addEventListener('storage', this._onStorageUpdate);
   }
 
   _initColumns() {
@@ -168,6 +179,9 @@ export class KanbanBoardView extends BaseView {
     }
     if (this._onAuthChanged) {
       this.eventBus.off('auth:login', this._onAuthChanged);
+    }
+    if (this._onStorageUpdate) {
+      window.removeEventListener('storage', this._onStorageUpdate);
     }
     super.unmount();
   }

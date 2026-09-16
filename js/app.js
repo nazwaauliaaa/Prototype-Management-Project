@@ -187,10 +187,31 @@ class CreativeOfficeApp {
       try {
         const boardKey = `board_members_${workspace}`;
         const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
-        if (!currentBoardMembers.some(m => m.email && m.email.toLowerCase() === finalEmail)) {
-          currentBoardMembers.push(newMember);
-          localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
+        const exIdx = currentBoardMembers.findIndex(m => m.email && m.email.toLowerCase() === finalEmail);
+        if (exIdx >= 0) {
+          currentBoardMembers[exIdx] = { ...currentBoardMembers[exIdx], ...newMember, isOnline: true };
+        } else {
+          currentBoardMembers.unshift(newMember);
         }
+        localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
+        localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+
+        // Also add/sync in team_members
+        const teamKey = 'team_members';
+        const team = JSON.parse(localStorage.getItem(teamKey) || '[]');
+        const tIdx = team.findIndex(t => t.email && t.email.toLowerCase() === finalEmail);
+        if (tIdx >= 0) {
+          team[tIdx] = { ...team[tIdx], name: finalName, role: newMember.role };
+        } else {
+          team.push({
+            id: newMember.id,
+            name: finalName,
+            email: finalEmail,
+            role: newMember.role,
+            avatar: userInstance.avatar
+          });
+        }
+        localStorage.setItem(teamKey, JSON.stringify(team));
       } catch (err) {}
 
       // 8. Set active workspace and project

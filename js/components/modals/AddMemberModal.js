@@ -489,31 +489,157 @@ export class AddMemberModal extends BaseModal {
     const inputField = modalRoot.querySelector('[data-testid="add-members-input"]');
     const shareBtn   = modalRoot.querySelector('[data-testid="team-invite-submit-button"]');
 
-    const handleShareAction = async () => {
-      const val = inputField?.value.trim() || '';
-      const email = val.includes('@')
-        ? val.toLowerCase()
-        : val ? `${val.toLowerCase().replace(/\s+/g,'')}@gmail.com`
-              : `anggota.${Math.floor(100 + Math.random() * 900)}@gmail.com`;
-      const name = val ? (val.includes('@') ? val.split('@')[0] : val) : 'Anggota Baru';
+    const refreshMembersListUI = () => {
+      const list  = modalRoot.querySelector('#board-members-list');
+      const badge = modalRoot.querySelector('#member-count-badge span');
+      const fresh = this.getBoardMembers(this.currentWorkspace);
 
-      const invite = {
-        id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2,7),
-        name, email, role: this._selectedPermission || 'Member',
-        workspace: this.currentWorkspace, boardTitle: this.boardTitle, color: '#2563eb',
+      if (badge) badge.textContent = fresh.length;
+
+      if (list) {
+        if (fresh.length === 0) {
+          list.innerHTML = `
+            <div class="D7yoA6_UXaeC0G py-8 px-4 text-center flex flex-col items-center justify-center">
+              <div class="SrmT8LwuTc56Bn mb-3 opacity-60">
+                <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
+                  ${this._svgEmptyUser()}
+                </span>
+              </div>
+              <p class="LcI5UVx0RhWBg1 text-[13.5px] font-semibold text-[#172b4d] dark:text-[#b6c2cf]">
+                Belum ada anggota yang bergabung.
+              </p>
+              <p class="text-[12px] text-[#5e6c84] dark:text-[#9fadbc] mt-1">
+                Bagikan tautan di atas untuk mengundang anggota ke papan ini.
+              </p>
+            </div>`;
+        } else {
+          list.innerHTML = fresh.map(m => this._renderMemberItem(m)).join('');
+        }
+      }
+    };
+
+    const handleShareAction = async () => {
+      const rawVal = inputField?.value.trim() || '';
+      if (!rawVal) {
+        if (this.notificationService) {
+          this.notificationService.warning('Silakan masukkan nama atau alamat Gmail.');
+        }
+        if (inputField) inputField.focus();
+        return;
+      }
+
+      // Format Name & Email
+      let name = '';
+      let email = '';
+
+      if (rawVal.includes('@')) {
+        email = rawVal.toLowerCase();
+        const userPart = rawVal.split('@')[0];
+        // Capitalize words from username part (e.g. dimas.anggara -> Dimas Anggara)
+        name = userPart
+          .replace(/[._-]+/g, ' ')
+          .split(' ')
+          .filter(Boolean)
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ') || userPart;
+      } else {
+        // User typed a name (e.g. "Dimas Anggara")
+        name = rawVal
+          .split(' ')
+          .filter(Boolean)
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ');
+        const cleanSlug = rawVal.toLowerCase().replace(/[^a-z0-9]/g, '.');
+        email = `${cleanSlug}@gmail.com`;
+      }
+
+      const selectedRole = this._selectedPermission || 'Member';
+      let roleDesc = 'Anggota Tim';
+      if (selectedRole === 'Admin') roleDesc = 'Workspace admin';
+      else if (selectedRole === 'Observer') roleDesc = 'Pengamat & Kontributor';
+
+      const colors = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#db2777'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || name.slice(0, 2).toUpperCase() || 'MB';
+
+      const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'aikreativ';
+      const key = `board_members_${currentWs}`;
+      let members = this.getBoardMembers(currentWs);
+
+      const existingIdx = members.findIndex(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+      const memberObj = {
+        id: existingIdx >= 0 ? members[existingIdx].id : 'mem-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        name: name,
+        email: email,
+        role: selectedRole,
+        roleDescription: roleDesc,
+        color: existingIdx >= 0 && members[existingIdx].color ? members[existingIdx].color : randomColor,
+        initials: initials,
+        workspace: currentWs,
+        projectId: this.projectId || currentWs,
+        joinedViaGmail: true,
+        isOnline: true,
+        joinedAt: existingIdx >= 0 && members[existingIdx].joinedAt ? members[existingIdx].joinedAt : new Date().toISOString()
       };
 
-      this.savePendingInvite(invite);
-      const link = this.generateInviteLink(invite);
+      if (existingIdx >= 0) {
+        members[existingIdx] = { ...members[existingIdx], ...memberObj };
+      } else {
+        members.unshift(memberObj);
+      }
 
+      // Save to board members
+      localStorage.setItem(key, JSON.stringify(members));
+
+      // Also register to team_members for task assignment
+      try {
+        const teamKey = 'team_members';
+        const team = JSON.parse(localStorage.getItem(teamKey) || '[]');
+        const tIdx = team.findIndex(t => t.email && t.email.toLowerCase() === email.toLowerCase());
+        if (tIdx >= 0) {
+          team[tIdx] = { ...team[tIdx], name, role: selectedRole };
+        } else {
+          team.push({
+            id: memberObj.id,
+            name: memberObj.name,
+            email: memberObj.email,
+            role: memberObj.role,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(memberObj.name)}&background=${memberObj.color.replace('#','')}&color=fff&bold=true`
+          });
+        }
+        localStorage.setItem(teamKey, JSON.stringify(team));
+      } catch (e) {}
+
+      // Save pending invite for link tracking
+      const invite = {
+        id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2,7),
+        name,
+        email,
+        role: selectedRole,
+        workspace: currentWs,
+        boardTitle: this.boardTitle,
+        color: memberObj.color,
+      };
+      this.savePendingInvite(invite);
+
+      // Generate invite link & copy to clipboard
+      const link = this.generateInviteLink(invite);
       try {
         await navigator.clipboard.writeText(link);
-        if (this.notificationService)
-          this.notificationService.success(`Tautan undangan untuk ${email} (${invite.role}) berhasil disalin!`);
-      } catch {
-        if (this.notificationService)
-          this.notificationService.success(`Undangan untuk ${email} berhasil dibuat!`);
+      } catch (e) {}
+
+      // Broadcast updates
+      localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+      this.eventBus.emit('board:members_updated', { workspace: currentWs, member: memberObj });
+      this.eventBus.emit('member:added', { workspace: currentWs, member: memberObj });
+
+      // Immediate UI update in modal
+      refreshMembersListUI();
+
+      if (this.notificationService) {
+        this.notificationService.success(`✅ ${name} (${email}) berhasil ditambahkan ke Board members! Tautan disalin.`);
       }
+
       if (inputField) inputField.value = '';
     };
 
@@ -609,36 +735,22 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
-    // 9. Live member list update when someone joins via invite link
-    this.eventBus.on('board:members_updated', ({ workspace }) => {
+    // 9. Live member list update when someone joins via invite link or other tabs
+    const onMembersUpdated = ({ workspace } = {}) => {
       if (workspace && workspace !== this.currentWorkspace) return;
-      const list  = modalRoot.querySelector('#board-members-list');
-      const badge = modalRoot.querySelector('#member-count-badge span');
+      refreshMembersListUI();
+    };
 
-      const fresh = this.getBoardMembers(this.currentWorkspace);
+    this.eventBus.on('board:members_updated', onMembersUpdated);
+    this.eventBus.on('member:added', onMembersUpdated);
 
-      if (badge) badge.textContent = fresh.length;
-
-      if (list) {
-        if (fresh.length === 0) {
-          list.innerHTML = `
-            <div class="D7yoA6_UXaeC0G py-8 px-4 text-center flex flex-col items-center justify-center">
-              <div class="SrmT8LwuTc56Bn mb-3 opacity-60">
-                <span aria-hidden="true" class="_1e0c1o8l _vchhusvi _1o9zidpf _vwz4kb7n _y4ti1igz _bozg1mb9 _12va1onz _jcxd1r8n" style="color: currentcolor;">
-                  ${this._svgEmptyUser()}
-                </span>
-              </div>
-              <p class="LcI5UVx0RhWBg1 text-[13.5px] font-semibold text-[#172b4d] dark:text-[#b6c2cf]">
-                Belum ada anggota yang bergabung.
-              </p>
-              <p class="text-[12px] text-[#5e6c84] dark:text-[#9fadbc] mt-1">
-                Bagikan tautan di atas untuk mengundang anggota ke papan ini.
-              </p>
-            </div>`;
-        } else {
-          list.innerHTML = fresh.map(m => this._renderMemberItem(m)).join('');
-        }
+    // Cross-tab real-time sync via storage event
+    const storageHandler = (e) => {
+      if (!e.key) return;
+      if (e.key === `board_members_${this.currentWorkspace}` || e.key === 'board_members_updated_trigger') {
+        refreshMembersListUI();
       }
-    });
+    };
+    window.addEventListener('storage', storageHandler);
   }
 }
