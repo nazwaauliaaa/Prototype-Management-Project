@@ -235,6 +235,7 @@ export class CreateBoardModal extends BaseModal {
             </div>
           </div>
 
+<<<<<<< HEAD
           <!-- Deskripsi Proyek -->
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
@@ -245,6 +246,8 @@ export class CreateBoardModal extends BaseModal {
               class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
             ></textarea>
           </div>
+=======
+>>>>>>> ca94d97 (menghapus input estimasi budgertt)
 
           <!-- Tema Visual Papan & Preview -->
           <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
@@ -317,8 +320,6 @@ export class CreateBoardModal extends BaseModal {
     const workspaceTagSelect = container.querySelector('#select-ws-new-workspace-tag');
     const prioritySelect = container.querySelector('#select-ws-project-priority');
     const dueDateInput = container.querySelector('#input-ws-project-due');
-    const budgetInput = container.querySelector('#input-ws-project-budget');
-    const descInput = container.querySelector('#input-ws-project-desc');
 
     const previewEl = container.querySelector('#board-theme-preview');
     const previewTitle = container.querySelector('#preview-board-title');
@@ -405,7 +406,11 @@ export class CreateBoardModal extends BaseModal {
         const priority = prioritySelect ? prioritySelect.value : 'High';
         const dueDate = dueDateInput ? dueDateInput.value : 'Des 2026';
         const budget = 'Rp 85.000.000';
+<<<<<<< HEAD
         const description = descInput ? descInput.value.trim() : `Ruang kerja dan deliverable proyek ${name}.`;
+=======
+        const description = `Ruang kerja dan deliverable proyek ${name}.`;
+>>>>>>> ca94d97 (menghapus input estimasi budgertt)
 
         if (!name) {
           if (projectNameInput) projectNameInput.focus();

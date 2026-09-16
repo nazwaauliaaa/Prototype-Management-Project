@@ -353,6 +353,7 @@ export class WorkspacesView extends BaseView {
                 </div>
               </div>
 
+<<<<<<< HEAD
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
                 <textarea
@@ -362,6 +363,8 @@ export class WorkspacesView extends BaseView {
                   class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
                 ></textarea>
               </div>
+=======
+>>>>>>> ca94d97 (menghapus input estimasi budgertt)
 
               <!-- Modal Footer Actions -->
               <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-slate-100">
@@ -659,7 +662,11 @@ export class WorkspacesView extends BaseView {
         const priority = this.element.querySelector('#select-ws-project-priority')?.value || 'High';
         const dueDate = this.element.querySelector('#input-ws-project-due')?.value || 'Des 2026';
         const budget = 'Rp 85.000.000';
+<<<<<<< HEAD
         const description = this.element.querySelector('#input-ws-project-desc')?.value.trim() || `Ruang kerja dan deliverable proyek ${name}.`;
+=======
+        const description = `Ruang kerja dan deliverable proyek ${name}.`;
+>>>>>>> ca94d97 (menghapus input estimasi budgertt)
 
         if (!name) return;
 
