@@ -3,10 +3,9 @@ import { BaseModal } from '../../core/BaseModal.js';
 /**
  * TaskDetailModal - Super Card #RK-304
  * Multi-tab comprehensive task modal:
- * Tab 1: Checklist QA & Teknis
- * Tab 2: Pratinjau Visual & Rasio
- * Tab 3: Log Aktivitas & Catatan Tim
- * Tab 4: Dokumen Legalitas
+ * Tab 1: Pratinjau Visual & Rasio
+ * Tab 2: Log Aktivitas & Catatan Tim
+ * Tab 3: Dokumen Legalitas
  */
 export class TaskDetailModal extends BaseModal {
   constructor(container) {
@@ -15,7 +14,7 @@ export class TaskDetailModal extends BaseModal {
     this.documentService = container.resolve('DocumentService');
     this.notificationService = container.resolve('NotificationService');
     this.modalManager = container.resolve('ModalManager');
-    this.activeTab = 'checklist'; // 'checklist' | 'visual' | 'logs' | 'legal'
+    this.activeTab = 'visual'; // 'visual' | 'logs' | 'legal'
     this.currentTask = null;
     this.comments = [
       {
@@ -61,30 +60,17 @@ export class TaskDetailModal extends BaseModal {
         
         <!-- Modal Header -->
         <div class="p-spacing-lg bg-surface-container-low border-b border-surface-border flex flex-col gap-spacing-sm">
-          <div class="flex flex-wrap items-center justify-between gap-spacing-sm">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-badge-micro text-[11px] font-bold tracking-wide">
-                ${task.code}
-              </span>
-              <button 
-                id="btn-modal-back-workspace" 
-                class="px-2.5 py-0.5 rounded-full bg-status-planning/20 hover:bg-status-planning/35 text-status-planning font-badge-micro text-[11px] font-bold capitalize transition-colors flex items-center gap-1 cursor-pointer border border-status-planning/30"
-                type="button"
-                title="Kembali ke Ruang Kerja ${task.workspace}"
-              >
-                <span class="material-symbols-outlined text-[13px]">arrow_back</span>
-                <span>${task.workspace}</span>
-              </button>
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error text-on-error font-badge-micro text-[10px] font-bold tracking-wide uppercase">
-                <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                ● LIVE CRITICAL AUDIT
-              </span>
-              <span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-badge-micro text-[10px] font-bold">
-                ${task.priority}
-              </span>
+          <div class="flex items-start justify-between gap-spacing-sm">
+            <div>
+              <h2 class="font-headline-lg text-[18px] text-text-primary font-bold tracking-tight">
+                ${task.title}
+              </h2>
+              <p class="font-body-default text-[13px] text-text-secondary mt-1">
+                ${task.description || 'Audit lapangan langsung uji keterbacaan, kecerahan siang hari, sinkronisasi controller Novastar, dan failover stream transmisi 4K.'}
+              </p>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               ${!isUser ? `
               <button 
                 id="btn-modal-delete-task" 
@@ -113,15 +99,6 @@ export class TaskDetailModal extends BaseModal {
                 <span class="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
-          </div>
-
-          <div>
-            <h2 class="font-headline-lg text-[18px] text-text-primary font-bold tracking-tight">
-              ${task.title}
-            </h2>
-            <p class="font-body-default text-[13px] text-text-secondary mt-1">
-              ${task.description || 'Audit lapangan langsung uji keterbacaan, kecerahan siang hari, sinkronisasi controller Novastar, dan failover stream transmisi 4K.'}
-            </p>
           </div>
         </div>
 
@@ -204,49 +181,8 @@ export class TaskDetailModal extends BaseModal {
           </div>
         </div>
 
-        <!-- Tabs Navigation -->
-        <div class="px-spacing-lg pt-spacing-sm bg-surface-container-low border-b border-surface-border flex items-center gap-1 overflow-x-auto">
-          <button 
-            class="modal-tab-btn px-3 py-2 border-b-2 font-body-medium text-[13px] flex items-center gap-1.5 whitespace-nowrap transition-colors ${this.activeTab === 'checklist' ? 'border-primary text-primary font-bold' : 'border-transparent text-text-secondary hover:text-text-primary'}" 
-            data-tab="checklist" 
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[16px]">checklist</span>
-            <span>Checklist QA & Teknis</span>
-          </button>
-
-          <button 
-            class="modal-tab-btn px-3 py-2 border-b-2 font-body-medium text-[13px] flex items-center gap-1.5 whitespace-nowrap transition-colors ${this.activeTab === 'visual' ? 'border-primary text-primary font-bold' : 'border-transparent text-text-secondary hover:text-text-primary'}" 
-            data-tab="visual" 
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[16px]">aspect_ratio</span>
-            <span>Hasil Pekerjaan & Visual</span>
-          </button>
-
-          <button 
-            class="modal-tab-btn px-3 py-2 border-b-2 font-body-medium text-[13px] flex items-center gap-1.5 whitespace-nowrap transition-colors ${this.activeTab === 'logs' ? 'border-primary text-primary font-bold' : 'border-transparent text-text-secondary hover:text-text-primary'}" 
-            data-tab="logs" 
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[16px]">quick_reference_all</span>
-            <span>Log Aktivitas & Catatan Bug</span>
-            <span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-badge-micro text-[10px] font-bold">${this.comments.length}</span>
-          </button>
-
-          <button 
-            class="modal-tab-btn px-3 py-2 border-b-2 font-body-medium text-[13px] flex items-center gap-1.5 whitespace-nowrap transition-colors ${this.activeTab === 'legal' ? 'border-primary text-primary font-bold' : 'border-transparent text-text-secondary hover:text-text-primary'}" 
-            data-tab="legal" 
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[16px]">verified</span>
-            <span>Dokumen Legalitas</span>
-            <span class="px-1.5 py-0.2 rounded-full bg-status-success/15 text-status-success font-badge-micro text-[10px] font-bold">4 Berkas</span>
-          </button>
-        </div>
-
         <!-- Tab Content Body -->
-        <div class="p-spacing-lg flex-1 overflow-y-auto flex flex-col gap-spacing-md bg-surface-container-lowest">
+        <div class="p-spacing-lg flex-1 overflow-y-auto flex flex-col gap-6 bg-surface-container-lowest">
           ${this.renderActiveTabContent()}
         </div>
 
@@ -287,97 +223,27 @@ export class TaskDetailModal extends BaseModal {
   }
 
   renderActiveTabContent() {
-    switch (this.activeTab) {
-      case 'visual':
-        return this.renderVisualTab();
-      case 'logs':
-        return this.renderLogsTab();
-      case 'legal':
-        return this.renderLegalTab();
-      default:
-        return this.renderChecklistTab();
-    }
-  }
-
-  renderChecklistTab() {
     return `
-      <div class="flex flex-col gap-2.5">
-        <span class="font-caption-meta text-[11px] text-text-muted uppercase tracking-wider font-semibold">
-          Daftar Pengujian Lapangan Safe-Zone & Hardware
-        </span>
+      <section id="section-visual" class="flex flex-col gap-4">
+        ${this.renderVisualTab()}
+      </section>
 
-        <!-- Checklist Item 1 -->
-        <div class="p-3 rounded-xl bg-status-success/15 border border-status-success/20 flex items-start gap-3">
-          <div class="w-6 h-6 rounded-md bg-status-success text-white flex items-center justify-center shrink-0 mt-0.5">
-            <span class="material-symbols-outlined text-[16px]">check</span>
-          </div>
-          <div class="flex flex-col flex-1">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-body-medium text-[13px] text-text-primary font-semibold">
-                Uji keterbacaan tipografi kampanye pada kecepatan 40-60 km/jam di jalur kendaraan
-              </span>
-              <span class="px-2 py-0.5 rounded bg-status-success text-white font-badge-micro text-[10px] font-bold">Lolos / Pass</span>
-            </div>
-            <p class="font-caption-meta text-[11px] text-text-secondary mt-0.5">
-              Jarak pandang optimum 75m terkonfirmasi jelas dari flyover dan bundaran tanpa distorsi sudut pandang.
-            </p>
-          </div>
+      <section id="section-legal" class="flex flex-col gap-4 pt-4 border-t border-surface-border">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px] text-primary">verified</span>
+          <h3 class="font-headline-md text-[14px] font-bold text-text-primary">Dokumen & Kepatuhan Legalitas</h3>
         </div>
+        ${this.renderLegalTab()}
+      </section>
 
-        <!-- Checklist Item 2 -->
-        <div class="p-3 rounded-xl bg-status-success/15 border border-status-success/20 flex items-start gap-3">
-          <div class="w-6 h-6 rounded-md bg-status-success text-white flex items-center justify-center shrink-0 mt-0.5">
-            <span class="material-symbols-outlined text-[16px]">check</span>
-          </div>
-          <div class="flex flex-col flex-1">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-body-medium text-[13px] text-text-primary font-semibold">
-                Kalibrasi pixel pitch & rasio 3840 x 2160 (16:9 4K) pada controller Novastar MCTRL4K
-              </span>
-              <span class="px-2 py-0.5 rounded bg-status-success text-white font-badge-micro text-[10px] font-bold">Selesai</span>
-            </div>
-            <p class="font-caption-meta text-[11px] text-text-secondary mt-0.5">
-              Mapping canvas 1:1 tanpa peregangan (aspect-ratio preservation locked).
-            </p>
-          </div>
+      <section id="section-logs" class="flex flex-col gap-4 pt-4 border-t border-surface-border">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px] text-primary">quick_reference_all</span>
+          <h3 class="font-headline-md text-[14px] font-bold text-text-primary">Log Aktivitas & Catatan Tim</h3>
+          <span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-badge-micro text-[10px] font-bold">${this.comments.length}</span>
         </div>
-
-        <!-- Checklist Item 3 -->
-        <div class="p-3 rounded-xl bg-status-success/15 border border-status-success/20 flex items-start gap-3">
-          <div class="w-6 h-6 rounded-md bg-status-success text-white flex items-center justify-center shrink-0 mt-0.5">
-            <span class="material-symbols-outlined text-[16px]">check</span>
-          </div>
-          <div class="flex flex-col flex-1">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-body-medium text-[13px] text-text-primary font-semibold">
-                Uji nits kecerahan di bawah terik siang hari (Outdoor Ambient Light Sensor)
-              </span>
-              <span class="px-2 py-0.5 rounded bg-status-success text-white font-badge-micro text-[10px] font-bold">Safe Area Pass 98%</span>
-            </div>
-            <p class="font-caption-meta text-[11px] text-text-secondary mt-0.5">
-              Output kecerahan 7,500 nits, kontras rasio terkalibrasi tajam terhadap terik matahari Jakarta.
-            </p>
-          </div>
-        </div>
-
-        <!-- Checklist Item 4 -->
-        <div class="p-3 rounded-xl bg-surface-container-low border border-surface-border flex items-start gap-3">
-          <div class="w-6 h-6 rounded-md border-2 border-primary-container flex items-center justify-center shrink-0 mt-0.5">
-            <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-          </div>
-          <div class="flex flex-col flex-1">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-body-medium text-[13px] text-text-primary font-semibold">
-                Sinyal live-stream failover redundansi CDN Antasari
-              </span>
-              <span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-badge-micro text-[10px] font-bold">Sedang Diuji - 85%</span>
-            </div>
-            <p class="font-caption-meta text-[11px] text-text-secondary mt-0.5">
-              Menunggu verifikasi ping redundansi uplink 4G/5G backup switchover.
-            </p>
-          </div>
-        </div>
-      </div>
+        ${this.renderLogsTab()}
+      </section>
     `;
   }
 
@@ -607,14 +473,13 @@ export class TaskDetailModal extends BaseModal {
       });
     }
 
-    // Tabs switching
-    const tabBtns = modalRoot.querySelectorAll('.modal-tab-btn');
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.activeTab = btn.getAttribute('data-tab');
-        this.modalManager.open(this.modalId, { task: this.currentTask, tab: this.activeTab });
-      });
-    });
+    // Auto-scroll to target section if requested
+    if (this.activeTab && this.activeTab !== 'visual') {
+      const targetSection = modalRoot.querySelector(`#section-${this.activeTab}`);
+      if (targetSection) {
+        setTimeout(() => targetSection.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
+    }
 
     // Add comment button
     const commentInput = modalRoot.querySelector('#input-task-comment');

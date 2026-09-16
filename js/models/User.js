@@ -42,18 +42,4 @@ export class User {
   isTechnical() {
     return this.isQA();
   }
-
-  canAccessQrHub() {
-    const r = (this.role || '').toLowerCase().trim();
-    return (
-      this.isAdmin() ||
-      this.isProjectManager() ||
-      r === 'admin' ||
-      r === 'eksekutif' ||
-      r === 'manajement-project' ||
-      r === 'manajemen-project' ||
-      r === 'manajemen project' ||
-      r === 'kreatif'
-    );
-  }
 }

@@ -30,33 +30,19 @@ export class BottomNav {
       } else if (route === 'workspaces' || route === 'ruang-kerja') {
         this.activeTab = 'ruang-kerja';
         this._updateActiveState();
-      } else if (route === 'qr' || route === 'qr-dashboard' || route === 'qr-scanner') {
-        this.activeTab = 'qr';
-        this._updateActiveState();
       }
     });
   }
 
   /** Nav tab definitions */
   get tabs() {
-    const authService = this.container ? this.container.resolve('AuthService') : null;
-    const canAccessQrHub = authService && typeof authService.canAccessQrHub === 'function'
-      ? authService.canAccessQrHub()
-      : false;
-
-    const baseTabs = [
+    return [
       { id: 'dashboard',   icon: 'space_dashboard', label: 'Dashboard'   },
       { id: 'calendar',    icon: 'calendar_today',  label: 'Jadwal'      },
       { id: 'ruang-kerja', icon: 'workspaces',      label: 'Ruang Kerja' },
       { id: 'kanban',      icon: 'view_kanban',     label: 'Kanban'      },
       { id: 'dokumen',     icon: 'description',     label: 'Dokumen'     },
     ];
-
-    if (canAccessQrHub) {
-      baseTabs.push({ id: 'qr', icon: 'qr_code_scanner', label: 'QR Scan' });
-    }
-
-    return baseTabs;
   }
 
   render() {

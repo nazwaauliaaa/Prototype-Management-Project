@@ -96,17 +96,11 @@ export class AuthView extends BaseView {
                   </span>
                 </div>
 
-                <!-- Scanner Controls Overlay (no toggle buttons, automatically on) -->
-                <div class="absolute bottom-1.5 inset-x-1.5 sm:bottom-2 sm:inset-x-2 flex items-center justify-between px-3 py-1.5 bg-black/80 backdrop-blur-md rounded-lg z-30">
-                  <div class="flex items-center gap-2 min-w-0">
+                <!-- Scanner Controls Overlay (automatically on) -->
+                <div class="absolute bottom-1.5 inset-x-1.5 sm:bottom-2 sm:inset-x-2 flex items-center justify-center px-3 py-1.5 bg-black/80 backdrop-blur-md rounded-lg z-30">
+                  <div class="flex items-center gap-2">
                     <span id="camera-status-dot" class="w-2 h-2 rounded-full bg-status-success animate-ping shrink-0"></span>
-                    <span id="camera-status-text" class="font-badge-micro text-[10px] text-white uppercase tracking-wider truncate">Kamera Pemindai Aktif</span>
-                  </div>
-                  <div class="flex items-center gap-1.5 shrink-0">
-                    <button id="btn-trigger-scan" class="bg-brand-accent/20 hover:bg-brand-accent/30 text-white font-badge-micro text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded-md border border-brand-accent/30" type="button">
-                      <span class="material-symbols-outlined text-[13px]">qr_code_scanner</span>
-                      <span>Uji Scan</span>
-                    </button>
+                    <span id="camera-status-text" class="font-badge-micro text-[10px] text-white uppercase tracking-wider">Kamera Pemindai Aktif</span>
                   </div>
                 </div>
               </div>
@@ -857,25 +851,21 @@ export class AuthView extends BaseView {
       });
     });
 
-    const testScanBtn = this.element.querySelector('#btn-trigger-scan');
-    
-    const triggerScanSimulation = () => {
-      if (feedback) {
-        feedback.innerHTML = `<span class="text-brand-accent animate-pulse font-semibold">Membaca Barcode ID Card Pegawai...</span>`;
-      }
-      this.authService.simulateScan().then(user => {
+    if (qrArea) {
+      qrArea.addEventListener('click', () => {
         if (feedback) {
-          feedback.innerHTML = `<span class="text-status-success font-semibold">Scan Berhasil!</span> Selamat datang, ${user.name}`;
+          feedback.innerHTML = `<span class="text-brand-accent animate-pulse font-semibold">Membaca Barcode ID Card Pegawai...</span>`;
         }
-        setTimeout(() => {
-          stopCamera();
-          // loginWithRole (inside simulateScan) already emits 'auth:login' => navigates to dashboard
-        }, 600);
+        this.authService.simulateScan().then(user => {
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-status-success font-semibold">Scan Berhasil!</span> Selamat datang, ${user.name}`;
+          }
+          setTimeout(() => {
+            stopCamera();
+          }, 600);
+        });
       });
-    };
-
-    if (testScanBtn) testScanBtn.addEventListener('click', triggerScanSimulation);
-    if (qrArea) qrArea.addEventListener('click', triggerScanSimulation);
+    }
 
     // Automatically activate camera when QR gate loads (User requirement)
     startCamera();

@@ -177,27 +177,6 @@ export class AuthService {
   }
 
   /**
-   * Cek apakah pengguna saat ini berhak mengakses fitur QR Hub & Scanner.
-   * Hanya role 'admin' dan 'manajement-project' (atau aliasnya) yang diizinkan.
-   * @returns {boolean}
-   */
-  canAccessQrHub() {
-    if (!this.currentUser) return false;
-    if (typeof this.currentUser.canAccessQrHub === 'function') {
-      return this.currentUser.canAccessQrHub();
-    }
-    const r = (this.currentUser.role || '').toLowerCase().trim();
-    return (
-      r === 'admin' ||
-      r === 'eksekutif' ||
-      r === 'manajement-project' ||
-      r === 'manajemen-project' ||
-      r === 'manajemen project' ||
-      r === 'kreatif'
-    );
-  }
-
-  /**
    * Login by selecting a role (simulates barcode identification or SSO)
    * @param {'admin'|'manajement-project'|'qa'|'user'} role
    */
