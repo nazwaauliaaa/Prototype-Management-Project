@@ -126,7 +126,13 @@ export class TaskService {
    * @returns {Task|undefined}
    */
   getTask(idOrCode) {
-    return this.tasks.find(t => t.id === idOrCode || t.code === idOrCode);
+    if (!idOrCode) return undefined;
+    const clean = String(idOrCode).trim();
+    return this.tasks.find(t => 
+      String(t.id) === clean || 
+      String(t.code) === clean ||
+      (t.code && t.code.toLowerCase() === clean.toLowerCase())
+    );
   }
 
   /**
@@ -259,6 +265,41 @@ export class TaskService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Update task properties (title, description, status, priority, pic, timeline, etc.)
+   * @param {string} taskId
+   * @param {Object} updates
+   * @returns {Task|null}
+   */
+  updateTask(taskId, updates) {
+    if (!taskId || !updates) return null;
+    const cleanId = String(taskId).trim();
+    let task = this.tasks.find(t => 
+      String(t.id) === cleanId || 
+      String(t.code) === cleanId ||
+      (t.code && t.code.toLowerCase() === cleanId.toLowerCase())
+    );
+
+    if (!task) {
+      task = { id: taskId, ...updates };
+      this.tasks.push(task);
+    } else {
+      Object.assign(task, updates);
+    }
+
+    this.saveToStorage();
+
+    apiService.updateTask(task.id, updates).catch(err => {
+      console.warn('[TaskService] Gagal update task di PostgreSQL:', err.message);
+    });
+
+    this.eventBus.emit('tasks:updated', this.tasks);
+    if (this.notifications) {
+      this.notifications.success(`Tugas "${task.title || task.code}" berhasil diperbarui.`);
+    }
+    return task;
   }
 
   /**

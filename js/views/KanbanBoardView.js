@@ -2269,6 +2269,49 @@ export class KanbanBoardView extends BaseView {
     });
   }
 
+  /**
+   * Buka modal detail/editing tugas saat kartu diklik
+   * @param {HTMLElement} card
+   */
+  _openTaskEditModal(card) {
+    if (!card) return;
+    const taskId = card.getAttribute('data-task-id');
+    let task = this.taskService ? this.taskService.getTask(taskId) : null;
+
+    if (!task) {
+      const codeEl = card.querySelector('.font-mono');
+      const titleEl = card.querySelector('h4');
+      const priorityEl = card.querySelector('.text-\\[9\\.5px\\]');
+      const picEl = card.querySelector('.truncate');
+      const picInitialsEl = card.querySelector('.w-5.h-5');
+
+      task = {
+        id: taskId,
+        code: codeEl ? codeEl.textContent.trim() : '#TASK',
+        title: titleEl ? titleEl.textContent.trim() : 'Tugas Baru',
+        status: card.getAttribute('data-task-status') || 'backlog',
+        priority: priorityEl ? priorityEl.textContent.trim() : 'Medium',
+        description: '',
+        pic: {
+          name: picEl ? picEl.textContent.trim() : 'Bagas',
+          initials: picInitialsEl ? picInitialsEl.textContent.trim() : 'BW',
+          role: 'Team Member'
+        },
+        timeline: 'Hari ini',
+        workspace: this.currentWorkspace,
+        projectId: this.projectId
+      };
+      if (this.taskService && this.taskService.tasks) {
+        this.taskService.tasks.push(task);
+        this.taskService.saveToStorage();
+      }
+    }
+
+    if (this.modalManager) {
+      this.modalManager.open('task-detail', { task, editMode: true });
+    }
+  }
+
   _closeAllPopups() {
     const popups = [
       '#popup-board-view-switch',
@@ -2428,7 +2471,28 @@ export class KanbanBoardView extends BaseView {
       });
     });
 
-    // 4. Card click opens Task Detail
+    // 4. Card click opens Task Detail & Editing
+    const kanbanBoard = this.element.querySelector('#kanban-board');
+    if (kanbanBoard) {
+      kanbanBoard.addEventListener('click', (e) => {
+        if (
+          e.target.closest('.btn-delete-kanban-card') ||
+          e.target.closest('.btn-shift-col') ||
+          e.target.closest('.btn-clear-kanban-col') ||
+          e.target.closest('.btn-list-actions') ||
+          e.target.closest('.btn-edit-column-title') ||
+          e.target.closest('[data-testid="list-collapse-button"]') ||
+          e.target.closest('.btn-quick-add-col')
+        ) {
+          return;
+        }
+        const card = e.target.closest('.kanban-card');
+        if (card) {
+          this._openTaskEditModal(card);
+        }
+      });
+    }
+
     const cards = this.element.querySelectorAll('.kanban-card');
     cards.forEach(card => {
       card.addEventListener('click', (e) => {
@@ -2438,11 +2502,8 @@ export class KanbanBoardView extends BaseView {
         ) {
           return;
         }
-        const taskId = card.getAttribute('data-task-id');
-        const task = this.taskService.getTask(taskId);
-        if (task && this.modalManager) {
-          this.modalManager.open('task-detail', { task });
-        }
+        e.stopPropagation();
+        this._openTaskEditModal(card);
       });
     });
 
