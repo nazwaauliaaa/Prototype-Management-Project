@@ -1476,23 +1476,7 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[17px]">check</span>
             </button>
 
-            <!-- 2. Tabel (Table View) -->
-            <button id="btn-switch-view-table" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
-              <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[18px] text-slate-400">table_chart</span>
-                <span>Tabel (Table)</span>
-              </div>
-            </button>
-
-            <!-- 3. Kalender (Calendar View) -->
-            <button id="btn-switch-view-calendar" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
-              <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
-                <span>Kalender (Calendar)</span>
-              </div>
-            </button>
-
-            <!-- 4. Timeline (Gantt) -->
+            <!-- 2. Timeline (Gantt) -->
             <button id="btn-switch-view-gantt" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
               <div class="flex items-center gap-2.5">
                 <span class="material-symbols-outlined text-[18px] text-slate-400">timeline</span>
