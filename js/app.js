@@ -60,16 +60,16 @@ class CreativeOfficeApp {
   checkInviteToken() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const inviteToken = urlParams.get('accept_invite');
+      const inviteToken = urlParams.get('accept_invite') || urlParams.get('invite');
       if (!inviteToken) return;
 
       // Mark invite redirect as active — prevents auth:login from redirecting to dashboard
       this._inviteRedirect = true;
 
-      const rawName = urlParams.get('name') || 'Anggota Baru';
-      const rawEmail = urlParams.get('email') || '';
+      let rawName = urlParams.get('name') || '';
+      let rawEmail = urlParams.get('email') || '';
       const role = urlParams.get('role') || 'user';
-      const workspace = urlParams.get('ws') || urlParams.get('workspace') || 'aikreativ';
+      const workspace = urlParams.get('ws') || urlParams.get('workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const projectId = urlParams.get('project_id') || urlParams.get('projectId') || workspace;
       const boardTitle = urlParams.get('board_title') || workspace;
       const inviterName = urlParams.get('inviter_name') || urlParams.get('inviter') || 'awaa';
@@ -77,44 +77,223 @@ class CreativeOfficeApp {
       const color = urlParams.get('color') || '#2563eb';
       const via = urlParams.get('via') || (inviteToken.startsWith('inv-qr-') ? 'qr' : 'link');
 
-      const eventBus = this.container.resolve('EventBus');
-      const notificationService = this.container.resolve('NotificationService');
+      const authService = this.container.resolve('AuthService');
+      const existingUser = authService ? authService.getCurrentUser() : null;
 
-      // 1. One-time Link Validation & Reset Mechanism
-      const usedTokensKey = `used_invite_tokens_${workspace}`;
-      let usedTokens = [];
-      try {
-        usedTokens = JSON.parse(localStorage.getItem(usedTokensKey) || '[]');
-      } catch (e) {
-        usedTokens = [];
+      // If user is already logged in and link has no email, use logged-in user profile
+      if (existingUser && existingUser.email && !existingUser.email.endsWith('@workspace')) {
+        if (!rawEmail) rawEmail = existingUser.email;
+        if (!rawName || rawName === 'Anggota Baru') rawName = existingUser.name;
       }
 
-      if (usedTokens.includes(inviteToken)) {
-        if (notificationService) {
-          notificationService.warning('⚠️ Tautan ini sudah pernah digunakan dan telah di-reset. Silakan minta tautan baru dari admin.');
-        }
-        const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${projectId || workspace}`;
-        window.history.replaceState({}, document.title, cleanUrl);
-        this._inviteRedirect = false;
+      // If still no email, display join modal so user can input their real name and Gmail
+      if (!rawEmail) {
+        this.showInviteJoinModal({
+          workspace,
+          projectId,
+          boardTitle,
+          inviterName,
+          inviterRole,
+          role,
+          color,
+          via,
+          inviteToken,
+          onSubmit: (submittedName, submittedEmail) => {
+            this._processInviteJoin({
+              inviteToken,
+              rawName: submittedName,
+              rawEmail: submittedEmail,
+              role,
+              workspace,
+              projectId,
+              boardTitle,
+              inviterName,
+              inviterRole,
+              color,
+              via
+            });
+          }
+        });
         return;
       }
 
-      // Mark token as consumed/reset
-      usedTokens.push(inviteToken);
-      localStorage.setItem(usedTokensKey, JSON.stringify(usedTokens));
+      this._processInviteJoin({
+        inviteToken,
+        rawName,
+        rawEmail,
+        role,
+        workspace,
+        projectId,
+        boardTitle,
+        inviterName,
+        inviterRole,
+        color,
+        via
+      });
 
-      // 2. Email Validation: Wajib ada email
-      let finalEmail = rawEmail.trim().toLowerCase();
-      let finalName = rawName.trim();
+    } catch (e) {
+      console.error('Failed to process invite token:', e);
+      this._inviteRedirect = false;
+    }
+  }
+
+  showInviteJoinModal({ workspace, projectId, boardTitle, inviterName, inviterRole, role, color, via, inviteToken, onSubmit }) {
+    const existing = document.getElementById('modal-invite-join-input');
+    if (existing) existing.remove();
+
+    let cleanWsTitle = boardTitle || workspace;
+    if (cleanWsTitle.toLowerCase() === 'aikreativ') cleanWsTitle = 'AIKreativ';
+    else if (cleanWsTitle.toLowerCase() === 'ruangkreasi') cleanWsTitle = 'Kreasi';
+    else if (cleanWsTitle.toLowerCase() === 'layarbaca') cleanWsTitle = 'Layar Baca';
+    else if (cleanWsTitle.toLowerCase() === 'panen-kunci') cleanWsTitle = 'Panen Kunci';
+
+    const targetRuangName = cleanWsTitle.toLowerCase().startsWith('ruang') ? cleanWsTitle : `Ruang ${cleanWsTitle}`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-invite-join-input';
+    overlay.className = 'fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200';
+    overlay.innerHTML = `
+      <div class="w-full max-w-md bg-white dark:bg-[#1d2125] border border-[#dfe1e6] dark:border-[#333c43] rounded-2xl shadow-2xl p-6 text-slate-800 dark:text-slate-100 flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+        
+        <!-- Header -->
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">person_add</span>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-[16px] font-bold text-slate-900 dark:text-white leading-tight">Bergabung ke Papan Proyek</h3>
+            <p class="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">${targetRuangName}</p>
+          </div>
+        </div>
+
+        <!-- Info notice -->
+        <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-800/60 flex items-center gap-2 text-[12px] text-blue-700 dark:text-blue-300">
+          <span class="material-symbols-outlined text-[18px] text-blue-600 shrink-0">link</span>
+          <span>Anda membuka tautan undangan papan. Masukkan nama & email Anda agar tercatat di <strong>Board members</strong>.</span>
+        </div>
+
+        <!-- Form -->
+        <div class="flex flex-col gap-3">
+          <div>
+            <label class="block text-[11.5px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              Nama Lengkap Anda <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">badge</span>
+              <input
+                id="input-join-full-name"
+                type="text"
+                placeholder="Contoh: Dimas Anggara"
+                class="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all font-medium"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11.5px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              Alamat Email (Gmail) Anda <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">mail</span>
+              <input
+                id="input-join-email-addr"
+                type="email"
+                placeholder="contoh: dimas.anggara@gmail.com"
+                class="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all font-medium font-mono"
+              />
+            </div>
+          </div>
+
+          <p id="join-modal-validation-error" class="hidden text-[11.5px] text-rose-500 font-medium"></p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
+          <button
+            id="btn-confirm-join-board"
+            type="button"
+            class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+            <span>Konfirmasi & Gabung ke Papan</span>
+          </button>
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const inputName = overlay.querySelector('#input-join-full-name');
+    const inputEmail = overlay.querySelector('#input-join-email-addr');
+    const errText = overlay.querySelector('#join-modal-validation-error');
+    const confirmBtn = overlay.querySelector('#btn-confirm-join-board');
+
+    if (inputName) setTimeout(() => inputName.focus(), 100);
+
+    const submit = () => {
+      const nameVal = (inputName?.value || '').trim();
+      const emailVal = (inputEmail?.value || '').trim();
+
+      if (!nameVal) {
+        if (errText) {
+          errText.textContent = 'Harap masukkan Nama Lengkap Anda.';
+          errText.classList.remove('hidden');
+        }
+        inputName?.focus();
+        return;
+      }
+
+      if (!emailVal || !emailVal.includes('@')) {
+        if (errText) {
+          errText.textContent = 'Harap masukkan alamat email (Gmail) yang valid.';
+          errText.classList.remove('hidden');
+        }
+        inputEmail?.focus();
+        return;
+      }
+
+      overlay.remove();
+      if (typeof onSubmit === 'function') {
+        onSubmit(nameVal, emailVal);
+      }
+    };
+
+    if (confirmBtn) confirmBtn.addEventListener('click', submit);
+    if (inputName) inputName.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    if (inputEmail) inputEmail.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  }
+
+  _processInviteJoin({
+    inviteToken,
+    rawName,
+    rawEmail,
+    role,
+    workspace,
+    projectId,
+    boardTitle,
+    inviterName,
+    inviterRole,
+    color,
+    via
+  }) {
+    try {
+      const eventBus = this.container.resolve('EventBus');
+      const notificationService = this.container.resolve('NotificationService');
+      const authService = this.container.resolve('AuthService');
+      const projectService = this.container.resolve('ProjectService');
+
+      let finalName = (rawName || '').trim();
+      let finalEmail = (rawEmail || '').trim().toLowerCase();
 
       if (!finalEmail) {
-        finalEmail = `${finalName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+        finalEmail = `${(finalName || 'anggota').toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
       }
-      if (finalEmail.includes('@') && finalName === 'Anggota Baru') {
-        finalName = finalEmail.split('@')[0];
+      if (!finalName) {
+        finalName = finalEmail.split('@')[0].replace(/[._-]+/g, ' ').split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Anggota Baru';
       }
 
-      // 3. Format Workspace Display Name & Inviter Notice (e.g., "awaa(admin) mengundang anda ke Ruang AIKreativ")
+      // Format Workspace Display Name & Inviter Notice
       let cleanWsTitle = boardTitle || workspace;
       if (cleanWsTitle.toLowerCase() === 'aikreativ') cleanWsTitle = 'AIKreativ';
       else if (cleanWsTitle.toLowerCase() === 'ruangkreasi') cleanWsTitle = 'Kreasi';
@@ -124,10 +303,10 @@ class CreativeOfficeApp {
       const targetRuangName = cleanWsTitle.toLowerCase().startsWith('ruang') ? cleanWsTitle : `Ruang ${cleanWsTitle}`;
       const inviterNotice = `${inviterName}(${inviterRole}) mengundang anda ke ${targetRuangName}`;
 
-      // 4. Map role to internal authorization role and jobdesk title (Default: User)
+      // Map role to internal authorization role and jobdesk title
       let authRole = 'user';
       let jobdeskTitle = 'Creative Specialist & Kontributor';
-      const lowerRole = role.toLowerCase();
+      const lowerRole = (role || '').toLowerCase();
       
       if (lowerRole.includes('admin')) {
         authRole = 'admin';
@@ -135,7 +314,7 @@ class CreativeOfficeApp {
       } else if (lowerRole.includes('lead') || lowerRole.includes('manajemen') || lowerRole.includes('pm')) {
         authRole = 'manajement-project';
         jobdeskTitle = 'Creative Lead & Project Manager';
-      } else if (lowerRole.includes('pengamat') || lowerRole.includes('viewer') || lowerRole.includes('qa')) {
+      } else if (lowerRole.includes('pengamat') || lowerRole.includes('viewer') || lowerRole.includes('qa') || lowerRole.includes('observer')) {
         authRole = 'qa';
         jobdeskTitle = 'Pengamat & Quality Assurance';
       } else {
@@ -143,7 +322,7 @@ class CreativeOfficeApp {
         jobdeskTitle = 'Editor & Anggota Tim Proyek';
       }
 
-      // 5. Create User Model instance with valid email
+      // Create User Model instance with confirmed valid email
       const userInstance = new User({
         id: 'usr-' + Date.now(),
         name: finalName,
@@ -153,37 +332,40 @@ class CreativeOfficeApp {
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=${color.replace('#','')}&color=fff&bold=true`,
         workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca', 'aikreativ']
       });
+      userInstance.loginMethod = via === 'qr' ? 'qr' : 'link';
 
-      // 6. Login to AuthService
-      const authService = this.container.resolve('AuthService');
+      // Login to AuthService
       if (authService) {
         authService.currentUser = userInstance;
         authService.isAuthenticated = true;
       }
+      sessionStorage.setItem('auth_login_method', via === 'qr' ? 'qr' : 'link');
 
-      // 8. Set active workspace and project first to resolve ID
-      localStorage.setItem('active_workspace', workspace);
-      localStorage.setItem('active_project_id', projectId);
-      localStorage.setItem('user_invited_workspace', workspace);
-      this.activeWorkspace = workspace;
-      const projectService = this.container.resolve('ProjectService');
+      // Resolve Workspace & Project ID
       let resolvedProjectId = projectId;
+      const relatedKeys = new Set([workspace, projectId]);
       if (projectService) {
         const projects = projectService.getAllProjects();
         const matched = projects.find(p => p.workspace === workspace || p.id === workspace || p.id === projectId);
         if (matched) {
           resolvedProjectId = matched.id;
-          localStorage.setItem('active_project_id', matched.id);
+          relatedKeys.add(matched.id);
+          if (matched.workspace) relatedKeys.add(matched.workspace);
         }
       }
-      localStorage.setItem('user_invited_project', resolvedProjectId);
 
-      // 7. Create new member record with confirmed email & save to board members
+      localStorage.setItem('active_workspace', workspace);
+      localStorage.setItem('active_project_id', resolvedProjectId);
+      localStorage.setItem('user_invited_workspace', workspace);
+      localStorage.setItem('user_invited_project', resolvedProjectId);
+      this.activeWorkspace = workspace;
+
+      // Create confirmed Board Member record
       const newMember = {
         id: 'mem-' + Date.now(),
         name: finalName,
         email: finalEmail,
-        role: role === 'Anggota' ? 'Editor' : (role.toLowerCase() === 'admin' ? 'Admin' : (role.toLowerCase() === 'observer' ? 'Observer' : 'Member')),
+        role: role === 'Anggota' ? 'Editor' : (lowerRole === 'admin' ? 'Admin' : (lowerRole === 'observer' ? 'Observer' : 'Member')),
         roleDescription: jobdeskTitle,
         color,
         initials: finalName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
@@ -195,43 +377,34 @@ class CreativeOfficeApp {
         joinedAt: new Date().toISOString()
       };
 
-      // Remove from pending invites
-      try {
-        const pKey = `pending_invites_${workspace}`;
-        const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
-        const filtered = pending.filter(p => (p.email && p.email.toLowerCase() !== finalEmail) && p.id !== inviteToken);
-        localStorage.setItem(pKey, JSON.stringify(filtered));
+      // Remove from pending invites in all related workspace / project keys
+      relatedKeys.forEach(k => {
+        try {
+          const pKey = `pending_invites_${k}`;
+          const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
+          const filtered = pending.filter(p => (!p.email || p.email.toLowerCase() !== finalEmail) && p.id !== inviteToken);
+          localStorage.setItem(pKey, JSON.stringify(filtered));
+        } catch(e) {}
+      });
 
-        if (resolvedProjectId && resolvedProjectId !== workspace) {
-          const pKey2 = `pending_invites_${resolvedProjectId}`;
-          const pending2 = JSON.parse(localStorage.getItem(pKey2) || '[]');
-          localStorage.setItem(pKey2, JSON.stringify(pending2.filter(p => (p.email && p.email.toLowerCase() !== finalEmail) && p.id !== inviteToken)));
-        }
-      } catch(e) {}
-
-      // Save as active member in board_members_${workspace} and board_members_${resolvedProjectId}
-      try {
-        const updateBoardList = (k) => {
-          const currentBoardMembers = JSON.parse(localStorage.getItem(k) || '[]');
+      // Save as active member in board_members across ALL related keys
+      relatedKeys.forEach(k => {
+        try {
+          const boardKey = `board_members_${k}`;
+          const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
           const exIdx = currentBoardMembers.findIndex(m => m.email && m.email.toLowerCase() === finalEmail);
           if (exIdx >= 0) {
             currentBoardMembers[exIdx] = { ...currentBoardMembers[exIdx], ...newMember, isOnline: true };
           } else {
             currentBoardMembers.unshift(newMember);
           }
-          localStorage.setItem(k, JSON.stringify(currentBoardMembers));
-        };
+          localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
+        } catch(e) {}
+      });
+      localStorage.setItem('board_members_updated_trigger', Date.now().toString());
 
-        updateBoardList(`board_members_${workspace}`);
-        if (resolvedProjectId && resolvedProjectId !== workspace) {
-          updateBoardList(`board_members_${resolvedProjectId}`);
-        }
-        if (projectId && projectId !== workspace && projectId !== resolvedProjectId) {
-          updateBoardList(`board_members_${projectId}`);
-        }
-        localStorage.setItem('board_members_updated_trigger', Date.now().toString());
-
-        // Also add/sync in team_members
+      // Sync team_members list
+      try {
         const teamKey = 'team_members';
         const team = JSON.parse(localStorage.getItem(teamKey) || '[]');
         const tIdx = team.findIndex(t => t.email && t.email.toLowerCase() === finalEmail);
@@ -249,33 +422,33 @@ class CreativeOfficeApp {
         localStorage.setItem(teamKey, JSON.stringify(team));
       } catch (err) {}
 
-      // 9. Clean up query string from URL & set hash to specific kanban project
+      // Clean up query string from URL & set hash to specific kanban project
       const cleanUrl = window.location.origin + window.location.pathname + `#/kanban/${resolvedProjectId}`;
       window.history.replaceState({}, document.title, cleanUrl);
 
-      // 10. Show QR Login Animation displaying invitation text and route directly to Kanban
+      // Show login celebration overlay
       this.showQrLoginSuccessOverlay(userInstance, targetRuangName, jobdeskTitle, inviterNotice);
 
       setTimeout(() => {
-        eventBus.emit('auth:login', userInstance);
-        eventBus.emit('workspace:selected', { workspace });
-        eventBus.emit('member:added', { member: newMember, workspace, projectId: resolvedProjectId });
-        eventBus.emit('board:members_updated', { member: newMember, workspace, projectId: resolvedProjectId });
+        if (eventBus) {
+          eventBus.emit('auth:login', userInstance);
+          eventBus.emit('workspace:selected', { workspace });
+          eventBus.emit('member:added', { member: newMember, workspace, projectId: resolvedProjectId });
+          eventBus.emit('board:members_updated', { member: newMember, workspace, projectId: resolvedProjectId });
+        }
 
         // Navigate directly to the specific kanban project board
         this.navigateTo('kanban', { projectId: resolvedProjectId, workspace: workspace });
-
-        // Clear invite redirect flag after navigation
         this._inviteRedirect = false;
 
         if (notificationService) {
           const viaText = via === 'qr' ? 'via QR Code' : 'via Tautan Undangan';
-          notificationService.success(`🎉 ${inviterNotice} — Berhasil bergabung ${viaText} ke papan Kanban!`);
+          notificationService.success(`🎉 Selamat datang ${finalName} (${finalEmail})! Berhasil bergabung ${viaText} ke papan.`);
         }
       }, 1500);
 
     } catch (e) {
-      console.error('Failed to process invite token:', e);
+      console.error('Failed to complete _processInviteJoin:', e);
       this._inviteRedirect = false;
     }
   }

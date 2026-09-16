@@ -249,43 +249,78 @@ export class KanbanBoardView extends BaseView {
   }
 
   getBoardMembers() {
-    const key = `board_members_${this.currentWorkspace}`;
-    let stored = localStorage.getItem(key);
-    if (!stored && this.projectId && this.projectId !== this.currentWorkspace) {
-      stored = localStorage.getItem(`board_members_${this.projectId}`);
-      if (stored) localStorage.setItem(key, stored);
-    } else if (stored && this.projectId && this.projectId !== this.currentWorkspace && !localStorage.getItem(`board_members_${this.projectId}`)) {
-      localStorage.setItem(`board_members_${this.projectId}`, stored);
-    }
-    if (!stored) {
-      return [];
-    }
+    const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const relatedKeys = new Set([currentWs, curProjId]);
 
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        // Filter keluar mock/dummy fiktif yang belum masuk via link atau QR
-        const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
-        const clean = parsed.filter(m => {
-          if (!m) return false;
-          if (dummyIds.includes(m.id)) return false;
-          if (m.email && m.email.endsWith('@workspace')) return false;
-          return true;
+    if (this.projectService) {
+      try {
+        const projects = this.projectService.getAllProjects();
+        projects.forEach(p => {
+          if (p.workspace === currentWs || p.id === currentWs || p.workspace === curProjId || p.id === curProjId) {
+            if (p.workspace) relatedKeys.add(p.workspace);
+            if (p.id) relatedKeys.add(p.id);
+          }
         });
+      } catch (e) {}
+    }
 
-        if (clean.length !== parsed.length) {
-          localStorage.setItem(key, JSON.stringify(clean));
-          if (this.projectId && this.projectId !== this.currentWorkspace) {
-            localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(clean));
+    const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
+    const memberMap = new Map();
+
+    relatedKeys.forEach(k => {
+      try {
+        const raw = localStorage.getItem(`board_members_${k}`);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            arr.forEach(m => {
+              if (!m) return;
+              if (dummyIds.includes(m.id)) return;
+              if (m.email && m.email.endsWith('@workspace')) return;
+              const emailKey = (m.email || m.name || m.id || '').toLowerCase().trim();
+              if (emailKey && !memberMap.has(emailKey)) {
+                memberMap.set(emailKey, m);
+              }
+            });
           }
         }
-        return clean;
-      }
-    } catch (e) {
-      console.error('Failed to load board members:', e);
+      } catch (e) {}
+    });
+
+    const clean = Array.from(memberMap.values());
+    relatedKeys.forEach(k => {
+      try {
+        localStorage.setItem(`board_members_${k}`, JSON.stringify(clean));
+      } catch(e) {}
+    });
+
+    return clean;
+  }
+
+  saveBoardMembers(members) {
+    const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const relatedKeys = new Set([currentWs, curProjId]);
+
+    if (this.projectService) {
+      try {
+        const projects = this.projectService.getAllProjects();
+        projects.forEach(p => {
+          if (p.workspace === currentWs || p.id === currentWs || p.workspace === curProjId || p.id === curProjId) {
+            if (p.workspace) relatedKeys.add(p.workspace);
+            if (p.id) relatedKeys.add(p.id);
+          }
+        });
+      } catch (e) {}
     }
 
-    return [];
+    relatedKeys.forEach(k => {
+      try {
+        localStorage.setItem(`board_members_${k}`, JSON.stringify(members));
+      } catch(e) {}
+    });
+    localStorage.setItem('board_members_updated_trigger', Date.now().toString());
   }
 
   _ensureCurrentUserInBoardMembers() {
@@ -294,56 +329,55 @@ export class KanbanBoardView extends BaseView {
       const currentUser = authService ? authService.getCurrentUser() : null;
       if (!currentUser) return;
 
-      const isQrUser = sessionStorage.getItem('auth_login_method') === 'qr' ||
-                       currentUser.loginMethod === 'qr' ||
-                       Boolean(currentUser.qr_data);
-
-      if (!isQrUser) return;
-
       const currentWs = this.currentWorkspace || 'panen-kunci';
-      const key = `board_members_${currentWs}`;
       let members = this.getBoardMembers();
 
-      const userEmail = (currentUser.email || '').toLowerCase();
+      const userEmail = (currentUser.email || '').toLowerCase().trim();
       const existingIdx = members.findIndex(m =>
-        (m.id && m.id === currentUser.id) ||
-        (m.email && userEmail && m.email.toLowerCase() === userEmail)
+        (userEmail && m.email && m.email.toLowerCase() === userEmail) ||
+        (m.id && m.id === currentUser.id)
       );
 
-      if (existingIdx === -1) {
-        const displayName = currentUser.name || 'Pengguna QR';
-        const displayEmail = currentUser.email || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
-        const newMember = {
-          id: currentUser.id || 'mem-' + Date.now(),
-          name: displayName,
-          email: displayEmail,
-          role: currentUser.role === 'admin' ? 'Admin' : (currentUser.isProjectManager?.() ? 'PM' : 'Member'),
-          roleDescription: currentUser.title || currentUser.jobdesk || 'Anggota Tim',
-          color: '#059669',
-          initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'QR',
-          workspace: currentWs,
-          projectId: this.projectId || currentWs,
-          joinedVia: 'qr',
-          isOnline: true,
-          joinedAt: new Date().toISOString()
-        };
-        members.unshift(newMember);
-        localStorage.setItem(key, JSON.stringify(members));
-        if (this.projectId && this.projectId !== currentWs) {
-          localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(members));
-        }
-        localStorage.setItem('board_members_updated_trigger', Date.now().toString());
-        if (this.eventBus) {
-          this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
+      const isViaQr = sessionStorage.getItem('auth_login_method') === 'qr' ||
+                      currentUser.loginMethod === 'qr' ||
+                      Boolean(currentUser.qr_data);
+
+      const isViaLink = sessionStorage.getItem('auth_login_method') === 'link' ||
+                        currentUser.loginMethod === 'link' ||
+                        Boolean(localStorage.getItem('user_invited_workspace'));
+
+      // If user joined via link or QR, ensure they are registered in board members
+      if (isViaQr || isViaLink || currentUser.role === 'user') {
+        if (existingIdx === -1) {
+          const displayName = currentUser.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna Baru');
+          const displayEmail = userEmail || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+          const newMember = {
+            id: currentUser.id || 'mem-' + Date.now(),
+            name: displayName,
+            email: displayEmail,
+            role: currentUser.role === 'admin' ? 'Admin' : (currentUser.isProjectManager?.() ? 'PM' : 'Member'),
+            roleDescription: currentUser.title || currentUser.jobdesk || 'Anggota Tim',
+            color: '#2563eb',
+            initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
+            workspace: currentWs,
+            projectId: this.projectId || currentWs,
+            joinedVia: isViaQr ? 'qr' : 'link',
+            isOnline: true,
+            joinedAt: new Date().toISOString()
+          };
+          members.unshift(newMember);
+          this.saveBoardMembers(members);
+          if (this.eventBus) {
+            this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
+          }
         }
       }
     } catch (e) {
-      console.warn('Error syncing QR user to board members:', e);
+      console.warn('Error syncing user to board members:', e);
     }
   }
 
   removeBoardMember(memberId) {
-    const key = `board_members_${this.currentWorkspace}`;
     const current = this.getBoardMembers();
     const target = current.find(m => m.id === memberId);
     if (!target) return;
@@ -355,10 +389,7 @@ export class KanbanBoardView extends BaseView {
     }
 
     const filtered = current.filter(m => m.id !== memberId);
-    localStorage.setItem(key, JSON.stringify(filtered));
-    if (this.projectId && this.projectId !== this.currentWorkspace) {
-      localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(filtered));
-    }
+    this.saveBoardMembers(filtered);
 
     try {
       const teamKey = 'team_members';

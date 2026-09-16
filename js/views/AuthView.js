@@ -186,6 +186,27 @@ export class AuthView extends BaseView {
               <p id="user-invite-url-error" class="hidden text-[11px] text-rose-500 font-medium"></p>
             </div>
 
+            <div class="grid grid-cols-2 gap-2 mt-0.5">
+              <div>
+                <label class="block font-bold text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Nama Lengkap</label>
+                <input
+                  id="input-user-invite-name"
+                  type="text"
+                  placeholder="Nama Anda..."
+                  class="w-full h-9 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[12px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                />
+              </div>
+              <div>
+                <label class="block font-bold text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Alamat Gmail</label>
+                <input
+                  id="input-user-invite-email"
+                  type="email"
+                  placeholder="nama@gmail.com"
+                  class="w-full h-9 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[12px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
+                />
+              </div>
+            </div>
+
             <div class="flex flex-col gap-2 pt-1">
               <button
                 id="btn-submit-user-invite-url"
@@ -849,11 +870,16 @@ export class AuthView extends BaseView {
             return;
           }
 
+          const customName = this.element.querySelector('#input-user-invite-name')?.value.trim();
+          const customEmail = this.element.querySelector('#input-user-invite-email')?.value.trim();
+          if (customName) parsed.searchParams.set('name', customName);
+          if (customEmail) parsed.searchParams.set('email', customEmail);
+
           if (inviteModal) inviteModal.classList.add('hidden');
           if (feedback) {
             feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Memverifikasi Tautan Undangan...</span> Mengalihkan ke Papan Kanban...`;
           }
-          window.location.href = targetUrl;
+          window.location.href = parsed.toString();
         } catch (err) {
           if (inviteError) {
             inviteError.textContent = 'Format URL tidak valid. Contoh: ' + window.location.origin + '/?accept_invite=inv-123#/kanban';

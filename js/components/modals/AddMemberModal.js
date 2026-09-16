@@ -115,44 +115,68 @@ export class AddMemberModal extends BaseModal {
   /** Returns confirmed board members from localStorage (joined via invite link or QR). */
   getBoardMembers(ws) {
     try {
-      const currentWs = ws || this.currentWorkspace;
-      const key = `board_members_${currentWs}`;
-      let saved = localStorage.getItem(key);
+      const currentWs = ws || this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+      const relatedKeys = new Set([currentWs, curProjId]);
 
-      // Fallback check under projectId if different from workspace
-      if (!saved && this.projectId && this.projectId !== currentWs) {
-        saved = localStorage.getItem(`board_members_${this.projectId}`);
+      // Check ProjectService to find all matching aliases for this workspace/project
+      if (this.container) {
+        try {
+          const projectService = this.container.resolve('ProjectService');
+          if (projectService) {
+            const projects = projectService.getAllProjects();
+            projects.forEach(p => {
+              if (p.workspace === currentWs || p.id === currentWs || p.workspace === curProjId || p.id === curProjId) {
+                if (p.workspace) relatedKeys.add(p.workspace);
+                if (p.id) relatedKeys.add(p.id);
+              }
+            });
+          }
+        } catch(e) {}
       }
 
-      if (!saved) return [];
-      const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return [];
-
-      // Filter: Hanya anggota yang benar-benar masuk/bergabung via link atau QR
       const dummyIds = ['member-awa', 'member-sari', 'member-bagas', 'member-farhan'];
-      const clean = parsed.filter(m => {
-        if (!m) return false;
-        if (dummyIds.includes(m.id)) return false;
-        if (m.email && m.email.endsWith('@workspace')) return false;
-        return true;
+      const memberMap = new Map();
+
+      relatedKeys.forEach(k => {
+        try {
+          const raw = localStorage.getItem(`board_members_${k}`);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              arr.forEach(m => {
+                if (!m) return;
+                if (dummyIds.includes(m.id)) return;
+                if (m.email && m.email.endsWith('@workspace')) return;
+                const emailKey = (m.email || m.name || m.id || '').toLowerCase().trim();
+                if (emailKey && !memberMap.has(emailKey)) {
+                  memberMap.set(emailKey, m);
+                }
+              });
+            }
+          }
+        } catch (e) {}
       });
 
-      // Update localStorage agar data bersih permanen
-      if (clean.length !== parsed.length) {
-        localStorage.setItem(key, JSON.stringify(clean));
-        if (this.projectId && this.projectId !== currentWs) {
-          localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(clean));
-        }
-      }
+      const clean = Array.from(memberMap.values());
+
+      // Sync back to all related keys so they stay completely identical!
+      relatedKeys.forEach(k => {
+        try {
+          localStorage.setItem(`board_members_${k}`, JSON.stringify(clean));
+        } catch(e) {}
+      });
 
       return clean;
-    } catch (e) { return []; }
+    } catch (e) {
+      return [];
+    }
   }
 
   generateInviteLink(invite) {
     const origin   = window.location.origin;
     const pathname = window.location.pathname;
-    const currentWs     = invite?.workspace  || this.currentWorkspace || localStorage.getItem('active_workspace')  || 'aikreativ';
+    const currentWs     = invite?.workspace  || this.currentWorkspace || localStorage.getItem('active_workspace')  || 'panen-kunci';
     const currentProjId = invite?.projectId  || this.projectId        || localStorage.getItem('active_project_id') || currentWs;
     const currentTitle  = invite?.boardTitle || this.boardTitle       || currentWs;
 
@@ -164,7 +188,7 @@ export class AddMemberModal extends BaseModal {
 
     const params = new URLSearchParams({
       accept_invite: invite?.id    || 'inv-' + Date.now(),
-      name:          invite?.name  || 'Anggota Baru',
+      name:          invite?.name  || '',
       email:         invite?.email || '',
       role:          invite?.role  || 'Member',
       ws:            currentWs,
@@ -701,10 +725,25 @@ export class AddMemberModal extends BaseModal {
     const copyLinkBtn = modalRoot.querySelector('[data-testid="board-invite-link-copy-button"]');
     if (copyLinkBtn) {
       copyLinkBtn.addEventListener('click', async () => {
+        const rawVal = inputField?.value.trim() || '';
+        let invName = '';
+        let invEmail = '';
+
+        if (rawVal) {
+          if (rawVal.includes('@')) {
+            invEmail = rawVal.toLowerCase();
+            const userPart = rawVal.split('@')[0];
+            invName = userPart.replace(/[._-]+/g, ' ').split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || userPart;
+          } else {
+            invName = rawVal.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            invEmail = `${rawVal.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
+          }
+        }
+
         const inv = {
           id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
-          name: 'Anggota Baru',
-          email: '',
+          name: invName,
+          email: invEmail,
           role: this._linkPermission || 'Member',
           workspace: this.currentWorkspace,
           projectId: this.projectId || this.currentWorkspace,
@@ -720,14 +759,12 @@ export class AddMemberModal extends BaseModal {
           const orig = copyLinkBtn.innerHTML;
           copyLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">check</span><span>Copied!</span>`;
           setTimeout(() => { copyLinkBtn.innerHTML = orig; }, 2000);
-          if (this.notificationService) this.notificationService.success('Tautan papan berhasil disalin! Pengguna akan masuk ke Board members setelah membuka tautan.');
+          if (this.notificationService) this.notificationService.success('Tautan papan berhasil disalin! Siapapun yang masuk via tautan ini akan langsung tercatat di Board members.');
         } catch {
           if (this.notificationService) this.notificationService.success('Tautan berhasil disalin!');
         }
       });
     }
-
-
 
     // 7. Delete / Reset Link
     const deleteLinkBtn = modalRoot.querySelector('[data-testid="board-invite-link-delete-button"]');
@@ -803,8 +840,7 @@ export class AddMemberModal extends BaseModal {
     }
 
     // 9. Live member list update when someone joins via invite link, QR, or other tabs
-    const onMembersUpdated = ({ workspace, projectId } = {}) => {
-      if (workspace && workspace !== this.currentWorkspace && projectId !== this.projectId) return;
+    const onMembersUpdated = () => {
       refreshMembersListUI();
     };
 
@@ -814,9 +850,7 @@ export class AddMemberModal extends BaseModal {
     // Cross-tab real-time sync via storage event
     const storageHandler = (e) => {
       if (!e.key) return;
-      if (e.key === `board_members_${this.currentWorkspace}` ||
-          (this.projectId && e.key === `board_members_${this.projectId}`) ||
-          e.key === 'board_members_updated_trigger') {
+      if (e.key.startsWith('board_members_') || e.key === 'board_members_updated_trigger') {
         refreshMembersListUI();
       }
     };
