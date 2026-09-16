@@ -583,43 +583,33 @@ export class TaskDetailModal extends BaseModal {
     return `
       <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[92vh] modal-content-box animate-in fade-in zoom-in duration-150">
         <!-- Modal Header -->
-        <div class="px-6 py-4 bg-surface-container-low/90 dark:bg-slate-900/90 border-b border-surface-border flex items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold shrink-0">
-              <span class="material-symbols-outlined text-[20px]">edit_note</span>
+        <div class="px-6 py-4.5 bg-surface-container-low/90 dark:bg-slate-900/90 border-b border-surface-border flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+              <span class="material-symbols-outlined text-[22px]">edit_note</span>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-[11px] font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-primary px-2.5 py-0.5 rounded-md bg-primary/10 border border-primary/20 tracking-wider">
+                  <span class="material-symbols-outlined text-[13px] opacity-70">tag</span>
                   ${task.code || '#TASK'}
                 </span>
-                <h3 class="text-[16px] font-bold text-slate-900 dark:text-white leading-none">
+                <h3 class="text-[16px] sm:text-[17px] font-bold text-slate-900 dark:text-white leading-tight truncate">
                   Edit Kartu Tugas
                 </h3>
               </div>
-              <p class="text-[11.5px] text-text-muted mt-1">
+              <p class="text-[12px] text-text-muted leading-normal">
                 Perbarui detail pekerjaan, prioritas, status kolom, dan penanggung jawab.
               </p>
             </div>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <!-- Switch to Preview / Detail button -->
-            <button 
-              id="btn-switch-to-view" 
-              class="h-8.5 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-secondary hover:text-text-primary text-[12px] font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-              type="button"
-              title="Beralih ke tampilan detail"
-            >
-              <span class="material-symbols-outlined text-[16px]">visibility</span>
-              <span class="hidden sm:inline">Lihat Detail</span>
-            </button>
-
             <button 
               id="btn-close-modal" 
               aria-label="Tutup Modal" 
-              class="w-8.5 h-8.5 rounded-xl bg-surface-container/60 hover:bg-surface-container-high hover:text-rose-500 text-text-muted flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-surface-border/50"
-              type="button"
+              class="w-8.5 h-8.5 rounded-xl bg-surface-container/60 hover:bg-surface-container-high hover:text-rose-500 text-text-muted flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-surface-border/50 shadow-2xs" 
+              type="button" 
               title="Tutup Modal"
             >
               <span class="material-symbols-outlined text-[19px]">close</span>
