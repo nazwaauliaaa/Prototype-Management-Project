@@ -247,16 +247,6 @@ export class CreateBoardModal extends BaseModal {
             />
           </div>
 
-          <!-- Deskripsi Proyek -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
-            <textarea 
-              id="input-ws-project-desc" 
-              rows="2" 
-              placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..." 
-              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
-            ></textarea>
-          </div>
 
           <!-- Tema Visual Papan & Preview -->
           <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
