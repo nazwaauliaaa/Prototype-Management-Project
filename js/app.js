@@ -377,31 +377,71 @@ class CreativeOfficeApp {
         joinedAt: new Date().toISOString()
       };
 
-      // Remove from pending invites in all related workspace / project keys
+      // Check if user is already an approved member
+      let isAlreadyApproved = false;
       relatedKeys.forEach(k => {
         try {
-          const pKey = `pending_invites_${k}`;
-          const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
-          const filtered = pending.filter(p => (!p.email || p.email.toLowerCase() !== finalEmail) && p.id !== inviteToken);
-          localStorage.setItem(pKey, JSON.stringify(filtered));
+          const list = JSON.parse(localStorage.getItem(`board_members_${k}`) || '[]');
+          if (list.some(m => m.email && m.email.toLowerCase() === finalEmail)) {
+            isAlreadyApproved = true;
+          }
         } catch(e) {}
       });
 
-      // Save as active member in board_members across ALL related keys
-      relatedKeys.forEach(k => {
-        try {
-          const boardKey = `board_members_${k}`;
-          const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
-          const exIdx = currentBoardMembers.findIndex(m => m.email && m.email.toLowerCase() === finalEmail);
-          if (exIdx >= 0) {
-            currentBoardMembers[exIdx] = { ...currentBoardMembers[exIdx], ...newMember, isOnline: true };
-          } else {
-            currentBoardMembers.unshift(newMember);
-          }
-          localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
-        } catch(e) {}
-      });
-      localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+      if (!isAlreadyApproved && authRole !== 'admin') {
+        // User directly enters the board ("langsung masuk"), but enters pending_invites for admin approval ("tetep harus di acc permintaannya")
+        const pendingRequest = {
+          id: inviteToken || ('inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)),
+          name: finalName,
+          email: finalEmail,
+          role: role === 'Anggota' ? 'Editor' : (lowerRole === 'admin' ? 'Admin' : (lowerRole === 'observer' ? 'Observer' : 'Member')),
+          roleDescription: jobdeskTitle,
+          color,
+          initials: finalName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
+          workspace,
+          projectId: resolvedProjectId,
+          boardTitle,
+          via: via === 'qr' ? 'qr' : 'link',
+          status: 'pending_approval',
+          createdAt: new Date().toISOString()
+        };
+
+        relatedKeys.forEach(k => {
+          try {
+            const pKey = `pending_invites_${k}`;
+            const pending = JSON.parse(localStorage.getItem(pKey) || '[]');
+            const exIdx = pending.findIndex(p => p.email && p.email.toLowerCase() === finalEmail);
+            if (exIdx >= 0) {
+              pending[exIdx] = { ...pending[exIdx], ...pendingRequest };
+            } else {
+              pending.unshift(pendingRequest);
+            }
+            localStorage.setItem(pKey, JSON.stringify(pending));
+          } catch(e) {}
+        });
+
+        localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+        if (eventBus) {
+          eventBus.emit('invite:sent', { invite: pendingRequest });
+          eventBus.emit('board:members_updated', { workspace, projectId: resolvedProjectId });
+        }
+      } else {
+        // Already approved by admin or is admin: save as active board member
+        relatedKeys.forEach(k => {
+          try {
+            const boardKey = `board_members_${k}`;
+            const currentBoardMembers = JSON.parse(localStorage.getItem(boardKey) || '[]');
+            const exIdx = currentBoardMembers.findIndex(m => m.email && m.email.toLowerCase() === finalEmail);
+            if (exIdx >= 0) {
+              currentBoardMembers[exIdx] = { ...currentBoardMembers[exIdx], ...newMember, isOnline: true };
+            } else {
+              currentBoardMembers.unshift(newMember);
+            }
+            localStorage.setItem(boardKey, JSON.stringify(currentBoardMembers));
+          } catch(e) {}
+        });
+        localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+      }
 
       // Sync team_members list
       try {
@@ -433,8 +473,7 @@ class CreativeOfficeApp {
         if (eventBus) {
           eventBus.emit('auth:login', userInstance);
           eventBus.emit('workspace:selected', { workspace });
-          eventBus.emit('member:added', { member: newMember, workspace, projectId: resolvedProjectId });
-          eventBus.emit('board:members_updated', { member: newMember, workspace, projectId: resolvedProjectId });
+          eventBus.emit('board:members_updated', { workspace, projectId: resolvedProjectId });
         }
 
         // Navigate directly to the specific kanban project board
@@ -442,8 +481,12 @@ class CreativeOfficeApp {
         this._inviteRedirect = false;
 
         if (notificationService) {
-          const viaText = via === 'qr' ? 'via QR Code' : 'via Tautan Undangan';
-          notificationService.success(`🎉 Selamat datang ${finalName} (${finalEmail})! Berhasil bergabung ${viaText} ke papan.`);
+          if (!isAlreadyApproved && authRole !== 'admin') {
+            notificationService.info(`👋 Selamat datang ${finalName}! Anda telah masuk ke papan. Permintaan bergabung Anda telah dikirim ke Admin untuk di-ACC.`);
+          } else {
+            const viaText = via === 'qr' ? 'via QR Code' : 'via Tautan Undangan';
+            notificationService.success(`🎉 Selamat datang ${finalName} (${finalEmail})! Berhasil bergabung ${viaText} ke papan.`);
+          }
         }
       }, 1500);
 

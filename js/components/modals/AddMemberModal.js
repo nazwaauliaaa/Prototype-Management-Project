@@ -20,26 +20,64 @@ export class AddMemberModal extends BaseModal {
 
   // --- Helpers ---
 
+  getRelatedKeys(ws) {
+    const currentWs = ws || this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const relatedKeys = new Set([currentWs, curProjId]);
+
+    if (this.container) {
+      try {
+        const projectService = this.container.resolve('ProjectService');
+        if (projectService) {
+          const projects = projectService.getAllProjects();
+          projects.forEach(p => {
+            if (p.workspace === currentWs || p.id === currentWs || p.workspace === curProjId || p.id === curProjId) {
+              if (p.workspace) relatedKeys.add(p.workspace);
+              if (p.id) relatedKeys.add(p.id);
+            }
+          });
+        }
+      } catch (e) {}
+    }
+    return relatedKeys;
+  }
+
   getPendingInvites(ws) {
     try {
-      const saved = localStorage.getItem(`pending_invites_${ws || this.currentWorkspace}`);
-      return saved ? JSON.parse(saved) : [];
+      const relatedKeys = this.getRelatedKeys(ws);
+      const pendingMap = new Map();
+      relatedKeys.forEach(k => {
+        try {
+          const saved = localStorage.getItem(`pending_invites_${k}`);
+          if (saved) {
+            const list = JSON.parse(saved);
+            if (Array.isArray(list)) {
+              list.forEach(i => {
+                if (i && i.id && !pendingMap.has(i.id)) {
+                  pendingMap.set(i.id, i);
+                }
+              });
+            }
+          }
+        } catch (e) {}
+      });
+      return Array.from(pendingMap.values());
     } catch (e) { return []; }
   }
 
   savePendingInvite(invite) {
     try {
-      const targetWs = invite.workspace || this.currentWorkspace;
-      const key = `pending_invites_${targetWs}`;
-      const list = this.getPendingInvites(targetWs);
+      const relatedKeys = this.getRelatedKeys(invite.workspace);
+      const list = this.getPendingInvites(invite.workspace);
       const idx = list.findIndex(i => i.id === invite.id);
       if (idx >= 0) list[idx] = invite;
       else list.unshift(invite);
-      localStorage.setItem(key, JSON.stringify(list));
 
-      if (invite.projectId && invite.projectId !== targetWs) {
-        localStorage.setItem(`pending_invites_${invite.projectId}`, JSON.stringify(list));
-      }
+      relatedKeys.forEach(k => {
+        try {
+          localStorage.setItem(`pending_invites_${k}`, JSON.stringify(list));
+        } catch (e) {}
+      });
 
       this.eventBus.emit('invite:sent', { invite });
     } catch (e) { console.error('Error saving pending invite:', e); }
@@ -47,56 +85,73 @@ export class AddMemberModal extends BaseModal {
 
   removePendingInvite(inviteId, ws) {
     try {
-      const targetWs = ws || this.currentWorkspace;
-      const key = `pending_invites_${targetWs}`;
-      const filtered = this.getPendingInvites(targetWs).filter(i => i.id !== inviteId);
-      localStorage.setItem(key, JSON.stringify(filtered));
-
-      if (this.projectId && this.projectId !== targetWs) {
-        localStorage.setItem(`pending_invites_${this.projectId}`, JSON.stringify(filtered));
-      }
+      const relatedKeys = this.getRelatedKeys(ws);
+      relatedKeys.forEach(k => {
+        try {
+          const saved = localStorage.getItem(`pending_invites_${k}`);
+          if (saved) {
+            const list = JSON.parse(saved);
+            const filtered = list.filter(i => i.id !== inviteId);
+            localStorage.setItem(`pending_invites_${k}`, JSON.stringify(filtered));
+          }
+        } catch (e) {}
+      });
 
       this.eventBus.emit('invite:removed', { inviteId });
     } catch (e) { console.error('Error removing pending invite:', e); }
   }
 
   acceptJoinRequest(inviteId, ws) {
-    const currentWs = ws || this.currentWorkspace;
+    const currentWs = ws || this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const relatedKeys = this.getRelatedKeys(currentWs);
+
     const pending = this.getPendingInvites(currentWs);
     const invite = pending.find(i => i.id === inviteId);
     if (!invite) return;
 
-    // Remove from pending
+    // Remove from pending across all keys
     this.removePendingInvite(inviteId, currentWs);
 
-    // Save as active board member
-    const key = `board_members_${currentWs}`;
-    let members = this.getBoardMembers(currentWs);
+    // Save as confirmed board member
     const name = invite.name || (invite.email ? invite.email.split('@')[0] : 'Anggota Baru');
+    const email = invite.email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
     const newMember = {
-      id: `user-${Date.now()}`,
+      id: invite.userId || `user-${Date.now()}`,
       name: name,
-      email: invite.email || '',
+      email: email,
       role: invite.role || 'Member',
       color: invite.color || '#2563eb',
-      initials: invite.initials || (name ? name.slice(0, 2).toUpperCase() : 'U'),
+      initials: invite.initials || (name ? name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'U'),
       workspace: currentWs,
-      projectId: this.projectId || currentWs,
+      projectId: curProjId,
       joinedVia: invite.via || 'link',
+      isOnline: true,
+      acceptedAt: new Date().toISOString(),
       joinedAt: new Date().toISOString()
     };
-    members.unshift(newMember);
-    localStorage.setItem(key, JSON.stringify(members));
 
-    if (this.projectId && this.projectId !== currentWs) {
-      localStorage.setItem(`board_members_${this.projectId}`, JSON.stringify(members));
+    let members = this.getBoardMembers(currentWs);
+    const exIdx = members.findIndex(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+    if (exIdx >= 0) {
+      members[exIdx] = { ...members[exIdx], ...newMember, isOnline: true };
+    } else {
+      members.unshift(newMember);
     }
+
+    relatedKeys.forEach(k => {
+      try {
+        localStorage.setItem(`board_members_${k}`, JSON.stringify(members));
+      } catch (e) {}
+    });
+    localStorage.setItem('board_members_updated_trigger', Date.now().toString());
 
     if (this.notificationService) {
-      this.notificationService.success(`Permintaan ${newMember.name} telah DITERIMA & ditambahkan ke Board Members!`);
+      this.notificationService.success(`✅ Permintaan ${newMember.name} telah DISETUJUI & masuk ke Board members!`);
     }
 
-    this.eventBus.emit('board:members_updated', { workspace: currentWs });
+    this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: curProjId });
+    this.eventBus.emit('member:added', { member: newMember, workspace: currentWs });
   }
 
   rejectJoinRequest(inviteId, ws) {
@@ -106,10 +161,83 @@ export class AddMemberModal extends BaseModal {
     this.removePendingInvite(inviteId, currentWs);
 
     if (this.notificationService) {
-      this.notificationService.info(`Permintaan akses dari ${invite?.name || invite?.email || 'pengguna'} DITOLAK.`);
+      this.notificationService.info(`Permintaan bergabung dari ${invite?.name || invite?.email || 'pengguna'} ditolak.`);
     }
 
     this.eventBus.emit('board:members_updated', { workspace: currentWs });
+  }
+
+  _renderPendingItem(inv) {
+    const displayName = inv.name || (inv.email ? inv.email.split('@')[0] : 'Pengguna');
+    const displayEmail = inv.email || 'tanpa.email@gmail.com';
+    const initials = inv.initials || (displayName ? displayName.slice(0, 2).toUpperCase() : 'U');
+    const color = inv.color || '#2563eb';
+    const role = inv.role || 'Member';
+
+    return `
+      <li class="pending-invite-item flex items-center justify-between p-2.5 rounded-xl bg-slate-50/90 dark:bg-white/5 border border-amber-200/80 dark:border-amber-800/60 transition-all" data-invite-id="${inv.id}">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-8 h-8 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${color}">
+            ${initials}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-bold text-[13px] text-slate-900 dark:text-white truncate">${displayName}</span>
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 shrink-0">
+                via link
+              </span>
+              <span class="text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-900/60 px-1.5 py-0.2 rounded shrink-0">
+                ${role}
+              </span>
+            </div>
+            <div class="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              <span class="material-symbols-outlined text-[12px] text-rose-500">mail</span>
+              <span class="font-mono">${displayEmail}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0 ml-2">
+          <button
+            type="button"
+            class="btn-acc-join-request h-7.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-all"
+            data-invite-id="${inv.id}"
+            title="Terima & ACC ke Board members"
+          >
+            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+            <span>Terima</span>
+          </button>
+          <button
+            type="button"
+            class="btn-reject-join-request h-7.5 px-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 text-[11px] font-medium border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 cursor-pointer transition-all"
+            data-invite-id="${inv.id}"
+            title="Tolak Permintaan"
+          >
+            Tolak
+          </button>
+        </div>
+      </li>
+    `;
+  }
+
+  _renderPendingSection(pendingInvites) {
+    if (!pendingInvites || pendingInvites.length === 0) return '';
+    return `
+      <div class="px-5 py-3 bg-amber-50/60 dark:bg-amber-950/20 border-b border-amber-200/80 dark:border-amber-800/60" id="container-pending-requests">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-1.5 text-[12.5px] font-bold text-amber-800 dark:text-amber-300">
+            <span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+            <span>Permintaan Bergabung (<span id="pending-invites-count">${pendingInvites.length}</span>)</span>
+          </div>
+          <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded-full">
+            Perlu ACC Admin
+          </span>
+        </div>
+        <ul class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-0.5" id="pending-invites-list">
+          ${pendingInvites.map(inv => this._renderPendingItem(inv)).join('')}
+        </ul>
+      </div>
+    `;
   }
 
   /** Returns confirmed board members from localStorage (joined via invite link or QR). */
@@ -355,6 +483,7 @@ export class AddMemberModal extends BaseModal {
     // Hanya anggota yang benar-benar masuk via link atau QR
     const allMembers = this.getBoardMembers(this.currentWorkspace);
     const memberCount = allMembers.length;
+    const pendingInvites = this.getPendingInvites(this.currentWorkspace);
 
     let membersHTML = '';
     if (memberCount === 0) {
@@ -501,34 +630,15 @@ export class AddMemberModal extends BaseModal {
 
         </div>
 
-        <!-- MEMBERS CONTENT -->
-        <div class="mPKaQevFgFe1YW">
-          <div class="_1e0c1txw _p12f1osq _1tkeidpf _i0dl1osq _2lx21bp4 _16jlkb7n _1c3y1txw _ftfaidpf _18i0kb7n _185bglyw">
-
-            <!-- Header: Board members -->
-            <div class="flex items-center justify-between border-b border-[#dfe1e6] dark:border-[#333c43] pb-2.5 mb-3">
-              <div class="flex items-center gap-2 text-[13.5px] font-bold text-[#172b4d] dark:text-[#b6c2cf]">
-                <span>Board members</span>
-                <span class="CMFjDCY2mn2lSV">
-                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-inherit" id="member-count-badge">
-                    <span>${memberCount}</span>
-                  </span>
-                </span>
-              </div>
-              <span class="text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                <span>Otomatis aktif via tautan / QR</span>
-              </span>
-            </div>
-
-            <!-- Board members list (Pengguna langsung aktif via link) -->
-            <div class="cX7DxBpgEOIOL2 max-h-72 overflow-y-auto pr-1">
-              <ul class="B7nkPJRc6Kdh6U" id="board-members-list">
-                ${membersHTML}
-              </ul>
-            </div>
-
-          </div>
+        <!-- MODAL FOOTER -->
+        <div class="px-5 py-3 bg-slate-50/80 dark:bg-[#161a1d] border-t border-[#dfe1e6] dark:border-[#333c43] flex items-center justify-between text-[11.5px] text-slate-500 dark:text-slate-400">
+          <span class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[15px] text-emerald-600">group</span>
+            <span>Semua anggota dan permintaan bergabung dikelola di menu <strong>Anggota Papan</strong>.</span>
+          </span>
+          <button type="button" class="btn-close-share-dialog px-3 py-1 rounded-lg bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11.5px] font-semibold transition-all cursor-pointer">
+            Selesai
+          </button>
         </div>
 
       </div>
@@ -542,6 +652,9 @@ export class AddMemberModal extends BaseModal {
     // 1. Close Modal
     const closeBtn = modalRoot.querySelector('[data-testid="board-invite-modal-close-button"]');
     if (closeBtn) closeBtn.addEventListener('click', () => this.modalManager.close(this.modalId));
+
+    const doneBtn = modalRoot.querySelector('.btn-close-share-dialog');
+    if (doneBtn) doneBtn.addEventListener('click', () => this.modalManager.close(this.modalId));
 
     // 2. Tab Navigation
     const tabMembers    = modalRoot.querySelector('#boardInviteModalMembersAndRequests-0');
@@ -645,6 +758,26 @@ export class AddMemberModal extends BaseModal {
             </div>`;
         } else {
           list.innerHTML = fresh.map(m => this._renderMemberItem(m)).join('');
+        }
+      }
+
+      // Also refresh pending requests section
+      const freshPending = this.getPendingInvites(this.currentWorkspace);
+      const pendingContainer = modalRoot.querySelector('#container-pending-requests');
+      const pendingList = modalRoot.querySelector('#pending-invites-list');
+      const pendingCountEl = modalRoot.querySelector('#pending-invites-count');
+
+      if (freshPending.length === 0) {
+        if (pendingContainer) pendingContainer.remove();
+      } else {
+        if (pendingContainer && pendingList) {
+          if (pendingCountEl) pendingCountEl.textContent = freshPending.length;
+          pendingList.innerHTML = freshPending.map(inv => this._renderPendingItem(inv)).join('');
+        } else {
+          const membersWrap = modalRoot.querySelector('.mPKaQevFgFe1YW');
+          if (membersWrap) {
+            membersWrap.insertAdjacentHTML('beforebegin', this._renderPendingSection(freshPending));
+          }
         }
       }
     };
@@ -839,6 +972,27 @@ export class AddMemberModal extends BaseModal {
       });
     }
 
+    // 8.5. Accept & Reject Join Request Buttons (ACC)
+    modalRoot.addEventListener('click', (e) => {
+      const accBtn = e.target.closest('.btn-acc-join-request');
+      if (accBtn) {
+        e.stopPropagation();
+        const inviteId = accBtn.getAttribute('data-invite-id');
+        this.acceptJoinRequest(inviteId, this.currentWorkspace);
+        refreshMembersListUI();
+        return;
+      }
+
+      const rejBtn = e.target.closest('.btn-reject-join-request');
+      if (rejBtn) {
+        e.stopPropagation();
+        const inviteId = rejBtn.getAttribute('data-invite-id');
+        this.rejectJoinRequest(inviteId, this.currentWorkspace);
+        refreshMembersListUI();
+        return;
+      }
+    });
+
     // 9. Live member list update when someone joins via invite link, QR, or other tabs
     const onMembersUpdated = () => {
       refreshMembersListUI();
@@ -846,11 +1000,13 @@ export class AddMemberModal extends BaseModal {
 
     this.eventBus.on('board:members_updated', onMembersUpdated);
     this.eventBus.on('member:added', onMembersUpdated);
+    this.eventBus.on('invite:sent', onMembersUpdated);
+    this.eventBus.on('invite:removed', onMembersUpdated);
 
     // Cross-tab real-time sync via storage event
     const storageHandler = (e) => {
       if (!e.key) return;
-      if (e.key.startsWith('board_members_') || e.key === 'board_members_updated_trigger') {
+      if (e.key.startsWith('board_members_') || e.key.startsWith('pending_invites_') || e.key === 'board_members_updated_trigger') {
         refreshMembersListUI();
       }
     };

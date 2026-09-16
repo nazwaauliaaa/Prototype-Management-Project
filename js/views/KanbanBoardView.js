@@ -346,30 +346,44 @@ export class KanbanBoardView extends BaseView {
                         currentUser.loginMethod === 'link' ||
                         Boolean(localStorage.getItem('user_invited_workspace'));
 
-      // If user joined via link or QR, ensure they are registered in board members
-      if (isViaQr || isViaLink || currentUser.role === 'user') {
-        if (existingIdx === -1) {
-          const displayName = currentUser.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna Baru');
-          const displayEmail = userEmail || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
-          const newMember = {
-            id: currentUser.id || 'mem-' + Date.now(),
-            name: displayName,
-            email: displayEmail,
-            role: currentUser.role === 'admin' ? 'Admin' : (currentUser.isProjectManager?.() ? 'PM' : 'Member'),
-            roleDescription: currentUser.title || currentUser.jobdesk || 'Anggota Tim',
-            color: '#2563eb',
-            initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
-            workspace: currentWs,
-            projectId: this.projectId || currentWs,
-            joinedVia: isViaQr ? 'qr' : 'link',
-            isOnline: true,
-            joinedAt: new Date().toISOString()
-          };
-          members.unshift(newMember);
-          this.saveBoardMembers(members);
-          if (this.eventBus) {
-            this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
-          }
+      // If user joined via link/QR and is still waiting for admin ACC approval, do NOT auto-add to board_members yet
+      if (currentUser.role !== 'admin') {
+        const pending = this.getPendingInvites();
+        const isPending = pending.some(p => p.email && p.email.toLowerCase() === userEmail);
+        if (isPending) {
+          return;
+        }
+      }
+
+      // User masuk lewat manapun dan sebagai apapun otomatis langsung disimpan ke Anggota Papan jika belum terdaftar
+      if (existingIdx === -1) {
+        const displayName = currentUser.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna');
+        const displayEmail = userEmail || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+
+        let roleBadge = 'Member';
+        if (currentUser.role === 'admin') roleBadge = 'Admin';
+        else if (currentUser.isProjectManager?.() || currentUser.role === 'manajement-project' || currentUser.role === 'pm') roleBadge = 'PM';
+        else if (currentUser.role === 'qa' || currentUser.role === 'observer') roleBadge = 'Observer';
+        else if (currentUser.role) roleBadge = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+
+        const newMember = {
+          id: currentUser.id || 'mem-' + Date.now(),
+          name: displayName,
+          email: displayEmail,
+          role: roleBadge,
+          roleDescription: currentUser.title || currentUser.jobdesk || (roleBadge === 'Admin' ? 'Admin & Managing Director' : (roleBadge === 'PM' ? 'Project Manager' : 'Anggota Tim Proyek')),
+          color: currentUser.role === 'admin' ? '#2563eb' : (roleBadge === 'PM' ? '#d97706' : '#059669'),
+          initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
+          workspace: currentWs,
+          projectId: this.projectId || currentWs,
+          joinedVia: isViaQr ? 'qr' : (isViaLink ? 'link' : 'direct'),
+          isOnline: true,
+          joinedAt: new Date().toISOString()
+        };
+        members.unshift(newMember);
+        this.saveBoardMembers(members);
+        if (this.eventBus) {
+          this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
         }
       }
     } catch (e) {
@@ -407,16 +421,125 @@ export class KanbanBoardView extends BaseView {
 
     if (this.element) {
       this.mount(this.element);
+      const popup = this.element.querySelector('#popup-board-members');
+      if (popup) popup.classList.remove('hidden');
     }
   }
 
   getPendingInvites() {
-    try {
-      const saved = localStorage.getItem(`pending_invites_${this.currentWorkspace}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
+    const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const relatedKeys = new Set([currentWs, curProjId]);
+
+    if (this.projectService) {
+      try {
+        const projects = this.projectService.getAllProjects();
+        projects.forEach(p => {
+          if (p.workspace === currentWs || p.id === currentWs || p.workspace === curProjId || p.id === curProjId) {
+            if (p.workspace) relatedKeys.add(p.workspace);
+            if (p.id) relatedKeys.add(p.id);
+          }
+        });
+      } catch (e) {}
     }
+
+    const pendingMap = new Map();
+    relatedKeys.forEach(k => {
+      try {
+        const saved = localStorage.getItem(`pending_invites_${k}`);
+        if (saved) {
+          const list = JSON.parse(saved);
+          if (Array.isArray(list)) {
+            list.forEach(i => {
+              if (i && i.id && !pendingMap.has(i.id)) {
+                pendingMap.set(i.id, i);
+              }
+            });
+          }
+        }
+      } catch (e) {}
+    });
+
+    return Array.from(pendingMap.values());
+  }
+
+  acceptPendingInvite(inviteId) {
+    const pending = this.getPendingInvites();
+    const inv = pending.find(i => i.id === inviteId);
+    if (!inv) return;
+
+    // Remove from pending in all related keys
+    this.removePendingInvite(inviteId);
+
+    // Save as confirmed board member
+    const name = inv.name || (inv.email ? inv.email.split('@')[0] : 'Anggota Baru');
+    const email = inv.email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+    const newMember = {
+      id: inv.userId || `usr-${Date.now()}`,
+      name: name,
+      email: email,
+      role: inv.role || 'Member',
+      roleDescription: inv.roleDescription || 'Anggota Tim Proyek',
+      color: inv.color || '#2563eb',
+      initials: inv.initials || (name ? name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'U'),
+      workspace: this.currentWorkspace,
+      projectId: this.projectId || this.currentWorkspace,
+      joinedVia: inv.via || 'link',
+      isOnline: true,
+      acceptedAt: new Date().toISOString(),
+      joinedAt: new Date().toISOString()
+    };
+
+    let members = this.getBoardMembers();
+    const exIdx = members.findIndex(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+    if (exIdx >= 0) {
+      members[exIdx] = { ...members[exIdx], ...newMember, isOnline: true };
+    } else {
+      members.unshift(newMember);
+    }
+    this.saveBoardMembers(members);
+
+    if (this.notificationService) {
+      this.notificationService.success(`✅ Permintaan ${newMember.name} (${newMember.email}) telah DISETUJUI & resmi masuk ke Board members!`);
+    }
+
+    this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace, projectId: this.projectId });
+    this.eventBus.emit('member:added', { member: newMember, workspace: this.currentWorkspace });
+
+    if (this.element) {
+      this.mount(this.element);
+      const popup = this.element.querySelector('#popup-board-members');
+      if (popup) popup.classList.remove('hidden');
+    }
+  }
+
+  removePendingInvite(inviteId) {
+    const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+    const relatedKeys = new Set([currentWs, curProjId]);
+
+    if (this.projectService) {
+      try {
+        const projects = this.projectService.getAllProjects();
+        projects.forEach(p => {
+          if (p.workspace === currentWs || p.id === currentWs || p.workspace === curProjId || p.id === curProjId) {
+            if (p.workspace) relatedKeys.add(p.workspace);
+            if (p.id) relatedKeys.add(p.id);
+          }
+        });
+      } catch (e) {}
+    }
+
+    relatedKeys.forEach(k => {
+      try {
+        const pKey = `pending_invites_${k}`;
+        const list = JSON.parse(localStorage.getItem(pKey) || '[]');
+        const filtered = list.filter(i => i.id !== inviteId);
+        localStorage.setItem(pKey, JSON.stringify(filtered));
+      } catch (e) {}
+    });
+
+    this.eventBus.emit('invite:removed', { inviteId });
   }
 
   getAvailableWorkspacesAndProjects() {
@@ -1763,12 +1886,16 @@ export class KanbanBoardView extends BaseView {
                     ${m.online ? `<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>` : ''}
                   </div>
                   <div class="min-w-0">
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1.5 flex-wrap">
                       <span class="member-name text-[12px] font-bold text-slate-900 dark:text-white truncate">${m.name}</span>
                       ${m.isOwner ? `<span class="text-[9.5px] font-semibold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">Anda</span>` : ''}
-                      ${m.joinedViaGmail ? `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">mail</span>Gmail</span>` : ''}
+                      ${m.joinedVia === 'link' || m.via === 'link' ? `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 flex items-center gap-0.5 shrink-0"><span class="material-symbols-outlined text-[10px]">link</span>Tautan</span>` : ''}
+                      ${m.joinedVia === 'qr' || m.via === 'qr' ? `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-200/60 flex items-center gap-0.5 shrink-0"><span class="material-symbols-outlined text-[10px]">qr_code_2</span>QR</span>` : ''}
                     </div>
-                    <div class="member-role text-[10.5px] text-slate-500 dark:text-slate-400 truncate">${m.roleDescription || m.email || m.role}</div>
+                    <div class="member-role text-[10.5px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                      ${m.email ? `<span class="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-0.5 truncate"><span class="material-symbols-outlined text-[11px] text-rose-500 shrink-0">mail</span><span class="truncate">${m.email}</span></span><span>•</span>` : ''}
+                      <span class="truncate">${m.roleDescription || m.role || 'Anggota Tim'}</span>
+                    </div>
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
@@ -1791,12 +1918,15 @@ export class KanbanBoardView extends BaseView {
             `).join('')}
 
             ${pendingInvites.length > 0 ? `
-              <!-- Section: Undangan Tertunda via Gmail -->
+              <!-- Section: Permintaan Bergabung (Perlu ACC Admin) -->
               <div class="mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 flex flex-col gap-1.5">
                 <div class="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 px-1">
                   <span class="flex items-center gap-1">
                     <span class="material-symbols-outlined text-[13px]">hourglass_top</span>
-                    <span>Menunggu Diterima via Gmail (${pendingInvites.length})</span>
+                    <span>Permintaan Bergabung (${pendingInvites.length})</span>
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                    Perlu ACC
                   </span>
                 </div>
 
@@ -1813,29 +1943,29 @@ export class KanbanBoardView extends BaseView {
                         </div>
                       </div>
                       <span class="text-[9.5px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-900/60 px-1.5 py-0.2 rounded shrink-0">
-                        ${inv.role || 'Editor'}
+                        ${inv.role || 'Member'}
                       </span>
                     </div>
 
-                    <!-- Action buttons to accept as invited user -->
+                    <!-- Action buttons to accept or reject as admin directly without Gmail -->
                     <div class="flex items-center gap-1.5 pt-1 border-t border-amber-200/60 dark:border-amber-800/50">
                       <button
-                        class="btn-open-recipient-gmail flex-1 py-1 px-2 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-[10.5px] font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
+                        class="btn-accept-pending-invite flex-1 py-1 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[10.5px] font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
                         data-invite-id="${inv.id}"
-                        title="Buka email dari sudut pandang ${inv.name} dan terima undangan"
+                        title="Terima & ACC ${inv.name} ke Board members"
                         type="button"
                       >
-                        <span class="material-symbols-outlined text-[13px]">mail</span>
-                        <span>Buka Gmail & Terima</span>
+                        <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                        <span>Terima (ACC)</span>
                       </button>
 
                       <button
-                        class="btn-cancel-pending-invite py-1 px-2 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-600 text-[10.5px] font-medium transition-colors cursor-pointer"
+                        class="btn-cancel-pending-invite py-1 px-2 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-600 text-[10.5px] font-medium transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
                         data-invite-id="${inv.id}"
-                        title="Batalkan Undangan"
+                        title="Tolak Permintaan"
                         type="button"
                       >
-                        Batal
+                        Tolak
                       </button>
                     </div>
                   </div>
@@ -3218,23 +3348,13 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // B.1. Pending Gmail Invite action buttons
-    const openRecipientGmailBtns = this.element.querySelectorAll('.btn-open-recipient-gmail');
-    openRecipientGmailBtns.forEach(btn => {
+    // B.1. Direct Accept (ACC) & Reject Pending Join Requests without Gmail
+    const acceptPendingBtns = this.element.querySelectorAll('.btn-accept-pending-invite');
+    acceptPendingBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const inviteId = btn.getAttribute('data-invite-id');
-        const pending = this.getPendingInvites();
-        const inv = pending.find(i => i.id === inviteId);
-        if (inv && this.modalManager) {
-          this._closeAllPopups();
-          this.modalManager.open('add-member', {
-            mode: 'gmail-inbox',
-            invite: inv,
-            workspace: this.currentWorkspace,
-            boardTitle: this.project ? this.project.name : this.getWorkspaceName(this.currentWorkspace)
-          });
-        }
+        this.acceptPendingInvite(inviteId);
       });
     });
 
@@ -3244,13 +3364,15 @@ export class KanbanBoardView extends BaseView {
         e.stopPropagation();
         const inviteId = btn.getAttribute('data-invite-id');
         const pending = this.getPendingInvites();
-        const filtered = pending.filter(i => i.id !== inviteId);
-        localStorage.setItem(`pending_invites_${this.currentWorkspace}`, JSON.stringify(filtered));
-        this.eventBus.emit('invite:removed', { inviteId });
+        const inv = pending.find(i => i.id === inviteId);
+        this.removePendingInvite(inviteId);
         if (this.notificationService) {
-          this.notificationService.info('Undangan Gmail berhasil dibatalkan.');
+          this.notificationService.info(`Permintaan bergabung ${inv ? inv.name : ''} ditolak.`);
         }
+        this.eventBus.emit('board:members_updated', { workspace: this.currentWorkspace, projectId: this.projectId });
         this.mount(this.element);
+        const popup = this.element.querySelector('#popup-board-members');
+        if (popup) popup.classList.remove('hidden');
       });
     });
 
