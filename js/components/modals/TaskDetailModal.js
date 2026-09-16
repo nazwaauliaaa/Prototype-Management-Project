@@ -59,44 +59,68 @@ export class TaskDetailModal extends BaseModal {
       <div class="relative w-full max-w-4xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[92vh] modal-content-box">
         
         <!-- Modal Header -->
-        <div class="p-spacing-lg bg-surface-container-low border-b border-surface-border flex flex-col gap-spacing-sm">
-          <div class="flex items-start justify-between gap-spacing-sm">
-            <div>
-              <h2 class="font-headline-lg text-[18px] text-text-primary font-bold tracking-tight">
+        <div class="px-5 py-4 bg-surface-container-low border-b border-surface-border">
+          <div class="flex items-start justify-between gap-4">
+            <!-- Left: Task Code / Status & Title & Description -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary font-mono text-[11px] font-bold tracking-wide">
+                  ${task.code || '#RK-304'}
+                </span>
+                <span class="text-text-muted text-[10px]">•</span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-text-secondary">
+                  <span class="w-1.5 h-1.5 rounded-full ${task.status === 'done' ? 'bg-emerald-500' : task.status === 'review-qa' ? 'bg-amber-500' : 'bg-blue-500'}"></span>
+                  <span class="capitalize">${task.status === 'in-progress' ? 'Sedang Berjalan' : task.status === 'done' ? 'Selesai' : task.status === 'review-qa' ? 'Review QA' : (task.status || 'Aktif')}</span>
+                </span>
+                ${task.priority ? `
+                <span class="text-text-muted text-[10px]">•</span>
+                <span class="text-[11px] font-medium text-text-muted">
+                  Prioritas: <strong class="text-text-primary font-semibold">${task.priority}</strong>
+                </span>` : ''}
+              </div>
+
+              <h2 class="font-headline-lg text-[17px] sm:text-[19px] text-text-primary font-bold tracking-tight leading-snug break-words">
                 ${task.title}
               </h2>
-              <p class="font-body-default text-[13px] text-text-secondary mt-1">
+              <p class="font-body-default text-[12.5px] sm:text-[13px] text-text-secondary mt-1 leading-relaxed line-clamp-2">
                 ${task.description || 'Audit lapangan langsung uji keterbacaan, kecerahan siang hari, sinkronisasi controller Novastar, dan failover stream transmisi 4K.'}
               </p>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
+            <!-- Right: Action Buttons & Close Button -->
+            <div class="flex items-center gap-2 shrink-0 pt-0.5">
               ${!isUser ? `
               <button 
+                id="btn-modal-reschedule" 
+                class="h-8 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-border text-text-secondary hover:text-text-primary font-body-medium text-[12px] font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                type="button"
+                title="Jadwalkan Ulang"
+              >
+                <span class="material-symbols-outlined text-[16px] text-text-muted">schedule</span>
+                <span class="hidden sm:inline">Jadwalkan Ulang</span>
+              </button>
+
+              <button 
                 id="btn-modal-delete-task" 
-                class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 font-body-medium text-[12px] font-semibold transition-colors cursor-pointer border border-rose-500/20"
+                class="h-8 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-body-medium text-[12px] font-semibold transition-colors cursor-pointer border border-rose-500/20 flex items-center gap-1.5 shadow-2xs"
                 type="button"
                 title="Hapus tugas ini"
               >
                 <span class="material-symbols-outlined text-[16px]">delete</span>
                 <span>Hapus</span>
               </button>
-              <button 
-                id="btn-modal-reschedule" 
-                class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-text-secondary font-body-medium text-[12px] transition-colors"
-                type="button"
-              >
-                <span class="material-symbols-outlined text-[16px]">schedule</span>
-                <span>Jadwalkan Ulang</span>
-              </button>
+
+              <div class="w-px h-5 bg-surface-border mx-0.5 hidden sm:block"></div>
               ` : ''}
+
               <button 
                 id="btn-close-modal" 
                 aria-label="Tutup Modal" 
-                class="w-8 h-8 rounded-lg bg-surface-container hover:bg-error-container hover:text-on-error-container text-text-muted flex items-center justify-center transition-colors"
+                class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high hover:text-rose-500 text-text-muted flex items-center justify-center transition-colors cursor-pointer"
                 type="button"
+                title="Tutup"
               >
-                <span class="material-symbols-outlined text-[20px]">close</span>
+                <span class="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
           </div>
