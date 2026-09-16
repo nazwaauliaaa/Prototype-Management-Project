@@ -106,13 +106,6 @@ export class SearchModal extends BaseModal {
             Tugas
           </button>
           <button
-            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 ${this.activeCategory === 'doc' ? 'bg-primary-container text-on-primary shadow-xs' : 'bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container'}"
-            data-category="doc"
-            type="button"
-          >
-            Dokumen & SOP
-          </button>
-          <button
             class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 ${this.activeCategory === 'workspace' ? 'bg-primary-container text-on-primary shadow-xs' : 'bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container'}"
             data-category="workspace"
             type="button"
