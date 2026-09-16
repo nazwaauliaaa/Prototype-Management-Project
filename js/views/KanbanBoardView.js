@@ -59,6 +59,13 @@ export class KanbanBoardView extends BaseView {
     this._draggedFromCol = null;
     this.highlightTaskId = null;
 
+    // Auto-scroll state during card drag
+    this._autoScrollRaf = null;
+    this._autoScrollSpeed = 0;
+    this._lastDragX = 0;
+    this._lastDragY = 0;
+    this._windowDragOverHandler = null;
+
     // Trello-style states matching screenshot
     this.isInboxOpen = false;
     this.isStarred = localStorage.getItem(`starred_board_${this.currentWorkspace}`) === 'true';
@@ -161,6 +168,11 @@ export class KanbanBoardView extends BaseView {
   }
 
   unmount() {
+    this._stopAutoScroll();
+    if (this._windowDragOverHandler) {
+      window.removeEventListener('dragover', this._windowDragOverHandler);
+      this._windowDragOverHandler = null;
+    }
     if (this._onTasksUpdated) {
       this.eventBus.off('tasks:updated', this._onTasksUpdated);
     }
@@ -590,6 +602,9 @@ export class KanbanBoardView extends BaseView {
           background: rgba(255, 255, 255, 0.6);
         }
 
+        .kanban-card {
+          transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+        }
         .kanban-card[draggable="true"] {
           cursor: grab;
           user-select: none;
@@ -598,40 +613,42 @@ export class KanbanBoardView extends BaseView {
           cursor: grabbing;
         }
         .kanban-card.is-dragging {
-          opacity: 0.35;
-          transform: scale(0.97);
-          box-shadow: 0 0 0 2px #0c66e4, 0 8px 24px rgba(12,102,228,0.25);
-          transition: opacity 0.15s, transform 0.15s;
+          opacity: 0.28 !important;
+          transform: scale(0.96);
+          box-shadow: 0 0 0 2px #0c66e4, 0 12px 28px rgba(12,102,228,0.28);
+        }
+        .kanban-drop-placeholder {
+          min-height: 72px;
+          border-radius: 14px;
+          border: 2px dashed #0c66e4;
+          background: rgba(12, 102, 228, 0.08);
+          box-shadow: inset 0 0 14px rgba(12, 102, 228, 0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          color: #0c66e4;
+          font-size: 11.5px;
+          font-weight: 700;
+          margin-bottom: 8px;
+          pointer-events: none;
+          animation: pulse-placeholder 1.2s infinite ease-in-out;
+          transition: all 0.18s cubic-bezier(0.2, 0, 0, 1);
+        }
+        @keyframes pulse-placeholder {
+          0%, 100% { border-color: #0c66e4; background: rgba(12,102,228,0.06); }
+          50%       { border-color: #388bff; background: rgba(12,102,228,0.16); }
         }
         .kanban-column {
           transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
         }
         .kanban-column.drag-over {
-          background-color: rgba(255,255,255,0.95);
+          background-color: rgba(255,255,255,0.96);
           box-shadow: 0 0 0 2px #0c66e4, inset 0 0 0 2px rgba(12,102,228,0.15);
           transform: scale(1.015);
         }
         .column-drop-hint {
-          display: none;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          padding: 10px;
-          margin-bottom: 8px;
-          border-radius: 10px;
-          border: 2px dashed #0c66e4;
-          background: rgba(12,102,228,0.06);
-          color: #0c66e4;
-          font-size: 11.5px;
-          font-weight: 600;
-          animation: pulse-border 1.2s infinite ease-in-out;
-        }
-        .kanban-column.drag-over .column-drop-hint {
-          display: flex;
-        }
-        @keyframes pulse-border {
-          0%, 100% { border-color: #0c66e4; background: rgba(12,102,228,0.06); }
-          50%       { border-color: #388bff; background: rgba(12,102,228,0.14); }
+          display: none !important;
         }
         @keyframes drop-snap {
           0%   { transform: scale(0.95); opacity: 0.7; }
@@ -2087,9 +2104,10 @@ export class KanbanBoardView extends BaseView {
   }
 
   /**
-   * HTML5 Drag-and-Drop — Desktop.
+   * HTML5 Drag-and-Drop — Desktop dengan pergeseran dinamis kartu
    */
   _setupDesktopDragAndDrop() {
+    const kanbanBoard = this.element.querySelector('#kanban-board');
     const cards = this.element.querySelectorAll('.kanban-card[draggable]');
     const columns = this.element.querySelectorAll('.kanban-column');
 
@@ -2097,34 +2115,167 @@ export class KanbanBoardView extends BaseView {
       card.addEventListener('dragstart', (e) => {
         this._draggedTaskId = card.getAttribute('data-task-id');
         this._draggedFromCol = card.getAttribute('data-task-status');
+        window._activeKanbanDragTaskId = this._draggedTaskId;
 
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', this._draggedTaskId);
 
-        requestAnimationFrame(() => card.classList.add('is-dragging'));
+        // Pasang window dragover listener untuk auto-scroll saat kursor mendekati tepi layar
+        if (this._windowDragOverHandler) {
+          window.removeEventListener('dragover', this._windowDragOverHandler);
+        }
+        this._windowDragOverHandler = (ev) => {
+          if (this._draggedTaskId || window._activeKanbanDragTaskId) {
+            this._lastDragX = ev.clientX;
+            this._lastDragY = ev.clientY;
+            this._handleAutoScroll(ev.clientX, kanbanBoard);
+          }
+        };
+        window.addEventListener('dragover', this._windowDragOverHandler);
+
+        // Siapkan placeholder visual
+        if (!this._dragPlaceholder) {
+          this._dragPlaceholder = document.createElement('div');
+          this._dragPlaceholder.className = 'kanban-drop-placeholder';
+        }
+        const cardHeight = card.offsetHeight || 72;
+        this._dragPlaceholder.style.minHeight = `${cardHeight}px`;
+        this._dragPlaceholder.innerHTML = `
+          <span class="material-symbols-outlined text-[17px]">move_to_inbox</span>
+          <span>Pindahkan ke posisi ini</span>
+        `;
+
+        // Tunda mutasi DOM ke event loop tick berikutnya agar browser tidak membatalkan sesi drag
+        setTimeout(() => {
+          if (this._draggedTaskId) {
+            card.classList.add('is-dragging');
+            if (card.parentNode && !this._dragPlaceholder.parentNode) {
+              card.parentNode.insertBefore(this._dragPlaceholder, card);
+            }
+          }
+        }, 0);
       });
 
       card.addEventListener('dragend', () => {
+        this._stopAutoScroll();
+        if (this._windowDragOverHandler) {
+          window.removeEventListener('dragover', this._windowDragOverHandler);
+          this._windowDragOverHandler = null;
+        }
+
         card.classList.remove('is-dragging');
+        if (this._dragPlaceholder && this._dragPlaceholder.parentNode) {
+          this._dragPlaceholder.parentNode.removeChild(this._dragPlaceholder);
+        }
+        this._dragPlaceholder = null;
         this._draggedTaskId = null;
         this._draggedFromCol = null;
-        columns.forEach(col => col.classList.remove('drag-over'));
+        window._activeKanbanDragTaskId = null;
+        this.element.querySelectorAll('.kanban-column.drag-over').forEach(col => col.classList.remove('drag-over'));
+        this.element.querySelectorAll('.kanban-card.is-dragging').forEach(c => c.classList.remove('is-dragging'));
       });
     });
 
-    columns.forEach(col => {
-      const colId = col.getAttribute('data-column-id');
+    // Delegasi dragover & drop pada kontainer papan kanban utama
+    if (kanbanBoard) {
+      kanbanBoard.addEventListener('dragover', (e) => {
+        const taskId = this._draggedTaskId || window._activeKanbanDragTaskId;
+        if (!taskId) return;
 
-      col.addEventListener('dragenter', (e) => {
         e.preventDefault();
-        if (this._draggedTaskId && colId !== this._draggedFromCol) {
-          col.classList.add('drag-over');
+        e.dataTransfer.dropEffect = 'move';
+
+        this._lastDragX = e.clientX;
+        this._lastDragY = e.clientY;
+        this._handleAutoScroll(e.clientX, kanbanBoard);
+
+        const col = e.target.closest('.kanban-column');
+        if (!col) return;
+
+        const colId = col.getAttribute('data-column-id');
+        columns.forEach(c => {
+          if (c !== col) c.classList.remove('drag-over');
+        });
+        col.classList.add('drag-over');
+
+        const cardsArea = col.querySelector(`[data-cards-area="${colId}"]`) || col.querySelector('[data-cards-area]') || col;
+        const afterElement = this._getDragAfterElement(cardsArea, e.clientY);
+
+        if (!this._dragPlaceholder) {
+          this._dragPlaceholder = document.createElement('div');
+          this._dragPlaceholder.className = 'kanban-drop-placeholder';
+          this._dragPlaceholder.innerHTML = `
+            <span class="material-symbols-outlined text-[17px]">move_to_inbox</span>
+            <span>Pindahkan ke posisi ini</span>
+          `;
+        }
+
+        if (afterElement) {
+          if (afterElement !== this._dragPlaceholder && afterElement.previousElementSibling !== this._dragPlaceholder) {
+            cardsArea.insertBefore(this._dragPlaceholder, afterElement);
+          }
+        } else {
+          if (cardsArea.lastElementChild !== this._dragPlaceholder) {
+            cardsArea.appendChild(this._dragPlaceholder);
+          }
         }
       });
 
-      col.addEventListener('dragover', (e) => {
+      kanbanBoard.addEventListener('drop', (e) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+        this._stopAutoScroll();
+        if (this._windowDragOverHandler) {
+          window.removeEventListener('dragover', this._windowDragOverHandler);
+          this._windowDragOverHandler = null;
+        }
+
+        const taskId = e.dataTransfer.getData('text/plain') || this._draggedTaskId || window._activeKanbanDragTaskId;
+
+        let col = e.target.closest('.kanban-column');
+        if (!col && this._dragPlaceholder && this._dragPlaceholder.parentNode) {
+          col = this._dragPlaceholder.closest('.kanban-column');
+        }
+        const colId = col ? col.getAttribute('data-column-id') : null;
+
+        let beforeTaskId = null;
+        if (this._dragPlaceholder) {
+          let next = this._dragPlaceholder.nextElementSibling;
+          while (next && (!next.classList.contains('kanban-card') || next.classList.contains('is-dragging'))) {
+            next = next.nextElementSibling;
+          }
+          if (next && next.classList.contains('kanban-card')) {
+            beforeTaskId = next.getAttribute('data-task-id');
+          }
+        }
+
+        if (this._dragPlaceholder && this._dragPlaceholder.parentNode) {
+          this._dragPlaceholder.parentNode.removeChild(this._dragPlaceholder);
+        }
+        this._dragPlaceholder = null;
+        this.element.querySelectorAll('.kanban-column.drag-over').forEach(c => c.classList.remove('drag-over'));
+        this.element.querySelectorAll('.kanban-card.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+
+        // Reset state drag agar mount dan event listener tidak terhambat
+        this._draggedTaskId = null;
+        this._draggedFromCol = null;
+        window._activeKanbanDragTaskId = null;
+
+        if (taskId && colId) {
+          this._dropTaskInColumn(taskId, colId, beforeTaskId);
+        }
+      });
+    }
+
+    columns.forEach(col => {
+      col.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        const taskId = this._draggedTaskId || window._activeKanbanDragTaskId;
+        if (taskId) {
+          columns.forEach(c => {
+            if (c !== col) c.classList.remove('drag-over');
+          });
+          col.classList.add('drag-over');
+        }
       });
 
       col.addEventListener('dragleave', (e) => {
@@ -2132,21 +2283,157 @@ export class KanbanBoardView extends BaseView {
           col.classList.remove('drag-over');
         }
       });
-
-      col.addEventListener('drop', (e) => {
-        e.preventDefault();
-        col.classList.remove('drag-over');
-
-        const taskId = e.dataTransfer.getData('text/plain') || this._draggedTaskId;
-        if (!taskId) return;
-
-        this._dropTaskInColumn(taskId, colId);
-      });
     });
   }
 
   /**
-   * Touch Drag-and-Drop — Mobile support.
+   * Cari elemen kartu berikutnya berdasarkan koordinat Y kursor untuk pergeseran kartu secara live
+   * @param {HTMLElement} container
+   * @param {number} y
+   * @returns {HTMLElement|null}
+   */
+  _getDragAfterElement(container, y) {
+    const draggableCards = [...container.querySelectorAll('.kanban-card:not(.is-dragging)')];
+    return draggableCards.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  /**
+   * Mulai atau perbarui auto-scroll horizontal pada papan kanban saat kartu didekatkan ke tepi layar/container
+   * @param {number} clientX
+   * @param {HTMLElement} [container]
+   */
+  _handleAutoScroll(clientX, container = null) {
+    const scrollContainer = container || this.element?.querySelector('#kanban-board');
+    if (!scrollContainer) return;
+
+    const rect = scrollContainer.getBoundingClientRect();
+    const EDGE_THRESHOLD = 120; // Zona tepi (px) untuk memicu auto-scroll
+    const MIN_SPEED = 6;
+    const MAX_SPEED = 28;
+
+    let direction = 0; // -1 = geser kiri, 1 = geser kanan
+    let intensity = 0; // 0 s.d. 1
+
+    // Jarak ke tepi kiri scroll container dan viewport
+    const distToLeft = Math.min(clientX - rect.left, clientX);
+    // Jarak ke tepi kanan scroll container dan viewport
+    const distToRight = Math.min(rect.right - clientX, window.innerWidth - clientX);
+
+    if (distToLeft < EDGE_THRESHOLD && distToLeft >= -30) {
+      direction = -1;
+      intensity = Math.min(1, Math.max(0, (EDGE_THRESHOLD - distToLeft) / EDGE_THRESHOLD));
+    } else if (distToRight < EDGE_THRESHOLD && distToRight >= -30) {
+      direction = 1;
+      intensity = Math.min(1, Math.max(0, (EDGE_THRESHOLD - distToRight) / EDGE_THRESHOLD));
+    }
+
+    if (direction !== 0) {
+      // Akselerasi eksponensial yang nyaman
+      const speed = Math.round(MIN_SPEED + (intensity * intensity) * (MAX_SPEED - MIN_SPEED));
+      this._autoScrollSpeed = direction * speed;
+
+      if (!this._autoScrollRaf) {
+        const scrollStep = () => {
+          if (!this._autoScrollSpeed || !scrollContainer) {
+            this._stopAutoScroll();
+            return;
+          }
+
+          // Cek batas kiri
+          if (this._autoScrollSpeed < 0 && scrollContainer.scrollLeft <= 0) {
+            this._stopAutoScroll();
+            return;
+          }
+
+          // Cek batas kanan
+          const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+          if (this._autoScrollSpeed > 0 && scrollContainer.scrollLeft >= maxScrollLeft - 1) {
+            this._stopAutoScroll();
+            return;
+          }
+
+          scrollContainer.scrollLeft += this._autoScrollSpeed;
+
+          // Perbarui posisi kolom dan placeholder di bawah kursor saat kontainer bergeser
+          if (this._lastDragX && this._lastDragY) {
+            this._updateHoveredColumnWhileScrolling(scrollContainer, this._lastDragX, this._lastDragY);
+          }
+
+          this._autoScrollRaf = requestAnimationFrame(scrollStep);
+        };
+
+        this._autoScrollRaf = requestAnimationFrame(scrollStep);
+      }
+    } else {
+      this._stopAutoScroll();
+    }
+  }
+
+  /**
+   * Hentikan auto-scroll
+   */
+  _stopAutoScroll() {
+    this._autoScrollSpeed = 0;
+    if (this._autoScrollRaf) {
+      cancelAnimationFrame(this._autoScrollRaf);
+      this._autoScrollRaf = null;
+    }
+  }
+
+  /**
+   * Perbarui kolom dan posisi placeholder saat kontainer bergeser secara otomatis di bawah kursor
+   * @param {HTMLElement} scrollContainer
+   * @param {number} x
+   * @param {number} y
+   */
+  _updateHoveredColumnWhileScrolling(scrollContainer, x, y) {
+    const taskId = this._draggedTaskId || window._activeKanbanDragTaskId || this._touchDragState?.taskId;
+    if (!taskId) return;
+
+    const elUnder = document.elementFromPoint(x, y);
+    const col = elUnder?.closest('.kanban-column');
+    if (!col) return;
+
+    const colId = col.getAttribute('data-column-id');
+    const columns = this.element.querySelectorAll('.kanban-column');
+    columns.forEach(c => {
+      if (c !== col) c.classList.remove('drag-over');
+    });
+    col.classList.add('drag-over');
+
+    const cardsArea = col.querySelector(`[data-cards-area="${colId}"]`) || col.querySelector('[data-cards-area]') || col;
+    const afterElement = this._getDragAfterElement(cardsArea, y);
+
+    if (!this._dragPlaceholder) {
+      this._dragPlaceholder = document.createElement('div');
+      this._dragPlaceholder.className = 'kanban-drop-placeholder';
+      this._dragPlaceholder.innerHTML = `
+        <span class="material-symbols-outlined text-[17px]">move_to_inbox</span>
+        <span>Pindahkan ke posisi ini</span>
+      `;
+    }
+
+    if (afterElement) {
+      if (afterElement !== this._dragPlaceholder && afterElement.previousElementSibling !== this._dragPlaceholder) {
+        cardsArea.insertBefore(this._dragPlaceholder, afterElement);
+      }
+    } else {
+      if (cardsArea.lastElementChild !== this._dragPlaceholder) {
+        cardsArea.appendChild(this._dragPlaceholder);
+      }
+    }
+  }
+
+  /**
+   * Touch Drag-and-Drop — Mobile support dengan pergeseran dinamis
    */
   _setupTouchDragAndDrop() {
     const cards = this.element.querySelectorAll('.kanban-card[draggable]');
@@ -2248,6 +2535,20 @@ export class KanbanBoardView extends BaseView {
     `;
     document.body.appendChild(ghost);
 
+    if (!this._dragPlaceholder) {
+      this._dragPlaceholder = document.createElement('div');
+      this._dragPlaceholder.className = 'kanban-drop-placeholder';
+    }
+    const cardHeight = card.offsetHeight || 72;
+    this._dragPlaceholder.style.minHeight = `${cardHeight}px`;
+    this._dragPlaceholder.innerHTML = `
+      <span class="material-symbols-outlined text-[17px]">move_to_inbox</span>
+      <span>Pindahkan ke posisi ini</span>
+    `;
+    if (card.parentNode) {
+      card.parentNode.insertBefore(this._dragPlaceholder, card);
+    }
+
     card.classList.add('is-dragging');
 
     this._touchDragState = {
@@ -2257,6 +2558,9 @@ export class KanbanBoardView extends BaseView {
       sourceCard: card,
       currentOverCol: null
     };
+
+    this._lastDragX = touch.clientX;
+    this._lastDragY = touch.clientY;
   }
 
   _onTouchDragMove(touch) {
@@ -2265,6 +2569,10 @@ export class KanbanBoardView extends BaseView {
 
     const x = touch.clientX;
     const y = touch.clientY;
+
+    this._lastDragX = x;
+    this._lastDragY = y;
+    this._handleAutoScroll(x);
 
     state.ghost.style.left = `${x - 140}px`;
     state.ghost.style.top = `${y - 40}px`;
@@ -2278,16 +2586,35 @@ export class KanbanBoardView extends BaseView {
 
     if (targetColId !== state.currentOverCol) {
       this.element.querySelectorAll('.kanban-column.drag-over').forEach(c => c.classList.remove('drag-over'));
-      if (targetColId && targetColId !== state.fromCol) {
+      if (targetCol) {
         targetCol.classList.add('drag-over');
       }
       state.currentOverCol = targetColId;
+    }
+
+    if (targetCol) {
+      const cardsArea = targetCol.querySelector(`[data-cards-area="${targetColId}"]`) || targetCol.querySelector('[data-cards-area]') || targetCol;
+      const afterElement = this._getDragAfterElement(cardsArea, y);
+
+      if (this._dragPlaceholder) {
+        if (afterElement) {
+          if (afterElement !== this._dragPlaceholder && afterElement.previousElementSibling !== this._dragPlaceholder) {
+            cardsArea.insertBefore(this._dragPlaceholder, afterElement);
+          }
+        } else {
+          if (cardsArea.lastElementChild !== this._dragPlaceholder) {
+            cardsArea.appendChild(this._dragPlaceholder);
+          }
+        }
+      }
     }
   }
 
   _onTouchDragEnd(touch) {
     const state = this._touchDragState;
     if (!state) return;
+
+    this._stopAutoScroll();
 
     const x = touch.clientX;
     const y = touch.clientY;
@@ -2297,16 +2624,28 @@ export class KanbanBoardView extends BaseView {
     const targetCol = elUnder?.closest('.kanban-column');
     const targetColId = targetCol?.getAttribute('data-column-id') ?? null;
 
+    let beforeTaskId = null;
+    if (this._dragPlaceholder) {
+      let next = this._dragPlaceholder.nextElementSibling;
+      while (next && (!next.classList.contains('kanban-card') || next.classList.contains('is-dragging'))) {
+        next = next.nextElementSibling;
+      }
+      if (next && next.classList.contains('kanban-card')) {
+        beforeTaskId = next.getAttribute('data-task-id');
+      }
+    }
+
     this._cleanupTouchDrag();
 
-    if (targetColId && targetColId !== state.fromCol) {
-      this._dropTaskInColumn(state.taskId, targetColId);
+    if (targetColId) {
+      this._dropTaskInColumn(state.taskId, targetColId, beforeTaskId);
     } else {
       state.sourceCard.classList.remove('is-dragging');
     }
   }
 
   _cancelTouchDrag() {
+    this._stopAutoScroll();
     const state = this._touchDragState;
     if (!state) return;
     this._cleanupTouchDrag();
@@ -2314,7 +2653,13 @@ export class KanbanBoardView extends BaseView {
   }
 
   _cleanupTouchDrag() {
+    this._stopAutoScroll();
     const state = this._touchDragState;
+    if (this._dragPlaceholder && this._dragPlaceholder.parentNode) {
+      this._dragPlaceholder.parentNode.removeChild(this._dragPlaceholder);
+    }
+    this._dragPlaceholder = null;
+
     if (!state) return;
 
     if (state.ghost && state.ghost.parentNode) {
@@ -2328,15 +2673,67 @@ export class KanbanBoardView extends BaseView {
     this._touchDragState = null;
   }
 
-  _dropTaskInColumn(taskId, colId) {
+  /**
+   * Pindahkan kartu tugas ke kolom target dan urutkan sesuai posisi drop
+   * @param {string} taskId
+   * @param {string} targetColId
+   * @param {string|null} beforeTaskId
+   */
+  _dropTaskInColumn(taskId, targetColId, beforeTaskId = null) {
+    if (!taskId || !targetColId) return;
     const task = this.taskService.getTask(taskId);
-    if (!task || task.status === colId) return;
+    if (!task) return;
 
-    this.taskService.updateTaskStatus(taskId, colId);
+    const actualTaskId = task.id;
+    const oldStatus = task.status;
+    const isStatusChanged = oldStatus !== targetColId;
+
+    if (this.taskService && Array.isArray(this.taskService.tasks)) {
+      const taskIndex = this.taskService.tasks.findIndex(t => 
+        String(t.id) === String(actualTaskId) || String(t.code) === String(taskId)
+      );
+
+      if (taskIndex !== -1) {
+        const [movedTask] = this.taskService.tasks.splice(taskIndex, 1);
+        movedTask.status = targetColId;
+
+        let targetIndex = -1;
+        if (beforeTaskId && String(beforeTaskId) !== String(actualTaskId)) {
+          const beforeTask = this.taskService.getTask(beforeTaskId);
+          const cleanBeforeId = beforeTask ? beforeTask.id : beforeTaskId;
+          targetIndex = this.taskService.tasks.findIndex(t => String(t.id) === String(cleanBeforeId));
+        }
+
+        if (targetIndex !== -1) {
+          this.taskService.tasks.splice(targetIndex, 0, movedTask);
+        } else {
+          let insertIdx = -1;
+          for (let i = this.taskService.tasks.length - 1; i >= 0; i--) {
+            if (this.taskService.tasks[i].status === targetColId) {
+              insertIdx = i + 1;
+              break;
+            }
+          }
+          if (insertIdx !== -1) {
+            this.taskService.tasks.splice(insertIdx, 0, movedTask);
+          } else {
+            this.taskService.tasks.push(movedTask);
+          }
+        }
+      }
+      this.taskService.saveToStorage();
+
+      if (isStatusChanged) {
+        this.taskService.updateTaskStatus(actualTaskId, targetColId);
+      } else {
+        this.eventBus.emit('tasks:updated', this.taskService.tasks);
+      }
+    }
+
     this.mount(this.element);
 
     requestAnimationFrame(() => {
-      const newCard = this.element.querySelector(`.kanban-card[data-task-id="${taskId}"]`);
+      const newCard = this.element.querySelector(`.kanban-card[data-task-id="${actualTaskId}"]`);
       if (newCard) {
         newCard.classList.add('drop-snap');
         newCard.addEventListener('animationend', () => newCard.classList.remove('drop-snap'), { once: true });
@@ -2547,12 +2944,30 @@ export class KanbanBoardView extends BaseView {
     });
 
     // 4. Card click opens Task Detail & Editing
+    // 4. Card click opens Task Detail & Editing + Delegated Shift Buttons
     const kanbanBoard = this.element.querySelector('#kanban-board');
     if (kanbanBoard) {
       kanbanBoard.addEventListener('click', (e) => {
+        const shiftBtn = e.target.closest('.btn-shift-col');
+        if (shiftBtn) {
+          e.stopPropagation();
+          const taskId = shiftBtn.getAttribute('data-task-id');
+          const dir = shiftBtn.getAttribute('data-dir');
+          const task = this.taskService.getTask(taskId);
+          if (task) {
+            const columnOrder = this.columns.map(c => c.id);
+            const currentIndex = columnOrder.indexOf(task.status);
+            const newIndex = dir === 'next' ? currentIndex + 1 : currentIndex - 1;
+            if (newIndex >= 0 && newIndex < columnOrder.length) {
+              this._dropTaskInColumn(task.id, columnOrder[newIndex]);
+            }
+          }
+          return;
+        }
+
         if (
           e.target.closest('.btn-delete-kanban-card') ||
-          e.target.closest('.btn-shift-col') ||
+          e.target.closest('.btn-edit-kanban-card') ||
           e.target.closest('.btn-clear-kanban-col') ||
           e.target.closest('.btn-list-actions') ||
           e.target.closest('.btn-edit-column-title') ||
@@ -2596,7 +3011,7 @@ export class KanbanBoardView extends BaseView {
       });
     });
 
-    // 5. Shift column buttons
+    // 5. Shift column buttons (direct attachment fallback)
     const columnOrder = this.columns.map(c => c.id);
     const shiftButtons = this.element.querySelectorAll('.btn-shift-col');
     shiftButtons.forEach(btn => {
@@ -2609,8 +3024,7 @@ export class KanbanBoardView extends BaseView {
           const currentIndex = columnOrder.indexOf(task.status);
           const newIndex = dir === 'next' ? currentIndex + 1 : currentIndex - 1;
           if (newIndex >= 0 && newIndex < columnOrder.length) {
-            this.taskService.updateTaskStatus(taskId, columnOrder[newIndex]);
-            this.mount(this.element);
+            this._dropTaskInColumn(task.id, columnOrder[newIndex]);
           }
         }
       });

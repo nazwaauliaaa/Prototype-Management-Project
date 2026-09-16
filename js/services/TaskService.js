@@ -226,18 +226,26 @@ export class TaskService {
    * @param {string} newStatus
    */
   updateTaskStatus(taskId, newStatus) {
-    const task = this.tasks.find(t => t.id === taskId);
+    if (!taskId) return false;
+    const clean = String(taskId).trim();
+    const task = this.tasks.find(t => 
+      String(t.id) === clean || 
+      String(t.code) === clean ||
+      (t.code && t.code.toLowerCase() === clean.toLowerCase())
+    );
     if (task) {
       const oldStatus = task.status;
       task.status = newStatus;
       this.saveToStorage();
 
-      apiService.updateTask(taskId, { status: newStatus }).catch(err => {
+      apiService.updateTask(task.id, { status: newStatus }).catch(err => {
         console.warn('[TaskService] Gagal update status di PostgreSQL:', err.message);
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
-      this.notifications.info(`Status ${task.code || 'tugas'} diubah: ${oldStatus} ➔ ${newStatus}`);
+      if (this.notifications) {
+        this.notifications.info(`Status ${task.code || 'tugas'} diubah: ${oldStatus} ➔ ${newStatus}`);
+      }
       return true;
     }
     return false;
