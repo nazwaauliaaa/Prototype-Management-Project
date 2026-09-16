@@ -1286,6 +1286,14 @@ export class KanbanBoardView extends BaseView {
                               <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
                                 ${task.priority}
                               </span>
+                              <button
+                                class="btn-edit-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-primary hover:bg-primary/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
+                                data-task-id="${task.id}"
+                                title="Edit tugas ini"
+                                type="button"
+                              >
+                                <span class="material-symbols-outlined text-[15px]">edit</span>
+                              </button>
                               ${perms.canDeleteCard ? `
                               <button
                                 class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
@@ -2498,12 +2506,26 @@ export class KanbanBoardView extends BaseView {
       card.addEventListener('click', (e) => {
         if (
           e.target.closest('.btn-delete-kanban-card') ||
+          e.target.closest('.btn-edit-kanban-card') ||
           e.target.closest('.btn-shift-col')
         ) {
           return;
         }
         e.stopPropagation();
         this._openTaskEditModal(card);
+      });
+    });
+
+    // 4b. Card quick edit buttons
+    const cardEditButtons = this.element.querySelectorAll('.btn-edit-kanban-card');
+    cardEditButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const taskId = btn.getAttribute('data-task-id');
+        const task = this.taskService.getTask(taskId);
+        if (task && this.modalManager) {
+          this.modalManager.open('task-detail', { task, isEditing: true });
+        }
       });
     });
 
