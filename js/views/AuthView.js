@@ -1,14 +1,19 @@
 import { BaseView } from '../core/BaseView.js';
 import { QRCodeGenerator } from '../services/QRCodeGenerator.js';
+import { apiService } from '../services/ApiService.js';
+import { getDeviceId, getDeviceName, simulateSwitchDevice } from '../utils/deviceHelper.js';
+import jsQR from 'jsqr';
 
 /**
  * AuthView - Single Responsibility Principle (SRP)
- * Renders the Security Barcode/QR Card Gate and role authorization simulator.
+ * Renders the Security Barcode/QR Card Gate, real-time QR camera scanner,
+ * file upload scanner, Supabase account synchronization, and single device locking.
  */
 export class AuthView extends BaseView {
   constructor(container) {
     super(container);
     this.authService = container.resolve('AuthService');
+    this.notificationService = container.resolve('NotificationService');
   }
 
   render() {
@@ -35,21 +40,13 @@ export class AuthView extends BaseView {
                 </span>
               </div>
               <p class="font-caption-meta text-[11px] text-text-secondary">by Sampulkreativ Technology</p>
-
-              <!-- Domain Internal Badge -->
-              <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-text-secondary font-caption-meta text-[11px]">
-                <span class="material-symbols-outlined text-[13px] text-brand-accent">lock</span>
-                <span class="font-semibold text-text-primary">creativeoffice.app</span>
-                <span class="w-1 h-1 rounded-full bg-text-muted"></span>
-                <span class="text-text-muted">Internal Network</span>
-              </div>
             </div>
 
-            <!-- Scanner Viewfinder Component -->
+            <!-- Scanner Viewfinder Component (Portrait) -->
             <div class="relative z-10 w-full mb-spacing-md">
-              <div class="relative w-full aspect-[4/3] max-h-48 bg-slate-950 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-spacing-md group">
+              <div class="relative w-full max-w-[280px] mx-auto aspect-[3/4] min-h-[300px] max-h-[380px] bg-slate-950 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-spacing-md group">
                 
-                <!-- Live Camera Video Feed (strictly mirrored by default) -->
+                <!-- Live Camera Video Feed (strictly mirrored by default, portrait orientation) -->
                 <video id="camera-video-stream" class="absolute inset-0 w-full h-full object-cover hidden z-10" playsinline autoplay muted style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></video>
                 <!-- Camera Simulation Canvas (fallback if hardware camera is blocked/unavailable) -->
                 <canvas id="camera-sim-canvas" class="absolute inset-0 w-full h-full object-cover hidden z-10" style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></canvas>
@@ -83,18 +80,18 @@ export class AuthView extends BaseView {
 
                 <!-- Dynamic QR Code Container (shown if camera is off) -->
                 <div id="qr-scanner-area" class="flex flex-col items-center justify-center opacity-90 transition-transform duration-300 group-hover:scale-105 cursor-pointer z-20" title="Klik untuk simulasi scan">
-                  <div class="w-20 h-20 bg-white p-1.5 rounded-lg shadow-sm">
-                    ${QRCodeGenerator.generate('http://localhost:3000/#/auth?scan=auto', { size: 68, darkColor: '#0b1c30' })}
+                  <div class="w-24 h-24 bg-white p-1.5 rounded-lg shadow-sm">
+                    ${QRCodeGenerator.generate('http://localhost:3000/#/auth?scan=auto', { size: 84, darkColor: '#0b1c30' })}
                   </div>
-                  <span class="mt-2 text-white/90 font-caption-meta text-[11px] tracking-wide uppercase font-semibold">Pindai ID Card / QR</span>
+                  <span class="mt-2.5 text-white/90 font-caption-meta text-[11px] tracking-wide uppercase font-semibold">Pindai ID Card / QR</span>
                 </div>
 
-                <!-- Live Camera Reticle Overlay (when camera is on) -->
+                <!-- Live Camera Reticle Overlay (when camera is on, portrait proportion) -->
                 <div id="camera-active-overlay" class="hidden absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
-                  <div class="w-32 h-32 border-2 border-dashed border-status-success/80 rounded-xl animate-pulse flex items-center justify-center">
-                    <span class="material-symbols-outlined text-[32px] text-status-success/80">filter_center_focus</span>
+                  <div class="w-40 h-40 border-2 border-dashed border-status-success/80 rounded-2xl animate-pulse flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[36px] text-status-success/80">filter_center_focus</span>
                   </div>
-                  <span class="mt-2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-status-success font-mono text-[10px] font-bold tracking-wider">
+                  <span class="mt-3 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-status-success font-mono text-[10px] font-bold tracking-wider">
                     SCANNING BARCODE / QR...
                   </span>
                 </div>
@@ -115,97 +112,11 @@ export class AuthView extends BaseView {
               </div>
 
               <p id="scanner-feedback" class="mt-2 text-center font-caption-meta text-[11px] text-text-muted">
-                Arahkan barcode fisik kartu pegawai atau QR aplikasi seluler ke dalam kotak pemindai.
+                Arahkan barcode fisik kartu pegawai atau QR aplikasi ke dalam kotak pemindai.
               </p>
             </div>
 
-            <!-- Role Simulator Selection Block -->
-            <div class="w-full mb-spacing-md">
-              <div class="flex items-center justify-between mb-2">
-                <label class="font-caption-meta text-[11px] font-bold uppercase tracking-wider text-text-secondary">Simulasi Otorisasi Peran</label>
-                <span class="font-badge-micro text-[10px] text-brand-accent bg-brand-subdued px-1.5 py-0.5 rounded font-semibold">Auto-Routing</span>
-              </div>
 
-              <div class="space-y-2">
-                <!-- Role 1: Admin -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="admin" type="button">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-tertiary-fixed flex items-center justify-center shrink-0 text-tertiary">
-                      <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Admin</div>
-                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Akses Penuh & Executive Dashboard</div>
-                    </div>
-                  </div>
-                  <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
-                </button>
-
-                <!-- Role 2: Manajement Project -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="manajement-project" type="button">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center shrink-0 text-primary-container">
-                      <span class="material-symbols-outlined text-[20px]">assignment</span>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">Manajement Project</div>
-                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Workspace & Creative Hub (RuangKreasi, LayarBaca)</div>
-                    </div>
-                  </div>
-                  <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
-                </button>
-
-                <!-- Role 3: QA (Quality Assurance) -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="qa" type="button">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-text-primary">
-                      <span class="material-symbols-outlined text-[20px]">fact_check</span>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="font-body-medium text-[13px] text-text-primary font-bold truncate">QA (Quality Assurance)</div>
-                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Sprint, Code & QA Checklist (Panen Kunci, AIKreativ)</div>
-                    </div>
-                  </div>
-                  <span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors text-[18px]">arrow_forward</span>
-                </button>
-
-                <!-- Role 4: User -->
-                <button class="role-auth-btn w-full p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between text-left group border border-surface-border" data-role="user" type="button">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
-                      <span class="material-symbols-outlined text-[20px]">person</span>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-1.5">
-                        <span class="font-body-medium text-[13px] text-text-primary font-bold truncate">User</span>
-                        <span class="font-badge-micro text-[9.5px] text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 px-1.5 py-0.2 rounded font-semibold">Tautan Saja</span>
-                      </div>
-                      <div class="font-caption-meta text-[11px] text-text-secondary truncate">Akses Terbatas: Hanya via Tautan Undangan Kanban</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-1 text-text-muted group-hover:text-primary transition-colors">
-                    <span class="material-symbols-outlined text-[16px]">link</span>
-                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <!-- Divider -->
-            <div class="relative w-full flex items-center justify-center my-2">
-              <div class="w-full h-px bg-surface-border"></div>
-              <span class="absolute px-2.5 bg-surface-container-lowest font-badge-micro text-[10px] text-text-muted uppercase">Atau Masuk Melalui</span>
-            </div>
-
-            <!-- SSO Corporate Button -->
-            <div class="w-full mt-2">
-              <button id="btn-sso-login" class="w-full py-2.5 px-4 rounded-xl bg-surface-container hover:bg-surface-container-high transition-all flex items-center justify-center gap-2 text-text-primary font-body-medium text-[13px] font-semibold border border-surface-border" type="button">
-                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"></path>
-                </svg>
-                <span>Sampulkreativ Corporate SSO</span>
-              </button>
-            </div>
 
             <!-- Security Verification Footer -->
             <div class="mt-spacing-lg pt-spacing-sm flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
@@ -290,6 +201,53 @@ export class AuthView extends BaseView {
               >
                 <span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">mark_email_read</span>
                 <span>Simulasikan Tautan Undangan Manajer (Demo)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Single Device Locked Security Modal Dialog -->
+        <div id="modal-device-locked" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+          <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-rose-300 dark:border-rose-900/80 p-6 flex flex-col items-center text-center">
+            
+            <div class="w-16 h-16 rounded-2xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3 shadow-inner">
+              <span class="material-symbols-outlined text-4xl">phonelink_lock</span>
+            </div>
+
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-[10.5px] uppercase tracking-wider mb-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+              <span>Akses Ditolak • Device Lock</span>
+            </div>
+
+            <h3 class="text-[17px] font-bold text-slate-900 dark:text-white" id="locked-user-title">Akun Terkunci di Perangkat Lain</h3>
+            
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 mb-4 leading-relaxed" id="locked-user-description">
+              Akun ini sudah tersambung dan aktif di perangkat lain. Sistem keamanan membatasi akses sehingga perangkat ini tidak dapat mengakses akun tersebut.
+            </p>
+
+            <div class="w-full p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left text-xs mb-5 flex flex-col gap-2">
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
+                <span>Perangkat Resmi:</span>
+                <b class="text-slate-900 dark:text-slate-100 font-mono" id="locked-bound-device">Perangkat Lain</b>
+              </div>
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
+                <span>Status Database Supabase:</span>
+                <span class="text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">lock</span> Terikat 1 Perangkat
+                </span>
+              </div>
+              <div class="pt-1.5 border-t border-slate-200 dark:border-slate-700 text-[10.5px] text-slate-500 dark:text-slate-400">
+                💡 Untuk memindahkan akun ke perangkat ini, silakan keluar sesi (logout) di perangkat sebelumnya terlebih dahulu.
+              </div>
+            </div>
+
+            <div class="w-full flex flex-col gap-2">
+              <button
+                id="btn-close-locked-modal"
+                class="w-full py-2.5 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 text-white dark:text-slate-900 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md"
+                type="button"
+              >
+                Tutup & Kembali
               </button>
             </div>
           </div>
@@ -444,7 +402,12 @@ export class AuthView extends BaseView {
           let stream = null;
           try {
             stream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+              video: {
+                facingMode: 'user',
+                aspectRatio: { ideal: 0.75 },
+                width: { ideal: 720 },
+                height: { ideal: 960 }
+              }
             });
           } catch (camErr) {
             // Fallback for environment/any webcam
@@ -460,23 +423,36 @@ export class AuthView extends BaseView {
             applyMirrorState();
             await videoEl.play();
 
-            // Real barcode / QR detection support via BarcodeDetector API if available
-            if ('BarcodeDetector' in window) {
+            // Real-time QR Code scanning from camera video frame using jsQR
+            const offscreenCanvas = document.createElement('canvas');
+            const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+            let isScanningFrame = false;
+
+            this.barcodeDetectorInterval = setInterval(() => {
+              if (!this.isCameraOn || !videoEl || videoEl.readyState < 2 || isScanningFrame) return;
               try {
-                const detector = new window.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
-                this.barcodeDetectorInterval = setInterval(async () => {
-                  if (!this.isCameraOn || !videoEl || videoEl.readyState < 2) return;
-                  try {
-                    const barcodes = await detector.detect(videoEl);
-                    if (barcodes && barcodes.length > 0) {
-                      clearInterval(this.barcodeDetectorInterval);
-                      this.barcodeDetectorInterval = null;
-                      triggerScanSimulation();
-                    }
-                  } catch (e) {}
-                }, 400);
+                const w = videoEl.videoWidth;
+                const h = videoEl.videoHeight;
+                if (!w || !h) return;
+
+                const scale = Math.min(1, 640 / w);
+                const targetW = Math.floor(w * scale);
+                const targetH = Math.floor(h * scale);
+
+                offscreenCanvas.width = targetW;
+                offscreenCanvas.height = targetH;
+                offscreenCtx.drawImage(videoEl, 0, 0, targetW, targetH);
+                const imgData = offscreenCtx.getImageData(0, 0, targetW, targetH);
+
+                const code = jsQR(imgData.data, targetW, targetH, { inversionAttempts: 'attemptBoth' });
+                if (code && code.data) {
+                  isScanningFrame = true;
+                  handleQrAuthentication(code.data).finally(() => {
+                    setTimeout(() => { isScanningFrame = false; }, 2000);
+                  });
+                }
               } catch (e) {}
-            }
+            }, 300);
           }
         } else {
           startCanvasSimulation();
@@ -486,6 +462,283 @@ export class AuthView extends BaseView {
         startCanvasSimulation();
       }
     };
+
+    /**
+     * =========================================================================
+     * INTI FITUR: PEMROSESAN QR, SINKRONISASI KE SUPABASE & DEVICE LOCKING
+     * =========================================================================
+     */
+    const handleQrAuthentication = async (rawCode) => {
+      if (!rawCode) return;
+      const cleanCode = String(rawCode).trim();
+      console.log('[AuthView] Kode QR terdeteksi:', cleanCode);
+
+      if (feedback) {
+        feedback.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">Memverifikasi ke Supabase & Memvalidasi Perangkat...</span>`;
+      }
+
+      // 1. Ekstrak data jika kode berupa JSON (seperti format QR Muhamad Fazli Esfandiar)
+      let parsedUser = null;
+      try {
+        let parsed = null;
+        if (cleanCode.startsWith('{') && cleanCode.endsWith('}')) {
+          try {
+            parsed = JSON.parse(cleanCode);
+          } catch {}
+        } else if (cleanCode.includes(':')) {
+          // Mendukung format plain text:
+          // Nama: Muhamad Fazli Esfandiar
+          // Role: Admin
+          // Jobdesk: Web development
+          parsed = {};
+          const lines = cleanCode.split(/[\r\n,]+/);
+          for (const line of lines) {
+            const colonIdx = line.indexOf(':');
+            if (colonIdx > 0) {
+              const k = line.slice(0, colonIdx).trim();
+              const v = line.slice(colonIdx + 1).trim();
+              if (k && v) parsed[k] = v;
+            }
+          }
+        }
+
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          const getKey = (keys) => {
+            for (const k of keys) {
+              for (const key of Object.keys(parsed)) {
+                if (key.toLowerCase() === k.toLowerCase() && parsed[key]) {
+                  return String(parsed[key]).trim();
+                }
+              }
+            }
+            return null;
+          };
+
+          const name = getKey(['name', 'nama']);
+          const role = getKey(['role', 'peran']) || 'user';
+          const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
+          const isFazli = name && name.toLowerCase().includes('fazli');
+          const finalId = isFazli ? (role.toLowerCase() === 'admin' ? 'usr-admin-fazli' : 'usr-352837') : `usr-${Date.now().toString().slice(-6)}`;
+          const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
+
+          if (name) {
+            parsedUser = {
+              id: finalId,
+              name,
+              role: role.toLowerCase(),
+              jobdesk,
+              title: jobdesk,
+              email,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name + (role.toLowerCase() === 'admin' ? ' Admin' : ''))}`,
+              qr_data: cleanCode
+            };
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal parse QR payload:', e);
+      }
+
+      // 2. Jika bukan JSON langsung, lakukan lookup via backend
+      let payloadToSend = parsedUser;
+      if (!payloadToSend) {
+        payloadToSend = {
+          rawCode: cleanCode,
+          name: cleanCode.includes('usr-') ? null : cleanCode
+        };
+      }
+
+      // 3. Kirim ke API Supabase dengan identitas perangkat ini
+      try {
+        const result = await apiService.registerUser(payloadToSend);
+
+        // KASUS A: PERANGKAT LAIN TERKUNCI (SINGLE DEVICE LOCK TERPICU!)
+        if (result && result.locked) {
+          console.warn('[AuthView] Akses Ditolak: Terkunci di perangkat lain', result);
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-rose-500 font-bold">❌ Akses Ditolak: Akun Terkunci di Perangkat Lain!</span>`;
+          }
+
+          const lockedModal = this.element.querySelector('#modal-device-locked');
+          const titleEl = this.element.querySelector('#locked-user-title');
+          const descEl = this.element.querySelector('#locked-user-description');
+          const boundDevEl = this.element.querySelector('#locked-bound-device');
+
+          const boundName = result.boundDeviceName || 'Perangkat Utama Lain';
+          const userName = (result.data && result.data.name) || (parsedUser && parsedUser.name) || 'Pengguna';
+
+          if (titleEl) titleEl.textContent = `Akun "${userName}" Terkunci`;
+          if (descEl) {
+            descEl.innerHTML = `Akun <b>${userName}</b> saat ini sudah tersambung di <b>${boundName}</b>. Sesuai kebijakan keamanan, <b>perangkat ini tidak dapat mengakses akun tersebut</b> selama masih terikat pada perangkat resmi.`;
+          }
+          if (boundDevEl) boundDevEl.textContent = boundName;
+
+          if (lockedModal) lockedModal.classList.remove('hidden');
+          if (this.notificationService) {
+            this.notificationService.error(`Akses ditolak: Akun ${userName} terkunci di perangkat "${boundName}"!`);
+          }
+          return;
+        }
+
+        // KASUS B: BERHASIL LOGIN & TERIKAT KE PERANGKAT INI
+        if (result && result.success && result.data) {
+          const savedUser = result.data;
+          stopCamera();
+
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">Autentikasi Supabase Sukses!</span> Mengunci perangkat & masuk...`;
+          }
+
+          if (this.notificationService) {
+            this.notificationService.success(`🎉 Selamat datang, ${savedUser.name}! Akun terhubung ke Supabase dan perangkat ini telah terkunci secara resmi.`);
+          }
+
+          // Daftarkan dan masuki akun
+          const userInstance = this.authService.registerNewUser({
+            ...savedUser,
+            boundDeviceId: apiService.getDeviceId(),
+            boundDeviceName: apiService.getDeviceName()
+          });
+
+          setTimeout(() => {
+            this.authService.loginAsUser(userInstance);
+          }, 600);
+          return;
+        }
+
+        // KASUS C: BACKEND OFFLINE ATAU KONEKSI TERPUTUS TAPI IDENTITAS QR LENGKAP (GRACEFUL SESSION FALLBACK)
+        if (parsedUser && parsedUser.name) {
+          stopCamera();
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">QR Terverifikasi!</span> Masuk ke sesi...`;
+          }
+          if (this.notificationService) {
+            this.notificationService.success(`🎉 Selamat datang, ${parsedUser.name}! Berhasil masuk sebagai ${(parsedUser.role || 'user').toUpperCase()}.`);
+          }
+
+          const userInstance = this.authService.registerNewUser({
+            ...parsedUser,
+            boundDeviceId: apiService.getDeviceId(),
+            boundDeviceName: apiService.getDeviceName()
+          });
+
+          setTimeout(() => {
+            this.authService.loginAsUser(userInstance);
+          }, 600);
+          return;
+        }
+
+        // KASUS D: JIKA SERVER MENGEMBALIKAN ERROR SPESIFIK
+        if (result && result.error) {
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-rose-500 font-semibold">⚠️ ${result.error}</span>`;
+          }
+          return;
+        }
+
+        // KASUS E: KODE QR BENAR-BENAR TIDAK DIKENALI
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-amber-500 font-semibold">Kode QR tidak dikenali di database.</span>`;
+        }
+      } catch (err) {
+        console.error('Error saat login QR:', err);
+
+        // Fallback jika terjadi exception tapi parsedUser ada
+        if (parsedUser && parsedUser.name) {
+          stopCamera();
+          const userInstance = this.authService.registerNewUser(parsedUser);
+          this.authService.loginAsUser(userInstance);
+          return;
+        }
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-rose-500 font-semibold">Gagal memvalidasi QR: ${err.message}</span>`;
+        }
+      }
+    };
+
+    /**
+     * Memproses file gambar QR yang diunggah
+     */
+    const processQrImageFile = (file) => {
+      if (!file) return;
+      if (feedback) {
+        feedback.innerHTML = `<span class="text-indigo-600 font-semibold animate-pulse">Menganalisis file gambar QR...</span>`;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          const imgData = ctx.getImageData(0, 0, img.width, img.height);
+          const code = jsQR(imgData.data, img.width, img.height, {
+            inversionAttempts: 'attemptBoth'
+          });
+
+          if (code && code.data) {
+            handleQrAuthentication(code.data);
+          } else {
+            // Coba skala menengah jika gambar terlalu besar
+            const scale = 800 / Math.max(img.width, img.height);
+            if (scale < 1) {
+              const canvas2 = document.createElement('canvas');
+              canvas2.width = Math.floor(img.width * scale);
+              canvas2.height = Math.floor(img.height * scale);
+              const ctx2 = canvas2.getContext('2d', { willReadFrequently: true });
+              ctx2.drawImage(img, 0, 0, canvas2.width, canvas2.height);
+              const imgData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+              const code2 = jsQR(imgData2.data, canvas2.width, canvas2.height, {
+                inversionAttempts: 'attemptBoth'
+              });
+              if (code2 && code2.data) {
+                handleQrAuthentication(code2.data);
+                return;
+              }
+            }
+
+            if (feedback) {
+              feedback.innerHTML = `<span class="text-rose-500 font-semibold">Tidak dapat membaca kode QR dari gambar tersebut.</span>`;
+            }
+            if (this.notificationService) {
+              this.notificationService.error('QR tidak terbaca. Pastikan foto QR jelas dan tidak buram.');
+            }
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Event listener input file QR
+    const qrFileInput = this.element.querySelector('#auth-qr-file-input');
+    if (qrFileInput) {
+      qrFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) processQrImageFile(file);
+      });
+    }
+
+    // Tombol Cepat: QR Muhamad Fazli Esfandiar (Demo Pengujian Langsung)
+    const quickMyQrBtn = this.element.querySelector('#btn-quick-my-qr');
+    if (quickMyQrBtn) {
+      quickMyQrBtn.addEventListener('click', () => {
+        handleQrAuthentication('{"Nama":"Muhamad Fazli Esfandiar","Role":"User","Jobdesk":"Web development"}');
+      });
+    }
+
+    // Modal Device Locked Close Listener
+    const lockedModal = this.element.querySelector('#modal-device-locked');
+    const closeLockedModalBtn = this.element.querySelector('#btn-close-locked-modal');
+    if (closeLockedModalBtn && lockedModal) {
+      closeLockedModalBtn.addEventListener('click', () => {
+        lockedModal.classList.add('hidden');
+      });
+    }
 
     const inviteModal = this.element.querySelector('#modal-user-invite-gate');
     const closeInviteModalBtn = this.element.querySelector('#btn-close-user-invite-modal');
@@ -592,7 +845,6 @@ export class AuthView extends BaseView {
         feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Autentikasi Terverifikasi!</span> Mengalihkan sesi ke Creative Office...`;
       }
       setTimeout(() => {
-        // loginWithRole emits 'auth:login' which is handled in app.js to navigate to dashboard or kanban
         this.authService.loginWithRole(role);
       }, 700);
     };
@@ -624,18 +876,6 @@ export class AuthView extends BaseView {
 
     if (testScanBtn) testScanBtn.addEventListener('click', triggerScanSimulation);
     if (qrArea) qrArea.addEventListener('click', triggerScanSimulation);
-
-    const ssoBtn = this.element.querySelector('#btn-sso-login');
-    if (ssoBtn) {
-      ssoBtn.addEventListener('click', () => {
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-primary font-semibold animate-pulse">Menghubungkan ke Gateway OAuth2 Sampulkreativ...</span>`;
-        }
-        setTimeout(() => {
-          handleRoleSelect('admin');
-        }, 800);
-      });
-    }
 
     // Automatically activate camera when QR gate loads (User requirement)
     startCamera();

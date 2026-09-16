@@ -22,10 +22,15 @@ async function ensureDefaultUsers() {
           ('usr-001', 'Dr. Hendra Wijaya', 'admin', 'Admin & Managing Director', 'Direktur Eksekutif & Manajemen Operasional', 'hendra.wijaya@sampulkreativ.id', '', '["ruangkreasi", "layarbaca"]'::jsonb),
           ('usr-002', 'Sari Rahmawati', 'manajement-project', 'Project Manager', 'Lead Operasional & Sprint Coordinator', 'sari.rahmawati@sampulkreativ.id', '', '["ruangkreasi", "layarbaca"]'::jsonb),
           ('usr-003', 'Budi Pratama', 'qa', 'QA Lead', 'Quality Assurance & Kelaikan Deliverable', 'budi.pratama@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb),
-          ('usr-004', 'Dimas Anggara', 'user', 'Creative Specialist', 'Desain Grafis & Konten Visual 3D', 'dimas.anggara@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb),
-          ('usr-005', 'Rizky Firmansyah', 'user', 'UI/UX Designer', 'Perancangan Antarmuka & Prototipe Web', 'rizky.firmansyah@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb),
-          ('usr-006', 'Dewi Sartika', 'user', 'Content Strategist', 'Penulisan Naskah & Strategi Publikasi', 'dewi.sartika@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb)
-        ON CONFLICT (id) DO NOTHING;
+          ('usr-004', 'Dimas Anggara', 'user', 'Creative Specialist', 'Desain Grafis & Konten Visual 3D', 'dimas.anggara@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dimas Anggara",\n  "role": "User",\n  "jobdesk": "Desain Grafis & Konten Visual 3D"\n}'),
+          ('usr-005', 'Rizky Firmansyah', 'user', 'UI/UX Designer', 'Perancangan Antarmuka & Prototipe Web', 'rizky.firmansyah@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Rizky Firmansyah",\n  "role": "User",\n  "jobdesk": "Perancangan Antarmuka & Prototipe Web"\n}'),
+          ('usr-006', 'Dewi Sartika', 'user', 'Content Strategist', 'Penulisan Naskah & Strategi Publikasi', 'dewi.sartika@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dewi Sartika",\n  "role": "User",\n  "jobdesk": "Penulisan Naskah & Strategi Publikasi"\n}'),
+          ('usr-352837', 'Muhamad Fazli Esfandiar', 'user', 'Web development', 'Web development', 'muhamad.fazli.esfandiar@sampulkreativ.id', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Muhamad%20Fazli%20Esfandiar', '["ruangkreasi", "panen-kunci", "layarbaca"]'::jsonb, '{\n  "nama": "Muhamad Fazli Esfandiar",\n  "role": "User",\n  "jobdesk": "Web development"\n}'),
+          ('usr-admin-fazli', 'Muhamad Fazli Esfandiar', 'admin', 'System Administrator & Lead Developer', 'Administrator', 'muhamad.fazli.admin@sampulkreativ.id', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Muhamad%20Fazli%20Esfandiar%20Admin', '["ruangkreasi", "layarbaca", "aikreativ", "panen-kunci", "sharinginaja"]'::jsonb, '{\n  "nama": "Muhamad Fazli Esfandiar",\n  "role": "Admin",\n  "jobdesk": "Administrator"\n}')
+        ON CONFLICT (id) DO UPDATE SET
+          qr_data = EXCLUDED.qr_data,
+          jobdesk = EXCLUDED.jobdesk,
+          updated_at = NOW();
       `;
       await pool.query(seedQuery);
     }
@@ -38,55 +43,185 @@ async function ensureDefaultUsers() {
 // Jalankan seed awal saat rute dimuat
 ensureDefaultUsers();
 
+// Helper ekstraksi data pengguna dari payload QR (fleksibel nama/Nama, role/Role, jobdesk/Jobdesk)
+function extractUserFromPayload(raw) {
+  if (!raw) return null;
+  let parsed = null;
+  if (typeof raw === 'object') {
+    parsed = raw;
+  } else if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {}
+    } else if (trimmed.includes(':')) {
+      // Dukung format plain-text berbaris "Key: Value", misalnya:
+      // Nama: Muhamad Fazli Esfandiar
+      // Role: Admin
+      // Jobdesk: Web development
+      parsed = {};
+      const lines = trimmed.split(/[\r\n,]+/);
+      for (const line of lines) {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx > 0) {
+          const k = line.slice(0, colonIdx).trim();
+          const v = line.slice(colonIdx + 1).trim();
+          if (k && v) parsed[k] = v;
+        }
+      }
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Object.keys(parsed).length === 0) return null;
+
+  const getKey = (keys) => {
+    for (const k of keys) {
+      for (const key of Object.keys(parsed)) {
+        if (key.toLowerCase() === k.toLowerCase() && parsed[key]) {
+          return String(parsed[key]).trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  const name = getKey(['name', 'nama']);
+  const role = getKey(['role', 'peran']) || 'user';
+  const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
+  const id = getKey(['id', 'userid', 'user_id']);
+  const isFazli = name && name.toLowerCase().includes('fazli');
+  const finalId = id || (isFazli ? (role.toLowerCase() === 'admin' ? 'usr-admin-fazli' : 'usr-352837') : `usr-${Date.now().toString().slice(-6)}`);
+  const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
+  const avatar = getKey(['avatar']);
+
+  if (name) {
+    return {
+      id: finalId,
+      name,
+      role: role.toLowerCase(),
+      jobdesk,
+      title: jobdesk,
+      email,
+      avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name + (role.toLowerCase() === 'admin' ? ' Admin' : ''))}`
+    };
+  }
+  return null;
+}
+
 /**
  * POST /api/qr/register-user
- * Otomatis mendaftarkan akun baru ke database PostgreSQL dari data QR
+ * Otomatis mendaftarkan akun baru ke Supabase dan mengunci akses hanya ke perangkat yang mendaftar
  */
 router.post('/register-user', async (req, res) => {
   try {
-    const { name, role = 'user', jobdesk = 'Anggota Tim & Kontributor', title, email, avatar } = req.body;
+    const extracted = extractUserFromPayload(req.body) || {};
+    const name = extracted.name || req.body.name || req.body.Nama;
+    const role = (extracted.role || req.body.role || req.body.Role || 'user').toLowerCase();
+    const jobdesk = extracted.jobdesk || req.body.jobdesk || req.body.Jobdesk || 'Anggota Tim & Kontributor';
+    const title = extracted.title || req.body.title || jobdesk;
+    const email = extracted.email || req.body.email || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id` : '');
+    const avatar = extracted.avatar || req.body.avatar || (name ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}` : '');
+    const userId = extracted.id || req.body.id || `usr-${Date.now().toString().slice(-6)}`;
     
+    // Perangkat pengakses
+    const deviceId = req.body.deviceId || req.headers['x-device-id'] || null;
+    const deviceName = req.body.deviceName || req.headers['user-agent']?.slice(0, 100) || 'Perangkat Utama';
+    const forceUnbind = Boolean(req.body.forceUnbind);
+
     if (!name) {
-      return res.status(400).json({ success: false, error: 'Nama pengguna wajib diisi' });
+      return res.status(400).json({ success: false, error: 'Nama pengguna wajib diisi dari QR' });
     }
 
-    const userId = req.body.id || `usr-${Date.now().toString().slice(-6)}`;
-    const userTitle = title || jobdesk;
-    const cleanEmail = email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
-    const userAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+    // 1. Cek apakah user sudah terdaftar di Supabase
+    const checkUserQuery = `
+      SELECT * FROM users 
+      WHERE id = $1 
+         OR (LOWER(name) = LOWER($2) AND LOWER(role) = LOWER($3)) 
+         OR (email IS NOT NULL AND LOWER(email) = LOWER($4))
+      LIMIT 1
+    `;
+    const checkUserRes = await pool.query(checkUserQuery, [userId, name, role, email]);
 
-    const insertQuery = `
-      INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
-      ON CONFLICT (id) DO UPDATE 
-        SET name = EXCLUDED.name, 
-            role = EXCLUDED.role, 
-            jobdesk = EXCLUDED.jobdesk,
-            title = EXCLUDED.title,
+    if (checkUserRes.rows.length > 0) {
+      const existing = checkUserRes.rows[0];
+      const boundDevId = existing.bound_device_id;
+      const boundDevName = existing.bound_device_name || 'Perangkat Lain';
+
+      // SINGLE DEVICE LOCK: Jika akun sudah terikat perangkat lain dan deviceId berbeda
+      if (boundDevId && deviceId && boundDevId !== deviceId && !forceUnbind) {
+        return res.status(403).json({
+          success: false,
+          locked: true,
+          error: `Akses ditolak: Akun "${existing.name}" sudah terhubung di perangkat "${boundDevName}". Perangkat lain tidak dapat mengakses akun ini!`,
+          boundDeviceName: boundDevName,
+          boundAt: existing.bound_at,
+          data: {
+            id: existing.id,
+            name: existing.name,
+            role: existing.role,
+            boundDeviceName: boundDevName
+          }
+        });
+      }
+
+      // Ikat perangkat saat ini (atau perbarui)
+      const updateQuery = `
+        UPDATE users 
+        SET bound_device_id = COALESCE($1, bound_device_id),
+            bound_device_name = COALESCE($2, bound_device_name),
+            bound_at = CASE WHEN bound_device_id IS NULL OR bound_device_id != $1 THEN NOW() ELSE bound_at END,
+            name = COALESCE($3, name),
+            jobdesk = COALESCE($4, jobdesk),
+            title = COALESCE($4, title),
+            email = COALESCE($5, email),
+            avatar = COALESCE($6, avatar),
             updated_at = NOW()
+        WHERE id = $7
+        RETURNING *
+      `;
+      const updateRes = await pool.query(updateQuery, [deviceId, deviceName, name, jobdesk, email, avatar, existing.id]);
+      const savedUser = updateRes.rows[0];
+
+      return res.json({
+        success: true,
+        autoCreated: false,
+        bound: true,
+        message: `Akun "${savedUser.name}" berhasil terhubung dan terkunci di perangkat ini!`,
+        data: savedUser
+      });
+    }
+
+    // 2. Akun Baru: Masukkan ke Supabase dan kunci langsung ke perangkat ini
+    const insertQuery = `
+      INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, bound_device_id, bound_device_name, bound_at, is_locked_to_device)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), true)
       RETURNING *
     `;
 
     const values = [
       userId,
       name,
-      role.toLowerCase(),
-      userTitle,
+      role,
+      title,
       jobdesk,
-      cleanEmail,
-      userAvatar,
-      JSON.stringify(['ruangkreasi', 'layarbaca'])
+      email,
+      avatar,
+      JSON.stringify(['ruangkreasi', 'panen-kunci']),
+      deviceId,
+      deviceName
     ];
 
     const result = await pool.query(insertQuery, values);
     const savedUser = result.rows[0];
 
-    console.log(`[QR Router] ✅ Akun baru otomatis dibuat via QR: ${savedUser.name} (${savedUser.jobdesk})`);
+    console.log(`[QR Router] ✅ Akun baru tersimpan di Supabase & terkunci ke perangkat: ${savedUser.name} (${deviceId})`);
 
     res.status(201).json({
       success: true,
       autoCreated: true,
-      message: `Akun baru "${savedUser.name}" berhasil dibuat otomatis di database!`,
+      bound: true,
+      message: `Akun "${savedUser.name}" berhasil tersimpan di Supabase dan terkunci khusus perangkat ini!`,
       data: savedUser
     });
   } catch (err) {
@@ -96,12 +231,46 @@ router.post('/register-user', async (req, res) => {
 });
 
 /**
- * GET /api/qr/lookup?code=...
- * Mencari data proyek, tugas, atau pengguna di database PostgreSQL berdasarkan kode QR
+ * POST /api/qr/unbind-device
+ * Melepaskan kunci perangkat (logout dari perangkat) agar bisa dipindahkan jika diizinkan
+ */
+router.post('/unbind-device', async (req, res) => {
+  try {
+    const { userId, deviceId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Parameter userId wajib disertakan' });
+    }
+
+    const query = `
+      UPDATE users 
+      SET bound_device_id = NULL, bound_device_name = NULL, bound_at = NULL, updated_at = NOW()
+      WHERE id = $1 AND (bound_device_id = $2 OR $2 IS NULL)
+      RETURNING id, name
+    `;
+    const result = await pool.query(query, [userId, deviceId || null]);
+
+    if (result.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: `Kunci perangkat untuk akun "${result.rows[0].name}" berhasil dilepas.`
+      });
+    }
+
+    res.status(404).json({ success: false, error: 'Pengguna tidak ditemukan atau perangkat tidak sesuai' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/qr/lookup?code=...&deviceId=...
+ * Mencari data proyek, tugas, atau pengguna di database PostgreSQL berdasarkan kode QR dengan pengecekan lock perangkat
  */
 router.get('/lookup', async (req, res) => {
   try {
     const rawCode = req.query.code || req.query.q || '';
+    const deviceId = req.query.deviceId || null;
+    const deviceName = req.query.deviceName || 'Perangkat Ini';
     const code = sanitizeCode(rawCode);
 
     if (!code) {
@@ -109,66 +278,91 @@ router.get('/lookup', async (req, res) => {
     }
 
     // A. Periksa apakah kode QR berupa JSON yang membawa informasi User
-    let jsonUser = null;
-    try {
-      if (code.startsWith('{') && code.endsWith('}')) {
-        const parsed = JSON.parse(code);
-        if (parsed.role && parsed.role.toLowerCase() === 'user' || parsed.type === 'user') {
-          jsonUser = parsed;
-        }
-      }
-    } catch {}
+    const jsonUser = extractUserFromPayload(code);
 
-    // Jika QR secara eksplisit memuat data user, otomatis buat/sinkronkan akun baru di database
+    // Jika QR secara eksplisit memuat data user, otomatis buat/sinkronkan akun baru di database Supabase
     if (jsonUser && jsonUser.name) {
       const newId = jsonUser.id || `usr-${Date.now().toString().slice(-6)}`;
-      const jobdesk = jsonUser.jobdesk || jsonUser.title || 'Creative Staff';
+      const jobdesk = jsonUser.jobdesk || 'Creative Staff';
       const email = jsonUser.email || `${jsonUser.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
 
       try {
-        const insertQuery = `
-          INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
-          ON CONFLICT (id) DO UPDATE 
-            SET name = EXCLUDED.name, 
-                jobdesk = EXCLUDED.jobdesk,
+        // Cek lock perangkat user yang sudah ada
+        const existingCheck = await pool.query(`
+          SELECT * FROM users 
+          WHERE id = $1 
+             OR (LOWER(name) = LOWER($2) AND LOWER(role) = LOWER($3)) 
+             OR (email IS NOT NULL AND LOWER(email) = LOWER($4))
+             OR qr_data = $5
+             OR (qr_data IS NOT NULL AND qr_data ILIKE '%' || $5 || '%')
+          LIMIT 1
+        `, [newId, jsonUser.name, jsonUser.role || 'user', email, code]);
+
+        if (existingCheck.rows.length > 0) {
+          const row = existingCheck.rows[0];
+          if (row.bound_device_id && deviceId && row.bound_device_id !== deviceId) {
+            return res.status(403).json({
+              success: false,
+              locked: true,
+              type: 'user',
+              error: `Akses ditolak: Akun "${row.name}" sedang terhubung di perangkat "${row.bound_device_name || 'Perangkat Lain'}". Perangkat lain tidak diizinkan masuk!`,
+              boundDeviceName: row.bound_device_name,
+              boundAt: row.bound_at,
+              data: row
+            });
+          }
+
+          // Update bound device and preserve qr_data
+          const updateRes = await pool.query(`
+            UPDATE users 
+            SET bound_device_id = COALESCE($1, bound_device_id),
+                bound_device_name = COALESCE($2, bound_device_name),
+                bound_at = CASE WHEN bound_device_id IS NULL THEN NOW() ELSE bound_at END,
+                qr_data = COALESCE(qr_data, $4),
                 updated_at = NOW()
+            WHERE id = $3
+            RETURNING *
+          `, [deviceId, deviceName, row.id, code]);
+
+          return res.json({
+            success: true,
+            type: 'user',
+            autoCreated: false,
+            bound: true,
+            matchedBy: 'supabase-users',
+            data: updateRes.rows[0]
+          });
+        }
+
+        const insertQuery = `
+          INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, bound_device_id, bound_device_name, bound_at, is_locked_to_device, qr_data)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), true, $11)
           RETURNING *
         `;
         const result = await pool.query(insertQuery, [
           newId,
           jsonUser.name,
-          'user',
+          jsonUser.role || 'user',
           jobdesk,
           jobdesk,
           email,
           jsonUser.avatar || '',
-          JSON.stringify(['ruangkreasi'])
+          JSON.stringify(['ruangkreasi', 'panen-kunci']),
+          deviceId,
+          deviceName,
+          code
         ]);
 
         return res.json({
           success: true,
           type: 'user',
           autoCreated: true,
+          bound: true,
           matchedBy: 'qr-json-auto-create',
           data: result.rows[0]
         });
       } catch (dbErr) {
-        console.warn('Gagal simpan user ke pg, mengembalikan payload json:', dbErr.message);
-        return res.json({
-          success: true,
-          type: 'user',
-          autoCreated: true,
-          matchedBy: 'qr-json-local',
-          data: {
-            id: newId,
-            name: jsonUser.name,
-            role: 'user',
-            title: jobdesk,
-            jobdesk: jobdesk,
-            email: email
-          }
-        });
+        console.warn('Gagal simpan user ke Supabase:', dbErr.message);
       }
     }
 
@@ -179,6 +373,10 @@ router.get('/lookup', async (req, res) => {
         WHERE id = $1 
            OR LOWER(name) = LOWER($1) 
            OR LOWER(email) = LOWER($1)
+           OR qr_data = $1
+           OR LOWER(qr_data) = LOWER($1)
+           OR (qr_data IS NOT NULL AND qr_data ILIKE '%' || $1 || '%')
+           OR (qr_data IS NOT NULL AND $1 ILIKE '%' || qr_data || '%')
            OR $1 ILIKE '%' || id || '%'
            OR $1 ILIKE '%' || name || '%'
         LIMIT 1
@@ -203,6 +401,7 @@ router.get('/lookup', async (req, res) => {
             email: row.email,
             avatar: row.avatar || '',
             workspaceAccess: row.workspace_access || ['ruangkreasi'],
+            qr_data: row.qr_data,
             createdAt: row.created_at
           }
         });

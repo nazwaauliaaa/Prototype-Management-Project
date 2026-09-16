@@ -30,6 +30,9 @@ export class Header {
       role: 'kreatif'
     };
     const isUserRole = (user.role || '').toLowerCase() === 'user';
+    const canAccessQrHub = this.authService && typeof this.authService.canAccessQrHub === 'function'
+      ? this.authService.canAccessQrHub()
+      : false;
 
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
@@ -81,7 +84,8 @@ export class Header {
               <span>Hapus Tugas</span>
             </button>
 
-            <!-- QR Scanner Button in indigo -->
+            <!-- QR Scanner Button in indigo (Hanya Admin & Manajemen Project) -->
+            ${canAccessQrHub ? `
             <button
               id="btn-header-qr-scanner"
               class="h-8 px-2.5 sm:px-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 hover:border-indigo-300 font-semibold text-[12.5px] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0 shadow-2xs"
@@ -91,6 +95,7 @@ export class Header {
               <span class="material-symbols-outlined text-[16px] text-indigo-600">qr_code_scanner</span>
               <span>QR Hub</span>
             </button>
+            ` : ''}
           </div>
           ` : `
           <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center">
@@ -124,6 +129,7 @@ export class Header {
               >
                 <span class="material-symbols-outlined text-[18px]">delete</span>
               </button>
+              ${canAccessQrHub ? `
               <button
                 id="btn-mobile-qr-scanner"
                 aria-label="QR Scanner"
@@ -133,6 +139,7 @@ export class Header {
               >
                 <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
               </button>
+              ` : ''}
               <button
                 id="btn-mobile-search"
                 aria-label="Cari"

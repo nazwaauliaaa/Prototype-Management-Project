@@ -1,44 +1,54 @@
+import QRCode from 'qrcode';
+
 /**
- * QRCodeGenerator - Generates QR codes as SVG elements
- * Lightweight implementation using a simple QR matrix approach
+ * QRCodeGenerator - Generates real, standard scannable QR codes as SVG elements
  */
 export class QRCodeGenerator {
   /**
-   * Generate a QR code SVG string for a given data string
+   * Generate a standard QR code SVG string for a given data string
    * @param {string} data - The data to encode
    * @param {Object} [options]
    * @param {number} [options.size=200] - Size in pixels
-   * @param {string} [options.darkColor='#ffffff'] - Module color
+   * @param {string} [options.darkColor='#0b1c30'] - Module color
    * @param {string} [options.lightColor='transparent'] - Background color
+   * @param {number} [options.margin=2] - Quiet zone margin in cells
    * @returns {string} SVG markup
    */
   static generate(data, options = {}) {
     const {
       size = 200,
-      darkColor = '#ffffff',
-      lightColor = 'transparent'
+      darkColor = '#0b1c30',
+      lightColor = 'transparent',
+      margin = 2
     } = options;
 
-    // Generate a deterministic QR-like matrix from data
-    const matrix = this._createMatrix(data);
-    const moduleCount = matrix.length;
-    const cellSize = size / moduleCount;
+    try {
+      const qr = QRCode.create(data, { errorCorrectionLevel: 'M' });
+      const modCount = qr.modules.size;
+      const totalCells = modCount + margin * 2;
+      const cellSize = size / totalCells;
 
-    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`;
-    svgContent += `<rect width="${size}" height="${size}" fill="${lightColor}"/>`;
+      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`;
+      if (lightColor && lightColor !== 'transparent') {
+        svgContent += `<rect width="${size}" height="${size}" fill="${lightColor}"/>`;
+      }
 
-    for (let row = 0; row < moduleCount; row++) {
-      for (let col = 0; col < moduleCount; col++) {
-        if (matrix[row][col]) {
-          const x = col * cellSize;
-          const y = row * cellSize;
-          svgContent += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${darkColor}" rx="1"/>`;
+      for (let row = 0; row < modCount; row++) {
+        for (let col = 0; col < modCount; col++) {
+          if (qr.modules.get(row, col)) {
+            const x = (col + margin) * cellSize;
+            const y = (row + margin) * cellSize;
+            svgContent += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${cellSize.toFixed(2)}" height="${cellSize.toFixed(2)}" fill="${darkColor}"/>`;
+          }
         }
       }
-    }
 
-    svgContent += '</svg>';
-    return svgContent;
+      svgContent += '</svg>';
+      return svgContent;
+    } catch (e) {
+      console.warn('[QRCodeGenerator] Gagal membuat QR standard, fallback:', e);
+      return '';
+    }
   }
 
   /**

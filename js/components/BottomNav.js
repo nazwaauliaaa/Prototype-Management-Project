@@ -39,14 +39,24 @@ export class BottomNav {
 
   /** Nav tab definitions */
   get tabs() {
-    return [
+    const authService = this.container ? this.container.resolve('AuthService') : null;
+    const canAccessQrHub = authService && typeof authService.canAccessQrHub === 'function'
+      ? authService.canAccessQrHub()
+      : false;
+
+    const baseTabs = [
       { id: 'dashboard',   icon: 'space_dashboard', label: 'Dashboard'   },
       { id: 'calendar',    icon: 'calendar_today',  label: 'Jadwal'      },
       { id: 'ruang-kerja', icon: 'workspaces',      label: 'Ruang Kerja' },
       { id: 'kanban',      icon: 'view_kanban',     label: 'Kanban'      },
       { id: 'dokumen',     icon: 'description',     label: 'Dokumen'     },
-      { id: 'qr',          icon: 'qr_code_scanner', label: 'QR Scan'     },
     ];
+
+    if (canAccessQrHub) {
+      baseTabs.push({ id: 'qr', icon: 'qr_code_scanner', label: 'QR Scan' });
+    }
+
+    return baseTabs;
   }
 
   render() {

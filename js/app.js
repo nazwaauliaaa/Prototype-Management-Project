@@ -399,6 +399,25 @@ class CreativeOfficeApp {
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
         return;
       }
+
+      // Proteksi rute QR Hub: hanya role admin dan manajemen project yang dapat mengakses
+      const isQrRoute = view === 'qr' || view === 'qr-dashboard' || view === 'qr-scanner';
+      if (isQrRoute) {
+        const canAccessQrHub = authService && typeof authService.canAccessQrHub === 'function'
+          ? authService.canAccessQrHub()
+          : false;
+
+        if (!canAccessQrHub) {
+          const notificationService = this.container.resolve('NotificationService');
+          if (notificationService) {
+            notificationService.error('Akses ditolak: Fitur QR Hub hanya dapat diakses oleh Admin dan Manajemen Project.');
+          }
+          const fallbackView = currentUser && currentUser.role === 'user' ? 'kanban' : 'dashboard';
+          this.navigateTo(fallbackView);
+          return;
+        }
+      }
+
       if (workspace) {
         this.activeWorkspace = workspace;
         localStorage.setItem('active_workspace', workspace);
@@ -508,6 +527,23 @@ class CreativeOfficeApp {
       const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
       viewName = 'kanban';
       params = { projectId: allowedProj, workspace: allowedWs };
+    }
+
+    // ROUTE GUARD ENFORCEMENT: Restrict QR Hub strictly to admin and management project
+    const isQrRoute = viewName === 'qr' || viewName === 'qr-dashboard' || viewName === 'qr-scanner';
+    if (isQrRoute) {
+      const canAccessQrHub = authService && typeof authService.canAccessQrHub === 'function'
+        ? authService.canAccessQrHub()
+        : false;
+
+      if (!canAccessQrHub) {
+        const notif = this.container.resolve('NotificationService');
+        if (notif) {
+          notif.error('Akses ditolak: Fitur QR Hub hanya dapat diakses oleh Admin dan Manajemen Project.');
+        }
+        const fallbackView = isUserRole ? 'kanban' : 'dashboard';
+        return this.navigateTo(fallbackView);
+      }
     }
 
     // Update URL hash without triggering double reload

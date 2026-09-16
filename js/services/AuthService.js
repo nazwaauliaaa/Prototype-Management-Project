@@ -102,12 +102,14 @@ export class AuthService {
    * @param {Object} userData
    * @returns {User}
    */
-  registerNewUser({ id, name, role = 'user', title, jobdesk, email, avatar, workspaceAccess }) {
+  registerNewUser({ id, name, role = 'user', title, jobdesk, email, avatar, workspaceAccess, boundDeviceId, boundDeviceName, bound_device_id, bound_device_name }) {
     const finalId = id || `usr-${Date.now().toString().slice(-6)}`;
     const finalJobdesk = jobdesk || title || 'Creative Specialist';
     const finalTitle = title || finalJobdesk;
     const finalEmail = email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
     const finalAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+    const finalBoundDevId = boundDeviceId || bound_device_id || null;
+    const finalBoundDevName = boundDeviceName || bound_device_name || null;
 
     // Cek apakah akun dengan nama atau email ini sudah terdaftar
     let existingIndex = this.customUsers.findIndex(u => u.id === finalId || u.email === finalEmail);
@@ -120,7 +122,9 @@ export class AuthService {
       jobdesk: finalJobdesk,
       avatar: finalAvatar,
       email: finalEmail,
-      workspaceAccess: workspaceAccess || ['ruangkreasi', 'layarbaca']
+      workspaceAccess: workspaceAccess || ['ruangkreasi', 'layarbaca'],
+      boundDeviceId: finalBoundDevId,
+      boundDeviceName: finalBoundDevName
     });
 
     if (existingIndex !== -1) {
@@ -173,6 +177,27 @@ export class AuthService {
   }
 
   /**
+   * Cek apakah pengguna saat ini berhak mengakses fitur QR Hub & Scanner.
+   * Hanya role 'admin' dan 'manajement-project' (atau aliasnya) yang diizinkan.
+   * @returns {boolean}
+   */
+  canAccessQrHub() {
+    if (!this.currentUser) return false;
+    if (typeof this.currentUser.canAccessQrHub === 'function') {
+      return this.currentUser.canAccessQrHub();
+    }
+    const r = (this.currentUser.role || '').toLowerCase().trim();
+    return (
+      r === 'admin' ||
+      r === 'eksekutif' ||
+      r === 'manajement-project' ||
+      r === 'manajemen-project' ||
+      r === 'manajemen project' ||
+      r === 'kreatif'
+    );
+  }
+
+  /**
    * Login by selecting a role (simulates barcode identification or SSO)
    * @param {'admin'|'manajement-project'|'qa'|'user'} role
    */
@@ -206,6 +231,7 @@ export class AuthService {
    * Logout user and return to barcode gate
    */
   logout() {
+    const prevUser = this.currentUser;
     this.currentUser = null;
     this.isAuthenticated = false;
     this.eventBus.emit('auth:logout');

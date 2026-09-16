@@ -4,17 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -n \"server,vite\" -c \"blue.bold,green.bold\" \"node server/index.js\" \"vite\"",
+    "dev:vite": "vite",
     "server": "node server/index.js",
     "server:dev": "node --watch server/index.js",
     "db:init": "node server/initDb.js",
+    "qr:generate": "node server/generate_user_qrcodes.js",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "concurrently": "^10.0.5",
     "vite": "^6.2.0"
   },
   "dependencies": {
-    "jsqr": "^1.4.0"
+    "jpeg-js": "^0.4.4",
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4"
   }
 }

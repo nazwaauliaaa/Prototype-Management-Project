@@ -1,11 +1,21 @@
+import { getDeviceId, getDeviceName } from '../utils/deviceHelper.js';
+
 /**
  * ApiService - Client HTTP untuk berkomunikasi dengan Backend Express + PostgreSQL
  */
 export class ApiService {
-  constructor(baseUrl = 'http://localhost:5000/api') {
+  constructor(baseUrl = (typeof window !== 'undefined' ? '/api' : 'http://localhost:5000/api')) {
     this.baseUrl = baseUrl;
     this.isOnline = false;
     this.lastCheck = 0;
+  }
+
+  getDeviceId() {
+    return getDeviceId();
+  }
+
+  getDeviceName() {
+    return getDeviceName();
   }
 
   /**
@@ -17,7 +27,11 @@ export class ApiService {
       const timeoutId = setTimeout(() => controller.abort(), 2000);
 
       const res = await fetch(`${this.baseUrl}/health`, {
-        signal: controller.signal
+        signal: controller.signal,
+        headers: {
+          'x-device-id': this.getDeviceId(),
+          'x-device-name': this.getDeviceName()
+        }
       });
       clearTimeout(timeoutId);
 
@@ -40,7 +54,9 @@ export class ApiService {
       const url = workspace && workspace !== 'all'
         ? `${this.baseUrl}/projects?workspace=${encodeURIComponent(workspace)}`
         : `${this.baseUrl}/projects`;
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'x-device-id': this.getDeviceId() }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       return result.data || [];
@@ -54,7 +70,10 @@ export class ApiService {
     try {
       const res = await fetch(`${this.baseUrl}/projects`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId()
+        },
         body: JSON.stringify(projectData)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -70,7 +89,10 @@ export class ApiService {
     try {
       const res = await fetch(`${this.baseUrl}/projects/${encodeURIComponent(id)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId()
+        },
         body: JSON.stringify(updates)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -85,7 +107,8 @@ export class ApiService {
   async deleteProject(id) {
     try {
       const res = await fetch(`${this.baseUrl}/projects/${encodeURIComponent(id)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'x-device-id': this.getDeviceId() }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return true;
@@ -104,7 +127,9 @@ export class ApiService {
       if (projectId) params.append('projectId', projectId);
 
       const query = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(`${this.baseUrl}/tasks${query}`);
+      const res = await fetch(`${this.baseUrl}/tasks${query}`, {
+        headers: { 'x-device-id': this.getDeviceId() }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       return result.data || [];
@@ -118,7 +143,10 @@ export class ApiService {
     try {
       const res = await fetch(`${this.baseUrl}/tasks`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId()
+        },
         body: JSON.stringify(taskData)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -134,7 +162,10 @@ export class ApiService {
     try {
       const res = await fetch(`${this.baseUrl}/tasks/${encodeURIComponent(id)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId()
+        },
         body: JSON.stringify(updates)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -149,7 +180,8 @@ export class ApiService {
   async deleteTask(id) {
     try {
       const res = await fetch(`${this.baseUrl}/tasks/${encodeURIComponent(id)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'x-device-id': this.getDeviceId() }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return true;
@@ -162,17 +194,35 @@ export class ApiService {
   // ==================== QR LOOKUP & INVENTORY ====================
 
   /**
-   * Cari entitas database berdasarkan kode QR yang dipindai
+   * Cari entitas database berdasarkan kode QR yang dipindai dengan validasi Device Binding
    * @param {string} code
    */
   async lookupQr(code) {
     try {
-      const res = await fetch(`${this.baseUrl}/qr/lookup?code=${encodeURIComponent(code)}`);
+      const params = new URLSearchParams({
+        code: code,
+        deviceId: this.getDeviceId(),
+        deviceName: this.getDeviceName()
+      });
+      const res = await fetch(`${this.baseUrl}/qr/lookup?${params.toString()}`, {
+        headers: {
+          'x-device-id': this.getDeviceId(),
+          'x-device-name': this.getDeviceName()
+        }
+      });
+      
+      const data = await res.json();
       if (!res.ok) {
-        if (res.status === 404) return { found: false, error: 'Tidak ditemukan di database' };
-        throw new Error(`HTTP ${res.status}`);
+        return {
+          success: false,
+          status: res.status,
+          locked: Boolean(data && data.locked),
+          error: data.error || `HTTP ${res.status}`,
+          boundDeviceName: data.boundDeviceName,
+          data: data.data
+        };
       }
-      return await res.json();
+      return data;
     } catch (err) {
       console.warn('[ApiService] Gagal mencari kode QR di backend:', err.message);
       return null;
@@ -184,7 +234,9 @@ export class ApiService {
    */
   async getQrInventory() {
     try {
-      const res = await fetch(`${this.baseUrl}/qr/all`);
+      const res = await fetch(`${this.baseUrl}/qr/all`, {
+        headers: { 'x-device-id': this.getDeviceId() }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -194,23 +246,69 @@ export class ApiService {
   }
 
   /**
-   * Daftarkan akun baru ke database PostgreSQL via API
+   * Daftarkan akun baru ke database Supabase dan kunci ke perangkat saat ini
    * @param {Object} userData
    */
   async registerUser(userData) {
     try {
+      const payload = {
+        ...userData,
+        deviceId: this.getDeviceId(),
+        deviceName: this.getDeviceName()
+      };
+
       const res = await fetch(`${this.baseUrl}/qr/register-user`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId(),
+          'x-device-name': this.getDeviceName()
+        },
+        body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+
+      const result = await res.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          status: res.status,
+          locked: Boolean(result && result.locked),
+          error: result.error || `Gagal registrasi (${res.status})`,
+          boundDeviceName: result.boundDeviceName,
+          data: result.data
+        };
+      }
+      return result;
     } catch (err) {
       console.warn('[ApiService] Gagal mendaftarkan user ke backend:', err.message);
-      return null;
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Lepaskan kunci perangkat (unbind) agar akun bisa digunakan di perangkat lain
+   * @param {string} userId
+   */
+  async unbindDevice(userId) {
+    try {
+      const res = await fetch(`${this.baseUrl}/qr/unbind-device`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId()
+        },
+        body: JSON.stringify({
+          userId,
+          deviceId: this.getDeviceId()
+        })
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[ApiService] Gagal unbind device:', err.message);
+      return { success: false, error: err.message };
     }
   }
 }
 
 export const apiService = new ApiService();
+

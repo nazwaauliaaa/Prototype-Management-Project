@@ -2,14 +2,17 @@
  * User Model - Enkapsulasi identitas dan peran pengguna
  */
 export class User {
-  constructor({ id, name, role, title, avatar, email, workspaceAccess }) {
+  constructor({ id, name, role, title, jobdesk, avatar, email, workspaceAccess, boundDeviceId, boundDeviceName }) {
     this.id = id;
     this.name = name;
     this.role = role; // 'admin' | 'manajement-project' | 'qa' | 'user' (alias: 'eksekutif' | 'kreatif' | 'teknis')
-    this.title = title;
+    this.jobdesk = jobdesk || title;
+    this.title = title || this.jobdesk;
     this.avatar = avatar;
     this.email = email;
     this.workspaceAccess = workspaceAccess || [];
+    this.boundDeviceId = boundDeviceId;
+    this.boundDeviceName = boundDeviceName;
   }
 
   isAdmin() {
@@ -38,5 +41,19 @@ export class User {
 
   isTechnical() {
     return this.isQA();
+  }
+
+  canAccessQrHub() {
+    const r = (this.role || '').toLowerCase().trim();
+    return (
+      this.isAdmin() ||
+      this.isProjectManager() ||
+      r === 'admin' ||
+      r === 'eksekutif' ||
+      r === 'manajement-project' ||
+      r === 'manajemen-project' ||
+      r === 'manajemen project' ||
+      r === 'kreatif'
+    );
   }
 }

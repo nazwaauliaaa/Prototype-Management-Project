@@ -1081,6 +1081,35 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
+            <!-- Banner Indikator Filter Berdasarkan -->
+            ${this.activeFilter !== 'all' ? `
+              <div class="mb-4 px-4 py-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 backdrop-blur-md text-indigo-100 flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-200">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-200">
+                    <span class="material-symbols-outlined text-[20px]">filter_alt</span>
+                  </div>
+                  <div class="min-w-0 text-[12.5px]">
+                    <span class="font-bold text-white">Sedang Masuk ke Bagian Filter Berdasarkan:</span>
+                    <span class="text-amber-300 font-bold ml-1.5">${
+                      this.activeFilter === 'critical' ? 'Hanya Prioritas Kritis' :
+                      this.activeFilter === 'high' ? 'Prioritas Tinggi & Kritis' :
+                      this.activeFilter === 'in-progress' ? 'Sedang Berjalan' :
+                      this.activeFilter === 'done' ? 'Sudah Selesai' : this.activeFilter
+                    }</span>
+                    <span class="text-indigo-200/80 ml-1.5 hidden md:inline">— Menampilkan kartu tugas sesuai kriteria filter.</span>
+                  </div>
+                </div>
+                <button
+                  id="btn-banner-reset-filter"
+                  class="px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-[11px] font-bold tracking-wider shrink-0 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                  title="Kembalikan ke semua kartu"
+                >
+                  <span class="material-symbols-outlined text-[13px]">close</span>
+                  <span>Reset Filter</span>
+                </button>
+              </div>
+            ` : ''}
+
             <div class="flex flex-row items-stretch gap-3.5 sm:gap-4 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden pb-2.5 custom-scrollbar snap-x snap-mandatory sm:snap-none" id="kanban-board">
               
               ${this.columns.map(col => {
@@ -2699,9 +2728,6 @@ export class KanbanBoardView extends BaseView {
         const fVal = btn.getAttribute('data-filter');
         this.activeFilter = fVal;
         this._closeAllPopups();
-        if (this.notificationService) {
-          this.notificationService.info(`Filter diterapkan: ${fVal === 'all' ? 'Semua Kartu' : fVal}`);
-        }
         this.mount(this.element);
       });
     });
@@ -2709,6 +2735,15 @@ export class KanbanBoardView extends BaseView {
     const resetFilterChip = this.element.querySelector('#btn-reset-filter-chip');
     if (resetFilterChip) {
       resetFilterChip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.activeFilter = 'all';
+        this.mount(this.element);
+      });
+    }
+
+    const resetFilterBanner = this.element.querySelector('#btn-banner-reset-filter');
+    if (resetFilterBanner) {
+      resetFilterBanner.addEventListener('click', (e) => {
         e.stopPropagation();
         this.activeFilter = 'all';
         this.mount(this.element);

@@ -63,9 +63,37 @@ CREATE TABLE IF NOT EXISTS users (
     avatar TEXT DEFAULT '',
     email VARCHAR(150) UNIQUE,
     workspace_access JSONB DEFAULT '["ruangkreasi"]'::jsonb,
+    bound_device_id VARCHAR(255) DEFAULT NULL,
+    bound_device_name VARCHAR(255) DEFAULT NULL,
+    bound_at TIMESTAMPTZ DEFAULT NULL,
+    is_locked_to_device BOOLEAN DEFAULT true,
+    qr_data TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- Seed Pengguna Awal Termasuk Akun QR Muhamad Fazli Esfandiar
+INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, qr_data)
+VALUES 
+  ('usr-001', 'Dr. Hendra Wijaya', 'admin', 'Admin & Managing Director', 'Direktur Eksekutif & Manajemen Operasional', 'hendra.wijaya@sampulkreativ.id', '', '["ruangkreasi", "layarbaca"]'::jsonb, NULL),
+  ('usr-002', 'Sari Rahmawati', 'manajement-project', 'Project Manager', 'Lead Operasional & Sprint Coordinator', 'sari.rahmawati@sampulkreativ.id', '', '["ruangkreasi", "layarbaca"]'::jsonb, NULL),
+  ('usr-003', 'Budi Pratama', 'qa', 'QA Lead', 'Quality Assurance & Kelaikan Deliverable', 'budi.pratama@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, NULL),
+  ('usr-004', 'Dimas Anggara', 'user', 'Creative Specialist', 'Desain Grafis & Konten Visual 3D', 'dimas.anggara@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dimas Anggara",\n  "role": "User",\n  "jobdesk": "Desain Grafis & Konten Visual 3D"\n}'),
+  ('usr-005', 'Rizky Firmansyah', 'user', 'UI/UX Designer', 'Perancangan Antarmuka & Prototipe Web', 'rizky.firmansyah@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Rizky Firmansyah",\n  "role": "User",\n  "jobdesk": "Perancangan Antarmuka & Prototipe Web"\n}'),
+  ('usr-006', 'Dewi Sartika', 'user', 'Content Strategist', 'Penulisan Naskah & Strategi Publikasi', 'dewi.sartika@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dewi Sartika",\n  "role": "User",\n  "jobdesk": "Penulisan Naskah & Strategi Publikasi"\n}'),
+  ('usr-352837', 'Muhamad Fazli Esfandiar', 'user', 'Web development', 'Web development', 'muhamad.fazli.esfandiar@sampulkreativ.id', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Muhamad%20Fazli%20Esfandiar', '["ruangkreasi", "panen-kunci", "layarbaca"]'::jsonb, '{\n  "nama": "Muhamad Fazli Esfandiar",\n  "role": "User",\n  "jobdesk": "Web development"\n}'),
+  ('usr-admin-fazli', 'Muhamad Fazli Esfandiar', 'admin', 'System Administrator & Lead Developer', 'Administrator', 'muhamad.fazli.admin@sampulkreativ.id', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Muhamad%20Fazli%20Esfandiar%20Admin', '["ruangkreasi", "layarbaca", "aikreativ", "panen-kunci", "sharinginaja"]'::jsonb, '{\n  "nama": "Muhamad Fazli Esfandiar",\n  "role": "Admin",\n  "jobdesk": "Administrator"\n}')
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  role = EXCLUDED.role,
+  title = EXCLUDED.title,
+  jobdesk = EXCLUDED.jobdesk,
+  email = EXCLUDED.email,
+  avatar = EXCLUDED.avatar,
+  workspace_access = EXCLUDED.workspace_access,
+  qr_data = EXCLUDED.qr_data,
+  updated_at = NOW();
+

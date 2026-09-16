@@ -53,6 +53,39 @@ export class QRCodeDashboardView extends BaseView {
    * Main render template
    */
   render() {
+    const canAccess = this.authService && typeof this.authService.canAccessQrHub === 'function'
+      ? this.authService.canAccessQrHub()
+      : false;
+
+    if (!canAccess) {
+      const currentUser = this.authService ? this.authService.getCurrentUser() : null;
+      const userRole = currentUser ? (currentUser.title || currentUser.role || 'User') : 'Tamu';
+
+      return `
+        <div class="w-full max-w-lg mx-auto my-16 p-6 sm:p-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm text-center flex flex-col items-center gap-4 animate-in fade-in duration-300">
+          <div class="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-900/50 text-rose-600 flex items-center justify-center shadow-xs">
+            <span class="material-symbols-outlined text-3xl">lock</span>
+          </div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Akses Fitur Terbatas</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+              Halaman <b>QR Hub & Scanner</b> hanya dapat diakses oleh pengguna dengan role <b>Admin</b> dan <b>Manajemen Project</b>.
+            </p>
+          </div>
+          <div class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-2">
+            <span class="material-symbols-outlined text-[16px] text-slate-400">person</span>
+            <span>Peran Anda saat ini: <b class="capitalize">${userRole}</b></span>
+          </div>
+          <button
+            id="btn-access-denied-back"
+            class="mt-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-all active:scale-95 cursor-pointer shadow-xs"
+          >
+            Kembali ke Beranda
+          </button>
+        </div>
+      `;
+    }
+
     return `
       <div class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 animate-in fade-in duration-300">
         
@@ -331,6 +364,22 @@ export class QRCodeDashboardView extends BaseView {
    * Bind event listeners to DOM
    */
   bindEvents() {
+    const canAccess = this.authService && typeof this.authService.canAccessQrHub === 'function'
+      ? this.authService.canAccessQrHub()
+      : false;
+
+    if (!canAccess) {
+      const backBtn = this.element.querySelector('#btn-access-denied-back');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          const u = this.authService ? this.authService.getCurrentUser() : null;
+          const fallback = u && u.role === 'user' ? 'kanban' : 'dashboard';
+          this.eventBus.emit('navigate', { view: fallback });
+        });
+      }
+      return;
+    }
+
     // 1. Tab switches
     const tabBtns = this.element.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
@@ -628,13 +677,64 @@ export class QRCodeDashboardView extends BaseView {
     // 1. Coba periksa apakah kode QR berupa JSON berisi informasi User
     let jsonUser = null;
     try {
+      let parsed = null;
       if (cleanCode.startsWith('{') && cleanCode.endsWith('}')) {
-        const parsed = JSON.parse(cleanCode);
-        if (parsed.role && parsed.role.toLowerCase() === 'user' || parsed.type === 'user') {
-          jsonUser = parsed;
+        try {
+          parsed = JSON.parse(cleanCode);
+        } catch {}
+      } else if (cleanCode.includes(':')) {
+        // Mendukung format plain text seperti:
+        // Nama: Muhamad Fazli Esfandiar
+        // Role: Admin
+        // Jobdesk: Web development
+        parsed = {};
+        const lines = cleanCode.split(/[\r\n,]+/);
+        for (const line of lines) {
+          const colonIdx = line.indexOf(':');
+          if (colonIdx > 0) {
+            const k = line.slice(0, colonIdx).trim();
+            const v = line.slice(colonIdx + 1).trim();
+            if (k && v) parsed[k] = v;
+          }
         }
       }
-    } catch {}
+
+      if (parsed && typeof parsed === 'object') {
+        const getKey = (keys) => {
+          for (const k of keys) {
+            for (const key of Object.keys(parsed)) {
+              if (key.toLowerCase() === k.toLowerCase() && parsed[key]) {
+                return String(parsed[key]).trim();
+              }
+            }
+          }
+          return null;
+        };
+
+        const name = getKey(['name', 'nama']);
+        const role = getKey(['role', 'peran', 'type']) || 'user';
+        const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
+        const id = getKey(['id', 'userid', 'user_id']);
+        const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
+        const avatar = getKey(['avatar']);
+
+        if (name) {
+          const isFazli = name.toLowerCase().includes('fazli');
+          const finalId = id || (isFazli ? (role.toLowerCase() === 'admin' ? 'usr-admin-fazli' : 'usr-352837') : `usr-${Date.now().toString().slice(-6)}`);
+          jsonUser = {
+            id: finalId,
+            name,
+            role: role.toLowerCase(),
+            jobdesk,
+            title: jobdesk,
+            email,
+            avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name + (role.toLowerCase() === 'admin' ? ' Admin' : ''))}`
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Gagal parse QR text/JSON:', e);
+    }
 
     // Coba ekstrak jika URL (misal: .../auth?scan=...)
     let parsedId = cleanCode;
@@ -651,7 +751,7 @@ export class QRCodeDashboardView extends BaseView {
     let entityType = null;
     let wasAutoCreated = false;
 
-    // JIKA QR MEMUAT DATA USER DENGAN ROLE USER (LANGSUNG DARI JSON)
+    // JIKA QR MEMUAT DATA USER DENGAN ROLE USER ATAU ADMIN (LANGSUNG DARI JSON)
     if (jsonUser && jsonUser.name) {
       matchedData = jsonUser;
       entityType = 'user';
@@ -701,37 +801,44 @@ export class QRCodeDashboardView extends BaseView {
     }
 
     // =========================================================================
-    // ATURAN UTAMA: JIKA DETEKSI QR DENGAN ROLE USER -> OTOMATIS BUAT AKUN BARU
+    // ATURAN UTAMA: DETEKSI QR PENGGUNA (USER / ADMIN) -> OTOMATIS DAFTAR/SINKRON
     // =========================================================================
     if (entityType === 'user' && matchedData) {
       const userRole = (matchedData.role || 'user').toLowerCase();
-      
-      if (userRole === 'user') {
-        const targetName = matchedData.name || 'Anggota Tim';
-        const targetJobdesk = matchedData.jobdesk || matchedData.title || 'Creative Specialist';
-        const targetEmail = matchedData.email || `${targetName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
-        const targetAvatar = matchedData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetName)}`;
-        const targetId = matchedData.id && matchedData.id.startsWith('usr-') ? matchedData.id : `usr-${Date.now().toString().slice(-6)}`;
+      const targetName = matchedData.name || 'Pengguna';
+      const targetJobdesk = matchedData.jobdesk || matchedData.title || (userRole === 'admin' ? 'Administrator' : 'Creative Specialist');
+      const targetEmail = matchedData.email || `${targetName.toLowerCase().replace(/[^a-z0-9]/g, '.')}${userRole === 'admin' ? '.admin' : ''}@sampulkreativ.id`;
+      const targetAvatar = matchedData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetName + (userRole === 'admin' ? ' Admin' : ''))}`;
+      const isFazli = targetName.toLowerCase().includes('fazli');
+      const targetId = matchedData.id && (matchedData.id.startsWith('usr-') || matchedData.id.startsWith('adm-'))
+        ? matchedData.id
+        : (isFazli ? (userRole === 'admin' ? 'usr-admin-fazli' : 'usr-352837') : `usr-${Date.now().toString().slice(-6)}`);
 
-        // Otomatis daftarkan akun baru di AuthService
-        const newAccount = this.authService.registerNewUser({
-          id: targetId,
-          name: targetName,
-          role: 'user',
-          title: targetJobdesk,
-          jobdesk: targetJobdesk,
-          email: targetEmail,
-          avatar: targetAvatar
-        });
+      // Otomatis daftarkan akun di AuthService
+      const newAccount = this.authService.registerNewUser({
+        id: targetId,
+        name: targetName,
+        role: userRole,
+        title: targetJobdesk,
+        jobdesk: targetJobdesk,
+        email: targetEmail,
+        avatar: targetAvatar
+      });
 
-        // Sinkronisasi pembuatan akun ke database PostgreSQL via ApiService
-        apiService.registerUser(newAccount).catch(() => {});
-
-        matchedData = newAccount;
-        wasAutoCreated = true;
-
-        this.notificationService.success(`🎉 Akun "${targetName}" (${targetJobdesk}) berhasil dibuat otomatis dari data QR!`);
+      // Sinkronisasi pembuatan/pembaruan akun ke database Supabase via ApiService
+      try {
+        const syncResult = await apiService.registerUser(newAccount);
+        if (syncResult && syncResult.locked) {
+          this.notificationService.error(`⚠️ ${syncResult.error}`);
+        } else if (syncResult && syncResult.data) {
+          matchedData = { ...newAccount, ...syncResult.data };
+        }
+      } catch (e) {
+        console.warn('Gagal sinkron user ke Supabase:', e);
       }
+
+      wasAutoCreated = true;
+      this.notificationService.success(`🎉 Akun "${targetName}" [${userRole.toUpperCase()}] (${targetJobdesk}) berhasil terhubung ke database!`);
     }
 
     // Simpan ke riwayat
@@ -783,22 +890,29 @@ export class QRCodeDashboardView extends BaseView {
         </div>
       `;
     } else if (type === 'user') {
-      // PENGGUNA (ROLE: USER) - OTOMATIS MEMBUAT AKUN BARU
-      const qrPayload = JSON.stringify({ type: 'user', role: 'user', id: data.id, name: data.name, jobdesk: data.jobdesk || data.title, email: data.email });
-      const qrSvg = QRCodeGenerator.generate(qrPayload, { size: 90, darkColor: '#065f46' });
+      const userRole = (data.role || 'user').toLowerCase();
+      const isAdmin = userRole === 'admin';
+      const qrPayload = JSON.stringify({ nama: data.name, role: isAdmin ? 'Admin' : 'User', jobdesk: data.jobdesk || data.title });
+      const qrDarkColor = isAdmin ? '#78350f' : '#065f46';
+      const qrSvg = QRCodeGenerator.generate(qrPayload, { size: 90, darkColor: qrDarkColor });
+
+      const borderClass = isAdmin ? 'border-amber-300 dark:border-amber-700/80' : 'border-emerald-200 dark:border-emerald-800/80';
+      const badgeBg = isAdmin ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300';
+      const roleBadge = isAdmin ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-300/80' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300/80';
+      const btnBg = isAdmin ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20';
 
       contentHtml = `
-        <div class="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xl p-6 animate-in zoom-in-95 duration-200 relative overflow-hidden">
+        <div class="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border ${borderClass} shadow-2xl p-6 animate-in zoom-in-95 duration-200 relative overflow-hidden">
           
           <!-- Background Glow -->
-          <div class="absolute -top-10 -right-10 w-44 h-44 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="absolute -top-10 -right-10 w-44 h-44 ${isAdmin ? 'bg-amber-500/10' : 'bg-emerald-500/10'} rounded-full blur-2xl pointer-events-none"></div>
 
           <!-- Top Header Tag -->
           <div class="flex items-center justify-between gap-2 mb-4">
             <div class="flex items-center gap-2">
-              <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center gap-1.5 shadow-2xs">
-                <span class="material-symbols-outlined text-[15px] text-emerald-600">verified_user</span>
-                <span>PROFIL PENGGUNA TERVERIFIKASI</span>
+              <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeBg} flex items-center gap-1.5 shadow-2xs">
+                <span class="material-symbols-outlined text-[15px] ${isAdmin ? 'text-amber-600' : 'text-emerald-600'}">${isAdmin ? 'admin_panel_settings' : 'verified_user'}</span>
+                <span>${isAdmin ? 'PROFIL ADMINISTRATOR TERVERIFIKASI' : 'PROFIL PENGGUNA TERVERIFIKASI'}</span>
               </span>
               ${isAutoCreated ? `
                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
@@ -814,18 +928,18 @@ export class QRCodeDashboardView extends BaseView {
           <!-- User Card -->
           <div class="flex items-start gap-4 mb-5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700">
             <img
-              src="${data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(data.name)}`}"
+              src="${data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(data.name + (isAdmin ? ' Admin' : ''))}`}"
               alt="${data.name}"
-              class="w-16 h-16 rounded-2xl object-cover bg-white ring-2 ring-emerald-500/30 shadow-sm shrink-0"
+              class="w-16 h-16 rounded-2xl object-cover bg-white ring-2 ${isAdmin ? 'ring-amber-500/40' : 'ring-emerald-500/30'} shadow-sm shrink-0"
             />
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">${data.name}</h3>
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300/80">
-                  Role: USER
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${roleBadge} border">
+                  Role: ${userRole.toUpperCase()}
                 </span>
               </div>
-              <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mt-0.5">${data.jobdesk || data.title || 'Creative Specialist'}</p>
+              <p class="text-xs font-semibold ${isAdmin ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'} mt-0.5">${data.jobdesk || data.title || (isAdmin ? 'Administrator' : 'Creative Specialist')}</p>
               <div class="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 truncate">
                 <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">mail</span>${data.email || 'user@sampulkreativ.id'}</span>
                 <span>•</span>
@@ -842,11 +956,11 @@ export class QRCodeDashboardView extends BaseView {
           <div class="flex flex-col sm:flex-row items-center gap-2.5">
             <button
               id="btn-login-new-user"
-              class="w-full sm:flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              class="w-full sm:flex-1 py-3 px-4 ${btnBg} active:scale-95 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
               data-user-id="${data.id}"
             >
               <span class="material-symbols-outlined text-[18px]">login</span>
-              <span>Masuk Sebagai ${data.name.split(' ')[0]} Sekarang</span>
+              <span>Masuk Sebagai ${data.name.split(' ')[0]} (${userRole.toUpperCase()})</span>
             </button>
 
             <button
