@@ -192,39 +192,20 @@ export class CreateBoardModal extends BaseModal {
             />
           </div>
 
-          <!-- Ruang Kerja Baru & Kategori -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                <span>Ruang Kerja Baru *</span>
-                <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Otomatis Baru
-                </span>
-              </label>
-              <input 
-                id="input-ws-new-workspace-name" 
-                type="text" 
-                required 
-                placeholder="Nama ruang kerja baru..." 
-                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
-              <select 
-                id="select-ws-new-workspace-tag" 
-                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
-              >
-                <option value="Dev / Creative Hub" selected>Dev / Creative Hub</option>
-                <option value="Produk / Inovasi">Produk / Inovasi</option>
-                <option value="Studio / Digital & AI">Studio / Digital & AI</option>
-                <option value="SaaS / Security & Core">SaaS / Security & Core</option>
-                <option value="Cloud / Infrastruktur">Cloud / Infrastruktur</option>
-                <option value="Marketing / Kampanye">Marketing / Kampanye</option>
-              </select>
-            </div>
+          <!-- Kategori / Divisi -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
+            <select 
+              id="select-ws-new-workspace-tag" 
+              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
+            >
+              <option value="Dev / Creative Hub" selected>Dev / Creative Hub</option>
+              <option value="Produk / Inovasi">Produk / Inovasi</option>
+              <option value="Studio / Digital & AI">Studio / Digital & AI</option>
+              <option value="SaaS / Security & Core">SaaS / Security & Core</option>
+              <option value="Cloud / Infrastruktur">Cloud / Infrastruktur</option>
+              <option value="Marketing / Kampanye">Marketing / Kampanye</option>
+            </select>
           </div>
 
           <!-- Prioritas & Deadline -->
