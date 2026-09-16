@@ -18,9 +18,9 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors({
-  origin: '*', // Bisa diatur ke origin spesifik jika diinginkan
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['*']
 }));
 app.use(express.json());
 
