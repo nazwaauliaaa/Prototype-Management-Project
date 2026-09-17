@@ -74,62 +74,6 @@ export class AuthView extends BaseView {
     }
   }
 
-  _renderApprovedUsersSection() {
-    const users = this.getApprovedUsers();
-    if (!users || users.length === 0) return '';
-
-    return `
-      <div class="relative z-10 w-full mt-3 pt-3 border-t border-purple-400/30 flex flex-col gap-2 animate-in fade-in duration-200">
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-            <span class="material-symbols-outlined text-[15px]">verified</span>
-            <span>Anggota Terverifikasi (Di-ACC)</span>
-          </div>
-          <span class="text-[9px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.2 rounded-full">
-            Bisa Masuk Kapan Saja
-          </span>
-        </div>
-
-        <p class="text-[10.5px] text-purple-200/80 px-1 text-left">
-          Akun di bawah sudah disetujui oleh Admin. Anda dapat langsung masuk ke papan tanpa perlu meminta link lagi:
-        </p>
-
-        <div class="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-0.5">
-          ${users.map(u => `
-            <div
-              class="btn-direct-approved-login flex items-center justify-between p-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 hover:border-emerald-400/70 transition-all cursor-pointer group shadow-xs active:scale-[0.99]"
-              data-user-email="${u.email}"
-              data-user-name="${u.name}"
-              data-user-ws="${u.workspace || ''}"
-              data-user-proj="${u.projectId || ''}"
-              title="Masuk langsung sebagai ${u.name} (${u.email})"
-            >
-              <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                <div class="w-8 h-8 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-xs border border-white/20" style="background-color: ${u.color || '#2563eb'}">
-                  ${u.initials || (u.name ? u.name.slice(0, 2).toUpperCase() : 'U')}
-                </div>
-                <div class="min-w-0 flex-1 text-left">
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-[12px] text-white group-hover:text-emerald-300 transition-colors truncate">${u.name}</span>
-                    <span class="text-[8.5px] font-bold px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">DI-ACC</span>
-                  </div>
-                  <div class="text-[10px] text-purple-200/70 truncate flex items-center gap-1 mt-0.5">
-                    <span class="material-symbols-outlined text-[11px] text-rose-400 shrink-0">mail</span>
-                    <span class="truncate font-mono">${u.email}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-1 shrink-0 text-emerald-400 group-hover:translate-x-0.5 transition-transform text-[11px] font-bold ml-2">
-                <span>Masuk</span>
-                <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
-
   _renderModalApprovedUsersBanner() {
     const users = this.getApprovedUsers();
     if (!users || users.length === 0) return '';
@@ -335,9 +279,6 @@ export class AuthView extends BaseView {
                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
               </button>
             </div>
-
-            <!-- Approved Members (Bisa Masuk Kapan Saja Tanpa Minta Link Lagi) -->
-            ${this._renderApprovedUsersSection()}
 
             <!-- Security Verification Footer -->
             <div class="mt-spacing-md pt-spacing-xs flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
