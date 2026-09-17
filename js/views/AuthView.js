@@ -278,6 +278,18 @@ export class AuthView extends BaseView {
                 <span>Langsung Masuk ke Halaman Beranda</span>
                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
               </button>
+
+              <!-- Portal Masuk Khusus User -->
+              <button
+                id="btn-portal-user-login"
+                type="button"
+                class="w-full py-2.5 px-4 rounded-xl bg-purple-950/70 hover:bg-purple-900/90 text-purple-100 hover:text-white font-bold text-[13px] shadow-md shadow-purple-950/40 hover:shadow-purple-900/50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-purple-400/40 hover:border-emerald-400/60 group"
+                title="Portal masuk khusus pengguna / anggota (melalui tautan undangan atau akun terverifikasi)"
+              >
+                <span class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:scale-110 transition-transform">group</span>
+                <span>Portal Masuk Khusus User</span>
+                <span class="material-symbols-outlined text-[16px] text-emerald-300 group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+              </button>
             </div>
 
             <!-- Security Verification Footer -->
@@ -1141,6 +1153,15 @@ export class AuthView extends BaseView {
         } else {
           window.location.hash = '#/dashboard';
         }
+      });
+    }
+
+    // Portal Masuk Khusus User button handler
+    const btnPortalUserLogin = this.element.querySelector('#btn-portal-user-login');
+    if (btnPortalUserLogin) {
+      btnPortalUserLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        openInviteModal();
       });
     }
 
