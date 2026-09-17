@@ -280,7 +280,7 @@ export class WorkspacesView extends BaseView {
           role="dialog"
           aria-modal="true"
         >
-          <div class="relative w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 ${this.isModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}">
+          <div class="relative w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[85vh] transform transition-all duration-300 ${this.isModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}">
             
             <!-- Modal Header -->
             <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
