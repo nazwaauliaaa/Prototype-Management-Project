@@ -1170,6 +1170,7 @@ export class KanbanBoardView extends BaseView {
     const currentWs = (this.currentWorkspace || (this.project?.workspace || 'workspace-utama')).toLowerCase();
     const allTasks = this.taskService ? this.taskService.getTasks().filter(t => {
       if (this.highlightTaskId && t.id === this.highlightTaskId) return true;
+      const taskWs = (t.workspace || '').toLowerCase();
       const isPanenMatch = (currentWs.includes('panen') || currentWs.includes('panan')) && (taskWs.includes('panen') || taskWs.includes('panan'));
       const isDirectMatch = taskWs === currentWs || isPanenMatch;
       const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && isDirectMatch)) : isDirectMatch;
