@@ -143,11 +143,11 @@ export class NewTaskModal extends BaseModal {
             </p>
           </div>
 
-          <!-- Prioritas & Status Awal -->
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Prioritas & Status Awal (Responsive Grid, In-Modal Dropdown) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Prioritas</label>
-              <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
+              <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer text-[12.5px]">
                 <option value="Medium">Sedang (Medium)</option>
                 <option value="High" selected>Tinggi (High)</option>
                 <option value="Critical">Kritis (Critical)</option>
@@ -155,15 +155,117 @@ export class NewTaskModal extends BaseModal {
               </select>
             </div>
 
-            <div>
+            <div class="relative z-20" id="wrapper-custom-status-select">
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Status Awal</label>
-              <select id="new-task-status" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
+              
+              <!-- Hidden native select for form data compatibility -->
+              <select id="new-task-status" class="hidden">
                 <option value="backlog" ${activeStatus === 'backlog' ? 'selected' : ''}>Daftar Pekerjaan</option>
                 <option value="in-progress" ${activeStatus === 'in-progress' ? 'selected' : ''}>Sedang Berjalan</option>
                 <option value="review-qa" ${activeStatus === 'review-qa' ? 'selected' : ''}>Review QA Lapangan</option>
                 <option value="ready-launch" ${activeStatus === 'ready-launch' ? 'selected' : ''}>Siap Launching</option>
                 <option value="done" ${activeStatus === 'done' ? 'selected' : ''}>Selesai</option>
               </select>
+
+              <!-- Custom Dropdown Button (In-Modal, 100% Safe from Screen/Modal Overflow) -->
+              <button
+                type="button"
+                id="btn-custom-status-trigger"
+                class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium flex items-center justify-between gap-2 transition-all cursor-pointer hover:border-primary/50 text-[12.5px]"
+                aria-expanded="false"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span id="custom-status-dot" class="w-2.5 h-2.5 rounded-full shrink-0 ${
+                    activeStatus === 'backlog' ? 'bg-slate-400' :
+                    activeStatus === 'in-progress' ? 'bg-blue-500' :
+                    activeStatus === 'review-qa' ? 'bg-amber-500' :
+                    activeStatus === 'ready-launch' ? 'bg-purple-500' : 'bg-emerald-500'
+                  }"></span>
+                  <span id="custom-status-text" class="truncate font-medium text-text-primary">${
+                    activeStatus === 'backlog' ? 'Daftar Pekerjaan' :
+                    activeStatus === 'in-progress' ? 'Sedang Berjalan' :
+                    activeStatus === 'review-qa' ? 'Review QA Lapangan' :
+                    activeStatus === 'ready-launch' ? 'Siap Launching' : 'Selesai'
+                  }</span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-status-chevron">expand_more</span>
+              </button>
+
+              <!-- In-Modal Dropdown Menu List: Absolute and bound strictly to column width -->
+              <div
+                id="custom-status-menu"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+              >
+                <button
+                  type="button"
+                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'backlog' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                  data-status-id="backlog"
+                  data-status-label="Daftar Pekerjaan"
+                  data-status-color="bg-slate-400"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-400"></span>
+                    <span class="truncate">Daftar Pekerjaan</span>
+                  </div>
+                  ${activeStatus === 'backlog' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'in-progress' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                  data-status-id="in-progress"
+                  data-status-label="Sedang Berjalan"
+                  data-status-color="bg-blue-500"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
+                    <span class="truncate">Sedang Berjalan</span>
+                  </div>
+                  ${activeStatus === 'in-progress' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'review-qa' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                  data-status-id="review-qa"
+                  data-status-label="Review QA Lapangan"
+                  data-status-color="bg-amber-500"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
+                    <span class="truncate">Review QA Lapangan</span>
+                  </div>
+                  ${activeStatus === 'review-qa' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'ready-launch' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                  data-status-id="ready-launch"
+                  data-status-label="Siap Launching"
+                  data-status-color="bg-purple-500"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-purple-500"></span>
+                    <span class="truncate">Siap Launching</span>
+                  </div>
+                  ${activeStatus === 'ready-launch' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'done' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                  data-status-id="done"
+                  data-status-label="Selesai"
+                  data-status-color="bg-emerald-500"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-emerald-500"></span>
+                    <span class="truncate">Selesai</span>
+                  </div>
+                  ${activeStatus === 'done' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -272,6 +374,84 @@ export class NewTaskModal extends BaseModal {
           newPicWrapper.classList.add('hidden');
         }
       });
+    }
+
+    // Custom Status Dropdown handling (strictly confined within modal, responsive in mobile & desktop)
+    const statusTrigger = modalRoot.querySelector('#btn-custom-status-trigger');
+    const statusMenu = modalRoot.querySelector('#custom-status-menu');
+    const statusChevron = modalRoot.querySelector('#custom-status-chevron');
+    const hiddenStatusSelect = modalRoot.querySelector('#new-task-status');
+    const customStatusDot = modalRoot.querySelector('#custom-status-dot');
+    const customStatusText = modalRoot.querySelector('#custom-status-text');
+
+    if (statusTrigger && statusMenu) {
+      const toggleMenu = (show) => {
+        const isCurrentlyOpen = !statusMenu.classList.contains('hidden');
+        const willOpen = show !== undefined ? show : !isCurrentlyOpen;
+        if (willOpen) {
+          statusMenu.classList.remove('hidden');
+          statusTrigger.setAttribute('aria-expanded', 'true');
+          if (statusChevron) statusChevron.classList.add('rotate-180');
+        } else {
+          statusMenu.classList.add('hidden');
+          statusTrigger.setAttribute('aria-expanded', 'false');
+          if (statusChevron) statusChevron.classList.remove('rotate-180');
+        }
+      };
+
+      statusTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      const optionButtons = modalRoot.querySelectorAll('.btn-status-option');
+      optionButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const statusId = btn.dataset.statusId;
+          const statusLabel = btn.dataset.statusLabel;
+          const statusColor = btn.dataset.statusColor;
+
+          if (hiddenStatusSelect) {
+            hiddenStatusSelect.value = statusId;
+          }
+
+          if (customStatusText) {
+            customStatusText.textContent = statusLabel;
+          }
+
+          if (customStatusDot) {
+            customStatusDot.className = `w-2.5 h-2.5 rounded-full shrink-0 ${statusColor}`;
+          }
+
+          optionButtons.forEach(otherBtn => {
+            const isMatch = otherBtn.dataset.statusId === statusId;
+            otherBtn.className = `btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${
+              isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'
+            }`;
+            const existingCheck = otherBtn.querySelector('.material-symbols-outlined');
+            if (isMatch && !existingCheck) {
+              const checkSpan = document.createElement('span');
+              checkSpan.className = 'material-symbols-outlined text-[16px] text-primary shrink-0';
+              checkSpan.textContent = 'check';
+              otherBtn.appendChild(checkSpan);
+            } else if (!isMatch && existingCheck) {
+              existingCheck.remove();
+            }
+          });
+
+          toggleMenu(false);
+        });
+      });
+
+      const handleOutsideClick = (e) => {
+        if (!statusTrigger.contains(e.target) && !statusMenu.contains(e.target)) {
+          toggleMenu(false);
+        }
+      };
+      document.addEventListener('click', handleOutsideClick);
     }
 
     // Attachment file handling
