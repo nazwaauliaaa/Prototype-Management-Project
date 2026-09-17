@@ -1464,74 +1464,8 @@ export class KanbanBoardView extends BaseView {
             ` : ''}
           </div>
 
-          <!-- Right: Trello Toolbar Icons from screenshot -->
-          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            
-            <!-- Member Avatar Stack / Badge -->
-            ${boardMembers.length > 0 ? `
-            <button
-              id="btn-board-avatar"
-              class="flex items-center -space-x-2 hover:space-x-1 p-0.5 rounded-full hover:bg-white/20 transition-all cursor-pointer shrink-0"
-              title="Anggota Papan (${boardMembers.length} Anggota) - Klik untuk melihat detail"
-              type="button"
-            >
-              ${boardMembers.slice(0, 3).map(m => `
-                ${m.avatar ? `
-                  <img src="${m.avatar}" alt="${m.name}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-white/80 shadow-sm transition-transform hover:scale-110 shrink-0" title="${m.name} (${m.role || 'Member'})" />
-                ` : `
-                  <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white font-bold text-[10.5px] sm:text-[11px] flex items-center justify-center border-2 border-white/80 shadow-sm transition-transform hover:scale-110 shrink-0" style="background-color: ${m.color || '#10b981'}" title="${m.name} (${m.role || 'Member'})">
-                    ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
-                  </div>
-                `}
-              `).join('')}
-              ${boardMembers.length > 3 ? `
-                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white/80 shadow-sm">
-                  +${boardMembers.length - 3}
-                </div>
-              ` : ''}
-            </button>
-            ` : ''}
-
-            <!-- Utility Icons Pill Container -->
-            <div class="flex items-center gap-0.5 bg-white/10 p-0.5 rounded-xl border border-white/10 shrink-0">
-
-              <!-- Star Favorite Icon -->
-              <button
-                id="btn-star-board"
-                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 ${this.isStarred ? 'text-amber-300' : 'text-white/90'} hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-                title="${this.isStarred ? 'Hapus dari favorit' : 'Bintangi Papan'}"
-                type="button"
-              >
-                <span class="material-symbols-outlined text-[19px]">${this.isStarred ? 'star' : 'star_border'}</span>
-              </button>
-
-              <!-- Workspace Visibility Icon (Group) - Admin only -->
-              ${perms.canChangeVisibility ? `
-              <button
-                id="btn-board-visibility"
-                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-                title="Visibilitas: ${this.boardVisibility}"
-                type="button"
-              >
-                <span class="material-symbols-outlined text-[19px]">group</span>
-              </button>
-              ` : ''}
-            </div>
-
-            <!-- Share Button [+ Share] - Admin & PM only -->
-            ${perms.canShare ? `
-            <button
-              id="btn-board-share"
-              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-[12px] font-semibold backdrop-blur-md transition-all shadow-xs active:scale-95 cursor-pointer shrink-0"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[16px]">person_add</span>
-              <span class="hidden sm:inline">Share</span>
-            </button>
-            ` : ''}
-
-            <!-- More Menu Icon [...] - Admin & PM only -->
-            ${perms.isAdmin || perms.isPM ? `
+          <!-- Right: Titik 3 (More Menu Button) -->
+          <div class="flex items-center gap-1.5 shrink-0">
             <button
               id="btn-board-more-menu"
               class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0 border border-white/10"
@@ -1540,10 +1474,6 @@ export class KanbanBoardView extends BaseView {
             >
               <span class="material-symbols-outlined text-[20px]">more_horiz</span>
             </button>
-            ` : ''}
-
-
-
           </div>
 
         </div>
@@ -2594,6 +2524,99 @@ export class KanbanBoardView extends BaseView {
             <button class="btn-close-drawer w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 cursor-pointer">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
+          </div>
+
+          <!-- 1. Anggota Papan & Share -->
+          <div class="flex flex-col gap-2 pb-3.5 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Anggota Papan</h4>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                ${boardMembers.length} Anggota
+              </span>
+            </div>
+
+            <button
+              id="btn-board-avatar"
+              class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between transition-all cursor-pointer text-left"
+              type="button"
+              title="Lihat semua anggota papan"
+            >
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="flex items-center -space-x-2 shrink-0">
+                  ${boardMembers.slice(0, 3).map(m => `
+                    ${m.avatar ? `
+                      <img src="${m.avatar}" alt="${m.name}" class="w-7 h-7 rounded-full object-cover border-2 border-white dark:border-slate-900 shadow-xs shrink-0" />
+                    ` : `
+                      <div class="w-7 h-7 rounded-full text-white font-bold text-[10px] flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs shrink-0" style="background-color: ${m.color || '#10b981'}">
+                        ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
+                      </div>
+                    `}
+                  `).join('')}
+                  ${boardMembers.length > 3 ? `
+                    <div class="w-7 h-7 rounded-full bg-slate-700 text-white font-bold text-[9px] flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs">
+                      +${boardMembers.length - 3}
+                    </div>
+                  ` : ''}
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[12.5px] font-bold text-slate-800 dark:text-white truncate">Daftar Anggota</div>
+                  <div class="text-[11px] text-slate-500 truncate">Lihat detail & kelola peran tim</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-[18px] text-slate-400">chevron_right</span>
+            </button>
+
+            ${perms.canShare ? `
+            <button
+              id="btn-board-share"
+              class="w-full py-2 px-3 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] active:scale-98 text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">person_add</span>
+              <span>Undang / Bagikan Papan</span>
+            </button>
+            ` : ''}
+          </div>
+
+          <!-- 2. Opsi Papan (Bintangi & Visibilitas) -->
+          <div class="flex flex-col gap-1 pb-3.5 border-b border-slate-200 dark:border-slate-800">
+            <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-1">Opsi Papan</h4>
+
+            <!-- Bintangi Papan -->
+            <button
+              id="btn-star-board"
+              class="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-left transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+              type="button"
+            >
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[20px] ${this.isStarred ? 'text-amber-400' : 'text-slate-400'}">${this.isStarred ? 'star' : 'star_border'}</span>
+                <div>
+                  <div class="text-[12.5px] font-semibold text-slate-800 dark:text-white">Bintangi Papan</div>
+                  <div class="text-[10.5px] text-slate-500">${this.isStarred ? 'Papan tersimpan di favorit' : 'Tambahkan ke daftar favorit'}</div>
+                </div>
+              </div>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${this.isStarred ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}">
+                ${this.isStarred ? 'Favorit ⭐' : 'Belum'}
+              </span>
+            </button>
+
+            <!-- Visibilitas Papan (Admin only) -->
+            ${perms.canChangeVisibility ? `
+            <button
+              id="btn-board-visibility"
+              class="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-left transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+              type="button"
+            >
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[20px] text-slate-400">group</span>
+                <div>
+                  <div class="text-[12.5px] font-semibold text-slate-800 dark:text-white">Visibilitas Papan</div>
+                  <div class="text-[10.5px] text-slate-500">Akses: ${this.boardVisibility}</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-[18px] text-slate-400">chevron_right</span>
+            </button>
+            ` : ''}
           </div>
 
           <!-- Background Themes Picker -->
