@@ -50,10 +50,44 @@ export class NewTaskModal extends BaseModal {
   render(data = {}) {
     this._modalData = data || {};
     this.uploadedAttachments = [];
-    const activeWs = data?.workspace || localStorage.getItem('active_workspace') || 'ruangkreasi';
-    const activeStatus = data?.status || 'in-progress';
+    const activeWs = data?.workspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+    const activeProjectId = data?.projectId || localStorage.getItem('active_project_id') || null;
+    const activeStatus = data?.status || 'backlog';
     const workspaces = this.getWorkspacesList();
     const members = this.getRegisteredMembers();
+
+    // Dapatkan kolom aktual papan untuk status awal tugas
+    let boardColumns = [
+      { id: 'backlog', title: 'Daftar Pekerjaan', color: 'bg-slate-400' },
+      { id: 'in-progress', title: 'Sedang Berjalan', color: 'bg-blue-500' },
+      { id: 'review-qa', title: 'Review QA Lapangan', color: 'bg-amber-500' },
+      { id: 'ready-launch', title: 'Siap Launching', color: 'bg-purple-500' },
+      { id: 'done', title: 'Selesai', color: 'bg-emerald-500' }
+    ];
+
+    try {
+      const savedCols = localStorage.getItem(`kanban_columns_${activeWs}`) || (activeProjectId ? localStorage.getItem(`kanban_columns_${activeProjectId}`) : null);
+      if (savedCols) {
+        const parsed = JSON.parse(savedCols);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          boardColumns = parsed.map(c => ({
+            id: c.id,
+            title: c.title,
+            color: c.dot || 'bg-blue-500'
+          }));
+        }
+      }
+    } catch (e) { }
+
+    if (activeStatus && !boardColumns.some(c => c.id === activeStatus)) {
+      boardColumns.unshift({
+        id: activeStatus,
+        title: activeStatus,
+        color: 'bg-blue-500'
+      });
+    }
+
+    const currentSelectedCol = boardColumns.find(c => c.id === activeStatus) || boardColumns[0];
 
     return `
       <div class="relative w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col modal-content-box animate-in fade-in zoom-in duration-200">
@@ -260,11 +294,9 @@ export class NewTaskModal extends BaseModal {
               
               <!-- Hidden native select for form data compatibility -->
               <select id="new-task-status" class="hidden">
-                <option value="backlog" ${activeStatus === 'backlog' ? 'selected' : ''}>Daftar Pekerjaan</option>
-                <option value="in-progress" ${activeStatus === 'in-progress' ? 'selected' : ''}>Sedang Berjalan</option>
-                <option value="review-qa" ${activeStatus === 'review-qa' ? 'selected' : ''}>Review QA Lapangan</option>
-                <option value="ready-launch" ${activeStatus === 'ready-launch' ? 'selected' : ''}>Siap Launching</option>
-                <option value="done" ${activeStatus === 'done' ? 'selected' : ''}>Selesai</option>
+                ${boardColumns.map(c => `
+                  <option value="${c.id}" ${c.id === currentSelectedCol.id ? 'selected' : ''}>${c.title}</option>
+                `).join('')}
               </select>
 
               <!-- Custom Dropdown Button (In-Modal, 100% Safe from Screen/Modal Overflow) -->
@@ -275,18 +307,8 @@ export class NewTaskModal extends BaseModal {
                 aria-expanded="false"
               >
                 <div class="flex items-center gap-2 min-w-0">
-                  <span id="custom-status-dot" class="w-2.5 h-2.5 rounded-full shrink-0 ${
-                    activeStatus === 'backlog' ? 'bg-slate-400' :
-                    activeStatus === 'in-progress' ? 'bg-blue-500' :
-                    activeStatus === 'review-qa' ? 'bg-amber-500' :
-                    activeStatus === 'ready-launch' ? 'bg-purple-500' : 'bg-emerald-500'
-                  }"></span>
-                  <span id="custom-status-text" class="truncate font-medium text-text-primary">${
-                    activeStatus === 'backlog' ? 'Daftar Pekerjaan' :
-                    activeStatus === 'in-progress' ? 'Sedang Berjalan' :
-                    activeStatus === 'review-qa' ? 'Review QA Lapangan' :
-                    activeStatus === 'ready-launch' ? 'Siap Launching' : 'Selesai'
-                  }</span>
+                  <span id="custom-status-dot" class="w-2.5 h-2.5 rounded-full shrink-0 ${currentSelectedCol.color}"></span>
+                  <span id="custom-status-text" class="truncate font-medium text-text-primary">${currentSelectedCol.title}</span>
                 </div>
                 <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-status-chevron">expand_more</span>
               </button>
@@ -294,77 +316,26 @@ export class NewTaskModal extends BaseModal {
               <!-- In-Modal Dropdown Menu List: Absolute and bound strictly to column width -->
               <div
                 id="custom-status-menu"
-                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150 max-h-60 overflow-y-auto"
               >
-                <button
-                  type="button"
-                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'backlog' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
-                  data-status-id="backlog"
-                  data-status-label="Daftar Pekerjaan"
-                  data-status-color="bg-slate-400"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-400"></span>
-                    <span class="truncate">Daftar Pekerjaan</span>
-                  </div>
-                  ${activeStatus === 'backlog' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
-
-                <button
-                  type="button"
-                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'in-progress' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
-                  data-status-id="in-progress"
-                  data-status-label="Sedang Berjalan"
-                  data-status-color="bg-blue-500"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
-                    <span class="truncate">Sedang Berjalan</span>
-                  </div>
-                  ${activeStatus === 'in-progress' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
-
-                <button
-                  type="button"
-                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'review-qa' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
-                  data-status-id="review-qa"
-                  data-status-label="Review QA Lapangan"
-                  data-status-color="bg-amber-500"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
-                    <span class="truncate">Review QA Lapangan</span>
-                  </div>
-                  ${activeStatus === 'review-qa' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
-
-                <button
-                  type="button"
-                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'ready-launch' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
-                  data-status-id="ready-launch"
-                  data-status-label="Siap Launching"
-                  data-status-color="bg-purple-500"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-purple-500"></span>
-                    <span class="truncate">Siap Launching</span>
-                  </div>
-                  ${activeStatus === 'ready-launch' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
-
-                <button
-                  type="button"
-                  class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${activeStatus === 'done' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
-                  data-status-id="done"
-                  data-status-label="Selesai"
-                  data-status-color="bg-emerald-500"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-emerald-500"></span>
-                    <span class="truncate">Selesai</span>
-                  </div>
-                  ${activeStatus === 'done' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
+                ${boardColumns.map(c => {
+                  const isMatch = c.id === currentSelectedCol.id;
+                  return `
+                    <button
+                      type="button"
+                      class="btn-status-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                      data-status-id="${c.id}"
+                      data-status-label="${c.title}"
+                      data-status-color="${c.color}"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0 ${c.color}"></span>
+                        <span class="truncate">${c.title}</span>
+                      </div>
+                      ${isMatch ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                    </button>
+                  `;
+                }).join('')}
               </div>
             </div>
           </div>
@@ -786,11 +757,12 @@ export class NewTaskModal extends BaseModal {
         e.preventDefault();
         const title = modalRoot.querySelector('#new-task-title').value;
         const workspace = this._modalData?.workspace || localStorage.getItem('active_workspace') || 'ruangkreasi';
+        const projectId = this._modalData?.projectId || localStorage.getItem('active_project_id') || null;
         const priority = modalRoot.querySelector('#new-task-priority').value;
         const hours = modalRoot.querySelector('#new-task-hours')?.value
           ? parseInt(modalRoot.querySelector('#new-task-hours').value, 10)
           : 8;
-        const status = modalRoot.querySelector('#new-task-status').value;
+        const status = modalRoot.querySelector('#new-task-status')?.value || this._modalData?.status || 'backlog';
         const description = modalRoot.querySelector('#new-task-desc').value;
         const startDate = modalRoot.querySelector('#new-task-start-date').value || '2026-09-11';
         const endDate = modalRoot.querySelector('#new-task-end-date').value || '2026-09-15';
@@ -856,7 +828,7 @@ export class NewTaskModal extends BaseModal {
         const createdTask = this.taskService.addTask({
           title,
           workspace,
-          projectId: this._modalData?.projectId || null,
+          projectId,
           priority,
           hours,
           status,
@@ -891,8 +863,9 @@ export class NewTaskModal extends BaseModal {
           console.warn('Calendar sync notice:', calErr);
         }
 
-        // Simpan workspace aktif
-        localStorage.setItem('active_workspace', workspace);
+        // Simpan workspace & project aktif
+        if (workspace) localStorage.setItem('active_workspace', workspace);
+        if (projectId) localStorage.setItem('active_project_id', projectId);
 
         // Tutup modal
         this.modalManager.close(this.modalId);
@@ -901,7 +874,7 @@ export class NewTaskModal extends BaseModal {
         this.eventBus.emit('navigate', {
           view: 'kanban',
           workspace,
-          projectId: this._modalData?.projectId || null,
+          projectId,
           newTaskId: createdTask.id
         });
       });

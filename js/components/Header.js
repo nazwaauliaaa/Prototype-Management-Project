@@ -233,7 +233,8 @@ export class Header {
     if (newTaskBtn) {
       newTaskBtn.addEventListener('click', () => {
         this.modalManager.open('new-task', {
-          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi'
+          workspace: localStorage.getItem('active_workspace') || 'ruangkreasi',
+          projectId: localStorage.getItem('active_project_id') || null
         });
       });
     }

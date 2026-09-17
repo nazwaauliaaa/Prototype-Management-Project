@@ -1142,6 +1142,7 @@ export class KanbanBoardView extends BaseView {
     // Filter tasks for this project / workspace
     const currentWs = (this.currentWorkspace || (this.project?.workspace || 'workspace-utama')).toLowerCase();
     const allTasks = this.taskService ? this.taskService.getTasks().filter(t => {
+      if (this.highlightTaskId && t.id === this.highlightTaskId) return true;
       const taskWs = (t.workspace || '').toLowerCase();
       const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && taskWs === currentWs)) : (taskWs === currentWs);
       if (!matchWs) return false;
@@ -1650,8 +1651,13 @@ export class KanbanBoardView extends BaseView {
 
             <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-16 sm:pb-20 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
-              ${this.columns.map(col => {
-      const colTasks = allTasks.filter(t => t.status === col.id);
+              ${this.columns.map((col, colIdx) => {
+      const validColIds = this.columns.map(c => c.id);
+      const colTasks = allTasks.filter(t => {
+        if (t.status === col.id) return true;
+        if (colIdx === 0 && (!t.status || !validColIds.includes(t.status))) return true;
+        return false;
+      });
 
       const colColor = col.listColor || '';
       const colHeaderBg = colColor ? `background:${colColor};border-radius:10px 10px 0 0;margin:-12px -12px 8px;padding:8px 12px;` : '';

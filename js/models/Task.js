@@ -17,6 +17,7 @@ export class Task {
     assets = [],
     attachments = [],
     qaProgress = { passed: 0, total: 4 },
+    isStarred = false,
     tags = [],
     location = '',
     resolution = '',
