@@ -43,13 +43,13 @@ export class Header {
 
           <!-- Logo & Branding -->
           <div class="flex items-center gap-spacing-md">
-            <div class="flex items-center gap-spacing-sm ${isUserRole ? 'cursor-default' : 'cursor-pointer'}" id="header-brand-logo" title="${isUserRole ? 'Creative Office - Papan Kanban' : 'Kembali ke Dashboard'}">
+            <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo" title="Creative Office - Beranda">
               <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
               <span class="font-headline-md text-[13px] font-bold text-on-surface leading-none">Creative Office</span>
             </div>
           </div>
 
-          <!-- Center: Search Bar & Create Button (Hidden for User role) -->
+          <!-- Center: Search Bar & Create Button (or User Kanban Badge) -->
           ${!isUserRole ? `
           <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center gap-2">
             <div class="relative flex-1 flex items-center">
@@ -77,10 +77,10 @@ export class Header {
             </button>
           </div>
           ` : `
-          <div class="flex-1 max-w-xl mx-2 sm:mx-4 hidden md:flex items-center">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60">
-              <span class="material-symbols-outlined text-[16px]">view_week</span>
-              <span>Papan Kanban • Akses Anggota Terundang</span>
+          <div class="flex-1 max-w-xl mx-1 sm:mx-4 flex items-center justify-center sm:justify-start min-w-0">
+            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 text-[11px] sm:text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60 truncate">
+              <span class="material-symbols-outlined text-[15px] sm:text-[16px] shrink-0">view_week</span>
+              <span class="truncate">Papan Kanban • User</span>
             </div>
           </div>
           `}
@@ -134,9 +134,9 @@ export class Header {
                   class="w-7 h-7 rounded-full object-cover ring-1 ring-black/10"
                   src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
                 />
-                <div class="hidden xl:flex flex-col">
+                <div class="hidden sm:flex flex-col">
                   <span class="text-[12.5px] text-on-surface font-semibold leading-tight">${user.name}</span>
-                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${isUserRole ? 'User (Undangan)' : (user.role || 'Member')}</span>
+                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${isUserRole ? 'User' : (user.role || 'Member')}</span>
                 </div>
                 <span class="material-symbols-outlined text-text-muted text-[16px] group-hover:text-text-primary transition-colors">expand_more</span>
               </button>
@@ -202,11 +202,6 @@ export class Header {
     const brand = this.element.querySelector('#header-brand-logo');
     if (brand) {
       brand.addEventListener('click', () => {
-        const u = this.authService.getCurrentUser();
-        if (u && u.role === 'user') {
-          // User role cannot access dashboard, remain on Kanban board
-          return;
-        }
         this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }

@@ -1357,15 +1357,15 @@ export class KanbanBoardView extends BaseView {
             
             <button
               id="btn-kanban-back-home"
-              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] sm:text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
               title="Kembali ke Beranda"
               type="button"
             >
               <span class="material-symbols-outlined text-[17px]">arrow_back</span>
-              <span class="hidden sm:inline">Beranda</span>
+              <span>Beranda</span>
             </button>
 
-            <span class="text-white/30 hidden sm:inline shrink-0">|</span>
+            <span class="text-white/30 shrink-0">|</span>
 
             <!-- Trello View Switcher Button (Admin/PM/QA only) -->
             ${perms.canSwitchView ? `
@@ -1405,9 +1405,9 @@ export class KanbanBoardView extends BaseView {
             ` : ''}
 
             <!-- Role Badge Indicator -->
-            <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
-              <span class="material-symbols-outlined text-[15px] ${perms.badgeIconColor}">${perms.badgeIcon}</span>
-              <span class="text-[11px] font-bold ${perms.badgeTextColor} tracking-wide">${perms.badgeLabel}</span>
+            <div class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
+              <span class="material-symbols-outlined text-[14px] sm:text-[15px] ${perms.badgeIconColor}">${perms.badgeIcon}</span>
+              <span class="text-[10.5px] sm:text-[11px] font-bold ${perms.badgeTextColor} tracking-wide">${perms.badgeLabel}</span>
             </div>
 
             <!-- Filter Badge Chip (if filter is active) -->
@@ -1507,14 +1507,14 @@ export class KanbanBoardView extends BaseView {
             </button>
             ` : ''}
 
-            <!-- Quick Add Task Button - Admin, PM, QA -->
+            <!-- Quick Add Task Button - Admin, PM, QA, User -->
             ${perms.canAddCard ? `
             <button
               id="btn-add-kanban-task"
-              class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer shrink-0 ml-0.5"
+              class="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[11px] sm:text-[12px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer shrink-0 ml-0.5"
               type="button"
             >
-              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span class="material-symbols-outlined text-[15px] sm:text-[16px]">add</span>
               <span>Kartu Baru</span>
             </button>
             ` : ''}
