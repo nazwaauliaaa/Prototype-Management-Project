@@ -894,6 +894,7 @@ export class AuthView extends BaseView {
 
           const userInstance = this.authService.registerNewUser({
             ...userFromDb,
+            workspaceAccess: userFromDb.workspace_access || userFromDb.workspaceAccess,
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName(),
             loginMethod: 'qr',
@@ -902,7 +903,40 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             this.authService.loginAsUser(userInstance);
-          }, 500);
+
+            // Arahkan hash URL ke halaman yang tepat
+            const role = (userInstance.role || '').toLowerCase();
+            const rawWs = userInstance.workspaceAccess;
+            let allowedWs = 'panen-kunci';
+            if (Array.isArray(rawWs) && rawWs.length > 0) {
+              allowedWs = rawWs[0];
+            } else if (typeof rawWs === 'string') {
+              try {
+                const parsed = JSON.parse(rawWs);
+                if (Array.isArray(parsed) && parsed.length > 0) allowedWs = parsed[0];
+              } catch (e) {
+                if (rawWs) allowedWs = rawWs;
+              }
+            } else {
+              allowedWs = localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+            }
+
+            const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+            const targetHash = role === 'user' ? `#/kanban/${allowedProj}` : `#/dashboard`;
+
+            if (window.location.hash === targetHash) {
+              const eb = this.container ? this.container.resolve('EventBus') : null;
+              if (eb) {
+                eb.emit('navigate', {
+                  view: role === 'user' ? 'kanban' : 'dashboard',
+                  projectId: allowedProj,
+                  workspace: allowedWs
+                });
+              }
+            } else {
+              window.location.hash = targetHash;
+            }
+          }, 400);
           return;
         }
 
@@ -1148,6 +1182,7 @@ export class AuthView extends BaseView {
       }
       setTimeout(() => {
         this.authService.loginWithRole(role);
+        window.location.hash = '#/dashboard';
       }, 700);
     };
 
@@ -1170,6 +1205,12 @@ export class AuthView extends BaseView {
           }
           setTimeout(() => {
             stopCamera();
+            const role = (user.role || '').toLowerCase();
+            if (role === 'user') {
+              window.location.hash = '#/kanban/panen-kunci';
+            } else {
+              window.location.hash = '#/dashboard';
+            }
           }, 600);
         });
       });

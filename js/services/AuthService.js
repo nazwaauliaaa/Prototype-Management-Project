@@ -134,6 +134,14 @@ export class AuthService {
     const finalBoundDevId = boundDeviceId || bound_device_id || null;
     const finalBoundDevName = boundDeviceName || bound_device_name || null;
 
+    let finalWsAccess = workspaceAccess || workspace_access;
+    if (typeof finalWsAccess === 'string') {
+      try { finalWsAccess = JSON.parse(finalWsAccess); } catch (e) { finalWsAccess = [finalWsAccess]; }
+    }
+    if (!Array.isArray(finalWsAccess) || finalWsAccess.length === 0) {
+      finalWsAccess = ['ruangkreasi', 'panen-kunci'];
+    }
+
     // Cek apakah akun dengan nama atau email ini sudah terdaftar
     let existingIndex = this.customUsers.findIndex(u => u.id === finalId || u.email === finalEmail);
     
@@ -145,7 +153,7 @@ export class AuthService {
       jobdesk: finalJobdesk,
       avatar: finalAvatar,
       email: finalEmail,
-      workspaceAccess: workspaceAccess || ['ruangkreasi', 'layarbaca'],
+      workspaceAccess: finalWsAccess,
       boundDeviceId: finalBoundDevId,
       boundDeviceName: finalBoundDevName
     });

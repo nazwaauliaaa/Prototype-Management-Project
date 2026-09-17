@@ -418,7 +418,14 @@ export class RegisterView extends BaseView {
 
             setTimeout(() => {
               this.authService.loginAsUser(userInstance);
-            }, 600);
+              const userRole = (userInstance.role || '').toLowerCase();
+              if (userRole === 'user') {
+                const targetWs = (userInstance.workspaceAccess && userInstance.workspaceAccess[0]) || 'panen-kunci';
+                window.location.hash = `#/kanban/${targetWs}`;
+              } else {
+                window.location.hash = '#/dashboard';
+              }
+            }, 500);
             return;
           }
 
@@ -460,7 +467,14 @@ export class RegisterView extends BaseView {
 
             setTimeout(() => {
               this.authService.loginAsUser(userInstance);
-            }, 600);
+              const userRole = (userInstance.role || '').toLowerCase();
+              if (userRole === 'user') {
+                const targetWs = (userInstance.workspaceAccess && userInstance.workspaceAccess[0]) || 'panen-kunci';
+                window.location.hash = `#/kanban/${targetWs}`;
+              } else {
+                window.location.hash = '#/dashboard';
+              }
+            }, 500);
             return;
           } catch (innerErr) {
             if (feedback) {
