@@ -1498,17 +1498,7 @@ export class KanbanBoardView extends BaseView {
             </button>
             ` : ''}
 
-            <!-- Quick Add Task Button - Admin, PM, QA, User -->
-            ${perms.canAddCard ? `
-            <button
-              id="btn-add-kanban-task"
-              class="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[11px] sm:text-[12px] font-bold transition-all shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer shrink-0 ml-0.5"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[15px] sm:text-[16px]">add</span>
-              <span>Kartu Baru</span>
-            </button>
-            ` : ''}
+
 
           </div>
 
@@ -3571,16 +3561,7 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // 2. Add Kanban Task from top bar
-    const addTaskBtn = this.element.querySelector('#btn-add-kanban-task');
-    if (addTaskBtn) {
-      addTaskBtn.addEventListener('click', () => {
-        this.modalManager.open('new-task', {
-          workspace: this.currentWorkspace,
-          projectId: this.projectId
-        });
-      });
-    }
+
 
     // 3. Quick Add Card in Column
     const quickAddBtns = this.element.querySelectorAll('.btn-quick-add-col');
