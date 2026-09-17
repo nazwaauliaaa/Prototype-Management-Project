@@ -146,13 +146,20 @@ export class Header {
                 id="user-profile-menu"
                 class="hidden absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-2 z-50 flex flex-col gap-1"
               >
-                <div class="px-2 py-1.5 border-b border-surface-border mb-1">
-                  <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Profil Anda</span>
-                  <p class="text-[13px] font-bold text-primary mt-0.5">${user.name}</p>
-                  <p class="text-[11px] text-text-secondary">${user.email || 'user@sampulkreativ.id'}</p>
-                  <span class="inline-block mt-1 px-2 py-0.5 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-primary/10 text-primary'} text-[10px] font-bold capitalize">
-                    ${isUserRole ? 'User • Anggota Terundang' : user.role}
-                  </span>
+                <div class="px-2 py-1.5 border-b border-surface-border mb-1 flex items-center gap-2.5">
+                  <img
+                    alt="${user.name}"
+                    class="w-10 h-10 rounded-full object-cover ring-1 ring-black/10 shrink-0"
+                    src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Profil Anda</span>
+                    <p class="text-[13px] font-bold text-primary mt-0.5 truncate">${user.name}</p>
+                    <p class="text-[11px] text-text-secondary truncate">${user.email || 'user@sampulkreativ.id'}</p>
+                    <span class="inline-block mt-0.5 px-2 py-0.2 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-primary/10 text-primary'} text-[9.5px] font-bold capitalize">
+                      ${isUserRole ? 'User • Anggota Terundang' : user.role}
+                    </span>
+                  </div>
                 </div>
 
                 ${isUserRole ? `

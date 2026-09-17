@@ -103,6 +103,11 @@ export class TaskDetailModal extends BaseModal {
     const isQA = authUser ? authUser.isQA() : false;
     const isUser = authUser ? authUser.isUser() : false;
 
+    const registeredMembers = this.getRegisteredMembers();
+    const picName = task.pic?.name || (task.assignee ? task.assignee.replace(/\s*\(.*?\)\s*/, '').trim() : '');
+    const matchedMember = registeredMembers.find(m => (task.pic?.email && m.email && m.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && m.name && m.name.toLowerCase() === picName.toLowerCase()));
+    const picAvatar = task.pic?.avatar || matchedMember?.avatar || (authUser && picName && authUser.name && picName.toLowerCase() === authUser.name.toLowerCase() ? authUser.avatar : null);
+
     // Format status label and color badge
     const statusMap = {
       'backlog': { label: 'Daftar Pekerjaan', badgeClass: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-300/70 dark:border-slate-700', dotClass: 'bg-slate-500' },
@@ -246,7 +251,16 @@ export class TaskDetailModal extends BaseModal {
                 <span class="material-symbols-outlined text-[15px] text-status-success">verified_user</span>
                 <span>Assignee & Penanggung Jawab</span>
               </div>
-              <span class="font-body-medium text-[13px] text-text-primary font-semibold">${task.assignee || 'Dimas Anggara (User)'}</span>
+              <div class="flex items-center gap-2">
+                ${picAvatar ? `
+                  <img src="${picAvatar}" alt="${picName}" class="w-6 h-6 rounded-full object-cover ring-1 ring-black/10 shrink-0" />
+                ` : `
+                  <div class="w-6 h-6 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    ${task.pic?.initials || (picName ? picName.slice(0, 2).toUpperCase() : 'PIC')}
+                  </div>
+                `}
+                <span class="font-body-medium text-[13px] text-text-primary font-semibold truncate">${task.assignee || task.pic?.name || 'Dimas Anggara (User)'}</span>
+              </div>
               <span class="font-caption-meta text-[11px] text-text-secondary">Status Task: <strong class="capitalize text-primary">${task.status}</strong></span>
             </div>
           </div>

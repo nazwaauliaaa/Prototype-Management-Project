@@ -273,7 +273,8 @@ export class ProfileView extends BaseView {
           reader.onload = (loadEvt) => {
             this.pendingAvatarUrl = loadEvt.target.result;
             if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
-            this.notificationService.info('Foto dipilih. Klik "Simpan Perubahan Profil" untuk menerapkan.');
+            this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
+            this.notificationService.success('Foto profil berhasil diubah & diperbarui di semua tempat!');
           };
           reader.readAsDataURL(file);
         }
@@ -287,7 +288,8 @@ export class ProfileView extends BaseView {
         const fallbackName = u?.name || 'User';
         this.pendingAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=2563eb&color=fff&bold=true`;
         if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
-        this.notificationService.info('Avatar direset ke inisial nama.');
+        this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
+        this.notificationService.info('Avatar direset ke inisial nama dan diperbarui.');
       });
     }
 
@@ -307,7 +309,8 @@ export class ProfileView extends BaseView {
         const fallbackName = u?.name || 'User';
         this.pendingAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=${color}&color=fff&bold=true`;
         if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
-        this.notificationService.info(`Preset warna avatar diterapkan.`);
+        this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
+        this.notificationService.info(`Preset warna avatar diterapkan di semua tempat.`);
       });
     });
 

@@ -24,6 +24,11 @@ export class ProjectListView extends BaseView {
       }
     };
     this.eventBus.on('project:added', this._onProjectAdded);
+    this.eventBus.on('auth:profile-updated', () => {
+      if (this.element) {
+        this.renderToDOM();
+      }
+    });
   }
 
   /** Workspace visual styling dictionary */
@@ -478,11 +483,17 @@ export class ProjectListView extends BaseView {
 
             <!-- Avatars -->
             <div class="flex items-center -space-x-1.5">
-              ${project.members.slice(0, 3).map(m => `
-                <div class="w-6 h-6 rounded-full bg-surface-container-high text-primary border-2 border-surface-container-lowest flex items-center justify-center text-[9px] font-bold" title="${m.name} (${m.role})">
-                  ${m.initials}
-                </div>
-              `).join('')}
+              ${project.members.slice(0, 3).map(m => {
+                const authUser = this.container.resolve('AuthService').getCurrentUser();
+                const mAvatar = m.avatar || (authUser && m.name && authUser.name && m.name.toLowerCase() === authUser.name.toLowerCase() ? authUser.avatar : null);
+                return mAvatar ? `
+                  <img src="${mAvatar}" alt="${m.name}" class="w-6 h-6 rounded-full object-cover border-2 border-surface-container-lowest shrink-0" title="${m.name} (${m.role})" />
+                ` : `
+                  <div class="w-6 h-6 rounded-full bg-surface-container-high text-primary border-2 border-surface-container-lowest flex items-center justify-center text-[9px] font-bold shrink-0" title="${m.name} (${m.role})">
+                    ${m.initials}
+                  </div>
+                `;
+              }).join('')}
             </div>
           </div>
         </div>

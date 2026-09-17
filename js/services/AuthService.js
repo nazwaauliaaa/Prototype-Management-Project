@@ -173,6 +173,7 @@ export class AuthService {
     if (!this.currentUser) return null;
 
     const oldEmail = this.currentUser.email;
+    const oldName = this.currentUser.name;
 
     if (updates.name && updates.name.trim()) {
       this.currentUser.name = updates.name.trim();
@@ -199,13 +200,22 @@ export class AuthService {
       } catch (e) {}
     }
 
+    // Update in roleProfiles if applicable
+    if (this.roleProfiles && this.currentUser.role && this.roleProfiles[this.currentUser.role]) {
+      const rp = this.roleProfiles[this.currentUser.role];
+      rp.name = this.currentUser.name;
+      rp.email = this.currentUser.email;
+      if (this.currentUser.avatar) rp.avatar = this.currentUser.avatar;
+      if (this.currentUser.title) rp.title = this.currentUser.title;
+    }
+
     // Persist to session localStorage
     try {
       localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
     } catch (e) {}
 
     // Update in customUsers
-    const customIdx = this.customUsers.findIndex(u => u.id === this.currentUser.id || (oldEmail && u.email === oldEmail));
+    const customIdx = this.customUsers.findIndex(u => u.id === this.currentUser.id || (oldEmail && u.email === oldEmail) || (oldName && u.name === oldName));
     if (customIdx !== -1) {
       this.customUsers[customIdx] = this.currentUser;
       this.saveCustomUsers();
@@ -216,7 +226,7 @@ export class AuthService {
       const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
       let updatedApproved = false;
       approved.forEach(u => {
-        if (u.id === this.currentUser.id || (oldEmail && u.email && u.email.toLowerCase() === oldEmail.toLowerCase())) {
+        if (u.id === this.currentUser.id || (oldEmail && u.email && u.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && u.name === oldName)) {
           u.name = this.currentUser.name;
           u.email = this.currentUser.email;
           if (this.currentUser.avatar) u.avatar = this.currentUser.avatar;
@@ -228,30 +238,79 @@ export class AuthService {
       }
     } catch (e) {}
 
-    // Update in board_members_*
+    // Update in team_members list
     try {
+      const teamKey = 'team_members';
+      const team = JSON.parse(localStorage.getItem(teamKey) || '[]');
+      let tChanged = false;
+      team.forEach(t => {
+        if (t.id === this.currentUser.id || (oldEmail && t.email && t.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && t.name === oldName)) {
+          t.name = this.currentUser.name;
+          t.email = this.currentUser.email;
+          if (this.currentUser.avatar) t.avatar = this.currentUser.avatar;
+          tChanged = true;
+        }
+      });
+      if (tChanged) {
+        localStorage.setItem(teamKey, JSON.stringify(team));
+      }
+    } catch (e) {}
+
+    // Update in all board_members_*
+    try {
+      const storageKeys = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('board_members_')) {
-          const members = JSON.parse(localStorage.getItem(key) || '[]');
-          let changed = false;
-          members.forEach(m => {
-            if (m.id === this.currentUser.id || (oldEmail && m.email && m.email.toLowerCase() === oldEmail.toLowerCase())) {
-              m.name = this.currentUser.name;
-              m.email = this.currentUser.email;
-              if (this.currentUser.avatar) m.avatar = this.currentUser.avatar;
-              changed = true;
+        if (key && key.startsWith('board_members_') && !key.endsWith('_trigger')) {
+          storageKeys.push(key);
+        }
+      }
+      storageKeys.forEach(key => {
+        const members = JSON.parse(localStorage.getItem(key) || '[]');
+        let changed = false;
+        members.forEach(m => {
+          if (m.id === this.currentUser.id || (oldEmail && m.email && m.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && m.name === oldName)) {
+            m.name = this.currentUser.name;
+            m.email = this.currentUser.email;
+            if (this.currentUser.avatar) m.avatar = this.currentUser.avatar;
+            changed = true;
+          }
+        });
+        if (changed) {
+          localStorage.setItem(key, JSON.stringify(members));
+        }
+      });
+    } catch (e) {}
+
+    // Update in tasks (PIC avatar)
+    try {
+      const tasksRaw = localStorage.getItem('creative_office_tasks');
+      if (tasksRaw) {
+        const tasks = JSON.parse(tasksRaw);
+        let tasksChanged = false;
+        if (Array.isArray(tasks)) {
+          tasks.forEach(t => {
+            if (t.pic && (t.pic.id === this.currentUser.id || (oldEmail && t.pic.email && t.pic.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && t.pic.name === oldName) || (this.currentUser.name && t.pic.name === this.currentUser.name))) {
+              if (this.currentUser.avatar) t.pic.avatar = this.currentUser.avatar;
+              t.pic.name = this.currentUser.name;
+              tasksChanged = true;
             }
           });
-          if (changed) {
-            localStorage.setItem(key, JSON.stringify(members));
+          if (tasksChanged) {
+            localStorage.setItem('creative_office_tasks', JSON.stringify(tasks));
           }
         }
       }
     } catch (e) {}
 
+    // Trigger board update across tabs and views
+    try {
+      localStorage.setItem('board_members_updated_trigger', Date.now().toString());
+    } catch (e) {}
+
     this.eventBus.emit('auth:profile-updated', this.currentUser);
-    this.notifications.success('Profil Anda berhasil diperbarui!');
+    this.eventBus.emit('board:members_updated', {});
+    this.eventBus.emit('tasks:updated', {});
     return this.currentUser;
   }
 

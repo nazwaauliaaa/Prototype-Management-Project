@@ -122,6 +122,12 @@ export class KanbanBoardView extends BaseView {
       }
     };
     this.eventBus.on('auth:login', this._onAuthChanged);
+    this.eventBus.on('auth:profile-updated', () => {
+      this._ensureCurrentUserInBoardMembers();
+      if (this.element) {
+        this.mount(this.element);
+      }
+    });
 
     // Auto-update kanban whenever board members change across tabs or background
     this._onStorageUpdate = (e) => {
@@ -333,9 +339,11 @@ export class KanbanBoardView extends BaseView {
       let members = this.getBoardMembers();
 
       const userEmail = (currentUser.email || '').toLowerCase().trim();
+      const currentUserName = (currentUser.name || '').toLowerCase().trim();
       const existingIdx = members.findIndex(m =>
         (userEmail && m.email && m.email.toLowerCase() === userEmail) ||
-        (m.id && m.id === currentUser.id)
+        (m.id && m.id === currentUser.id) ||
+        (currentUserName && m.name && m.name.toLowerCase() === currentUserName)
       );
 
       const isViaQr = sessionStorage.getItem('auth_login_method') === 'qr' ||
@@ -355,8 +363,31 @@ export class KanbanBoardView extends BaseView {
         }
       }
 
-      // User masuk lewat manapun dan sebagai apapun otomatis langsung disimpan ke Anggota Papan jika belum terdaftar
-      if (existingIdx === -1) {
+      // If already existing, synchronize latest avatar, name, and title
+      if (existingIdx !== -1) {
+        let changed = false;
+        if (currentUser.avatar && members[existingIdx].avatar !== currentUser.avatar) {
+          members[existingIdx].avatar = currentUser.avatar;
+          changed = true;
+        }
+        if (currentUser.name && members[existingIdx].name !== currentUser.name) {
+          members[existingIdx].name = currentUser.name;
+          members[existingIdx].initials = currentUser.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM';
+          changed = true;
+        }
+        if (currentUser.email && members[existingIdx].email !== currentUser.email) {
+          members[existingIdx].email = currentUser.email;
+          changed = true;
+        }
+        if (currentUser.title && members[existingIdx].roleDescription !== currentUser.title) {
+          members[existingIdx].roleDescription = currentUser.title;
+          changed = true;
+        }
+        if (changed) {
+          this.saveBoardMembers(members);
+        }
+      } else {
+        // User masuk lewat manapun dan sebagai apapun otomatis langsung disimpan ke Anggota Papan jika belum terdaftar
         const displayName = currentUser.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna');
         const displayEmail = userEmail || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
 
@@ -370,6 +401,7 @@ export class KanbanBoardView extends BaseView {
           id: currentUser.id || 'mem-' + Date.now(),
           name: displayName,
           email: displayEmail,
+          avatar: currentUser.avatar || '',
           role: roleBadge,
           roleDescription: currentUser.title || currentUser.jobdesk || (roleBadge === 'Admin' ? 'Admin & Managing Director' : (roleBadge === 'PM' ? 'Project Manager' : 'Anggota Tim Proyek')),
           color: currentUser.role === 'admin' ? '#2563eb' : (roleBadge === 'PM' ? '#d97706' : '#059669'),
@@ -478,6 +510,7 @@ export class KanbanBoardView extends BaseView {
       id: inv.userId || `usr-${Date.now()}`,
       name: name,
       email: email,
+      avatar: inv.avatar || '',
       role: inv.role || 'Member',
       roleDescription: inv.roleDescription || 'Anggota Tim Proyek',
       color: inv.color || '#2563eb',
@@ -508,6 +541,7 @@ export class KanbanBoardView extends BaseView {
         id: newMember.id,
         name: newMember.name,
         email: newMember.email,
+        avatar: newMember.avatar || inv.avatar || '',
         role: 'user',
         title: newMember.roleDescription || 'Anggota Tim Proyek',
         color: newMember.color,
@@ -1091,9 +1125,13 @@ export class KanbanBoardView extends BaseView {
               type="button"
             >
               ${boardMembers.slice(0, 3).map(m => `
-                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white font-bold text-[10.5px] sm:text-[11px] flex items-center justify-center border-2 border-white/80 shadow-sm transition-transform hover:scale-110" style="background-color: ${m.color || '#10b981'}">
-                  ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
-                </div>
+                ${m.avatar ? `
+                  <img src="${m.avatar}" alt="${m.name}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-white/80 shadow-sm transition-transform hover:scale-110 shrink-0" title="${m.name} (${m.role || 'Member'})" />
+                ` : `
+                  <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white font-bold text-[10.5px] sm:text-[11px] flex items-center justify-center border-2 border-white/80 shadow-sm transition-transform hover:scale-110 shrink-0" style="background-color: ${m.color || '#10b981'}" title="${m.name} (${m.role || 'Member'})">
+                    ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
+                  </div>
+                `}
               `).join('')}
               ${boardMembers.length > 3 ? `
                 <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white/80 shadow-sm">
@@ -1548,7 +1586,12 @@ export class KanbanBoardView extends BaseView {
 
                     <!-- Cards List Container -->
                     <div class="flex-1 min-h-0 overflow-y-auto px-1 py-1 flex flex-col gap-2.5 custom-scrollbar" data-cards-area="${col.id}">
-                      ${colTasks.map(task => `
+                      ${colTasks.map(task => {
+                        const picName = task.pic?.name || '';
+                        const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
+                        const picAvatar = task.pic?.avatar || picMember?.avatar || (perms.user && picName && perms.user.name && picName.toLowerCase() === perms.user.name.toLowerCase() ? perms.user.avatar : null);
+
+                        return `
                         <div
                           class="kanban-card p-3 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-[#0c66e4] hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border"
                           data-task-id="${task.id}"
@@ -1596,9 +1639,13 @@ export class KanbanBoardView extends BaseView {
                           <!-- Footer: PIC & Column Shift Buttons -->
                           <div class="flex items-center justify-between pt-2 border-t border-surface-border text-[11px] text-text-muted">
                             <div class="flex items-center gap-1.5 min-w-0">
-                              <div class="w-5 h-5 rounded-full bg-[#0c66e4] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs shrink-0">
-                                ${task.pic?.initials || 'SR'}
-                              </div>
+                              ${picAvatar ? `
+                                <img src="${picAvatar}" alt="${task.pic?.name || 'PIC'}" class="w-5 h-5 rounded-full object-cover shadow-2xs shrink-0 ring-1 ring-black/10" />
+                              ` : `
+                                <div class="w-5 h-5 rounded-full bg-[#0c66e4] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs shrink-0">
+                                  ${task.pic?.initials || 'SR'}
+                                </div>
+                              `}
                               <span class="text-[11px] font-medium text-text-secondary truncate max-w-[80px]">
                                 ${(task.pic?.name || 'Tim').split(' ')[0]}
                               </span>
@@ -1622,7 +1669,8 @@ export class KanbanBoardView extends BaseView {
                           </div>
 
                         </div>
-                      `).join('')}
+                      `;
+                      }).join('')}
 
                       ${colTasks.length === 0 ? `
                         <div class="p-4 rounded-xl border border-dashed border-surface-border text-center text-text-muted text-[11px] flex flex-col items-center justify-center gap-1 min-h-[90px] bg-white/40">
@@ -1917,9 +1965,13 @@ export class KanbanBoardView extends BaseView {
               <div class="member-item flex items-center justify-between p-2 rounded-xl ${m.isOwner ? 'bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="relative shrink-0">
-                    <div class="w-8 h-8 rounded-full text-white font-bold text-[11.5px] flex items-center justify-center shadow-xs" style="background-color: ${m.color || '#2563eb'}">
-                      ${m.initials || (m.name ? m.name.slice(0, 2).toUpperCase() : 'U')}
-                    </div>
+                    ${m.avatar ? `
+                      <img src="${m.avatar}" alt="${m.name}" class="w-8 h-8 rounded-full object-cover shadow-xs ring-1 ring-black/10 shrink-0" />
+                    ` : `
+                      <div class="w-8 h-8 rounded-full text-white font-bold text-[11.5px] flex items-center justify-center shadow-xs shrink-0" style="background-color: ${m.color || '#2563eb'}">
+                        ${m.initials || (m.name ? m.name.slice(0, 2).toUpperCase() : 'U')}
+                      </div>
+                    `}
                     ${m.online ? `<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>` : ''}
                   </div>
                   <div class="min-w-0">
