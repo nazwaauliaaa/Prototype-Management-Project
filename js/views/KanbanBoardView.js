@@ -972,11 +972,14 @@ export class KanbanBoardView extends BaseView {
       canPowerUps: isAdmin,
       canAutomation: isAdmin,
       canChangeVisibility: isAdmin,
-      canAddList: true,
+      canAddList: !isUser,
       canDeleteList: isAdmin || isPM,
-      canRenameList: true,
+      canRenameList: !isUser,
       canListActions: isAdmin || isPM,
       canClearColumn: isAdmin || isPM,
+      canCollapseList: !isUser,
+      canSwitchView: !isUser,
+      canSwitchProject: !isUser,
       canAddCard: true,
       canDeleteCard: isAdmin || isPM || isUser,
       canShiftColumns: true,
@@ -1364,7 +1367,8 @@ export class KanbanBoardView extends BaseView {
 
             <span class="text-white/30 hidden sm:inline shrink-0">|</span>
 
-            <!-- Trello View Switcher Button -->
+            <!-- Trello View Switcher Button (Admin/PM/QA only) -->
+            ${perms.canSwitchView ? `
             <button
               id="btn-board-view-switch"
               class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
@@ -1384,8 +1388,10 @@ export class KanbanBoardView extends BaseView {
                 </svg>
               </span>
             </button>
+            ` : ''}
 
-            <!-- Icon Pindah Projek / Ruang Kerja -->
+            <!-- Icon Pindah Projek / Ruang Kerja (Admin/PM/QA only) -->
+            ${perms.canSwitchProject ? `
             <button
               id="btn-header-switch-project"
               class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
@@ -1396,6 +1402,7 @@ export class KanbanBoardView extends BaseView {
               <span class="hidden md:inline font-medium">Pilih Projek</span>
               <span class="material-symbols-outlined text-[15px]">expand_more</span>
             </button>
+            ` : ''}
 
             <!-- Role Badge Indicator -->
             <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
@@ -1706,10 +1713,11 @@ export class KanbanBoardView extends BaseView {
                         <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
                         <div class="column-title-wrapper flex items-center gap-1 min-w-0 flex-1">
                           <h3 
-                            class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate cursor-pointer hover:text-primary transition-colors" 
+                            class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate ${perms.canRenameList ? 'cursor-pointer hover:text-primary' : ''} transition-colors" 
                             data-column-id="${col.id}"
-                            title="Klik untuk ubah nama daftar"
+                            title="${perms.canRenameList ? 'Klik untuk ubah nama daftar' : col.title}"
                           >${col.title}</h3>
+                          ${perms.canRenameList ? `
                           <button
                             class="btn-edit-column-title w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-80 sm:opacity-0 group-hover/col-header:opacity-100 cursor-pointer shrink-0"
                             data-column-id="${col.id}"
@@ -1718,6 +1726,7 @@ export class KanbanBoardView extends BaseView {
                           >
                             <span class="material-symbols-outlined text-[14px]">edit</span>
                           </button>
+                          ` : ''}
                         </div>
                         <span class="column-count-badge px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold shrink-0">
                           ${colTasks.length}
@@ -1730,11 +1739,13 @@ export class KanbanBoardView extends BaseView {
                           <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
                         </button>
                         ` : ''}
+                        ${perms.canCollapseList ? `
                         <button class="HWSXYBl9AjpaH2 bqDBTa8KAMX3yi fHETqJ4siBv5Ok" type="button" data-testid="list-collapse-button" title="Ciutkan daftar">
                           <span role="img" aria-label="Collapse list" class="text-slate-400 hover:text-slate-700 flex items-center">
                             <svg fill="none" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" fill-rule="evenodd" d="M6.25 8.75H0v-1.5h6.25zm3.5-1.5H16v1.5H9.75z" clip-rule="evenodd"></path><path fill="currentColor" fill-rule="evenodd" d="M5.19 8 2.22 5.03l1.06-1.06 3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5-1.06-1.06zm4.03-.53 3.5-3.5 1.06 1.06L10.81 8l2.97 2.97-1.06 1.06-3.5-3.5a.75.75 0 0 1 0-1.06" clip-rule="evenodd"></path></svg>
                           </span>
                         </button>
+                        ` : ''}
                         <!-- List Actions ··· Button -->
                         ${perms.canListActions ? `
                         <button
@@ -4488,6 +4499,8 @@ export class KanbanBoardView extends BaseView {
 
     const colHeaderTitles = this.element.querySelectorAll('.column-header-title');
     colHeaderTitles.forEach(titleEl => {
+      const permsCheck = this.getPermissions();
+      if (!permsCheck.canRenameList) return; // User role: no rename
       titleEl.addEventListener('click', (e) => {
         e.stopPropagation();
         const colId = titleEl.getAttribute('data-column-id');
