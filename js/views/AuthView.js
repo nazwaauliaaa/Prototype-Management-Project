@@ -272,19 +272,6 @@ export class AuthView extends BaseView {
                 </div>
               </div>
 
-              <!-- Mobile View Switch Camera Button (Depan / Belakang) -->
-              <div class="mt-2.5 flex items-center justify-center">
-                <button
-                  id="btn-switch-camera-mobile"
-                  type="button"
-                  class="w-full max-w-[280px] py-2 px-3.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/90 active:scale-[0.98] border border-purple-400/40 text-purple-100 hover:text-white text-[12px] font-semibold flex items-center justify-center gap-2 shadow-md shadow-purple-950/30 transition-all cursor-pointer group"
-                  title="Beralih antara Kamera Depan dan Kamera Belakang"
-                >
-                  <span id="icon-switch-camera-mobile" class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:rotate-180 transition-transform duration-300">cameraswitch</span>
-                  <span id="label-switch-camera-mobile">Ganti ke Kamera Belakang</span>
-                </button>
-              </div>
-
               <p id="scanner-feedback" class="mt-2 text-center font-caption-meta text-[11px] text-text-muted">
                 Arahkan barcode fisik kartu pegawai atau QR aplikasi ke dalam kotak pemindai.
               </p>
@@ -301,18 +288,6 @@ export class AuthView extends BaseView {
                 <span class="material-symbols-outlined text-[18px]">home</span>
                 <span>Langsung Masuk ke Halaman Beranda</span>
                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </button>
-
-              <!-- Portal Masuk Khusus User -->
-              <button
-                id="btn-portal-user-login"
-                type="button"
-                class="w-full py-2.5 px-4 rounded-xl bg-purple-950/70 hover:bg-purple-900/90 text-purple-100 hover:text-white font-bold text-[13px] shadow-md shadow-purple-950/40 hover:shadow-purple-900/50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-purple-400/40 hover:border-emerald-400/60 group"
-                title="Portal masuk khusus pengguna / anggota (melalui tautan undangan atau akun terverifikasi)"
-              >
-                <span class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:scale-110 transition-transform">group</span>
-                <span>Portal Masuk Khusus User</span>
-                <span class="material-symbols-outlined text-[16px] text-emerald-300 group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
               </button>
             </div>
 
@@ -497,13 +472,10 @@ export class AuthView extends BaseView {
     const cameraBadgeInfo = this.element.querySelector('#camera-badge-info');
     const cameraBadgeMode = this.element.querySelector('#camera-badge-mode');
 
-    // Camera Switch Selectors (Mobile & Desktop)
+    // Camera Switch Selectors (Viewfinder Button)
     const btnSwitchCamera = this.element.querySelector('#btn-switch-camera');
-    const btnSwitchCameraMobile = this.element.querySelector('#btn-switch-camera-mobile');
     const textSwitchCamera = this.element.querySelector('#text-switch-camera');
-    const labelSwitchCameraMobile = this.element.querySelector('#label-switch-camera-mobile');
     const iconSwitchCamera = this.element.querySelector('#icon-switch-camera');
-    const iconSwitchCameraMobile = this.element.querySelector('#icon-switch-camera-mobile');
 
     this.isCameraOn = false;
     this.facingMode = 'user'; // 'user' (depan/mirror) atau 'environment' (belakang/normal)
@@ -531,14 +503,8 @@ export class AuthView extends BaseView {
       if (textSwitchCamera) {
         textSwitchCamera.textContent = isFront ? 'Belakang' : 'Depan';
       }
-      if (labelSwitchCameraMobile) {
-        labelSwitchCameraMobile.textContent = isFront ? 'Ganti ke Kamera Belakang' : 'Ganti ke Kamera Depan';
-      }
       if (iconSwitchCamera) {
         iconSwitchCamera.classList.toggle('rotate-180', !isFront);
-      }
-      if (iconSwitchCameraMobile) {
-        iconSwitchCameraMobile.classList.toggle('rotate-180', !isFront);
       }
     };
 
@@ -555,13 +521,6 @@ export class AuthView extends BaseView {
 
     if (btnSwitchCamera) {
       btnSwitchCamera.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleCameraFacingMode();
-      });
-    }
-
-    if (btnSwitchCameraMobile) {
-      btnSwitchCameraMobile.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleCameraFacingMode();
       });
@@ -1236,14 +1195,7 @@ export class AuthView extends BaseView {
       });
     }
 
-    // Portal Masuk Khusus User button handler
-    const btnPortalUserLogin = this.element.querySelector('#btn-portal-user-login');
-    if (btnPortalUserLogin) {
-      btnPortalUserLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        openInviteModal();
-      });
-    }
+
 
     // Automatically activate camera when QR gate loads (User requirement)
     startCamera();
