@@ -1441,41 +1441,31 @@ export class KanbanBoardView extends BaseView {
 
             <span class="text-white/30 shrink-0">|</span>
 
-            <!-- Trello View Switcher Button -->
+            <!-- Trello View Switcher Button (Compact Icon Button) -->
             ${perms.canSwitchView ? `
             <button
               id="btn-board-view-switch"
-              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
+              class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
               type="button"
               data-testid="view-switcher-button-more"
               aria-label="Views"
               title="Tampilan Papan (Views)"
             >
-              <span class="flex items-center justify-center">
-                <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-4 h-4">
-                  <path fill="currentColor" d="M13.25 13.5h1.25v-11h-1.25zm-11.75-2h1.25v-9H1.5zm5.75-2h1.5v-7h-1.5zm-3 2.125c0 .76-.616 1.375-1.375 1.375h-1.5C.615 13 0 12.384 0 11.625v-9.25C0 1.615.616 1 1.375 1h1.5c.76 0 1.375.616 1.375 1.375zm6-2c0 .76-.616 1.375-1.375 1.375h-1.75c-.76 0-1.375-.616-1.375-1.375v-7.25C5.75 1.615 6.366 1 7.125 1h1.75c.76 0 1.375.616 1.375 1.375zm5.75 4c0 .76-.616 1.375-1.375 1.375h-1.5c-.76 0-1.375-.616-1.375-1.375V2.375c0-.76.616-1.375 1.375-1.375h1.5C15.385 1 16 1.616 16 2.375z"></path>
-                </svg>
-              </span>
-              <span class="hidden sm:inline font-medium text-[11.5px]">Tampilan</span>
-              <span class="flex items-center justify-center">
-                <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-3.5 h-3.5">
-                  <path fill="currentColor" d="m14.53 6.03-6 6a.75.75 0 0 1-1.004.052l-.056-.052-6-6 1.06-1.06L8 10.44l5.47-5.47z"></path>
-                </svg>
-              </span>
+              <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-4 h-4">
+                <path fill="currentColor" d="M13.25 13.5h1.25v-11h-1.25zm-11.75-2h1.25v-9H1.5zm5.75-2h1.5v-7h-1.5zm-3 2.125c0 .76-.616 1.375-1.375 1.375h-1.5C.615 13 0 12.384 0 11.625v-9.25C0 1.615.616 1 1.375 1h1.5c.76 0 1.375.616 1.375 1.375zm6-2c0 .76-.616 1.375-1.375 1.375h-1.75c-.76 0-1.375-.616-1.375-1.375v-7.25C5.75 1.615 6.366 1 7.125 1h1.75c.76 0 1.375.616 1.375 1.375zm5.75 4c0 .76-.616 1.375-1.375 1.375h-1.5c-.76 0-1.375-.616-1.375-1.375V2.375c0-.76.616-1.375 1.375-1.375h1.5C15.385 1 16 1.616 16 2.375z"></path>
+              </svg>
             </button>
             ` : ''}
 
-            <!-- Icon Pindah Projek / Ruang Kerja -->
+            <!-- Icon Pindah Projek / Ruang Kerja (Compact Icon Button) -->
             ${perms.canSwitchProject ? `
             <button
               id="btn-header-switch-project"
-              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] sm:text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
-              title="Pindah ke projek yang ada atau projek yang telah dibuat"
+              class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
+              title="Pindah ke projek lain"
               type="button"
             >
-              <span class="material-symbols-outlined text-[17px]">folder_open</span>
-              <span class="font-medium text-[11.5px]">Pilih Projek</span>
-              <span class="material-symbols-outlined text-[15px]">expand_more</span>
+              <span class="material-symbols-outlined text-[18px]">folder_open</span>
             </button>
             ` : ''}
 
