@@ -20,6 +20,12 @@ export class Header {
         this.renderToDOM();
       }
     });
+
+    this.eventBus.on('auth:profile-updated', () => {
+      if (this.hostElement) {
+        this.renderToDOM();
+      }
+    });
   }
 
   render() {
@@ -156,6 +162,11 @@ export class Header {
                 </div>
                 ` : ''}
 
+                <button id="btn-header-profile" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-primary">manage_accounts</span>
+                  <span>Pengaturan Profil</span>
+                </button>
+
                 <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer">
                   <span class="material-symbols-outlined text-[16px]">logout</span>
                   <span>Keluar Sesi</span>
@@ -246,6 +257,15 @@ export class Header {
       });
     }
 
+
+    const profileEditBtn = this.element.querySelector('#btn-header-profile');
+    if (profileEditBtn) {
+      profileEditBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (profileMenu) profileMenu.classList.add('hidden');
+        this.eventBus.emit('navigate', { view: 'profile' });
+      });
+    }
 
     const logoutBtn = this.element.querySelector('#btn-header-logout');
     if (logoutBtn) {

@@ -165,6 +165,97 @@ export class AuthService {
   }
 
   /**
+   * Update profile data of current logged in user
+   * @param {Object} updates
+   * @returns {User|null}
+   */
+  updateCurrentUser(updates) {
+    if (!this.currentUser) return null;
+
+    const oldEmail = this.currentUser.email;
+
+    if (updates.name && updates.name.trim()) {
+      this.currentUser.name = updates.name.trim();
+    }
+    if (updates.email && updates.email.trim()) {
+      this.currentUser.email = updates.email.trim();
+    }
+    if (updates.avatar !== undefined) {
+      this.currentUser.avatar = updates.avatar;
+    }
+    if (updates.title !== undefined) {
+      this.currentUser.title = updates.title;
+    }
+    if (updates.bio !== undefined) {
+      this.currentUser.bio = updates.bio;
+    }
+    if (updates.phone !== undefined) {
+      this.currentUser.phone = updates.phone;
+    }
+    if (updates.password) {
+      this.currentUser.password = updates.password;
+      try {
+        localStorage.setItem(`user_pwd_${this.currentUser.email}`, updates.password);
+      } catch (e) {}
+    }
+
+    // Persist to session localStorage
+    try {
+      localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+    } catch (e) {}
+
+    // Update in customUsers
+    const customIdx = this.customUsers.findIndex(u => u.id === this.currentUser.id || (oldEmail && u.email === oldEmail));
+    if (customIdx !== -1) {
+      this.customUsers[customIdx] = this.currentUser;
+      this.saveCustomUsers();
+    }
+
+    // Update in approved_board_users so ACC list is also updated
+    try {
+      const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
+      let updatedApproved = false;
+      approved.forEach(u => {
+        if (u.id === this.currentUser.id || (oldEmail && u.email && u.email.toLowerCase() === oldEmail.toLowerCase())) {
+          u.name = this.currentUser.name;
+          u.email = this.currentUser.email;
+          if (this.currentUser.avatar) u.avatar = this.currentUser.avatar;
+          updatedApproved = true;
+        }
+      });
+      if (updatedApproved) {
+        localStorage.setItem('approved_board_users', JSON.stringify(approved));
+      }
+    } catch (e) {}
+
+    // Update in board_members_*
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('board_members_')) {
+          const members = JSON.parse(localStorage.getItem(key) || '[]');
+          let changed = false;
+          members.forEach(m => {
+            if (m.id === this.currentUser.id || (oldEmail && m.email && m.email.toLowerCase() === oldEmail.toLowerCase())) {
+              m.name = this.currentUser.name;
+              m.email = this.currentUser.email;
+              if (this.currentUser.avatar) m.avatar = this.currentUser.avatar;
+              changed = true;
+            }
+          });
+          if (changed) {
+            localStorage.setItem(key, JSON.stringify(members));
+          }
+        }
+      }
+    } catch (e) {}
+
+    this.eventBus.emit('auth:profile-updated', this.currentUser);
+    this.notifications.success('Profil Anda berhasil diperbarui!');
+    return this.currentUser;
+  }
+
+  /**
    * Mengambil semua daftar pengguna (role dasar + akun baru dari QR)
    * @returns {User[]}
    */
