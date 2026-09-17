@@ -76,6 +76,19 @@ export class AuthService {
         if (u && (u.name || u.id)) {
           this.currentUser = new User(u);
           this.isAuthenticated = true;
+
+          // Restore avatar from dedicated override if saved avatar was DiceBear or empty
+          const uEmail = (this.currentUser.email || '').toLowerCase().trim();
+          const uName = (this.currentUser.name || '').toLowerCase().trim();
+          const dedicated = localStorage.getItem('current_user_avatar_override') ||
+                            (uEmail && localStorage.getItem(`user_avatar_${uEmail}`)) ||
+                            (uName && localStorage.getItem(`user_avatar_${uName}`));
+          if (dedicated && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
+            this.currentUser.avatar = dedicated;
+            try {
+              localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+            } catch (err) {}
+          }
         }
       }
     } catch (e) {}
@@ -214,6 +227,25 @@ export class AuthService {
       localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
     } catch (e) {}
 
+    // Persist dedicated avatar keys for robust recovery across views
+    if (this.currentUser.avatar) {
+      try {
+        localStorage.setItem('current_user_avatar_override', this.currentUser.avatar);
+        if (this.currentUser.email) {
+          localStorage.setItem(`user_avatar_${this.currentUser.email.toLowerCase().trim()}`, this.currentUser.avatar);
+        }
+        if (this.currentUser.name) {
+          localStorage.setItem(`user_avatar_${this.currentUser.name.toLowerCase().trim()}`, this.currentUser.avatar);
+        }
+        if (oldEmail) {
+          localStorage.setItem(`user_avatar_${oldEmail.toLowerCase().trim()}`, this.currentUser.avatar);
+        }
+        if (oldName) {
+          localStorage.setItem(`user_avatar_${oldName.toLowerCase().trim()}`, this.currentUser.avatar);
+        }
+      } catch (e) {}
+    }
+
     // Update in customUsers
     const customIdx = this.customUsers.findIndex(u => u.id === this.currentUser.id || (oldEmail && u.email === oldEmail) || (oldName && u.name === oldName));
     if (customIdx !== -1) {
@@ -226,7 +258,21 @@ export class AuthService {
       const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
       let updatedApproved = false;
       approved.forEach(u => {
-        if (u.id === this.currentUser.id || (oldEmail && u.email && u.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && u.name === oldName)) {
+        const uEmail = (u.email || '').toLowerCase().trim();
+        const uName = (u.name || '').toLowerCase().trim();
+        const cEmail = (this.currentUser.email || '').toLowerCase().trim();
+        const cName = (this.currentUser.name || '').toLowerCase().trim();
+        const oEmail = (oldEmail || '').toLowerCase().trim();
+        const oName = (oldName || '').toLowerCase().trim();
+
+        const isMatch = (u.id === this.currentUser.id) ||
+                        (cEmail && uEmail === cEmail) ||
+                        (oEmail && uEmail === oEmail) ||
+                        (cName && uName === cName) ||
+                        (oName && uName === oName) ||
+                        (cName && uName && (cName.includes(uName) || uName.includes(cName)));
+
+        if (isMatch) {
           u.name = this.currentUser.name;
           u.email = this.currentUser.email;
           if (this.currentUser.avatar) u.avatar = this.currentUser.avatar;
@@ -244,7 +290,21 @@ export class AuthService {
       const team = JSON.parse(localStorage.getItem(teamKey) || '[]');
       let tChanged = false;
       team.forEach(t => {
-        if (t.id === this.currentUser.id || (oldEmail && t.email && t.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && t.name === oldName)) {
+        const tEmail = (t.email || '').toLowerCase().trim();
+        const tName = (t.name || '').toLowerCase().trim();
+        const cEmail = (this.currentUser.email || '').toLowerCase().trim();
+        const cName = (this.currentUser.name || '').toLowerCase().trim();
+        const oEmail = (oldEmail || '').toLowerCase().trim();
+        const oName = (oldName || '').toLowerCase().trim();
+
+        const isMatch = (t.id === this.currentUser.id) ||
+                        (cEmail && tEmail === cEmail) ||
+                        (oEmail && tEmail === oEmail) ||
+                        (cName && tName === cName) ||
+                        (oName && tName === oName) ||
+                        (cName && tName && (cName.includes(tName) || tName.includes(cName)));
+
+        if (isMatch) {
           t.name = this.currentUser.name;
           t.email = this.currentUser.email;
           if (this.currentUser.avatar) t.avatar = this.currentUser.avatar;
@@ -269,7 +329,21 @@ export class AuthService {
         const members = JSON.parse(localStorage.getItem(key) || '[]');
         let changed = false;
         members.forEach(m => {
-          if (m.id === this.currentUser.id || (oldEmail && m.email && m.email.toLowerCase() === oldEmail.toLowerCase()) || (oldName && m.name === oldName)) {
+          const mEmail = (m.email || '').toLowerCase().trim();
+          const mName = (m.name || '').toLowerCase().trim();
+          const cEmail = (this.currentUser.email || '').toLowerCase().trim();
+          const cName = (this.currentUser.name || '').toLowerCase().trim();
+          const oEmail = (oldEmail || '').toLowerCase().trim();
+          const oName = (oldName || '').toLowerCase().trim();
+
+          const isMatch = (m.id && (m.id === this.currentUser.id || m.id === `usr-${this.currentUser.id}` || this.currentUser.id === `usr-${m.id}`)) ||
+                          (cEmail && mEmail === cEmail) ||
+                          (oEmail && mEmail === oEmail) ||
+                          (cName && mName === cName) ||
+                          (oName && mName === oName) ||
+                          (cName && mName && (cName.includes(mName) || mName.includes(cName)));
+
+          if (isMatch) {
             m.name = this.currentUser.name;
             m.email = this.currentUser.email;
             if (this.currentUser.avatar) m.avatar = this.currentUser.avatar;

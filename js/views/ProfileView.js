@@ -23,6 +23,38 @@ export class ProfileView extends BaseView {
       .replace(/>/g, '&gt;');
   }
 
+  _compressImage(file, maxSize = 256, quality = 0.85) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+
+            const targetDim = Math.min(maxSize, minDim);
+            canvas.width = targetDim;
+            canvas.height = targetDim;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, targetDim, targetDim);
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } catch (err) {
+            resolve(loadEvt.target.result);
+          }
+        };
+        img.onerror = () => resolve(loadEvt.target.result);
+        img.src = loadEvt.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
   render() {
     const user = this.authService.getCurrentUser() || {
       name: 'User Anggota',
@@ -261,22 +293,36 @@ export class ProfileView extends BaseView {
     const avatarImg = this.element.querySelector('#profile-avatar-preview');
     const removeAvatarBtn = this.element.querySelector('#btn-remove-avatar');
 
+    if (avatarImg && fileInput) {
+      avatarImg.parentElement?.addEventListener('click', (e) => {
+        if (e.target !== fileInput) {
+          fileInput.click();
+        }
+      });
+    }
+
     if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
+      fileInput.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
         if (file) {
-          if (file.size > 4 * 1024 * 1024) {
-            this.notificationService.warning('Ukuran foto terlalu besar. Maksimum 4MB.');
+          if (file.size > 12 * 1024 * 1024) {
+            this.notificationService.warning('Ukuran foto terlalu besar. Maksimum 12MB.');
             return;
           }
-          const reader = new FileReader();
-          reader.onload = (loadEvt) => {
-            this.pendingAvatarUrl = loadEvt.target.result;
+          this.notificationService.info('Mengompres dan memproses foto profil...');
+          const compressed = await this._compressImage(file, 256, 0.85);
+          if (compressed) {
+            this.pendingAvatarUrl = compressed;
             if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
+            try {
+              localStorage.setItem('current_user_avatar_override', this.pendingAvatarUrl);
+              const u = this.authService.getCurrentUser();
+              if (u?.email) localStorage.setItem(`user_avatar_${u.email.toLowerCase().trim()}`, this.pendingAvatarUrl);
+              if (u?.name) localStorage.setItem(`user_avatar_${u.name.toLowerCase().trim()}`, this.pendingAvatarUrl);
+            } catch (err) {}
             this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
             this.notificationService.success('Foto profil berhasil diubah & diperbarui di semua tempat!');
-          };
-          reader.readAsDataURL(file);
+          }
         }
       });
     }

@@ -254,6 +254,38 @@ export class KanbanBoardView extends BaseView {
     return wsKey.charAt(0).toUpperCase() + wsKey.slice(1);
   }
 
+  _compressImage(file, maxSize = 256, quality = 0.85) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+
+            const targetDim = Math.min(maxSize, minDim);
+            canvas.width = targetDim;
+            canvas.height = targetDim;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, targetDim, targetDim);
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } catch (err) {
+            resolve(loadEvt.target.result);
+          }
+        };
+        img.onerror = () => resolve(loadEvt.target.result);
+        img.src = loadEvt.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
   getBoardMembers() {
     const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
     const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
@@ -295,6 +327,89 @@ export class KanbanBoardView extends BaseView {
     });
 
     const clean = Array.from(memberMap.values());
+
+    const authService = this.container ? this.container.resolve('AuthService') : null;
+    const currentUser = authService ? authService.getCurrentUser() : null;
+    const globalOverrideAvatar = localStorage.getItem('current_user_avatar_override');
+
+    clean.forEach(m => {
+      const mEmail = (m.email || '').toLowerCase().trim();
+      const mName = (m.name || '').toLowerCase().trim();
+
+      // Check dedicated user_avatar_* fallback keys in localStorage
+      const dedicatedAvatar = (mEmail && localStorage.getItem(`user_avatar_${mEmail}`)) ||
+                              (mName && localStorage.getItem(`user_avatar_${mName}`));
+
+      // Sync with approved_board_users
+      try {
+        const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
+        approved.forEach(app => {
+          if (!app) return;
+          const aEmail = (app.email || '').toLowerCase().trim();
+          const aName = (app.name || '').toLowerCase().trim();
+          if ((aEmail && mEmail === aEmail) || (app.id && m.id === app.id) || (aName && mName === aName)) {
+            if (app.avatar && (!m.avatar || m.avatar.includes('dicebear'))) {
+              m.avatar = app.avatar;
+            }
+          }
+        });
+      } catch (e) {}
+
+      // Sync with customUsers
+      try {
+        const customUsers = JSON.parse(localStorage.getItem('creative_office_custom_users') || '[]');
+        customUsers.forEach(cu => {
+          if (!cu) return;
+          const cuEmail = (cu.email || '').toLowerCase().trim();
+          const cuName = (cu.name || '').toLowerCase().trim();
+          if ((cuEmail && mEmail === cuEmail) || (cu.id && m.id === cu.id) || (cuName && mName === cuName)) {
+            if (cu.avatar && (!m.avatar || m.avatar.includes('dicebear'))) {
+              m.avatar = cu.avatar;
+            }
+          }
+        });
+      } catch (e) {}
+
+      // Dedicated fallback keys override stale dicebear
+      if (dedicatedAvatar && (!m.avatar || m.avatar.includes('dicebear') || dedicatedAvatar.startsWith('data:image/'))) {
+        m.avatar = dedicatedAvatar;
+      }
+
+      // Sync with currentUser if matches (highest priority)
+      if (currentUser) {
+        const uEmail = (currentUser.email || '').toLowerCase().trim();
+        const uName = (currentUser.name || '').toLowerCase().trim();
+        const uId = currentUser.id;
+
+        const isCurrent = (uEmail && mEmail === uEmail) || 
+                          (uId && m.id === uId) || 
+                          (uName && mName === uName) ||
+                          (uName && mName && (mName.includes(uName) || uName.includes(mName)));
+
+        if (isCurrent) {
+          const effectiveAvatar = (currentUser.avatar && !currentUser.avatar.includes('dicebear'))
+            ? currentUser.avatar
+            : (globalOverrideAvatar || dedicatedAvatar || currentUser.avatar);
+
+          if (effectiveAvatar) {
+            m.avatar = effectiveAvatar;
+            if (currentUser.avatar !== effectiveAvatar) {
+              currentUser.avatar = effectiveAvatar;
+              try {
+                localStorage.setItem('creative_office_auth_user', JSON.stringify(currentUser));
+              } catch (e) {}
+            }
+          }
+          if (currentUser.name) {
+            m.name = currentUser.name;
+          }
+          if (currentUser.email) {
+            m.email = currentUser.email;
+          }
+        }
+      }
+    });
+
     relatedKeys.forEach(k => {
       try {
         localStorage.setItem(`board_members_${k}`, JSON.stringify(clean));
@@ -335,39 +450,36 @@ export class KanbanBoardView extends BaseView {
       const currentUser = authService ? authService.getCurrentUser() : null;
       if (!currentUser) return;
 
+      const userEmail = (currentUser.email || '').toLowerCase().trim();
+      const currentUserName = (currentUser.name || '').toLowerCase().trim();
+
+      // Check fallback dedicated avatar key
+      const dedicatedAvatar = localStorage.getItem('current_user_avatar_override') ||
+                              (userEmail && localStorage.getItem(`user_avatar_${userEmail}`)) ||
+                              (currentUserName && localStorage.getItem(`user_avatar_${currentUserName}`));
+      if (dedicatedAvatar && (!currentUser.avatar || currentUser.avatar.includes('dicebear'))) {
+        currentUser.avatar = dedicatedAvatar;
+        try {
+          localStorage.setItem('creative_office_auth_user', JSON.stringify(currentUser));
+        } catch (e) {}
+      }
+
       const currentWs = this.currentWorkspace || 'panen-kunci';
       let members = this.getBoardMembers();
 
-      const userEmail = (currentUser.email || '').toLowerCase().trim();
-      const currentUserName = (currentUser.name || '').toLowerCase().trim();
       const existingIdx = members.findIndex(m =>
         (userEmail && m.email && m.email.toLowerCase() === userEmail) ||
         (m.id && m.id === currentUser.id) ||
-        (currentUserName && m.name && m.name.toLowerCase() === currentUserName)
+        (currentUserName && m.name && m.name.toLowerCase() === currentUserName) ||
+        (currentUserName && m.name && (m.name.toLowerCase().includes(currentUserName) || currentUserName.includes(m.name.toLowerCase())))
       );
 
-      const isViaQr = sessionStorage.getItem('auth_login_method') === 'qr' ||
-                      currentUser.loginMethod === 'qr' ||
-                      Boolean(currentUser.qr_data);
-
-      const isViaLink = sessionStorage.getItem('auth_login_method') === 'link' ||
-                        currentUser.loginMethod === 'link' ||
-                        Boolean(localStorage.getItem('user_invited_workspace'));
-
-      // If user joined via link/QR and is still waiting for admin ACC approval, do NOT auto-add to board_members yet
-      if (currentUser.role !== 'admin') {
-        const pending = this.getPendingInvites();
-        const isPending = pending.some(p => p.email && p.email.toLowerCase() === userEmail);
-        if (isPending) {
-          return;
-        }
-      }
-
-      // If already existing, synchronize latest avatar, name, and title
+      // If already existing on board, synchronize latest avatar, name, and title immediately!
       if (existingIdx !== -1) {
         let changed = false;
-        if (currentUser.avatar && members[existingIdx].avatar !== currentUser.avatar) {
-          members[existingIdx].avatar = currentUser.avatar;
+        const effectiveAvatar = currentUser.avatar || dedicatedAvatar;
+        if (effectiveAvatar && members[existingIdx].avatar !== effectiveAvatar) {
+          members[existingIdx].avatar = effectiveAvatar;
           changed = true;
         }
         if (currentUser.name && members[existingIdx].name !== currentUser.name) {
@@ -386,37 +498,55 @@ export class KanbanBoardView extends BaseView {
         if (changed) {
           this.saveBoardMembers(members);
         }
-      } else {
-        // User masuk lewat manapun dan sebagai apapun otomatis langsung disimpan ke Anggota Papan jika belum terdaftar
-        const displayName = currentUser.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna');
-        const displayEmail = userEmail || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+        return;
+      }
 
-        let roleBadge = 'Member';
-        if (currentUser.role === 'admin') roleBadge = 'Admin';
-        else if (currentUser.isProjectManager?.() || currentUser.role === 'manajement-project' || currentUser.role === 'pm') roleBadge = 'PM';
-        else if (currentUser.role === 'qa' || currentUser.role === 'observer') roleBadge = 'Observer';
-        else if (currentUser.role) roleBadge = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+      const isViaQr = sessionStorage.getItem('auth_login_method') === 'qr' ||
+                      currentUser.loginMethod === 'qr' ||
+                      Boolean(currentUser.qr_data);
 
-        const newMember = {
-          id: currentUser.id || 'mem-' + Date.now(),
-          name: displayName,
-          email: displayEmail,
-          avatar: currentUser.avatar || '',
-          role: roleBadge,
-          roleDescription: currentUser.title || currentUser.jobdesk || (roleBadge === 'Admin' ? 'Admin & Managing Director' : (roleBadge === 'PM' ? 'Project Manager' : 'Anggota Tim Proyek')),
-          color: currentUser.role === 'admin' ? '#2563eb' : (roleBadge === 'PM' ? '#d97706' : '#059669'),
-          initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
-          workspace: currentWs,
-          projectId: this.projectId || currentWs,
-          joinedVia: isViaQr ? 'qr' : (isViaLink ? 'link' : 'direct'),
-          isOnline: true,
-          joinedAt: new Date().toISOString()
-        };
-        members.unshift(newMember);
-        this.saveBoardMembers(members);
-        if (this.eventBus) {
-          this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
+      const isViaLink = sessionStorage.getItem('auth_login_method') === 'link' ||
+                        currentUser.loginMethod === 'link' ||
+                        Boolean(localStorage.getItem('user_invited_workspace'));
+
+      // If user joined via link/QR and is still waiting for admin ACC approval, do NOT auto-add to board_members yet
+      if (currentUser.role !== 'admin') {
+        const pending = this.getPendingInvites();
+        const isPending = pending.some(p => p.email && p.email.toLowerCase() === userEmail);
+        if (isPending) {
+          return;
         }
+      }
+
+      // User masuk lewat manapun dan sebagai apapun otomatis langsung disimpan ke Anggota Papan jika belum terdaftar
+      const displayName = currentUser.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna');
+      const displayEmail = userEmail || `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
+
+      let roleBadge = 'Member';
+      if (currentUser.role === 'admin') roleBadge = 'Admin';
+      else if (currentUser.isProjectManager?.() || currentUser.role === 'manajement-project' || currentUser.role === 'pm') roleBadge = 'PM';
+      else if (currentUser.role === 'qa' || currentUser.role === 'observer') roleBadge = 'Observer';
+      else if (currentUser.role) roleBadge = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+
+      const newMember = {
+        id: currentUser.id || 'mem-' + Date.now(),
+        name: displayName,
+        email: displayEmail,
+        avatar: currentUser.avatar || dedicatedAvatar || '',
+        role: roleBadge,
+        roleDescription: currentUser.title || currentUser.jobdesk || (roleBadge === 'Admin' ? 'Admin & Managing Director' : (roleBadge === 'PM' ? 'Project Manager' : 'Anggota Tim Proyek')),
+        color: currentUser.role === 'admin' ? '#2563eb' : (roleBadge === 'PM' ? '#d97706' : '#059669'),
+        initials: displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
+        workspace: currentWs,
+        projectId: this.projectId || currentWs,
+        joinedVia: isViaQr ? 'qr' : (isViaLink ? 'link' : 'direct'),
+        isOnline: true,
+        joinedAt: new Date().toISOString()
+      };
+      members.unshift(newMember);
+      this.saveBoardMembers(members);
+      if (this.eventBus) {
+        this.eventBus.emit('board:members_updated', { workspace: currentWs, projectId: this.projectId });
       }
     } catch (e) {
       console.warn('Error syncing user to board members:', e);
@@ -1955,16 +2085,25 @@ export class KanbanBoardView extends BaseView {
             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5 px-1">
               Anggota Aktif (${boardMembers.length})
             </div>
+            <input type="file" id="input-popup-avatar-upload" class="hidden" accept="image/png,image/jpeg,image/webp,image/gif" />
             ${boardMembers.length === 0 ? `
               <div class="py-5 px-3 text-center flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
                 <span class="material-symbols-outlined text-[26px] opacity-40 mb-1">group_off</span>
                 <p class="text-[12px] font-medium text-slate-600 dark:text-slate-300">Belum ada anggota di papan ini.</p>
                 <p class="text-[10.5px] text-slate-400 dark:text-slate-500 mt-0.5">Hanya pengguna yang bergabung melalui tautan undangan yang akan terdaftar di sini.</p>
               </div>
-            ` : boardMembers.map(m => `
-              <div class="member-item flex items-center justify-between p-2 rounded-xl ${m.isOwner ? 'bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all">
+            ` : boardMembers.map(m => {
+              const curUser = authService ? authService.getCurrentUser() : null;
+              const curEmail = (curUser?.email || '').toLowerCase().trim();
+              const curName = (curUser?.name || '').toLowerCase().trim();
+              const mEmail = (m.email || '').toLowerCase().trim();
+              const mName = (m.name || '').toLowerCase().trim();
+              const isOwnerOrCurrent = Boolean(m.isOwner || (curUser && ((curEmail && mEmail === curEmail) || (curUser.id && m.id === curUser.id) || (curName && mName === curName) || (curName && mName && (curName.includes(mName) || mName.includes(curName))))));
+
+              return `
+              <div class="member-item flex items-center justify-between p-2 rounded-xl ${isOwnerOrCurrent ? 'bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all">
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="relative shrink-0">
+                  <div class="relative shrink-0 ${isOwnerOrCurrent ? 'group/avatar cursor-pointer' : ''}" ${isOwnerOrCurrent ? 'title="Klik untuk mengganti foto profil Anda"' : ''}>
                     ${m.avatar ? `
                       <img src="${m.avatar}" alt="${m.name}" class="w-8 h-8 rounded-full object-cover shadow-xs ring-1 ring-black/10 shrink-0" />
                     ` : `
@@ -1972,12 +2111,17 @@ export class KanbanBoardView extends BaseView {
                         ${m.initials || (m.name ? m.name.slice(0, 2).toUpperCase() : 'U')}
                       </div>
                     `}
+                    ${isOwnerOrCurrent ? `
+                      <div class="btn-change-board-avatar absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity text-white">
+                        <span class="material-symbols-outlined text-[13px]">photo_camera</span>
+                      </div>
+                    ` : ''}
                     ${m.online ? `<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>` : ''}
                   </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5 flex-wrap">
                       <span class="member-name text-[12px] font-bold text-slate-900 dark:text-white truncate">${m.name}</span>
-                      ${m.isOwner ? `<span class="text-[9.5px] font-semibold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">Anda</span>` : ''}
+                      ${isOwnerOrCurrent ? `<span class="text-[9.5px] font-semibold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">Anda</span>` : ''}
                       ${m.joinedVia === 'link' || m.via === 'link' ? `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 flex items-center gap-0.5 shrink-0"><span class="material-symbols-outlined text-[10px]">link</span>Tautan</span>` : ''}
                       ${m.joinedVia === 'qr' || m.via === 'qr' ? `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-200/60 flex items-center gap-0.5 shrink-0"><span class="material-symbols-outlined text-[10px]">qr_code_2</span>QR</span>` : ''}
                     </div>
@@ -1988,10 +2132,16 @@ export class KanbanBoardView extends BaseView {
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
+                  ${isOwnerOrCurrent ? `
+                    <button type="button" class="btn-goto-profile text-[10px] font-bold px-2 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-0.5" title="Buka Halaman Profil untuk Ganti Foto / Info">
+                      <span class="material-symbols-outlined text-[12px]">edit</span>
+                      <span>Edit Foto</span>
+                    </button>
+                  ` : ''}
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${m.badgeClass || 'text-blue-700 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800/80'}">
                     ${m.role || 'Member'}
                   </span>
-                  ${perms.canManageMembers && !m.isOwner ? `
+                  ${perms.canManageMembers && !isOwnerOrCurrent ? `
                     <button
                       class="btn-delete-board-member w-6 h-6 rounded-md hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/60 dark:hover:text-rose-400 text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
                       data-member-id="${m.id}"
@@ -2004,7 +2154,8 @@ export class KanbanBoardView extends BaseView {
                   ` : ''}
                 </div>
               </div>
-            `).join('')}
+            `;
+          }).join('')}
 
             ${pendingInvites.length > 0 ? `
               <!-- Section: Permintaan Bergabung (Perlu ACC Admin) -->
@@ -3493,6 +3644,49 @@ export class KanbanBoardView extends BaseView {
       avatarBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this._togglePopup('#popup-board-members');
+      });
+    }
+
+    // B.0 Instant Avatar Upload from Board Members Popup
+    const popupAvatarInput = this.element.querySelector('#input-popup-avatar-upload');
+    const changeAvatarBtns = this.element.querySelectorAll('.btn-change-board-avatar');
+    changeAvatarBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (popupAvatarInput) popupAvatarInput.click();
+      });
+    });
+
+    const gotoProfileBtns = this.element.querySelectorAll('.btn-goto-profile');
+    gotoProfileBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._closeAllPopups();
+        this.eventBus.emit('navigate', { view: 'profile' });
+      });
+    });
+
+    if (popupAvatarInput) {
+      popupAvatarInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          if (file.size > 12 * 1024 * 1024) {
+            this.notificationService?.warning('Ukuran foto terlalu besar. Maksimum 12MB.');
+            return;
+          }
+          this.notificationService?.info('Memproses dan memperbarui foto profil Anda...');
+          const compressed = await this._compressImage(file, 256, 0.85);
+          if (compressed) {
+            const authService = this.container ? this.container.resolve('AuthService') : null;
+            if (authService) {
+              authService.updateCurrentUser({ avatar: compressed });
+            }
+            this.notificationService?.success('Foto profil Anda berhasil diubah & langsung diperbarui di papan!');
+            this.mount(this.element);
+            const popup = this.element.querySelector('#popup-board-members');
+            if (popup) popup.classList.remove('hidden');
+          }
+        }
       });
     }
 
