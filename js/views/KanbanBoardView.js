@@ -903,6 +903,43 @@ export class KanbanBoardView extends BaseView {
       const u = this.authService.getCurrentUser();
       if (u) return u;
     }
+    // Coba pulihkan sesi jika belum aktif di AuthService
+    if (this.authService && typeof this.authService.restoreSession === 'function') {
+      const restored = this.authService.restoreSession();
+      if (restored) return restored;
+    }
+
+    try {
+      const saved = localStorage.getItem('creative_office_auth_user') || localStorage.getItem('creative_office_user');
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u && (u.name || u.id)) {
+          return {
+            ...u,
+            isAdmin: () => (u.role || '').toLowerCase() === 'admin',
+            isProjectManager: () => (u.role || '').toLowerCase() === 'manajement-project',
+            isQA: () => (u.role || '').toLowerCase() === 'qa',
+            isUser: () => (u.role || '').toLowerCase() === 'user'
+          };
+        }
+      }
+    } catch (e) {}
+
+    // Periksa apakah active_user_role adalah 'user'
+    const activeRole = localStorage.getItem('active_user_role');
+    const activeName = localStorage.getItem('active_user_name');
+    if (activeRole === 'user' || activeName) {
+      return {
+        name: activeName || 'User',
+        role: 'user',
+        title: 'Editor & Anggota Tim Proyek',
+        isAdmin: () => false,
+        isProjectManager: () => false,
+        isQA: () => false,
+        isUser: () => true
+      };
+    }
+
     return {
       name: 'Dr. Hendra Wijaya',
       role: 'admin',
@@ -1036,19 +1073,28 @@ export class KanbanBoardView extends BaseView {
     const pendingInvites = this.getPendingInvites();
     const availableWorkspaces = this.getAvailableWorkspacesAndProjects();
 
+    const curWsLower = String(this.currentWorkspace || '').toLowerCase();
+    const curProjLower = String(this.projectId || '').toLowerCase();
+    const bTitleLower = String(boardTitle || '').toLowerCase();
+
     // Board theme wallpaper: prioritaskan tema dari projek yang dibuat/disetel admin agar di mobile user sama persis!
     let theme = this.project?.theme || null;
     if (!theme) {
       const savedTheme = localStorage.getItem(`board_theme_${this.currentWorkspace}`) ||
                          (this.projectId ? localStorage.getItem(`board_theme_${this.projectId}`) : null);
       if (savedTheme) {
-        try { theme = JSON.parse(savedTheme); } catch (e) { }
+        try {
+          const parsed = JSON.parse(savedTheme);
+          // Hapus Sunset Peach yang tidak sengaja ter-cache di mobile sharinginaja agar kembali selaras dengan desktop
+          if (parsed && parsed.name === 'Sunset Peach' && (curWsLower.includes('sharinginaja') || curProjLower.includes('sharinginaja'))) {
+            theme = null;
+          } else {
+            theme = parsed;
+          }
+        } catch (e) { }
       }
     }
 
-    const curWsLower = String(this.currentWorkspace || '').toLowerCase();
-    const curProjLower = String(this.projectId || '').toLowerCase();
-    const bTitleLower = String(boardTitle || '').toLowerCase();
     const isLayarBaca = curWsLower.includes('layarbaca') || curProjLower.includes('layarbaca') || bTitleLower.includes('layar');
     const isOldDefaultSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
 
@@ -1065,7 +1111,7 @@ export class KanbanBoardView extends BaseView {
           name: 'Neon Cyber',
           value: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)'
         };
-      } else if (curWsLower.includes('panan') || curProjLower.includes('panan')) {
+      } else if (curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan')) {
         theme = {
           type: 'gradient',
           name: 'Deep Forest',
@@ -1077,21 +1123,19 @@ export class KanbanBoardView extends BaseView {
           name: 'Royal Indigo',
           value: 'linear-gradient(135deg, #3730a3 0%, #6366f1 50%, #818cf8 100%)'
         };
-      } else if (curWsLower.includes('sharinginaja') || curProjLower.includes('sharinginaja')) {
-        theme = {
-          type: 'gradient',
-          name: 'Sunset Peach',
-          value: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)'
-        };
       } else {
+        // Default wallpaper resmi seluruh board (City Skyline pemandangan kota malam Unsplash) sama persis dengan desktop view
         theme = {
-          type: 'gradient',
-          name: 'Berry Fuchsia',
-          value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
+          type: 'image',
+          name: 'City Skyline',
+          value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80'
         };
       }
       try {
         localStorage.setItem(`board_theme_${this.currentWorkspace}`, JSON.stringify(theme));
+        if (this.projectId) {
+          localStorage.setItem(`board_theme_${this.projectId}`, JSON.stringify(theme));
+        }
       } catch (e) { }
     }
 

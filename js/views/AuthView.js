@@ -934,6 +934,13 @@ export class AuthView extends BaseView {
             }
 
             const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+            
+            // Simpan active workspace & project
+            localStorage.setItem('active_workspace', allowedWs);
+            localStorage.setItem('active_project_id', allowedProj);
+            localStorage.setItem('user_invited_workspace', allowedWs);
+            localStorage.setItem('user_invited_project', allowedProj);
+
             const targetHash = role === 'user' ? `#/kanban/${allowedProj}` : `#/dashboard`;
 
             if (window.location.hash === targetHash) {
@@ -1236,14 +1243,35 @@ export class AuthView extends BaseView {
         stopCamera();
 
         if (feedback) {
-          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Memverifikasi akses... Langsung mengalihkan ke Beranda!</span>`;
+          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Memverifikasi akses... Mengalihkan ke Beranda!</span>`;
         }
 
-        // Login as Admin if not currently logged in so dashboard access is fully granted
+        // Cek sesi aktif terlebih dahulu
         if (!this.authService.isLoggedIn()) {
-          this.authService.loginWithRole('admin');
+          this.authService.restoreSession();
+        }
+
+        if (this.authService.isLoggedIn()) {
+          const u = this.authService.getCurrentUser();
+          const role = (u?.role || '').toLowerCase();
+          if (role === 'user') {
+            const curWs = (u.workspaceAccess && u.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'panen-kunci';
+            const curProj = localStorage.getItem('active_project_id') || curWs;
+            window.location.hash = `#/kanban/${curProj}`;
+          } else {
+            window.location.hash = '#/dashboard';
+          }
         } else {
-          window.location.hash = '#/dashboard';
+          // Periksa apakah role terakhir adalah user
+          const lastRole = localStorage.getItem('active_user_role');
+          if (lastRole === 'user') {
+            this.authService.loginWithRole('user');
+            const curProj = localStorage.getItem('active_project_id') || 'panen-kunci';
+            window.location.hash = `#/kanban/${curProj}`;
+          } else {
+            this.authService.loginWithRole('admin');
+            window.location.hash = '#/dashboard';
+          }
         }
       });
     }

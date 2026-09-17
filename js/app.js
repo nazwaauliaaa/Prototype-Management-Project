@@ -335,12 +335,24 @@ class CreativeOfficeApp {
       });
       userInstance.loginMethod = via === 'qr' ? 'qr' : 'link';
 
-      // Login to AuthService
+      // Login to AuthService and persist session permanently to localStorage
       if (authService) {
-        authService.currentUser = userInstance;
-        authService.isAuthenticated = true;
+        authService.loginAsUser(userInstance);
       }
       sessionStorage.setItem('auth_login_method', via === 'qr' ? 'qr' : 'link');
+
+      // Sync theme if available from invite params
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tType = urlParams.get('theme_type');
+        const tName = urlParams.get('theme_name');
+        const tVal = urlParams.get('theme_val');
+        if (tType && tVal) {
+          const syncTheme = { type: tType, name: tName || 'Tema Papan', value: tVal };
+          localStorage.setItem(`board_theme_${workspace}`, JSON.stringify(syncTheme));
+          if (projectId) localStorage.setItem(`board_theme_${projectId}`, JSON.stringify(syncTheme));
+        }
+      } catch (errTheme) {}
 
       // Resolve Workspace & Project ID
       let resolvedProjectId = projectId;
@@ -688,6 +700,11 @@ class CreativeOfficeApp {
     const rawHash = window.location.hash.replace('#/', '') || 'dashboard';
     const cleanHash = rawHash.split('?')[0];
     const authService = this.container.resolve('AuthService');
+
+    // Pastikan sesi dipulihkan jika belum aktif di memori
+    if (authService && !authService.isLoggedIn()) {
+      authService.restoreSession();
+    }
 
     if (!authService.isLoggedIn() && cleanHash !== 'auth' && cleanHash !== 'register') {
       this.navigateTo('auth');

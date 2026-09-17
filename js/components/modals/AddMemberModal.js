@@ -354,7 +354,13 @@ export class AddMemberModal extends BaseModal {
     const inviterName = authUser?.name || 'awaa';
     const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
 
-    const params = new URLSearchParams({
+    let activeTheme = null;
+    try {
+      const savedTheme = localStorage.getItem(`board_theme_${currentWs}`) || localStorage.getItem(`board_theme_${currentProjId}`);
+      if (savedTheme) activeTheme = JSON.parse(savedTheme);
+    } catch (e) {}
+
+    const paramsObj = {
       accept_invite: invite?.id    || 'inv-' + Date.now(),
       name:          invite?.name  || '',
       email:         invite?.email || '',
@@ -366,7 +372,15 @@ export class AddMemberModal extends BaseModal {
       inviter_role:  inviterRole,
       color:         invite?.color || '#2563eb',
       via:           invite?.via   || 'link'
-    });
+    };
+
+    if (activeTheme) {
+      if (activeTheme.type) paramsObj.theme_type = activeTheme.type;
+      if (activeTheme.name) paramsObj.theme_name = activeTheme.name;
+      if (activeTheme.value) paramsObj.theme_val = activeTheme.value;
+    }
+
+    const params = new URLSearchParams(paramsObj);
 
     // Directly routes to the specific kanban project board
     return `${origin}${pathname}?${params.toString()}#/kanban/${currentProjId}`;
@@ -384,17 +398,33 @@ export class AddMemberModal extends BaseModal {
     const inviterName = authUser?.name || 'awaa';
     const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
 
-    const params = new URLSearchParams({
+    let activeTheme = null;
+    try {
+      const savedTheme = localStorage.getItem(`board_theme_${currentWs}`) || localStorage.getItem(`board_theme_${currentProjId}`);
+      if (savedTheme) activeTheme = JSON.parse(savedTheme);
+    } catch (e) {}
+
+    const paramsObj = {
       accept_invite: 'inv-qr-' + Date.now(),
-      name:          'Pengguna QR',
-      role:          'Member',
+      name:          '',
+      email:         '',
+      role:          this._qrPermission || 'Member',
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
       inviter_name:  inviterName,
       inviter_role:  inviterRole,
+      color:         '#2563eb',
       via:           'qr'
-    });
+    };
+
+    if (activeTheme) {
+      if (activeTheme.type) paramsObj.theme_type = activeTheme.type;
+      if (activeTheme.name) paramsObj.theme_name = activeTheme.name;
+      if (activeTheme.value) paramsObj.theme_val = activeTheme.value;
+    }
+
+    const params = new URLSearchParams(paramsObj);
 
     return `${origin}${pathname}?${params.toString()}#/kanban/${currentProjId}`;
   }

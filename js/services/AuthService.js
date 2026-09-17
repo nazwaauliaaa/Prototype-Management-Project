@@ -69,33 +69,85 @@ export class AuthService {
     // Session state: restore from localStorage if present
     this.currentUser = null;
     this.isAuthenticated = false;
-    try {
-      const saved = localStorage.getItem('creative_office_auth_user');
-      if (saved) {
-        const u = JSON.parse(saved);
-        if (u && (u.name || u.id)) {
-          this.currentUser = new User(u);
-          this.isAuthenticated = true;
-
-          // Restore avatar from dedicated override if saved avatar was DiceBear or empty
-          const uEmail = (this.currentUser.email || '').toLowerCase().trim();
-          const uName = (this.currentUser.name || '').toLowerCase().trim();
-          const dedicated = localStorage.getItem('current_user_avatar_override') ||
-                            (uEmail && localStorage.getItem(`user_avatar_${uEmail}`)) ||
-                            (uName && localStorage.getItem(`user_avatar_${uName}`));
-          if (dedicated && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
-            this.currentUser.avatar = dedicated;
-            try {
-              localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
-            } catch (err) {}
-          }
-        }
-      }
-    } catch (e) {}
+    this.restoreSession();
 
     // Load custom users registered via QR or database
     this.customUsers = [];
     this.loadCustomUsers();
+  }
+
+  /**
+   * Pulihkan sesi pengguna dari berbagai fallback storage agar tidak hilang saat reload browser
+   * @returns {User|null}
+   */
+  restoreSession() {
+    try {
+      let u = null;
+      const saved = localStorage.getItem('creative_office_auth_user');
+      if (saved) {
+        try { u = JSON.parse(saved); } catch (e) {}
+      }
+
+      if (!u || (!u.name && !u.id)) {
+        const fallbackSaved = localStorage.getItem('creative_office_user');
+        if (fallbackSaved) {
+          try { u = JSON.parse(fallbackSaved); } catch (e) {}
+        }
+      }
+
+      // Periksa active role & email jika masih belum dipulihkan
+      if (!u || (!u.name && !u.id)) {
+        const activeRole = localStorage.getItem('active_user_role');
+        const activeEmail = localStorage.getItem('active_user_email');
+        const activeName = localStorage.getItem('active_user_name');
+        if (activeName || activeEmail) {
+          // Cari di approved_board_users atau customUsers
+          const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
+          const matchApproved = approved.find(a => (activeEmail && a.email && a.email.toLowerCase() === activeEmail.toLowerCase()) || (activeName && a.name === activeName));
+          if (matchApproved) {
+            u = {
+              id: matchApproved.id || 'usr-' + Date.now(),
+              name: matchApproved.name,
+              email: matchApproved.email,
+              role: activeRole || 'user',
+              title: matchApproved.roleDescription || 'Editor & Anggota Tim Proyek',
+              avatar: matchApproved.avatar,
+              workspaceAccess: [matchApproved.workspace || localStorage.getItem('active_workspace') || 'panen-kunci']
+            };
+          } else if (activeRole && this.roleProfiles && this.roleProfiles[activeRole]) {
+            u = this.roleProfiles[activeRole];
+          }
+        }
+      }
+
+      if (u && (u.name || u.id)) {
+        this.currentUser = new User(u);
+        this.isAuthenticated = true;
+
+        // Restore avatar from dedicated override if saved avatar was DiceBear or empty
+        const uEmail = (this.currentUser.email || '').toLowerCase().trim();
+        const uName = (this.currentUser.name || '').toLowerCase().trim();
+        const dedicated = localStorage.getItem('current_user_avatar_override') ||
+                          (uEmail && localStorage.getItem(`user_avatar_${uEmail}`)) ||
+                          (uName && localStorage.getItem(`user_avatar_${uName}`));
+        if (dedicated && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
+          this.currentUser.avatar = dedicated;
+        }
+
+        try {
+          localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+          localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
+          localStorage.setItem('active_user_role', this.currentUser.role || 'user');
+          if (this.currentUser.email) localStorage.setItem('active_user_email', this.currentUser.email);
+          if (this.currentUser.name) localStorage.setItem('active_user_name', this.currentUser.name);
+        } catch (err) {}
+
+        return this.currentUser;
+      }
+    } catch (e) {
+      console.warn('[AuthService] Gagal memulihkan sesi:', e);
+    }
+    return null;
   }
 
   loadCustomUsers() {
@@ -179,6 +231,10 @@ export class AuthService {
     this.isAuthenticated = true;
     try {
       localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+      localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
+      localStorage.setItem('active_user_role', this.currentUser.role || 'user');
+      if (this.currentUser.email) localStorage.setItem('active_user_email', this.currentUser.email);
+      if (this.currentUser.name) localStorage.setItem('active_user_name', this.currentUser.name);
     } catch (e) {}
     this.eventBus.emit('auth:login', this.currentUser);
     this.notifications.success(`Masuk sebagai ${this.currentUser.name} (${this.currentUser.title || this.currentUser.role})`);
@@ -431,6 +487,10 @@ export class AuthService {
       this.isAuthenticated = true;
       try {
         localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+        localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
+        localStorage.setItem('active_user_role', role);
+        if (this.currentUser.email) localStorage.setItem('active_user_email', this.currentUser.email);
+        if (this.currentUser.name) localStorage.setItem('active_user_name', this.currentUser.name);
       } catch (e) {}
       this.eventBus.emit('auth:login', this.currentUser);
       this.notifications.success(`Selamat datang, ${this.currentUser.name} (${this.currentUser.title})`);
@@ -462,6 +522,11 @@ export class AuthService {
     this.isAuthenticated = false;
     try {
       localStorage.removeItem('creative_office_auth_user');
+      localStorage.removeItem('creative_office_user');
+      localStorage.removeItem('active_user_role');
+      localStorage.removeItem('active_user_email');
+      localStorage.removeItem('active_user_name');
+      sessionStorage.removeItem('auth_login_method');
     } catch (e) {}
     this.eventBus.emit('auth:logout');
     this.notifications.info('Sesi Anda telah diakhiri.');
