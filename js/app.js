@@ -628,7 +628,8 @@ class CreativeOfficeApp {
     eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
       const authService = this.container.resolve('AuthService');
       const currentUser = authService ? authService.getCurrentUser() : null;
-      if (currentUser && currentUser.role === 'user' && view !== 'kanban' && view !== 'auth' && view !== 'profile' && view !== 'profil') {
+      const allowedViewsForUser = ['dashboard', '', 'kanban', 'auth', 'register', 'profile', 'profil', 'user-profile'];
+      if (currentUser && currentUser.role === 'user' && !allowedViewsForUser.includes(view)) {
         const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
         const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
@@ -700,24 +701,26 @@ class CreativeOfficeApp {
     const viewName = parts[0];
     const param = parts[1];
 
-    // ROUTE GUARD: Role 'user' only permitted to access 'kanban', 'auth', 'register', and 'profile'
-    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'register' && viewName !== 'profile' && viewName !== 'profil') {
+    // ROUTE GUARD: Role 'user' only permitted to access 'dashboard', 'kanban', 'auth', 'register', and 'profile'
+    const allowedViewsForUser = ['dashboard', '', 'kanban', 'board', 'project', 'auth', 'register', 'profile', 'profil', 'user-profile'];
+    if (isUserRole && !allowedViewsForUser.includes(viewName)) {
       const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
       const notif = this.container.resolve('NotificationService');
       if (notif) {
-        notif.warning('Akses Terbatas: Sebagai User, Anda hanya dapat mengakses Papan Kanban proyek.');
+        notif.warning('Akses Terbatas: Sebagai User, Anda dapat mengakses Beranda, Papan Proyek, dan Profil.');
       }
-      this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+      this.navigateTo('dashboard');
       return;
     }
 
     if (viewName === 'workspace') {
       this.navigateTo('project-table', { workspace: param });
-    } else if (viewName === 'board' || viewName === 'project') {
-      this.navigateTo('kanban', { projectId: param });
-    } else if (viewName === 'kanban') {
-      this.navigateTo('kanban', { projectId: param });
+    } else if (viewName === 'board' || viewName === 'project' || viewName === 'kanban') {
+      const projectService = this.container.resolve('ProjectService');
+      const proj = projectService ? projectService.getProject(param) : null;
+      const ws = proj ? (proj.workspace || proj.id) : (localStorage.getItem('active_workspace') || 'panen-kunci');
+      this.navigateTo('kanban', { projectId: param, workspace: ws });
     } else {
       this.navigateTo(viewName);
     }
@@ -739,12 +742,11 @@ class CreativeOfficeApp {
     const currentUser = authService ? authService.getCurrentUser() : null;
     const isUserRole = currentUser && currentUser.role === 'user';
 
-    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban, auth, register, profile
-    if (isUserRole && viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'register' && viewName !== 'profile' && viewName !== 'profil') {
-      const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-      const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
-      viewName = 'kanban';
-      params = { projectId: allowedProj, workspace: allowedWs };
+    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to dashboard, kanban, auth, register, profile
+    const allowedViewsForUser = ['dashboard', '', 'kanban', 'board', 'project', 'auth', 'register', 'profile', 'profil', 'user-profile'];
+    if (isUserRole && !allowedViewsForUser.includes(viewName)) {
+      viewName = 'dashboard';
+      params = {};
     }
 
     // Update URL hash without triggering double reload
@@ -820,7 +822,7 @@ class CreativeOfficeApp {
       case 'kanban':
         this.currentView = new KanbanBoardView(this.container);
         if (params.projectId) {
-          this.currentView.setProject(params.projectId);
+          this.currentView.setProject(params.projectId, params.workspace);
         } else {
           const wsKanban = params.workspace || this.activeWorkspace;
           if (wsKanban) this.currentView.setWorkspace(wsKanban);

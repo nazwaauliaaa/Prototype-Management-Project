@@ -227,17 +227,39 @@ export class KanbanBoardView extends BaseView {
     this._initColumns();
   }
 
-  setProject(projectId) {
+  setProject(projectId, workspace = null) {
     this.projectId = projectId;
     localStorage.setItem('active_project_id', projectId || '');
+    if (workspace) {
+      this.currentWorkspace = workspace;
+      localStorage.setItem('active_workspace', workspace);
+    }
     if (this.projectService) {
       this.project = this.projectService.getProject(projectId);
+      if (!this.project) {
+        try {
+          const raw = localStorage.getItem('creative_office_projects');
+          if (raw) {
+            const arr = JSON.parse(raw);
+            const search = String(projectId).toLowerCase().trim();
+            const found = arr.find(p => 
+              (p.id && String(p.id).toLowerCase() === search) || 
+              (p.workspace && String(p.workspace).toLowerCase() === search) ||
+              (p.name && String(p.name).toLowerCase() === search)
+            );
+            if (found) this.project = found;
+          }
+        } catch (e) {}
+      }
       if (this.project) {
         this.currentWorkspace = this.project.workspace || this.project.id;
         localStorage.setItem('active_workspace', this.currentWorkspace);
-        this.setWorkspace(this.currentWorkspace);
       }
     }
+    if (!this.currentWorkspace) {
+      this.currentWorkspace = workspace || projectId || 'panen-kunci';
+    }
+    this.setWorkspace(this.currentWorkspace);
   }
 
   getWorkspaceName(wsKey) {
@@ -889,11 +911,41 @@ export class KanbanBoardView extends BaseView {
 
   render() {
     // Resolve project if projectId set
-    if (this.projectId && !this.project && this.projectService) {
-      this.project = this.projectService.getProject(this.projectId);
+    if (this.projectId && !this.project) {
+      if (this.projectService) {
+        this.project = this.projectService.getProject(this.projectId);
+      }
+      if (!this.project) {
+        try {
+          const raw = localStorage.getItem('creative_office_projects');
+          if (raw) {
+            const arr = JSON.parse(raw);
+            const search = String(this.projectId).toLowerCase().trim();
+            const found = arr.find(p => 
+              (p.id && String(p.id).toLowerCase() === search) || 
+              (p.workspace && String(p.workspace).toLowerCase() === search) ||
+              (p.name && String(p.name).toLowerCase() === search)
+            );
+            if (found) this.project = found;
+          }
+        } catch (e) {}
+      }
       if (this.project) {
         this.currentWorkspace = this.project.workspace || this.project.id;
       }
+    }
+
+    if (!Array.isArray(this.columns) || this.columns.length === 0) {
+      this._initColumns();
+    }
+    if (!Array.isArray(this.columns) || this.columns.length === 0) {
+      this.columns = [
+        { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-700' },
+        { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
+        { id: 'review-qa', title: 'Review QA Lapangan', color: 'border-rose-500', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' },
+        { id: 'ready-launch', title: 'Siap Launching', color: 'border-purple-500', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700' },
+        { id: 'done', title: 'Selesai', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
+      ];
     }
 
     const perms = this.getPermissions();
@@ -2093,7 +2145,7 @@ export class KanbanBoardView extends BaseView {
                 <p class="text-[10.5px] text-slate-400 dark:text-slate-500 mt-0.5">Hanya pengguna yang bergabung melalui tautan undangan yang akan terdaftar di sini.</p>
               </div>
             ` : boardMembers.map(m => {
-              const curUser = authService ? authService.getCurrentUser() : null;
+              const curUser = this.authService ? this.authService.getCurrentUser() : null;
               const curEmail = (curUser?.email || '').toLowerCase().trim();
               const curName = (curUser?.name || '').toLowerCase().trim();
               const mEmail = (m.email || '').toLowerCase().trim();

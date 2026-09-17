@@ -152,11 +152,12 @@ export class ProjectService {
    */
   getProject(idOrCode) {
     if (!idOrCode) return undefined;
-    const search = idOrCode.toLowerCase();
+    const search = String(idOrCode).toLowerCase().trim();
     return this.projects.find(p => 
-      p.id.toLowerCase() === search || 
-      p.code.toLowerCase() === search || 
-      p.name.toLowerCase() === search
+      (p.id && String(p.id).toLowerCase() === search) || 
+      (p.code && String(p.code).toLowerCase() === search) || 
+      (p.name && String(p.name).toLowerCase() === search) ||
+      (p.workspace && String(p.workspace).toLowerCase() === search)
     );
   }
 

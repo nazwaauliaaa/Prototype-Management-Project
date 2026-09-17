@@ -18,15 +18,17 @@ export class DashboardView extends BaseView {
     this.eventBus = container.resolve('EventBus');
 
     // Re-render when role switches or projects update
-    const rerender = () => {
+    this._rerender = () => {
       if (this.element) {
         this.mount(this.element);
       }
     };
 
-    this.eventBus.on('auth:login', rerender);
-    this.eventBus.on('project:added', rerender);
-    this.eventBus.on('project:created', rerender);
+    this.eventBus.on('auth:login', this._rerender);
+    this.eventBus.on('project:added', this._rerender);
+    this.eventBus.on('project:created', this._rerender);
+    this.eventBus.on('projects:updated', this._rerender);
+    this.eventBus.on('tasks:updated', this._rerender);
   }
 
   render() {
@@ -196,6 +198,17 @@ export class DashboardView extends BaseView {
     `;
   }
 
+  unmount() {
+    if (this._rerender) {
+      this.eventBus.off('auth:login', this._rerender);
+      this.eventBus.off('project:added', this._rerender);
+      this.eventBus.off('project:created', this._rerender);
+      this.eventBus.off('projects:updated', this._rerender);
+      this.eventBus.off('tasks:updated', this._rerender);
+    }
+    super.unmount();
+  }
+
   bindEvents() {
     // Click board card -> opens Kanban board
     const boardCards = this.element ? this.element.querySelectorAll('.board-card') : [];
@@ -203,6 +216,12 @@ export class DashboardView extends BaseView {
       const openBoard = () => {
         const projectId = card.getAttribute('data-project-id');
         const workspace = card.getAttribute('data-workspace') || 'ruangkreasi';
+        if (projectId) {
+          localStorage.setItem('active_project_id', projectId);
+        }
+        if (workspace) {
+          localStorage.setItem('active_workspace', workspace);
+        }
         this.eventBus.emit('navigate', {
           view: 'kanban',
           projectId: projectId,
