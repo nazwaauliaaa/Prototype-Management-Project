@@ -14,23 +14,92 @@ export class TaskService {
     this.eventBus = eventBus;
     this.notifications = notificationService;
     this.tasks = [];
+    this.isSyncing = false;
     this.loadFromStorage();
     this.syncFromBackend();
+
+    // Inisialisasi kanal sinkronisasi real-time antar-tab / multi-jendela
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        this.channel = new BroadcastChannel('creative_office_sync_bus');
+        this.channel.onmessage = (e) => {
+          if (e.data && e.data.type === 'TASKS_MODIFIED') {
+            this.loadFromStorage();
+            if (this.eventBus) {
+              this.eventBus.emit('tasks:updated', this.tasks);
+            }
+          }
+        };
+      } catch (e) {}
+    }
+
+    // Polling otomatis setiap 3.5 detik agar HP/mobile otomatis mengikuti apa pun yang diubah di desktop
+    this.syncTimer = setInterval(() => {
+      this.syncFromBackend(true);
+    }, 3500);
+
+    // Sinkronisasi instan saat user membuka tab / mengaktifkan layar HP
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.syncFromBackend(true);
+        }
+      });
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', () => {
+        this.syncFromBackend(true);
+      });
+    }
+  }
+
+  broadcastLocalChange() {
+    if (this.channel) {
+      try {
+        this.channel.postMessage({ type: 'TASKS_MODIFIED', timestamp: Date.now() });
+      } catch (e) {}
+    }
   }
 
   /**
-   * Sinkronisasi data tugas dengan PostgreSQL / Supabase melalui Backend API
+   * Cek apakah daftar tugas baru memiliki perbedaan dengan yang sedang aktif di memori
    */
-  async syncFromBackend() {
+  _hasTasksChanged(newTasks) {
+    if (!this.tasks || this.tasks.length !== newTasks.length) return true;
+    for (let i = 0; i < this.tasks.length; i++) {
+      const a = this.tasks[i];
+      const b = newTasks[i];
+      if (!b) return true;
+      if (
+        String(a.id) !== String(b.id) ||
+        a.status !== b.status ||
+        a.title !== b.title ||
+        a.board !== b.board ||
+        Boolean(a.isStarred) !== Boolean(b.isStarred) ||
+        (a.pic?.name !== b.pic?.name)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Sinkronisasi data tugas dengan Backend (Port 5000 / LAN / Supabase / Cloud Sync)
+   */
+  async syncFromBackend(isSilent = false) {
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+
     try {
       const remoteTasks = await apiService.getTasks();
-      if (Array.isArray(remoteTasks)) {
+      if (Array.isArray(remoteTasks) && remoteTasks.length > 0) {
         const remoteMap = new Map();
         remoteTasks.forEach(t => {
           if (t && t.id) remoteMap.set(String(t.id), new Task(t));
         });
 
-        // Cari task lokal yang belum ada di remote (Supabase) dan jadwalkan upload
+        // Cari task lokal yang belum ada di remote dan jadwalkan upload
         const localTasksToUpload = [];
         for (const localTask of this.tasks) {
           if (localTask && localTask.id && !remoteMap.has(String(localTask.id))) {
@@ -39,28 +108,36 @@ export class TaskService {
           }
         }
 
-        this.tasks = Array.from(remoteMap.values());
-        this.saveToStorage();
-        if (this.eventBus) {
-          this.eventBus.emit('tasks:updated', this.tasks);
-        }
+        const mergedTasks = Array.from(remoteMap.values());
+        const changed = this._hasTasksChanged(mergedTasks);
 
-        // Upload task lokal yang belum tersimpan di Supabase
-        if (localTasksToUpload.length > 0) {
-          console.log(`[TaskService] 🔄 Mengunggah ${localTasksToUpload.length} tugas lokal ke database Supabase...`);
-          for (const task of localTasksToUpload) {
-            try {
-              await apiService.createTask(task);
-            } catch (upErr) {
-              console.warn('[TaskService] Gagal upload task lokal:', upErr.message);
-            }
+        if (changed) {
+          this.tasks = mergedTasks;
+          this.saveToStorage();
+          if (this.eventBus) {
+            this.eventBus.emit('tasks:updated', this.tasks);
+          }
+          this.broadcastLocalChange();
+          if (!isSilent) {
+            console.log(`[TaskService] 🔄 Sinkronisasi otomatis: ${this.tasks.length} tugas diperbarui dari backend.`);
           }
         }
 
-        console.log(`[TaskService] ✅ Berhasil menyinkronkan ${this.tasks.length} tugas dengan PostgreSQL/Supabase.`);
+        // Upload task lokal yang belum tersimpan di remote
+        if (localTasksToUpload.length > 0) {
+          for (const task of localTasksToUpload) {
+            try {
+              await apiService.createTask(task);
+            } catch (upErr) {}
+          }
+        }
       }
     } catch (err) {
-      console.warn('[TaskService] Backend PostgreSQL belum dapat dihubungi, menggunakan cache lokal.');
+      if (!isSilent) {
+        console.warn('[TaskService] Backend sync warning:', err.message);
+      }
+    } finally {
+      this.isSyncing = false;
     }
   }
 
@@ -253,6 +330,7 @@ export class TaskService {
     });
 
     this.eventBus.emit('tasks:updated', this.tasks);
+    this.broadcastLocalChange();
     this.notifications.success(`Tugas "${newTask.title}" berhasil ditambahkan.`);
     return newTask;
   }
@@ -275,6 +353,7 @@ export class TaskService {
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
+      this.broadcastLocalChange();
       if (!silent) {
         this.notifications.success(`Tugas "${removed.title}" berhasil dihapus.`);
       }
@@ -342,6 +421,7 @@ export class TaskService {
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
+      this.broadcastLocalChange();
       if (this.notifications) {
         this.notifications.info(`Status ${task.code || 'tugas'} diubah: ${oldStatus} ➔ ${newStatus}`);
       }
@@ -369,6 +449,7 @@ export class TaskService {
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
+      this.broadcastLocalChange();
       return true;
     }
     return false;
@@ -403,6 +484,7 @@ export class TaskService {
     });
 
     this.eventBus.emit('tasks:updated', this.tasks);
+    this.broadcastLocalChange();
     if (this.notifications) {
       this.notifications.success(`Tugas "${task.title || task.code}" berhasil diperbarui.`);
     }
@@ -422,6 +504,7 @@ export class TaskService {
       apiService.updateTask(taskId, { isStarred: task.isStarred }).catch(() => {});
 
       this.eventBus.emit('tasks:updated', this.tasks);
+      this.broadcastLocalChange();
     }
   }
 

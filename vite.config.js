@@ -9,6 +9,7 @@ export default defineConfig({
     sourcemap: false
   },
   server: {
+    host: true,
     port: 3000,
     open: false,
     proxy: {

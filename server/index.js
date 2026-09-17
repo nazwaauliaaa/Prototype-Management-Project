@@ -57,14 +57,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Terjadi kesalahan internal server' });
 });
 
-app.listen(PORT, async () => {
-  console.log(`\n🚀 Server backend berjalan di http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`\n🚀 Server backend berjalan di http://0.0.0.0:${PORT} (dapat diakses dari Desktop & Mobile LAN)`);
   console.log(`🔍 Memeriksa koneksi database PostgreSQL...`);
   const status = await testConnection();
   if (status.connected) {
     console.log(`✅ Sukses terhubung ke PostgreSQL: "${status.database}"`);
   } else {
-    console.warn(`⚠️ Peringatan: Belum terhubung ke PostgreSQL: ${status.error}`);
-    console.warn(`👉 Pastikan konfigurasi di server/.env sudah sesuai.\n`);
+    console.warn(`⚠️ PostgreSQL belum aktif (${status.error || 'No DB config'}).`);
+    console.log(`📂 Menggunakan penyimpanan lokal fileStore (server/data/tasks.json) sebagai sinkronisasi desktop & mobile.`);
   }
 });

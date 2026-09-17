@@ -210,9 +210,88 @@ export class ApiService {
     }
   }
 
+  // ==================== CLOUD SYNC HELPERS (Untuk Vercel / Remote Cross-Device) ====================
+  getCloudSyncUrl() {
+    return 'https://api.restful-api.dev/objects/ff808181a09d98f701a0ae918ca32524';
+  }
+
+  async fetchFromCloud() {
+    try {
+      const res = await fetch(this.getCloudSyncUrl(), {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return Array.isArray(json?.data?.tasks) ? json.data.tasks : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async syncToCloud(tasks) {
+    if (!Array.isArray(tasks)) return;
+    try {
+      const cleanTasks = tasks.map(t => ({
+        id: String(t.id),
+        code: t.code || '',
+        title: t.title || '',
+        description: t.description || '',
+        workspace: t.workspace || 'panen-kunci',
+        board: t.board || 'backend-core',
+        status: t.status || 'in-progress',
+        priority: t.priority || 'Medium',
+        pic: t.pic || { name: 'Kevin Santoso', initials: 'KS' },
+        timeline: t.timeline || '',
+        hours: Number(t.hours) || 0,
+        assets: t.assets || [],
+        qaProgress: t.qaProgress || t.qa_progress || { passed: 0, total: 4 },
+        isStarred: Boolean(t.isStarred),
+        tags: t.tags || [],
+        location: t.location || '',
+        resolution: t.resolution || '',
+        projectId: t.projectId || null,
+        updatedAt: t.updatedAt || Date.now()
+      }));
+
+      await fetch(this.getCloudSyncUrl(), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'PrototypeTasks',
+          data: { tasks: cleanTasks, updatedAt: Date.now() }
+        })
+      });
+    } catch (e) {}
+  }
+
+  async addOrUpdateCloudTask(taskData) {
+    try {
+      const current = await this.fetchFromCloud();
+      const list = Array.isArray(current) ? current : [];
+      const idx = list.findIndex(t => String(t.id) === String(taskData.id) || (taskData.code && String(t.code) === String(taskData.code)));
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...taskData, updatedAt: Date.now() };
+      } else {
+        list.unshift({ ...taskData, updatedAt: Date.now() });
+      }
+      await this.syncToCloud(list);
+    } catch (e) {}
+  }
+
+  async removeCloudTask(id) {
+    try {
+      const current = await this.fetchFromCloud();
+      if (!Array.isArray(current)) return;
+      const list = current.filter(t => String(t.id) !== String(id) && String(t.code) !== String(id));
+      await this.syncToCloud(list);
+    } catch (e) {}
+  }
+
   // ==================== TASKS ====================
 
   async getTasks(workspace = null, projectId = null) {
+    let tasks = null;
     try {
       const params = new URLSearchParams();
       if (workspace && workspace !== 'all') params.append('workspace', workspace);
@@ -220,58 +299,86 @@ export class ApiService {
 
       const query = params.toString() ? `?${params.toString()}` : '';
       const result = await this.safeFetch(`/tasks${query}`);
-      if (!result.ok) throw new Error(`HTTP ${result.status}`);
-      return result.data.data || [];
+      if (result.ok && Array.isArray(result.data?.data)) {
+        tasks = result.data.data;
+        // Asynchronously mirror to cloud store for remote mobile / Vercel
+        this.syncToCloud(tasks).catch(() => {});
+      }
     } catch (err) {
-      console.warn('[ApiService] Gagal mengambil tasks dari backend:', err.message);
-      return null;
+      // Backend lokal tidak merespons (misal saat dibuka di Vercel tanpa backend)
     }
+
+    // Jika backend lokal tidak ada / mengembalikan null, gunakan Cloud Store
+    if (!tasks || tasks.length === 0) {
+      try {
+        const cloudTasks = await this.fetchFromCloud();
+        if (Array.isArray(cloudTasks) && cloudTasks.length > 0) {
+          tasks = cloudTasks;
+          if (workspace && workspace !== 'all') {
+            const wsLower = workspace.toLowerCase();
+            tasks = tasks.filter(t => {
+              const tWs = (t.workspace || '').toLowerCase();
+              const tProj = (t.projectId || '').toLowerCase();
+              return tWs === wsLower || tProj === wsLower;
+            });
+          }
+          if (projectId) {
+            const pLower = projectId.toLowerCase();
+            tasks = tasks.filter(t => (t.projectId || '').toLowerCase() === pLower);
+          }
+        }
+      } catch (cloudErr) {
+        console.warn('[ApiService] Cloud sync fallback error:', cloudErr.message);
+      }
+    }
+
+    return tasks;
   }
 
   async createTask(taskData) {
+    let saved = null;
     try {
       const result = await this.safeFetch('/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskData)
       });
-      if (!result.ok) {
-        const errMsg = result.data?.error || `HTTP ${result.status}`;
-        throw new Error(errMsg);
-      }
-      return result.data.data;
+      if (result.ok) saved = result.data?.data;
     } catch (err) {
-      console.warn('[ApiService] Gagal menyimpan task ke backend:', err.message);
-      throw err;
+      console.warn('[ApiService] Backend local not reached, saving to cloud sync...');
     }
+
+    // Selalu perbarui Cloud Store agar sinkron ke mobile di mana pun berada
+    this.addOrUpdateCloudTask(taskData).catch(() => {});
+    return saved || taskData;
   }
 
   async updateTask(id, updates) {
+    let updated = null;
     try {
       const result = await this.safeFetch(`/tasks/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-      if (!result.ok) throw new Error(`HTTP ${result.status}`);
-      return result.data.data;
-    } catch (err) {
-      console.warn('[ApiService] Gagal mengupdate task di backend:', err.message);
-      return null;
-    }
+      if (result.ok) updated = result.data?.data;
+    } catch (err) {}
+
+    // Selalu perbarui Cloud Store
+    this.addOrUpdateCloudTask({ id, ...updates }).catch(() => {});
+    return updated || { id, ...updates };
   }
 
   async deleteTask(id) {
     try {
-      const result = await this.safeFetch(`/tasks/${encodeURIComponent(id)}`, {
+      await this.safeFetch(`/tasks/${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
-      if (!result.ok) throw new Error(`HTTP ${result.status}`);
-      return true;
-    } catch (err) {
-      console.warn('[ApiService] Gagal menghapus task di backend:', err.message);
-      return false;
-    }
+    } catch (err) {}
+
+    // Selalu perbarui Cloud Store
+    this.removeCloudTask(id).catch(() => {});
+    return true;
   }
 
   // ==================== QR LOOKUP & INVENTORY ====================
