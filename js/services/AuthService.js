@@ -143,7 +143,7 @@ export class AuthService {
     }
 
     // Cek apakah akun dengan nama atau email ini sudah terdaftar
-    let existingIndex = this.customUsers.findIndex(u => u.id === finalId || u.email === finalEmail);
+    let existingIndex = this.customUsers.findIndex(u => u.id === finalId || (finalEmail && u.email === finalEmail) || (u.name && name && u.name.toLowerCase().trim() === name.toLowerCase().trim()));
     
     const newUser = new User({
       id: finalId,

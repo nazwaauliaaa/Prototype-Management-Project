@@ -287,22 +287,26 @@ router.get('/lookup', async (req, res) => {
       const jsonEmail = jsonUser ? jsonUser.email : null;
       const jsonId = jsonUser ? jsonUser.id : null;
 
+      const validRoles = ['admin', 'manajement-project', 'qa', 'user'];
+      const updateRole = (jsonRole && validRoles.includes(jsonRole.toLowerCase())) ? jsonRole.toLowerCase() : null;
+      const updateJobdesk = jsonUser && (jsonUser.jobdesk || jsonUser.title) ? (jsonUser.jobdesk || jsonUser.title) : null;
+
       const userQuery = `
         SELECT * FROM users 
         WHERE id = $1 
            OR qr_data = $1
+           OR (qr_data IS NOT NULL AND TRIM(qr_data) = TRIM($1))
            OR (qr_data IS NOT NULL AND qr_data ILIKE '%' || $1 || '%')
            OR (qr_data IS NOT NULL AND $1 ILIKE '%' || qr_data || '%')
            OR LOWER(name) = LOWER($1) 
            OR LOWER(email) = LOWER($1)
-           OR ($2::text IS NOT NULL AND (
-                id = $2::text 
-                OR (LOWER(name) = LOWER($3::text) AND LOWER(role) = LOWER($4::text))
-                OR (email IS NOT NULL AND LOWER(email) = LOWER($5::text))
-              ))
+           OR ($1 ILIKE '%' || name || '%')
+           OR ($2::text IS NOT NULL AND id = $2::text)
+           OR ($3::text IS NOT NULL AND LOWER(TRIM(name)) = LOWER(TRIM($3::text)))
+           OR ($4::text IS NOT NULL AND email IS NOT NULL AND LOWER(TRIM(email)) = LOWER(TRIM($4::text)))
         LIMIT 1
       `;
-      const userResult = await pool.query(userQuery, [code, jsonId, jsonName, jsonRole, jsonEmail]);
+      const userResult = await pool.query(userQuery, [code, jsonId, jsonName, jsonEmail]);
 
       if (userResult.rows.length > 0) {
         const row = userResult.rows[0];
@@ -320,17 +324,20 @@ router.get('/lookup', async (req, res) => {
           });
         }
 
-        // Ikat perangkat saat ini (atau alihkan jika forceSwitch)
+        // Ikat perangkat saat ini dan sinkronkan role/jobdesk/qr_data jika ada pembaruan dari QR
         const updateRes = await pool.query(`
           UPDATE users 
           SET bound_device_id = COALESCE($1, bound_device_id),
               bound_device_name = COALESCE($2, bound_device_name),
               bound_at = CASE WHEN bound_device_id IS NULL OR bound_device_id != $1 THEN NOW() ELSE bound_at END,
-              qr_data = COALESCE(qr_data, $4),
+              qr_data = COALESCE($4, qr_data),
+              role = COALESCE($5, role),
+              jobdesk = COALESCE($6, jobdesk),
+              title = COALESCE($6, title),
               updated_at = NOW()
           WHERE id = $3
           RETURNING *
-        `, [deviceId, deviceName, row.id, code]);
+        `, [deviceId, deviceName, row.id, code, updateRole, updateJobdesk]);
 
         const savedUser = updateRes.rows[0];
 
