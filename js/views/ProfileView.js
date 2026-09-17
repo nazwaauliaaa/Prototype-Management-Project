@@ -65,26 +65,30 @@ export class ProfileView extends BaseView {
           <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-emerald-600/10 dark:from-blue-950/40 dark:via-purple-950/40 dark:to-emerald-950/40 border border-surface-border p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm">
             
             <!-- Avatar Section with Upload trigger -->
-            <div class="relative group shrink-0">
-              <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-primary/40 shadow-md bg-surface-container-low flex items-center justify-center">
+            <div class="relative group shrink-0 flex flex-col items-center">
+              <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-primary/40 shadow-md bg-surface-container-low flex items-center justify-center cursor-pointer">
                 <img 
                   id="profile-avatar-preview" 
                   src="${currentAvatar}" 
                   alt="${this._escapeHtml(user.name)}" 
                   class="w-full h-full object-cover"
                 />
-              </div>
 
-              <!-- Upload Button Overlay -->
-              <label 
-                for="input-profile-avatar" 
-                class="absolute inset-0 bg-black/60 backdrop-blur-xs rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center text-white text-[11px] font-bold gap-1 cursor-pointer"
-                title="Klik untuk mengganti foto profil"
-              >
-                <span class="material-symbols-outlined text-[24px]">photo_camera</span>
-                <span>Ganti Foto</span>
-              </label>
+                <!-- Upload Button Overlay -->
+                <label 
+                  for="input-profile-avatar" 
+                  class="absolute inset-0 bg-black/60 backdrop-blur-xs rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center text-white text-[11.5px] font-bold gap-1 cursor-pointer"
+                  title="Klik untuk mengganti foto profil"
+                >
+                  <span class="material-symbols-outlined text-[24px]">photo_camera</span>
+                  <span>Ganti Foto</span>
+                </label>
+              </div>
               <input type="file" id="input-profile-avatar" class="hidden" accept="image/png,image/jpeg,image/webp,image/gif" />
+              <span class="text-[10px] text-text-muted mt-1.5 flex items-center gap-1 font-medium">
+                <span class="material-symbols-outlined text-[12px] text-primary">touch_app</span>
+                <span>Klik foto untuk ganti</span>
+              </span>
             </div>
 
             <!-- Hero Info & Quick Avatar Actions -->
@@ -103,21 +107,12 @@ export class ProfileView extends BaseView {
                 <div class="flex items-center justify-center sm:justify-end gap-2 flex-wrap">
                   <button 
                     type="button" 
-                    id="btn-trigger-upload-avatar" 
-                    class="h-8.5 px-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-[12px] font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
-                  >
-                    <span class="material-symbols-outlined text-[16px]">upload</span>
-                    <span>Unggah Foto</span>
-                  </button>
-
-                  <button 
-                    type="button" 
                     id="btn-remove-avatar" 
                     class="h-8.5 px-3 rounded-xl bg-surface-container hover:bg-rose-50 hover:text-rose-600 text-text-muted text-[12px] font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-surface-border"
                     title="Gunakan avatar inisial nama"
                   >
                     <span class="material-symbols-outlined text-[16px]">delete</span>
-                    <span>Reset</span>
+                    <span>Reset Inisial</span>
                   </button>
                 </div>
               </div>
@@ -354,13 +349,8 @@ export class ProfileView extends BaseView {
 
     // Avatar upload handling
     const fileInput = this.element.querySelector('#input-profile-avatar');
-    const triggerBtn = this.element.querySelector('#btn-trigger-upload-avatar');
     const avatarImg = this.element.querySelector('#profile-avatar-preview');
     const removeAvatarBtn = this.element.querySelector('#btn-remove-avatar');
-
-    if (triggerBtn && fileInput) {
-      triggerBtn.addEventListener('click', () => fileInput.click());
-    }
 
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
