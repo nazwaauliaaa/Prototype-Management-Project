@@ -77,9 +77,9 @@ export class ProfileView extends BaseView {
           <!-- Top Navigation & Breadcrumb -->
           <div class="flex items-center justify-between gap-4 pb-3 border-b border-surface-border">
             <div class="flex items-center gap-2 text-[13px] text-text-secondary">
-              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer font-medium">
+              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer font-medium" title="Kembali ke Beranda">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                <span>${isUserRole ? 'Kembali ke Papan Kanban' : 'Kembali'}</span>
+                <span>Kembali</span>
               </button>
               <span class="text-text-muted">/</span>
               <span class="font-bold text-text-primary">Pengaturan Profil</span>
@@ -280,10 +280,7 @@ export class ProfileView extends BaseView {
     const backBtn = this.element.querySelector('#btn-profile-back');
     const cancelBtn = this.element.querySelector('#btn-cancel-profile-edit');
     const handleBack = () => {
-      const u = this.authService.getCurrentUser();
-      const ws = localStorage.getItem('active_workspace') || 'panen-kunci';
-      const proj = localStorage.getItem('active_project_id') || ws;
-      this.eventBus.emit('navigate', { view: 'kanban', workspace: ws, projectId: proj });
+      this.eventBus.emit('navigate', { view: 'dashboard' });
     };
     if (backBtn) backBtn.addEventListener('click', handleBack);
     if (cancelBtn) cancelBtn.addEventListener('click', handleBack);
