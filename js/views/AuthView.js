@@ -808,7 +808,7 @@ export class AuthView extends BaseView {
 
           const name = getKey(['name', 'nama']);
           const role = getKey(['role', 'peran']) || 'user';
-          const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
+          const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi', 'jobdesk/posisi', 'jobdesk / posisi', 'posisi / jobdesk']) || 'Anggota Tim & Kontributor';
           const finalId = `usr-${Date.now().toString().slice(-6)}`;
           const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
 
@@ -859,26 +859,111 @@ export class AuthView extends BaseView {
         }
       };
 
-      // Helper: Alihkan ke halaman register jika QR belum ada di database
-      const redirectToRegister = (codeToReg, prefilled) => {
-        stopCamera();
-        sessionStorage.setItem('pending_registration_qr', codeToReg);
-        if (prefilled) {
-          sessionStorage.setItem('pending_registration_parsed', JSON.stringify(prefilled));
+      // Helper: Registrasi otomatis akun baru langsung ke Supabase dan navigasi ke Beranda
+      const autoRegisterAndEnter = async (codeToReg, userToReg) => {
+        if (!userToReg || !userToReg.name) {
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-rose-500 font-bold">⚠️ Kode QR belum terdaftar dan tidak memuat format identitas akun (Nama, Role, Jobdesk/Posisi, Email).</span>`;
+          }
+          if (this.notificationService) {
+            this.notificationService.warning('Kode QR belum terdaftar dan tidak berisi data pengguna yang lengkap.');
+          }
+          setTimeout(() => {
+            this.isScanning = false;
+          }, 1500);
+          return;
         }
+
+        stopCamera();
+
         if (feedback) {
-          feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">🔍 Kode QR belum terdaftar di database. Mengalihkan ke pendaftaran akun...</span>`;
+          feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">✨ QR Baru Terdeteksi! Menyimpan "${userToReg.name}" ke Supabase & mengunci perangkat...</span>`;
         }
         if (this.notificationService) {
-          this.notificationService.info('Kode QR belum terdaftar. Mengalihkan ke form pendaftaran QR...');
+          this.notificationService.info(`Mendaftarkan akun "${userToReg.name}" ke database Supabase...`);
         }
-        setTimeout(() => {
-          window.location.hash = `#/register?qr=${encodeURIComponent(codeToReg)}`;
-        }, 450);
+
+        const regPayload = {
+          id: userToReg.id || `usr-${Date.now().toString().slice(-6)}`,
+          name: userToReg.name,
+          role: (userToReg.role || 'user').toLowerCase(),
+          jobdesk: userToReg.jobdesk || 'Anggota Tim & Kontributor',
+          title: userToReg.jobdesk || 'Anggota Tim & Kontributor',
+          email: userToReg.email || `${userToReg.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+          avatar: userToReg.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userToReg.name)}`,
+          qr_data: codeToReg,
+          rawCode: codeToReg,
+          deviceId: apiService.getDeviceId(),
+          deviceName: apiService.getDeviceName(),
+          workspace_access: ['ruangkreasi', 'panen-kunci']
+        };
+
+        try {
+          const regResult = await apiService.registerUser(regPayload);
+
+          // Jika terjadi single-device lock conflict
+          if (regResult && regResult.locked) {
+            handleDeviceLocked(regResult, userToReg);
+            return;
+          }
+
+          const registeredData = (regResult && regResult.data) ? regResult.data : regPayload;
+
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Tersimpan di Supabase!</span> Mengalihkan ke Beranda...`;
+          }
+          if (this.notificationService) {
+            this.notificationService.success(`🎉 Akun "${registeredData.name}" berhasil terdaftar di Supabase! Selamat datang di Beranda.`);
+          }
+
+          const userInstance = this.authService.registerNewUser({
+            ...registeredData,
+            workspaceAccess: registeredData.workspace_access || registeredData.workspaceAccess || ['ruangkreasi', 'panen-kunci'],
+            boundDeviceId: apiService.getDeviceId(),
+            boundDeviceName: apiService.getDeviceName(),
+            loginMethod: 'qr',
+            qr_data: codeToReg
+          });
+
+          setTimeout(() => {
+            this.authService.loginAsUser(userInstance);
+
+            const allowedWs = 'panen-kunci';
+            const allowedProj = allowedWs;
+
+            localStorage.setItem('active_workspace', allowedWs);
+            localStorage.setItem('active_project_id', allowedProj);
+            localStorage.setItem('user_invited_workspace', allowedWs);
+            localStorage.setItem('user_invited_project', allowedProj);
+
+            // Arahkan langsung ke halaman Beranda
+            const eb = this.container ? this.container.resolve('EventBus') : null;
+            if (eb) {
+              eb.emit('navigate', {
+                view: 'dashboard',
+                projectId: allowedProj,
+                workspace: allowedWs
+              });
+            }
+            window.location.hash = '#/dashboard';
+          }, 450);
+        } catch (regErr) {
+          console.warn('[AuthView] Error registrasi otomatis:', regErr);
+          // Fallback lokal jika backend tidak terjangkau
+          const userInstance = this.authService.registerNewUser({
+            ...regPayload,
+            workspaceAccess: ['ruangkreasi', 'panen-kunci'],
+            boundDeviceId: apiService.getDeviceId(),
+            boundDeviceName: apiService.getDeviceName(),
+            loginMethod: 'qr',
+            qr_data: codeToReg
+          });
+          this.authService.loginAsUser(userInstance);
+          window.location.hash = '#/dashboard';
+        }
       };
 
       try {
-        // HANYA LOOKUP KE DATABASE! JANGAN PERNAH OTOMATIS INSERT PADA PROSES SCAN!
         let lookupUrl = `${apiService.baseUrl}/qr/lookup?code=${encodeURIComponent(cleanCode)}&deviceId=${encodeURIComponent(apiService.getDeviceId())}&deviceName=${encodeURIComponent(apiService.getDeviceName())}`;
         if (forceSwitch) {
           lookupUrl += '&forceSwitch=true';
@@ -892,7 +977,7 @@ export class AuthView extends BaseView {
           return;
         }
 
-        // 2. Jika akun sudah terdaftar di database PostgreSQL
+        // 2. Jika akun sudah terdaftar di database PostgreSQL / Supabase
         if (lookupRes.ok && lookupData && lookupData.success && lookupData.type === 'user' && lookupData.data) {
           const userFromDb = lookupData.data;
           stopCamera();
@@ -916,24 +1001,8 @@ export class AuthView extends BaseView {
           setTimeout(() => {
             this.authService.loginAsUser(userInstance);
 
-            // Arahkan hash URL ke halaman yang tepat
-            const role = (userInstance.role || '').toLowerCase();
-            const rawWs = userInstance.workspaceAccess;
-            let allowedWs = 'panen-kunci';
-            if (Array.isArray(rawWs) && rawWs.length > 0) {
-              allowedWs = rawWs[0];
-            } else if (typeof rawWs === 'string') {
-              try {
-                const parsed = JSON.parse(rawWs);
-                if (Array.isArray(parsed) && parsed.length > 0) allowedWs = parsed[0];
-              } catch (e) {
-                if (rawWs) allowedWs = rawWs;
-              }
-            } else {
-              allowedWs = localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-            }
-
-            const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+            const allowedWs = 'panen-kunci';
+            const allowedProj = allowedWs;
             
             // Simpan active workspace & project
             localStorage.setItem('active_workspace', allowedWs);
@@ -941,29 +1010,25 @@ export class AuthView extends BaseView {
             localStorage.setItem('user_invited_workspace', allowedWs);
             localStorage.setItem('user_invited_project', allowedProj);
 
-            const targetHash = role === 'user' ? `#/kanban/${allowedProj}` : `#/dashboard`;
-
-            if (window.location.hash === targetHash) {
-              const eb = this.container ? this.container.resolve('EventBus') : null;
-              if (eb) {
-                eb.emit('navigate', {
-                  view: role === 'user' ? 'kanban' : 'dashboard',
-                  projectId: allowedProj,
-                  workspace: allowedWs
-                });
-              }
-            } else {
-              window.location.hash = targetHash;
+            // Arahkan ke Beranda
+            const eb = this.container ? this.container.resolve('EventBus') : null;
+            if (eb) {
+              eb.emit('navigate', {
+                view: 'dashboard',
+                projectId: allowedProj,
+                workspace: allowedWs
+              });
             }
+            window.location.hash = '#/dashboard';
           }, 400);
           return;
         }
 
-        // 3. Jika TIDAK ADA di database PostgreSQL -> Langsung arahkan ke view register!
-        redirectToRegister(cleanCode, parsedUser);
+        // 3. Jika TIDAK ADA di database PostgreSQL/Supabase -> Otomatis daftarkan langsung dan masuk ke Beranda!
+        await autoRegisterAndEnter(cleanCode, parsedUser);
       } catch (lookupErr) {
-        console.warn('[AuthView] Error lookup database, alihkan ke register:', lookupErr);
-        redirectToRegister(cleanCode, parsedUser);
+        console.warn('[AuthView] Error lookup database, coba registrasi otomatis:', lookupErr);
+        await autoRegisterAndEnter(cleanCode, parsedUser);
       }
     };
 

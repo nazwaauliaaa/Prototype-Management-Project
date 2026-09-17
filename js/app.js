@@ -24,7 +24,6 @@ import { AddMemberModal } from './components/modals/AddMemberModal.js';
 import { CreateBoardModal } from './components/modals/CreateBoardModal.js';
 
 import { AuthView } from './views/AuthView.js';
-import { RegisterView } from './views/RegisterView.js';
 import { DashboardView } from './views/DashboardView.js';
 import { ProjectTableView } from './views/ProjectTableView.js';
 import { KanbanBoardView } from './views/KanbanBoardView.js';
@@ -759,11 +758,17 @@ class CreativeOfficeApp {
     const currentUser = authService ? authService.getCurrentUser() : null;
     const isUserRole = currentUser && currentUser.role === 'user';
 
-    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to dashboard, kanban, auth, register, profile
-    const allowedViewsForUser = ['dashboard', '', 'kanban', 'board', 'project', 'auth', 'register', 'profile', 'profil', 'user-profile'];
+    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to dashboard, kanban, auth, profile
+    const allowedViewsForUser = ['dashboard', '', 'kanban', 'board', 'project', 'auth', 'profile', 'profil', 'user-profile'];
     if (isUserRole && !allowedViewsForUser.includes(viewName)) {
       viewName = 'dashboard';
       params = {};
+    }
+
+    // Redirect obsolete register route to auth
+    if (viewName === 'register') {
+      window.location.hash = '#/auth';
+      return;
     }
 
     // Update URL hash without triggering double reload
@@ -772,8 +777,8 @@ class CreativeOfficeApp {
       history.replaceState(null, '', `#${targetHash}`);
     }
 
-    if (viewName === 'auth' || viewName === 'register') {
-      // Hide header, sidebar, workspace bar, and bottom nav in auth/register gate
+    if (viewName === 'auth') {
+      // Hide header, sidebar, workspace bar, and bottom nav in auth gate
       if (headerHost) headerHost.classList.add('hidden');
       if (sidebarHost) sidebarHost.classList.add('hidden');
       const bottomNavHost = document.getElementById('app-bottom-nav');
@@ -789,11 +794,7 @@ class CreativeOfficeApp {
       if (this.currentView) {
         this.currentView.unmount();
       }
-      if (viewName === 'register') {
-        this.currentView = new RegisterView(this.container);
-      } else {
-        this.currentView = new AuthView(this.container);
-      }
+      this.currentView = new AuthView(this.container);
       this.currentView.mount(mainHost);
       return;
     }

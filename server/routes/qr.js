@@ -86,7 +86,7 @@ function extractUserFromPayload(raw) {
 
   const name = getKey(['name', 'nama']);
   const role = getKey(['role', 'peran']) || 'user';
-  const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
+  const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi', 'jobdesk/posisi', 'jobdesk / posisi', 'posisi / jobdesk']) || 'Anggota Tim & Kontributor';
   const id = getKey(['id', 'userid', 'user_id']);
   const finalId = id || `usr-${Date.now().toString().slice(-6)}`;
   const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
