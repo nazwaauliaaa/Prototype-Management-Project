@@ -214,97 +214,6 @@ export class ProfileView extends BaseView {
                   </div>
                 </div>
               </div>
-
-              <!-- Bio / Catatan Singkat -->
-              <div>
-                <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
-                  Bio / Catatan Singkat
-                </label>
-                <textarea 
-                  id="input-profile-bio" 
-                  rows="2" 
-                  class="w-full p-3 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-y"
-                  placeholder="Ceritakan spesialisasi atau kontribusi Anda di dalam proyek..."
-                >${this._escapeHtml(user.bio || '')}</textarea>
-              </div>
-            </div>
-
-            <!-- Section 2: Ganti Kata Sandi -->
-            <div class="p-6 rounded-2xl bg-surface-container-lowest border border-surface-border flex flex-col gap-4 shadow-xs">
-              <div class="flex items-center gap-2.5 pb-3 border-b border-surface-border">
-                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <span class="material-symbols-outlined text-[19px]">lock_reset</span>
-                </div>
-                <div>
-                  <h3 class="text-[15px] font-bold text-text-primary">Keamanan & Kata Sandi Akun</h3>
-                  <p class="text-[12px] text-text-muted">Biarkan kolom kosong jika Anda tidak ingin mengubah kata sandi saat ini</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Sandi Baru -->
-                <div>
-                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
-                    Kata Sandi Baru
-                  </label>
-                  <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[18px]">key</span>
-                    <input 
-                      type="password" 
-                      id="input-profile-password" 
-                      class="w-full h-10 pl-9 pr-10 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                      placeholder="Masukkan kata sandi baru (min. 6 karakter)"
-                    />
-                    <button type="button" class="btn-toggle-pwd absolute right-3 top-2.5 text-text-muted hover:text-text-primary transition-colors cursor-pointer" data-target="input-profile-password">
-                      <span class="material-symbols-outlined text-[18px]">visibility</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Konfirmasi Sandi Baru -->
-                <div>
-                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
-                    Konfirmasi Kata Sandi Baru
-                  </label>
-                  <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[18px]">lock</span>
-                    <input 
-                      type="password" 
-                      id="input-profile-confirm-password" 
-                      class="w-full h-10 pl-9 pr-10 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                      placeholder="Ketik ulang kata sandi baru"
-                    />
-                    <button type="button" class="btn-toggle-pwd absolute right-3 top-2.5 text-text-muted hover:text-text-primary transition-colors cursor-pointer" data-target="input-profile-confirm-password">
-                      <span class="material-symbols-outlined text-[18px]">visibility</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <p id="password-match-warning" class="hidden text-[11.5px] text-rose-500 font-semibold flex items-center gap-1">
-                <span class="material-symbols-outlined text-[14px]">error</span>
-                <span>Konfirmasi kata sandi tidak cocok. Silakan periksa kembali.</span>
-              </p>
-            </div>
-
-            <!-- Section 3: Informasi Hak Akses & Status User -->
-            <div class="p-5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/25 border border-sky-200/80 dark:border-sky-800/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div class="flex items-start gap-3">
-                <div class="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-200 dark:border-sky-800">
-                  <span class="material-symbols-outlined text-[20px]">verified_user</span>
-                </div>
-                <div>
-                  <h4 class="text-[13.5px] font-bold text-sky-900 dark:text-sky-200">Hak Akses & Otorisasi Proyek</h4>
-                  <p class="text-[12px] text-sky-800/80 dark:text-sky-300/80 mt-0.5 leading-relaxed">
-                    Sebagai peran <strong>${user.role}</strong>, Anda memiliki izin membuat, memindahkan kartu, dan berkolaborasi di papan proyek 
-                    <span class="font-bold text-sky-900 dark:text-white uppercase">"${activeWs}"</span>.
-                  </p>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 px-3 py-1 rounded-full shrink-0">
-                <span class="material-symbols-outlined text-[14px]">cloud_done</span>
-                <span>Sesi Aktif</span>
-              </span>
             </div>
 
             <!-- Action Footer -->
@@ -402,25 +311,6 @@ export class ProfileView extends BaseView {
       });
     });
 
-    // Password visibility toggles
-    const toggleBtns = this.element.querySelectorAll('.btn-toggle-pwd');
-    toggleBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target');
-        const input = this.element.querySelector(`#${targetId}`);
-        const icon = btn.querySelector('.material-symbols-outlined');
-        if (input) {
-          if (input.type === 'password') {
-            input.type = 'text';
-            if (icon) icon.textContent = 'visibility_off';
-          } else {
-            input.type = 'password';
-            if (icon) icon.textContent = 'visibility';
-          }
-        }
-      });
-    });
-
     // Form submit handler
     const form = this.element.querySelector('#form-edit-user-profile');
     if (form) {
@@ -430,18 +320,11 @@ export class ProfileView extends BaseView {
         const emailInput = this.element.querySelector('#input-profile-email');
         const titleInput = this.element.querySelector('#input-profile-title');
         const phoneInput = this.element.querySelector('#input-profile-phone');
-        const bioInput = this.element.querySelector('#input-profile-bio');
-        const pwdInput = this.element.querySelector('#input-profile-password');
-        const confirmPwdInput = this.element.querySelector('#input-profile-confirm-password');
-        const pwdWarning = this.element.querySelector('#password-match-warning');
 
         const newName = nameInput ? nameInput.value.trim() : '';
         const newEmail = emailInput ? emailInput.value.trim() : '';
         const newTitle = titleInput ? titleInput.value.trim() : '';
         const newPhone = phoneInput ? phoneInput.value.trim() : '';
-        const newBio = bioInput ? bioInput.value.trim() : '';
-        const newPwd = pwdInput ? pwdInput.value : '';
-        const confirmPwd = confirmPwdInput ? confirmPwdInput.value : '';
 
         if (!newName) {
           this.notificationService.warning('Nama lengkap tidak boleh kosong.');
@@ -453,33 +336,16 @@ export class ProfileView extends BaseView {
           return;
         }
 
-        if (newPwd) {
-          if (newPwd.length < 6) {
-            this.notificationService.warning('Kata sandi baru minimal 6 karakter.');
-            return;
-          }
-          if (newPwd !== confirmPwd) {
-            if (pwdWarning) pwdWarning.classList.remove('hidden');
-            this.notificationService.error('Konfirmasi kata sandi tidak cocok!');
-            return;
-          }
-        }
-        if (pwdWarning) pwdWarning.classList.add('hidden');
-
         // Apply updates through AuthService
         const updates = {
           name: newName,
           email: newEmail,
           title: newTitle,
-          phone: newPhone,
-          bio: newBio
+          phone: newPhone
         };
 
         if (this.pendingAvatarUrl) {
           updates.avatar = this.pendingAvatarUrl;
-        }
-        if (newPwd) {
-          updates.password = newPwd;
         }
 
         const updatedUser = this.authService.updateCurrentUser(updates);
@@ -489,8 +355,6 @@ export class ProfileView extends BaseView {
           const dispEmail = this.element.querySelector('#display-profile-email span:nth-child(2)');
           if (dispName) dispName.textContent = updatedUser.name;
           if (dispEmail) dispEmail.textContent = updatedUser.email;
-          if (pwdInput) pwdInput.value = '';
-          if (confirmPwdInput) confirmPwdInput.value = '';
           this.pendingAvatarUrl = null;
         }
       });
