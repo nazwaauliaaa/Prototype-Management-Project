@@ -44,7 +44,7 @@ export class RescheduleModal extends BaseModal {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Tanggal Baru</label>
               <input 

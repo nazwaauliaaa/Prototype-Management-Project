@@ -145,14 +145,60 @@ export class NewTaskModal extends BaseModal {
 
           <!-- Prioritas & Status Awal (Responsive Grid, In-Modal Dropdown) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div class="relative z-20" id="wrapper-custom-priority-select">
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Prioritas</label>
-              <select id="new-task-priority" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer text-[12.5px]">
+              
+              <!-- Hidden native select for form data compatibility -->
+              <select id="new-task-priority" class="hidden">
                 <option value="Medium">Sedang (Medium)</option>
                 <option value="High" selected>Tinggi (High)</option>
                 <option value="Critical">Kritis (Critical)</option>
                 <option value="Low">Rendah (Low)</option>
               </select>
+
+              <button
+                type="button"
+                id="btn-custom-priority-trigger"
+                class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium flex items-center justify-between gap-2 transition-all cursor-pointer hover:border-primary/50 text-[12.5px]"
+                aria-expanded="false"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span id="custom-priority-dot" class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
+                  <span id="custom-priority-text" class="truncate font-medium text-text-primary">Tinggi (High)</span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-priority-chevron">expand_more</span>
+              </button>
+
+              <div
+                id="custom-priority-menu"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+              >
+                <button type="button" class="btn-priority-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer text-text-primary" data-priority-id="Critical" data-priority-label="Kritis (Critical)" data-priority-color="bg-rose-500">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-rose-500"></span>
+                    <span class="truncate">Kritis (Critical)</span>
+                  </div>
+                </button>
+                <button type="button" class="btn-priority-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer bg-primary/10 text-primary font-bold" data-priority-id="High" data-priority-label="Tinggi (High)" data-priority-color="bg-amber-500">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
+                    <span class="truncate">Tinggi (High)</span>
+                  </div>
+                  <span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>
+                </button>
+                <button type="button" class="btn-priority-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer text-text-primary" data-priority-id="Medium" data-priority-label="Sedang (Medium)" data-priority-color="bg-blue-500">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
+                    <span class="truncate">Sedang (Medium)</span>
+                  </div>
+                </button>
+                <button type="button" class="btn-priority-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer text-text-primary" data-priority-id="Low" data-priority-label="Rendah (Low)" data-priority-color="bg-slate-400">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-400"></span>
+                    <span class="truncate">Rendah (Low)</span>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <div class="relative z-20" id="wrapper-custom-status-select">
@@ -376,7 +422,70 @@ export class NewTaskModal extends BaseModal {
       });
     }
 
-    // Custom Status Dropdown handling (strictly confined within modal, responsive in mobile & desktop)
+    // Custom Status & Priority Dropdowns handling (strictly confined within modal, responsive in mobile & desktop)
+    const prioTrigger = modalRoot.querySelector('#btn-custom-priority-trigger');
+    const prioMenu = modalRoot.querySelector('#custom-priority-menu');
+    const prioChevron = modalRoot.querySelector('#custom-priority-chevron');
+    const hiddenPrioritySelect = modalRoot.querySelector('#new-task-priority');
+    const customPriorityDot = modalRoot.querySelector('#custom-priority-dot');
+    const customPriorityText = modalRoot.querySelector('#custom-priority-text');
+
+    const togglePrioMenu = (show) => {
+      if (!prioMenu) return;
+      const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
+      if (willOpen) {
+        prioMenu.classList.remove('hidden');
+        if (prioChevron) prioChevron.classList.add('rotate-180');
+        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
+        if (statusMenu && !statusMenu.classList.contains('hidden')) toggleStatusMenu(false);
+      } else {
+        prioMenu.classList.add('hidden');
+        if (prioChevron) prioChevron.classList.remove('rotate-180');
+        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    if (prioTrigger) {
+      prioTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePrioMenu();
+      });
+    }
+
+    const prioOptionButtons = modalRoot.querySelectorAll('.btn-priority-option');
+    prioOptionButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const prioId = btn.dataset.priorityId;
+        const prioLabel = btn.dataset.priorityLabel;
+        const prioColor = btn.dataset.priorityColor;
+
+        if (hiddenPrioritySelect) hiddenPrioritySelect.value = prioId;
+        if (customPriorityText) customPriorityText.textContent = prioLabel;
+        if (customPriorityDot) customPriorityDot.className = `w-2.5 h-2.5 rounded-full shrink-0 ${prioColor}`;
+
+        prioOptionButtons.forEach(otherBtn => {
+          const isMatch = otherBtn.dataset.priorityId === prioId;
+          otherBtn.className = `btn-priority-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${
+            isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'
+          }`;
+          const existingCheck = otherBtn.querySelector('.material-symbols-outlined');
+          if (isMatch && !existingCheck) {
+            const checkSpan = document.createElement('span');
+            checkSpan.className = 'material-symbols-outlined text-[16px] text-primary shrink-0';
+            checkSpan.textContent = 'check';
+            otherBtn.appendChild(checkSpan);
+          } else if (!isMatch && existingCheck) {
+            existingCheck.remove();
+          }
+        });
+
+        togglePrioMenu(false);
+      });
+    });
+
     const statusTrigger = modalRoot.querySelector('#btn-custom-status-trigger');
     const statusMenu = modalRoot.querySelector('#custom-status-menu');
     const statusChevron = modalRoot.querySelector('#custom-status-chevron');
@@ -384,25 +493,26 @@ export class NewTaskModal extends BaseModal {
     const customStatusDot = modalRoot.querySelector('#custom-status-dot');
     const customStatusText = modalRoot.querySelector('#custom-status-text');
 
-    if (statusTrigger && statusMenu) {
-      const toggleMenu = (show) => {
-        const isCurrentlyOpen = !statusMenu.classList.contains('hidden');
-        const willOpen = show !== undefined ? show : !isCurrentlyOpen;
-        if (willOpen) {
-          statusMenu.classList.remove('hidden');
-          statusTrigger.setAttribute('aria-expanded', 'true');
-          if (statusChevron) statusChevron.classList.add('rotate-180');
-        } else {
-          statusMenu.classList.add('hidden');
-          statusTrigger.setAttribute('aria-expanded', 'false');
-          if (statusChevron) statusChevron.classList.remove('rotate-180');
-        }
-      };
+    const toggleStatusMenu = (show) => {
+      if (!statusMenu) return;
+      const willOpen = show !== undefined ? show : statusMenu.classList.contains('hidden');
+      if (willOpen) {
+        statusMenu.classList.remove('hidden');
+        if (statusChevron) statusChevron.classList.add('rotate-180');
+        if (statusTrigger) statusTrigger.setAttribute('aria-expanded', 'true');
+        if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
+      } else {
+        statusMenu.classList.add('hidden');
+        if (statusChevron) statusChevron.classList.remove('rotate-180');
+        if (statusTrigger) statusTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
 
+    if (statusTrigger && statusMenu) {
       statusTrigger.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggleMenu();
+        toggleStatusMenu();
       });
 
       const optionButtons = modalRoot.querySelectorAll('.btn-status-option');
@@ -442,17 +552,20 @@ export class NewTaskModal extends BaseModal {
             }
           });
 
-          toggleMenu(false);
+          toggleStatusMenu(false);
         });
       });
-
-      const handleOutsideClick = (e) => {
-        if (!statusTrigger.contains(e.target) && !statusMenu.contains(e.target)) {
-          toggleMenu(false);
-        }
-      };
-      document.addEventListener('click', handleOutsideClick);
     }
+
+    const handleOutsideClickNewTask = (e) => {
+      if (!prioTrigger?.contains(e.target) && !prioMenu?.contains(e.target)) {
+        togglePrioMenu(false);
+      }
+      if (!statusTrigger?.contains(e.target) && !statusMenu?.contains(e.target)) {
+        toggleStatusMenu(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClickNewTask);
 
     // Attachment file handling
     const attachmentInput = modalRoot.querySelector('#new-task-attachment');

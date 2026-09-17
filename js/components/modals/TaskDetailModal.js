@@ -712,31 +712,108 @@ export class TaskDetailModal extends BaseModal {
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <!-- Status Kolom -->
-            <div>
+            <!-- Status Kolom (In-Modal Custom Dropdown, 100% Mobile Safe) -->
+            <div class="relative z-30" id="wrapper-custom-edit-status">
               <label class="font-caption-meta text-[11px] text-text-muted font-bold uppercase tracking-wider block mb-1.5">
                 Kolom / Status
               </label>
-              <select id="edit-task-status" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary font-medium focus:outline-none focus:border-primary cursor-pointer text-[13px]">
+              <select id="edit-task-status" class="hidden">
                 <option value="backlog" ${task.status === 'backlog' ? 'selected' : ''}>📋 Daftar Pekerjaan (Backlog)</option>
                 <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>⏳ Sedang Berjalan (In Progress)</option>
                 <option value="review-qa" ${task.status === 'review-qa' ? 'selected' : ''}>🔍 Review QA Lapangan</option>
                 <option value="ready-launch" ${task.status === 'ready-launch' ? 'selected' : ''}>🚀 Siap Launching</option>
                 <option value="done" ${task.status === 'done' ? 'selected' : ''}>✅ Selesai (Done)</option>
               </select>
+
+              <button
+                type="button"
+                id="btn-custom-edit-status-trigger"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary font-medium focus:outline-none focus:border-primary flex items-center justify-between gap-2 transition-all cursor-pointer hover:border-primary/50 text-[13px]"
+                aria-expanded="false"
+              >
+                <span id="custom-edit-status-text" class="truncate">
+                  ${task.status === 'backlog' ? '📋 Daftar Pekerjaan (Backlog)' :
+                    task.status === 'in-progress' ? '⏳ Sedang Berjalan (In Progress)' :
+                    task.status === 'review-qa' ? '🔍 Review QA Lapangan' :
+                    task.status === 'ready-launch' ? '🚀 Siap Launching' : '✅ Selesai (Done)'}
+                </span>
+                <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-edit-status-chevron">expand_more</span>
+              </button>
+
+              <div
+                id="custom-edit-status-menu"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+              >
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'backlog' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="backlog" data-label="📋 Daftar Pekerjaan (Backlog)">
+                  <span class="truncate">📋 Daftar Pekerjaan (Backlog)</span>
+                  ${task.status === 'backlog' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'in-progress' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="in-progress" data-label="⏳ Sedang Berjalan (In Progress)">
+                  <span class="truncate">⏳ Sedang Berjalan (In Progress)</span>
+                  ${task.status === 'in-progress' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'review-qa' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="review-qa" data-label="🔍 Review QA Lapangan">
+                  <span class="truncate">🔍 Review QA Lapangan</span>
+                  ${task.status === 'review-qa' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'ready-launch' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="ready-launch" data-label="🚀 Siap Launching">
+                  <span class="truncate">🚀 Siap Launching</span>
+                  ${task.status === 'ready-launch' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'done' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="done" data-label="✅ Selesai (Done)">
+                  <span class="truncate">✅ Selesai (Done)</span>
+                  ${task.status === 'done' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+              </div>
             </div>
 
-            <!-- Prioritas -->
-            <div>
+            <!-- Prioritas (In-Modal Custom Dropdown, 100% Mobile Safe) -->
+            <div class="relative z-20" id="wrapper-custom-edit-priority">
               <label class="font-caption-meta text-[11px] text-text-muted font-bold uppercase tracking-wider block mb-1.5">
                 Prioritas
               </label>
-              <select id="edit-task-priority" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary font-medium focus:outline-none focus:border-primary cursor-pointer text-[13px]">
+              <select id="edit-task-priority" class="hidden">
                 <option value="Low" ${task.priority === 'Low' ? 'selected' : ''}>⚪ Rendah (Low)</option>
                 <option value="Medium" ${task.priority === 'Medium' ? 'selected' : ''}>🟡 Sedang (Medium)</option>
                 <option value="High" ${task.priority === 'High' ? 'selected' : ''}>🟠 Tinggi (High)</option>
                 <option value="Critical" ${task.priority === 'Critical' ? 'selected' : ''}>🔴 Kritis (Critical)</option>
               </select>
+
+              <button
+                type="button"
+                id="btn-custom-edit-priority-trigger"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary font-medium focus:outline-none focus:border-primary flex items-center justify-between gap-2 transition-all cursor-pointer hover:border-primary/50 text-[13px]"
+                aria-expanded="false"
+              >
+                <span id="custom-edit-priority-text" class="truncate">
+                  ${task.priority === 'Critical' ? '🔴 Kritis (Critical)' :
+                    task.priority === 'High' ? '🟠 Tinggi (High)' :
+                    task.priority === 'Medium' ? '🟡 Sedang (Medium)' : '⚪ Rendah (Low)'}
+                </span>
+                <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-edit-priority-chevron">expand_more</span>
+              </button>
+
+              <div
+                id="custom-edit-priority-menu"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+              >
+                <button type="button" class="btn-edit-priority-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.priority === 'Critical' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="Critical" data-label="🔴 Kritis (Critical)">
+                  <span class="truncate">🔴 Kritis (Critical)</span>
+                  ${task.priority === 'Critical' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-priority-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.priority === 'High' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="High" data-label="🟠 Tinggi (High)">
+                  <span class="truncate">🟠 Tinggi (High)</span>
+                  ${task.priority === 'High' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-priority-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.priority === 'Medium' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="Medium" data-label="🟡 Sedang (Medium)">
+                  <span class="truncate">🟡 Sedang (Medium)</span>
+                  ${task.priority === 'Medium' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+                <button type="button" class="btn-edit-priority-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.priority === 'Low' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="Low" data-label="⚪ Rendah (Low)">
+                  <span class="truncate">⚪ Rendah (Low)</span>
+                  ${task.priority === 'Low' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -879,6 +956,131 @@ export class TaskDetailModal extends BaseModal {
           }
         });
       }
+
+      // In-Modal Custom Status & Priority Dropdown handling
+      const editStatusTrigger = modalRoot.querySelector('#btn-custom-edit-status-trigger');
+      const editStatusMenu = modalRoot.querySelector('#custom-edit-status-menu');
+      const editStatusChevron = modalRoot.querySelector('#custom-edit-status-chevron');
+      const hiddenEditStatus = modalRoot.querySelector('#edit-task-status');
+      const editStatusText = modalRoot.querySelector('#custom-edit-status-text');
+
+      const editPrioTrigger = modalRoot.querySelector('#btn-custom-edit-priority-trigger');
+      const editPrioMenu = modalRoot.querySelector('#custom-edit-priority-menu');
+      const editPrioChevron = modalRoot.querySelector('#custom-edit-priority-chevron');
+      const hiddenEditPrio = modalRoot.querySelector('#edit-task-priority');
+      const editPrioText = modalRoot.querySelector('#custom-edit-priority-text');
+
+      const toggleEditStatus = (show) => {
+        if (!editStatusMenu) return;
+        const willOpen = show !== undefined ? show : editStatusMenu.classList.contains('hidden');
+        if (willOpen) {
+          editStatusMenu.classList.remove('hidden');
+          if (editStatusChevron) editStatusChevron.classList.add('rotate-180');
+          if (editStatusTrigger) editStatusTrigger.setAttribute('aria-expanded', 'true');
+          if (editPrioMenu && !editPrioMenu.classList.contains('hidden')) toggleEditPrio(false);
+        } else {
+          editStatusMenu.classList.add('hidden');
+          if (editStatusChevron) editStatusChevron.classList.remove('rotate-180');
+          if (editStatusTrigger) editStatusTrigger.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const toggleEditPrio = (show) => {
+        if (!editPrioMenu) return;
+        const willOpen = show !== undefined ? show : editPrioMenu.classList.contains('hidden');
+        if (willOpen) {
+          editPrioMenu.classList.remove('hidden');
+          if (editPrioChevron) editPrioChevron.classList.add('rotate-180');
+          if (editPrioTrigger) editPrioTrigger.setAttribute('aria-expanded', 'true');
+          if (editStatusMenu && !editStatusMenu.classList.contains('hidden')) toggleEditStatus(false);
+        } else {
+          editPrioMenu.classList.add('hidden');
+          if (editPrioChevron) editPrioChevron.classList.remove('rotate-180');
+          if (editPrioTrigger) editPrioTrigger.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      if (editStatusTrigger) {
+        editStatusTrigger.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleEditStatus();
+        });
+      }
+
+      modalRoot.querySelectorAll('.btn-edit-status-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const val = btn.dataset.value;
+          const label = btn.dataset.label;
+          if (hiddenEditStatus) hiddenEditStatus.value = val;
+          if (editStatusText) editStatusText.textContent = label;
+
+          modalRoot.querySelectorAll('.btn-edit-status-option').forEach(o => {
+            const isMatch = o.dataset.value === val;
+            o.className = `btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${
+              isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'
+            }`;
+            const existingCheck = o.querySelector('.material-symbols-outlined');
+            if (isMatch && !existingCheck) {
+              const checkSpan = document.createElement('span');
+              checkSpan.className = 'material-symbols-outlined text-[16px] text-primary shrink-0';
+              checkSpan.textContent = 'check';
+              o.appendChild(checkSpan);
+            } else if (!isMatch && existingCheck) {
+              existingCheck.remove();
+            }
+          });
+          toggleEditStatus(false);
+        });
+      });
+
+      if (editPrioTrigger) {
+        editPrioTrigger.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleEditPrio();
+        });
+      }
+
+      modalRoot.querySelectorAll('.btn-edit-priority-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const val = btn.dataset.value;
+          const label = btn.dataset.label;
+          if (hiddenEditPrio) hiddenEditPrio.value = val;
+          if (editPrioText) editPrioText.textContent = label;
+
+          modalRoot.querySelectorAll('.btn-edit-priority-option').forEach(o => {
+            const isMatch = o.dataset.value === val;
+            o.className = `btn-edit-priority-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${
+              isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'
+            }`;
+            const existingCheck = o.querySelector('.material-symbols-outlined');
+            if (isMatch && !existingCheck) {
+              const checkSpan = document.createElement('span');
+              checkSpan.className = 'material-symbols-outlined text-[16px] text-primary shrink-0';
+              checkSpan.textContent = 'check';
+              o.appendChild(checkSpan);
+            } else if (!isMatch && existingCheck) {
+              existingCheck.remove();
+            }
+          });
+          toggleEditPrio(false);
+        });
+      });
+
+      const handleOutsideClickEditTask = (e) => {
+        if (!editStatusTrigger?.contains(e.target) && !editStatusMenu?.contains(e.target)) {
+          toggleEditStatus(false);
+        }
+        if (!editPrioTrigger?.contains(e.target) && !editPrioMenu?.contains(e.target)) {
+          toggleEditPrio(false);
+        }
+      };
+      document.addEventListener('click', handleOutsideClickEditTask);
 
       // Attachment handling in Edit Mode
       const editAttachmentInput = modalRoot.querySelector('#edit-task-attachment');

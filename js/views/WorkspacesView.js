@@ -311,14 +311,11 @@ export class WorkspacesView extends BaseView {
                 />
               </div>
 
-              <!-- Kategori / Divisi -->
-              <div class="w-full min-w-0">
+              <!-- Kategori / Divisi (In-Modal Custom Dropdown, 100% Mobile Safe) -->
+              <div class="w-full min-w-0 relative z-30" id="wrapper-ws-custom-category">
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
-                <select
-                  id="select-ws-new-workspace-tag"
-                  class="w-full max-w-full truncate bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer block"
-                  style="max-width: 100%; text-overflow: ellipsis; box-sizing: border-box;"
-                >
+                
+                <select id="select-ws-new-workspace-tag" class="hidden">
                   <option value="Dev / Creative Hub" selected>Dev / Creative</option>
                   <option value="Produk / Inovasi">Produk / Inovasi</option>
                   <option value="Studio / Digital & AI">Digital & AI</option>
@@ -326,20 +323,98 @@ export class WorkspacesView extends BaseView {
                   <option value="Cloud / Infrastruktur">Cloud Infra</option>
                   <option value="Marketing / Kampanye">Marketing</option>
                 </select>
+
+                <button
+                  type="button"
+                  id="btn-ws-custom-category-trigger"
+                  class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-purple-400 text-slate-800 text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  aria-expanded="false"
+                >
+                  <span id="ws-custom-category-text" class="truncate font-medium">Dev / Creative</span>
+                  <span class="material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 shrink-0" id="ws-custom-category-chevron">expand_more</span>
+                </button>
+
+                <div
+                  id="ws-custom-category-menu"
+                  class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+                >
+                  <button type="button" class="btn-ws-category-option w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-purple-700 bg-purple-50/60 transition-colors cursor-pointer" data-value="Dev / Creative Hub" data-label="Dev / Creative">
+                    <span class="truncate">Dev / Creative</span>
+                    <span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>
+                  </button>
+                  <button type="button" class="btn-ws-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Produk / Inovasi" data-label="Produk / Inovasi">
+                    <span class="truncate">Produk / Inovasi</span>
+                  </button>
+                  <button type="button" class="btn-ws-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Studio / Digital & AI" data-label="Digital & AI">
+                    <span class="truncate">Digital & AI</span>
+                  </button>
+                  <button type="button" class="btn-ws-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="SaaS / Security & Core" data-label="SaaS & Security">
+                    <span class="truncate">SaaS & Security</span>
+                  </button>
+                  <button type="button" class="btn-ws-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Cloud / Infrastruktur" data-label="Cloud Infra">
+                    <span class="truncate">Cloud Infra</span>
+                  </button>
+                  <button type="button" class="btn-ws-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Marketing / Kampanye" data-label="Marketing">
+                    <span class="truncate">Marketing</span>
+                  </button>
+                </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
+              <!-- Prioritas & Deadline (Responsive: 1 col on mobile, 2 col on sm+) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="relative z-20" id="wrapper-ws-custom-priority">
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Prioritas</label>
-                  <select
-                    id="select-ws-project-priority"
-                    class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
-                  >
+                  
+                  <select id="select-ws-project-priority" class="hidden">
                     <option value="Critical">Critical</option>
                     <option value="High" selected>High</option>
                     <option value="Medium">Medium</option>
                     <option value="Low">Low</option>
                   </select>
+
+                  <button
+                    type="button"
+                    id="btn-ws-custom-priority-trigger"
+                    class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-purple-400 text-slate-800 text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    aria-expanded="false"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span id="ws-custom-priority-dot" class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
+                      <span id="ws-custom-priority-text" class="truncate font-medium">High</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 shrink-0" id="ws-custom-priority-chevron">expand_more</span>
+                  </button>
+
+                  <div
+                    id="ws-custom-priority-menu"
+                    class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+                  >
+                    <button type="button" class="btn-ws-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer" data-value="Critical" data-label="Critical" data-color="bg-rose-500">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-rose-500"></span>
+                        <span class="truncate">Critical</span>
+                      </div>
+                    </button>
+                    <button type="button" class="btn-ws-priority-option w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-slate-50 text-purple-700 bg-purple-50/60 transition-colors cursor-pointer" data-value="High" data-label="High" data-color="bg-amber-500">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
+                        <span class="truncate">High</span>
+                      </div>
+                      <span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>
+                    </button>
+                    <button type="button" class="btn-ws-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer" data-value="Medium" data-label="Medium" data-color="bg-blue-500">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
+                        <span class="truncate">Medium</span>
+                      </div>
+                    </button>
+                    <button type="button" class="btn-ws-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer" data-value="Low" data-label="Low" data-color="bg-slate-400">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-400"></span>
+                        <span class="truncate">Low</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -648,6 +723,133 @@ export class WorkspacesView extends BaseView {
         }
       });
     }
+
+    // Custom Category & Priority Dropdowns in Modal Tambah Proyek
+    const wsTagSelect = this.element.querySelector('#select-ws-new-workspace-tag');
+    const wsPrioritySelect = this.element.querySelector('#select-ws-project-priority');
+
+    const catTrigger = this.element.querySelector('#btn-ws-custom-category-trigger');
+    const catMenu = this.element.querySelector('#ws-custom-category-menu');
+    const catChevron = this.element.querySelector('#ws-custom-category-chevron');
+    const catText = this.element.querySelector('#ws-custom-category-text');
+    const catOptions = this.element.querySelectorAll('.btn-ws-category-option');
+
+    const prioTrigger = this.element.querySelector('#btn-ws-custom-priority-trigger');
+    const prioMenu = this.element.querySelector('#ws-custom-priority-menu');
+    const prioChevron = this.element.querySelector('#ws-custom-priority-chevron');
+    const prioText = this.element.querySelector('#ws-custom-priority-text');
+    const prioDot = this.element.querySelector('#ws-custom-priority-dot');
+    const prioOptions = this.element.querySelectorAll('.btn-ws-priority-option');
+
+    const toggleCatMenu = (show) => {
+      if (!catMenu) return;
+      const willOpen = show !== undefined ? show : catMenu.classList.contains('hidden');
+      if (willOpen) {
+        catMenu.classList.remove('hidden');
+        if (catChevron) catChevron.classList.add('rotate-180');
+        if (catTrigger) catTrigger.setAttribute('aria-expanded', 'true');
+        if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
+      } else {
+        catMenu.classList.add('hidden');
+        if (catChevron) catChevron.classList.remove('rotate-180');
+        if (catTrigger) catTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    const togglePrioMenu = (show) => {
+      if (!prioMenu) return;
+      const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
+      if (willOpen) {
+        prioMenu.classList.remove('hidden');
+        if (prioChevron) prioChevron.classList.add('rotate-180');
+        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
+        if (catMenu && !catMenu.classList.contains('hidden')) toggleCatMenu(false);
+      } else {
+        prioMenu.classList.add('hidden');
+        if (prioChevron) prioChevron.classList.remove('rotate-180');
+        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    if (catTrigger) {
+      catTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleCatMenu();
+      });
+    }
+
+    catOptions.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const val = opt.getAttribute('data-value');
+        const label = opt.getAttribute('data-label');
+        if (wsTagSelect) wsTagSelect.value = val;
+        if (catText) catText.textContent = label;
+
+        catOptions.forEach(o => {
+          const isMatch = o.getAttribute('data-value') === val;
+          o.className = `btn-ws-category-option w-full px-3 py-2 text-left text-xs ${isMatch ? 'font-semibold text-purple-700 bg-purple-50/60' : 'font-medium text-slate-700'} flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer`;
+          const existingCheck = o.querySelector('.material-symbols-outlined');
+          if (isMatch && !existingCheck) {
+            const check = document.createElement('span');
+            check.className = 'material-symbols-outlined text-[16px] text-purple-600 shrink-0';
+            check.textContent = 'check';
+            o.appendChild(check);
+          } else if (!isMatch && existingCheck) {
+            existingCheck.remove();
+          }
+        });
+        toggleCatMenu(false);
+      });
+    });
+
+    if (prioTrigger) {
+      prioTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePrioMenu();
+      });
+    }
+
+    prioOptions.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const val = opt.getAttribute('data-value');
+        const label = opt.getAttribute('data-label');
+        const color = opt.getAttribute('data-color');
+        if (wsPrioritySelect) wsPrioritySelect.value = val;
+        if (prioText) prioText.textContent = label;
+        if (prioDot) prioDot.className = `w-2.5 h-2.5 rounded-full shrink-0 ${color}`;
+
+        prioOptions.forEach(o => {
+          const isMatch = o.getAttribute('data-value') === val;
+          o.className = `btn-ws-priority-option w-full px-3 py-2 text-left text-xs ${isMatch ? 'font-semibold text-purple-700 bg-purple-50/60' : 'font-medium text-slate-700'} flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer`;
+          const existingCheck = o.querySelector('.material-symbols-outlined');
+          if (isMatch && !existingCheck) {
+            const check = document.createElement('span');
+            check.className = 'material-symbols-outlined text-[16px] text-purple-600 shrink-0';
+            check.textContent = 'check';
+            o.appendChild(check);
+          } else if (!isMatch && existingCheck) {
+            existingCheck.remove();
+          }
+        });
+        togglePrioMenu(false);
+      });
+    });
+
+    const handleOutsideClickWs = (e) => {
+      if (!catTrigger?.contains(e.target) && !catMenu?.contains(e.target)) {
+        toggleCatMenu(false);
+      }
+      if (!prioTrigger?.contains(e.target) && !prioMenu?.contains(e.target)) {
+        togglePrioMenu(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClickWs);
 
     // Submit Tambah Proyek Form (Otomatis Buat Ruang Kerja Baru)
     const form = this.element.querySelector('#form-create-project');
