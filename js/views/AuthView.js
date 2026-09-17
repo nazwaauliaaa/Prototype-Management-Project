@@ -162,6 +162,13 @@ export class AuthView extends BaseView {
   render() {
     return `
       <div class="min-h-screen relative overflow-hidden flex items-center justify-center p-spacing-lg" style="background: radial-gradient(circle at 50% 15%, #581c87 0%, #3b0764 35%, #1e0538 70%, #0c0117 100%);">
+        <style>
+          @media (min-width: 768px) {
+            #btn-switch-camera {
+              display: none !important;
+            }
+          }
+        </style>
         
         <!-- Glowing Neon Purple Cyber Aura & Animated Ambient Orbs -->
         <div class="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-purple-600/35 blur-[120px] pointer-events-none animate-pulse"></div>
@@ -202,22 +209,22 @@ export class AuthView extends BaseView {
             <div class="relative z-10 w-full mb-spacing-md">
               <div class="relative w-full max-w-[280px] mx-auto aspect-[3/4] min-h-[300px] max-h-[380px] bg-slate-950 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-spacing-md group border border-purple-500/30">
                 
-                <!-- Live Camera Video Feed (strictly mirrored by default, portrait orientation) -->
-                <video id="camera-video-stream" class="absolute inset-0 w-full h-full object-cover hidden z-10" playsinline autoplay muted style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></video>
+                <!-- Live Camera Video Feed (un-mirrored orientation for natural QR scanning) -->
+                <video id="camera-video-stream" class="absolute inset-0 w-full h-full object-cover hidden z-10" playsinline autoplay muted style="transform: none; -webkit-transform: none;"></video>
                 <!-- Camera Simulation Canvas (fallback if hardware camera is blocked/unavailable) -->
-                <canvas id="camera-sim-canvas" class="absolute inset-0 w-full h-full object-cover hidden z-10" style="transform: scaleX(-1); -webkit-transform: scaleX(-1);"></canvas>
+                <canvas id="camera-sim-canvas" class="absolute inset-0 w-full h-full object-cover hidden z-10" style="transform: none; -webkit-transform: none;"></canvas>
 
                 <!-- Top Camera Status Indicator Badge -->
                 <div id="camera-badge-info" class="hidden absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-status-success font-mono text-[9px] font-semibold items-center gap-1.5 z-30">
                   <span class="w-1.5 h-1.5 rounded-full bg-status-success animate-ping"></span>
-                  <span id="camera-badge-mode">KAMERA DEPAN (MIRROR)</span>
+                  <span id="camera-badge-mode">KAMERA DEPAN</span>
                 </div>
 
-                <!-- Top Camera Switch Button (In Viewfinder) -->
+                <!-- Top Camera Switch Button (In Viewfinder, Mobile view only, hidden on desktop) -->
                 <button
                   id="btn-switch-camera"
                   type="button"
-                  class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/75 hover:bg-purple-950/80 active:scale-95 text-white text-[10px] font-semibold flex items-center gap-1.5 border border-purple-400/40 backdrop-blur-md shadow-lg cursor-pointer z-30 transition-all group/cam"
+                  class="md:hidden flex absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/75 hover:bg-purple-950/80 active:scale-95 text-white text-[10px] font-semibold items-center gap-1.5 border border-purple-400/40 backdrop-blur-md shadow-lg cursor-pointer z-30 transition-all group/cam"
                   title="Ganti ke Kamera Depan / Belakang"
                 >
                   <span id="icon-switch-camera" class="material-symbols-outlined text-[15px] text-emerald-400 group-hover/cam:rotate-180 transition-transform duration-300">flip_camera_ios</span>
@@ -478,14 +485,15 @@ export class AuthView extends BaseView {
     const iconSwitchCamera = this.element.querySelector('#icon-switch-camera');
 
     this.isCameraOn = false;
-    this.facingMode = 'user'; // 'user' (depan/mirror) atau 'environment' (belakang/normal)
+    this.facingMode = 'user'; // 'user' (depan) atau 'environment' (belakang)
     this.cameraStream = null;
     this.simAnimId = null;
     this.barcodeDetectorInterval = null;
 
     const applyMirrorState = () => {
       const isFront = this.facingMode === 'user';
-      const transformValue = isFront ? 'scaleX(-1)' : 'none';
+      // Sesuai permintaan user: kamera depan TIDAK dibuat mirror (normal / transform: none)
+      const transformValue = 'none';
       if (videoEl) {
         videoEl.style.transform = transformValue;
         videoEl.style.webkitTransform = transformValue;
@@ -495,7 +503,7 @@ export class AuthView extends BaseView {
         canvasEl.style.webkitTransform = transformValue;
       }
       if (cameraBadgeMode) {
-        cameraBadgeMode.textContent = isFront ? 'KAMERA DEPAN (MIRROR)' : 'KAMERA BELAKANG';
+        cameraBadgeMode.textContent = isFront ? 'KAMERA DEPAN' : 'KAMERA BELAKANG';
       }
       if (cameraStatusText && this.isCameraOn) {
         cameraStatusText.textContent = isFront ? 'Kamera Depan Aktif' : 'Kamera Belakang Aktif';
@@ -606,7 +614,7 @@ export class AuthView extends BaseView {
         const isFront = this.facingMode === 'user';
         ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
         ctx.font = '10px monospace';
-        ctx.fillText(`CAM: SENSOR READY (${isFront ? 'DEPAN/MIRROR' : 'BELAKANG'})`, 12, 20);
+        ctx.fillText(`CAM: SENSOR READY (${isFront ? 'DEPAN' : 'BELAKANG'})`, 12, 20);
         ctx.fillText('AI DETECT: SCANNING...', 12, 35);
         ctx.fillText(new Date().toISOString().substring(11, 19) + ' WIB', canvasEl.width - 95, 20);
 
@@ -638,7 +646,7 @@ export class AuthView extends BaseView {
 
       const isFront = this.facingMode === 'user';
       if (feedback) {
-        feedback.innerHTML = `<span class="text-status-success font-semibold">${isFront ? 'Kamera Depan Aktif (Mirror)' : 'Kamera Belakang Aktif'}.</span> Arahkan barcode fisik kartu pegawai atau QR aplikasi seluler ke kamera.`;
+        feedback.innerHTML = `<span class="text-status-success font-semibold">${isFront ? 'Kamera Depan Aktif' : 'Kamera Belakang Aktif'}.</span> Arahkan barcode fisik kartu pegawai atau QR aplikasi seluler ke kamera.`;
       }
 
       try {
