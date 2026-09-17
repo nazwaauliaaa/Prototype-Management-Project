@@ -87,9 +87,10 @@ export class TaskDetailModal extends BaseModal {
     if (data && data.tab) {
       this.activeTab = data.tab;
     }
-    if (data && data.editMode !== undefined) {
-      this.isEditMode = !!data.editMode;
+    if (data && (data.editMode !== undefined || data.isEditing !== undefined)) {
+      this.isEditMode = !!(data.editMode || data.isEditing);
     }
+    this.editUploadedAttachments = [...(task.attachments || task.assets || [])];
 
     if (this.isEditMode) {
       return this.renderEditForm(task);
@@ -351,8 +352,9 @@ export class TaskDetailModal extends BaseModal {
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
           ${taskAttachments.map(att => {
             const ext = (att.name || '').split('.').pop().toLowerCase();
+            const isImg = att.type?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
             let icon = 'attach_file';
-            if (att.type?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) icon = 'image';
+            if (isImg) icon = 'image';
             else if (att.type?.includes('pdf') || ext === 'pdf') icon = 'picture_as_pdf';
             else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = 'folder_zip';
             else if (['xls', 'xlsx', 'csv'].includes(ext)) icon = 'table_chart';
@@ -361,16 +363,20 @@ export class TaskDetailModal extends BaseModal {
             return `
               <div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-border flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <span class="material-symbols-outlined text-[18px]">${icon}</span>
-                  </div>
+                  ${isImg && att.url ? `
+                    <img src="${att.url}" alt="${this._escapeHtml(att.name || 'Gambar')}" class="w-8 h-8 rounded-lg object-cover border border-surface-border shrink-0" />
+                  ` : `
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <span class="material-symbols-outlined text-[18px]">${icon}</span>
+                    </div>
+                  `}
                   <div class="flex flex-col min-w-0">
-                    <span class="text-[12px] font-semibold text-text-primary truncate" title="${att.name || 'Dokumen'}">${att.name || 'Dokumen'}</span>
+                    <span class="text-[12px] font-semibold text-text-primary truncate" title="${this._escapeHtml(att.name || 'Dokumen')}">${this._escapeHtml(att.name || 'Dokumen')}</span>
                     <span class="text-[10px] text-text-muted">${att.formattedSize || att.size || 'File Lampiran'}</span>
                   </div>
                 </div>
                 ${att.url ? `
-                <a href="${att.url}" download="${att.name || 'lampiran'}" class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center text-text-secondary hover:text-primary transition-colors shrink-0" title="Unduh File">
+                <a href="${att.url}" download="${this._escapeHtml(att.name || 'lampiran')}" class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center text-text-secondary hover:text-primary transition-colors shrink-0" title="Unduh File">
                   <span class="material-symbols-outlined text-[16px]">download</span>
                 </a>` : ''}
               </div>
@@ -576,6 +582,50 @@ export class TaskDetailModal extends BaseModal {
     `;
   }
 
+  _renderEditAttachmentItems() {
+    if (!this.editUploadedAttachments || this.editUploadedAttachments.length === 0) {
+      return '';
+    }
+    return this.editUploadedAttachments.map((att, idx) => {
+      const ext = (att.name || '').split('.').pop().toLowerCase();
+      let icon = 'attach_file';
+      const isImg = att.type?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
+      if (isImg) icon = 'image';
+      else if (att.type?.includes('pdf') || ext === 'pdf') icon = 'picture_as_pdf';
+      else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = 'folder_zip';
+      else if (['xls', 'xlsx', 'csv'].includes(ext)) icon = 'table_chart';
+      else if (['doc', 'docx', 'txt', 'md'].includes(ext)) icon = 'description';
+
+      return `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-low border border-surface-border text-[12px] animate-in fade-in duration-150">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            ${isImg && att.url ? `
+              <img src="${att.url}" alt="${this._escapeHtml(att.name)}" class="w-8 h-8 rounded-lg object-cover border border-surface-border shrink-0" />
+            ` : `
+              <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[18px]">${icon}</span>
+              </div>
+            `}
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="font-semibold text-text-primary truncate" title="${this._escapeHtml(att.name)}">${this._escapeHtml(att.name)}</span>
+              <span class="text-text-muted text-[10px] font-mono">${att.formattedSize || (att.size ? (att.size / 1024).toFixed(1) + ' KB' : 'File')}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0 ml-2">
+            ${att.url ? `
+              <a href="${att.url}" download="${this._escapeHtml(att.name)}" class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center text-text-muted hover:text-primary transition-colors cursor-pointer" title="Unduh File">
+                <span class="material-symbols-outlined text-[15px]">download</span>
+              </a>
+            ` : ''}
+            <button type="button" data-index="${idx}" class="btn-remove-edit-attachment w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer" title="Hapus lampiran ini">
+              <span class="material-symbols-outlined text-[16px] pointer-events-none">close</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   renderEditForm(task) {
     const members = this.getRegisteredMembers();
     const currentPicName = task.pic?.name || (task.assignee ? task.assignee.replace(/\s*\(.*?\)\s*/, '').trim() : '');
@@ -709,6 +759,40 @@ export class TaskDetailModal extends BaseModal {
             </div>
           </div>
 
+          <!-- Lampiran / Attachment -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-caption-meta text-[11px] text-text-muted font-bold uppercase tracking-wider">
+                Lampiran / Attachment
+              </label>
+              <span id="edit-attachment-file-count" class="text-[10.5px] text-text-muted font-medium">
+                ${(this.editUploadedAttachments || []).length} file tersedia
+              </span>
+            </div>
+
+            <div class="relative border-2 border-dashed border-surface-border hover:border-primary/60 dark:hover:border-primary/60 rounded-xl p-3.5 bg-surface-container-lowest transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group text-center">
+              <input 
+                type="file" 
+                id="edit-task-attachment" 
+                multiple
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+              />
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform pointer-events-none">
+                <span class="material-symbols-outlined text-[20px]">attach_file</span>
+              </div>
+              <div class="pointer-events-none">
+                <span class="text-[12.5px] font-semibold text-text-primary">Unggah atau seret file ke sini</span>
+                <span class="text-[10.5px] text-text-muted block mt-0.5">Mendukung gambar, dokumen, PDF, spreadsheet, atau arsip</span>
+              </div>
+            </div>
+
+            <!-- List Preview Lampiran -->
+            <div id="edit-attachment-preview-list" class="${(this.editUploadedAttachments || []).length === 0 ? 'hidden' : ''} flex flex-col gap-1.5 mt-2.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              ${this._renderEditAttachmentItems()}
+            </div>
+          </div>
+
           <!-- Actions Footer inside Form -->
           <div class="pt-4 mt-2 border-t border-surface-border flex items-center justify-between gap-3">
             <button 
@@ -782,6 +866,88 @@ export class TaskDetailModal extends BaseModal {
         });
       }
 
+      // Attachment handling in Edit Mode
+      const editAttachmentInput = modalRoot.querySelector('#edit-task-attachment');
+      const editAttachmentCount = modalRoot.querySelector('#edit-attachment-file-count');
+      const editPreviewList = modalRoot.querySelector('#edit-attachment-preview-list');
+
+      const formatSize = (bytes) => {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+      };
+
+      const updateAttachmentUI = () => {
+        if (!editPreviewList || !editAttachmentCount) return;
+        if (!this.editUploadedAttachments || this.editUploadedAttachments.length === 0) {
+          editPreviewList.classList.add('hidden');
+          editPreviewList.innerHTML = '';
+          editAttachmentCount.textContent = '0 file tersedia';
+          return;
+        }
+
+        editPreviewList.classList.remove('hidden');
+        editAttachmentCount.textContent = `${this.editUploadedAttachments.length} file tersedia`;
+        editPreviewList.innerHTML = this._renderEditAttachmentItems();
+
+        editPreviewList.querySelectorAll('.btn-remove-edit-attachment').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index, 10);
+            this.editUploadedAttachments.splice(index, 1);
+            updateAttachmentUI();
+          });
+        });
+      };
+
+      // Wire initial remove buttons for existing attachments
+      if (editPreviewList) {
+        editPreviewList.querySelectorAll('.btn-remove-edit-attachment').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index, 10);
+            this.editUploadedAttachments.splice(index, 1);
+            updateAttachmentUI();
+          });
+        });
+      }
+
+      if (editAttachmentInput) {
+        editAttachmentInput.addEventListener('change', (e) => {
+          const files = Array.from(e.target.files || []);
+          files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (readEvent) => {
+              this.editUploadedAttachments.push({
+                name: file.name,
+                size: file.size,
+                formattedSize: formatSize(file.size),
+                type: file.type,
+                url: readEvent.target.result
+              });
+              updateAttachmentUI();
+            };
+            if (file.size <= 5 * 1024 * 1024) {
+              reader.readAsDataURL(file);
+            } else {
+              this.editUploadedAttachments.push({
+                name: file.name,
+                size: file.size,
+                formattedSize: formatSize(file.size),
+                type: file.type,
+                url: ''
+              });
+              updateAttachmentUI();
+            }
+          });
+          editAttachmentInput.value = '';
+        });
+      }
+
       const formEdit = modalRoot.querySelector('#form-edit-task');
       if (formEdit) {
         formEdit.addEventListener('submit', (e) => {
@@ -809,7 +975,9 @@ export class TaskDetailModal extends BaseModal {
             priority,
             pic,
             timeline,
-            assignee: pic ? `${pic.name} (${pic.role})` : this.currentTask.assignee
+            assignee: pic ? `${pic.name} (${pic.role})` : this.currentTask.assignee,
+            attachments: [...(this.editUploadedAttachments || [])],
+            assets: [...(this.editUploadedAttachments || [])]
           };
 
           const updatedTask = this.taskService.updateTask(this.currentTask.id, updates);

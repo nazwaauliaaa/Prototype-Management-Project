@@ -1590,27 +1590,24 @@ export class KanbanBoardView extends BaseView {
                             ${task.title}
                           </h4>
 
-                          <!-- Visual Thumbnail if Available -->
-                          ${task.code === '#RK-304' ? `
-                            <div class="relative h-24 rounded-lg overflow-hidden bg-slate-900 shadow-inner my-0.5">
-                              <img
-                                alt="Billboard Preview"
-                                class="w-full h-full object-cover"
-                                src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80"
-                              />
-                              <span class="absolute bottom-1 left-1.5 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">16:9 4K</span>
-                            </div>
-                          ` : ''}
+                          <!-- Visual Thumbnail & Attachments if Available -->
+                          ${this._renderCardAttachments(task)}
 
                           <!-- Footer: PIC & Column Shift Buttons -->
                           <div class="flex items-center justify-between pt-2 border-t border-surface-border text-[11px] text-text-muted">
-                            <div class="flex items-center gap-1.5">
-                              <div class="w-5 h-5 rounded-full bg-[#0c66e4] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                              <div class="w-5 h-5 rounded-full bg-[#0c66e4] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs shrink-0">
                                 ${task.pic?.initials || 'SR'}
                               </div>
-                              <span class="text-[11px] font-medium text-text-secondary truncate max-w-[85px]">
+                              <span class="text-[11px] font-medium text-text-secondary truncate max-w-[80px]">
                                 ${(task.pic?.name || 'Tim').split(' ')[0]}
                               </span>
+                              ${(task.attachments?.length || task.assets?.length) ? `
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-surface-container-low border border-surface-border text-[10px] font-bold text-text-secondary shrink-0" title="${(task.attachments || task.assets).length} file lampiran">
+                                  <span class="material-symbols-outlined text-[12px] text-primary">attach_file</span>
+                                  <span>${(task.attachments || task.assets).length}</span>
+                                </span>
+                              ` : ''}
                             </div>
 
                             <!-- Shift Column Buttons (Quick status shift) -->
@@ -2294,6 +2291,97 @@ export class KanbanBoardView extends BaseView {
       case 'High': return 'bg-amber-100 text-amber-700';
       default: return 'bg-slate-100 text-slate-700';
     }
+  }
+
+  _escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  _renderCardAttachments(task) {
+    const taskAtts = (task.attachments && task.attachments.length > 0)
+      ? task.attachments
+      : (task.assets && task.assets.length > 0 ? task.assets : []);
+
+    const isImageFile = (att) => {
+      if (!att) return false;
+      const ext = (att.name || '').split('.').pop().toLowerCase();
+      return (att.type && att.type.startsWith('image/')) || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
+    };
+
+    const getFileIcon = (mime = '', name = '') => {
+      const ext = (name || '').split('.').pop().toLowerCase();
+      if (mime?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return 'image';
+      if (mime?.includes('pdf') || ext === 'pdf') return 'picture_as_pdf';
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'folder_zip';
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'table_chart';
+      if (['doc', 'docx', 'txt', 'md'].includes(ext)) return 'description';
+      return 'attach_file';
+    };
+
+    // If there's an image attachment with URL:
+    const imageAtt = taskAtts.find(a => isImageFile(a) && a.url);
+
+    // Fallback for demo mock #RK-304 if it has no attachments
+    if (!imageAtt && task.code === '#RK-304' && taskAtts.length === 0) {
+      return `
+        <div class="relative h-24 rounded-lg overflow-hidden bg-slate-900 shadow-inner my-0.5 border border-surface-border">
+          <img
+            alt="Billboard Preview"
+            class="w-full h-full object-cover"
+            src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80"
+          />
+          <span class="absolute bottom-1 left-1.5 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">16:9 4K</span>
+        </div>
+      `;
+    }
+
+    if (taskAtts.length === 0) return '';
+
+    let html = '';
+
+    // 1. Image Thumbnail Banner
+    if (imageAtt) {
+      html += `
+        <div class="relative h-28 rounded-lg overflow-hidden bg-slate-900/10 dark:bg-slate-900 shadow-xs my-0.5 border border-surface-border group/img">
+          <img
+            alt="${this._escapeHtml(imageAtt.name || 'Lampiran Gambar')}"
+            class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200"
+            src="${imageAtt.url}"
+          />
+          <span class="absolute bottom-1.5 left-1.5 bg-black/75 backdrop-blur-xs text-white text-[9.5px] font-medium px-2 py-0.5 rounded flex items-center gap-1 max-w-[85%] shadow-xs">
+            <span class="material-symbols-outlined text-[12px] text-blue-300">image</span>
+            <span class="truncate">${this._escapeHtml(imageAtt.name || 'Gambar')}</span>
+          </span>
+        </div>
+      `;
+    }
+
+    // 2. Non-image files or additional files
+    const otherAtts = taskAtts.filter(a => a !== imageAtt);
+    if (otherAtts.length > 0) {
+      html += `
+        <div class="flex flex-col gap-1 my-0.5">
+          ${otherAtts.slice(0, 2).map(att => `
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface-container-low border border-surface-border text-[11px] text-text-secondary min-w-0 shadow-2xs hover:border-primary/50 transition-colors" title="${this._escapeHtml(att.name)}">
+              <span class="material-symbols-outlined text-[15px] text-primary shrink-0">${getFileIcon(att.type, att.name)}</span>
+              <span class="truncate font-medium flex-1 text-[11.5px] text-text-primary">${this._escapeHtml(att.name)}</span>
+              ${att.formattedSize ? `<span class="text-[9.5px] text-text-muted shrink-0 font-mono">(${att.formattedSize})</span>` : ''}
+            </div>
+          `).join('')}
+          ${otherAtts.length > 2 ? `
+            <span class="text-[10px] text-text-muted font-semibold px-1">+${otherAtts.length - 2} file lampiran lainnya</span>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    return html;
   }
 
   /**
@@ -3207,7 +3295,7 @@ export class KanbanBoardView extends BaseView {
         const taskId = btn.getAttribute('data-task-id');
         const task = this.taskService.getTask(taskId);
         if (task && this.modalManager) {
-          this.modalManager.open('task-detail', { task, isEditing: true });
+          this.modalManager.open('task-detail', { task, editMode: true, isEditing: true });
         }
       });
     });
