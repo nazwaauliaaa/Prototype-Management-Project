@@ -129,12 +129,20 @@ body {
   animation: laserSweep 2.8s ease-in-out infinite;
 }
 
-/* Camera Viewfinder - strictly un-mirrored (normal orientation for QR & barcode scanning) */
+/* Camera Viewfinder - dynamic mirroring (front: mirror, back: un-mirrored) */
 #camera-video-stream,
 #camera-sim-canvas {
+  transition: transform 0.2s ease-in-out;
+}
+
+.camera-mirrored {
+  transform: scaleX(-1) !important;
+  -webkit-transform: scaleX(-1) !important;
+}
+
+.camera-unmirrored {
   transform: none !important;
   -webkit-transform: none !important;
-  transition: transform 0.2s ease-in-out;
 }
 
 /* Smooth view transition */
