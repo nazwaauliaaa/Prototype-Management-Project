@@ -10,13 +10,22 @@ function getDefaultBaseUrl() {
   
   const port = window.location.port;
   const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
 
-  // Jika dibuka lewat file:// atau port Live Server (misal 5500, 5501, 8080)
-  if (protocol === 'file:' || (port && port !== '3000' && port !== '5000')) {
+  // Jika di localhost / 127.0.0.1
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Port 3000 adalah Vite dev server yang memiliki konfigurasi proxy /api -> port 5000
+    if (port === '3000') {
+      return '/api';
+    }
+    // Jika Live Server (5500, 5501, 8080 dsb) atau port selain 3000, arahkan langsung ke backend port 5000
+    return 'http://localhost:5000/api';
+  }
+
+  if (protocol === 'file:') {
     return 'http://localhost:5000/api';
   }
   
-  // Jika dibuka lewat Vite dev server di port 3000 (proxy aktif)
   return '/api';
 }
 
@@ -89,9 +98,12 @@ export class ApiService {
         if (fbContentType.includes('application/json')) {
           this.baseUrl = 'http://localhost:5000/api';
           res = fallbackRes;
+        } else {
+          throw new Error('Server backend di port 5000 belum berjalan.');
         }
       } catch (e) {
-        // Fallback gagal, lanjutkan penanganan error di bawah
+        // Fallback gagal karena server port 5000 belum aktif
+        throw new Error('Server backend PostgreSQL di http://localhost:5000 belum berjalan. Jalankan "npm run dev" atau "npm run server".');
       }
     }
 
@@ -337,7 +349,11 @@ export class ApiService {
       return resData;
     } catch (err) {
       console.warn('[ApiService] Gagal mendaftarkan user ke backend:', err.message);
-      return { success: false, error: err.message };
+      return { 
+        success: false, 
+        error: err.message,
+        isBackendDown: true
+      };
     }
   }
 

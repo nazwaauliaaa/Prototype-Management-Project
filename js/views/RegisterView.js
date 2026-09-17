@@ -359,16 +359,46 @@ export class RegisterView extends BaseView {
             return;
           }
 
+          let savedUser = null;
+          let isOfflineFallback = false;
+
           if (result && result.success && result.data) {
-            const savedUser = result.data;
+            savedUser = result.data;
+          } else if (!result || !result.locked) {
+            // Fallback registrasi offline jika backend PostgreSQL tidak dapat dihubungi
+            console.warn('[RegisterView] Backend offline/gagal, beralih ke registrasi lokal:', result?.error);
+            isOfflineFallback = true;
+            savedUser = {
+              id: 'usr-' + Date.now().toString().slice(-6),
+              name,
+              role,
+              jobdesk,
+              title: jobdesk,
+              email: email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+              workspace_access: ['ruangkreasi', 'panen-kunci'],
+              bound_device_id: apiService.getDeviceId(),
+              bound_device_name: apiService.getDeviceName(),
+              is_locked_to_device: true,
+              qr_data: this.qrCode
+            };
+          }
+
+          if (savedUser) {
             sessionStorage.removeItem('pending_registration_qr');
 
             if (feedback) {
-              feedback.innerHTML = '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar! Membuka sesi kerja...</span>';
+              feedback.innerHTML = isOfflineFallback
+                ? '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar (Mode Lokal)!</span><br><span class="text-[11px] text-amber-600 dark:text-amber-400">Tersimpan di browser karena backend PostgreSQL offline. Membuka sesi...</span>'
+                : '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar! Membuka sesi kerja...</span>';
             }
 
             if (this.notificationService) {
-              this.notificationService.success(`🎉 Selamat datang, ${savedUser.name}! Akun dan QR Anda telah resmi terdaftar di database.`);
+              if (isOfflineFallback) {
+                this.notificationService.warning(`Akun ${savedUser.name} didaftarkan dalam Mode Offline (Lokal).`);
+              } else {
+                this.notificationService.success(`🎉 Selamat datang, ${savedUser.name}! Akun dan QR Anda telah resmi terdaftar di database.`);
+              }
             }
 
             sessionStorage.setItem('auth_login_method', 'qr');
@@ -379,6 +409,12 @@ export class RegisterView extends BaseView {
               loginMethod: 'qr',
               qr_data: this.qrCode
             });
+
+            localStorage.setItem('creative_office_user', JSON.stringify({
+              ...savedUser,
+              boundDeviceId: apiService.getDeviceId(),
+              boundDeviceName: apiService.getDeviceName()
+            }));
 
             setTimeout(() => {
               this.authService.loginAsUser(userInstance);
@@ -395,13 +431,45 @@ export class RegisterView extends BaseView {
             submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">how_to_reg</span><span>Daftarkan QR & Masuk</span>`;
           }
         } catch (err) {
-          console.error('Error saat submit registrasi:', err);
-          if (feedback) {
-            feedback.innerHTML = `<span class="text-rose-500 font-semibold">⚠️ Terjadi kesalahan: ${err.message}</span>`;
-          }
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">how_to_reg</span><span>Daftarkan QR & Masuk</span>`;
+          console.warn('[RegisterView] Exception submit registrasi, beralih ke offline mode:', err);
+          
+          // Tetap izinkan user masuk dengan mode lokal offline
+          try {
+            sessionStorage.removeItem('pending_registration_qr');
+            const fallbackUser = {
+              id: 'usr-' + Date.now().toString().slice(-6),
+              name,
+              role,
+              jobdesk,
+              title: jobdesk,
+              email: email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+              workspace_access: ['ruangkreasi', 'panen-kunci'],
+              boundDeviceId: apiService.getDeviceId(),
+              boundDeviceName: apiService.getDeviceName(),
+              loginMethod: 'qr',
+              qr_data: this.qrCode
+            };
+
+            if (feedback) {
+              feedback.innerHTML = '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar (Mode Lokal)!</span><br><span class="text-[11px] text-amber-600 dark:text-amber-400">Backend offline. Mengalihkan ke sesi kerja...</span>';
+            }
+
+            const userInstance = this.authService.registerNewUser(fallbackUser);
+            localStorage.setItem('creative_office_user', JSON.stringify(fallbackUser));
+
+            setTimeout(() => {
+              this.authService.loginAsUser(userInstance);
+            }, 600);
+            return;
+          } catch (innerErr) {
+            if (feedback) {
+              feedback.innerHTML = `<span class="text-rose-500 font-semibold">⚠️ Terjadi kesalahan: ${err.message}</span>`;
+            }
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">how_to_reg</span><span>Daftarkan QR & Masuk</span>`;
+            }
           }
         }
       });

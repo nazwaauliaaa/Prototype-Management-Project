@@ -355,16 +355,51 @@
           return;
         }
 
+        let savedUser = null;
+        let isOffline = false;
+
         if (result && result.success && result.data) {
+          savedUser = result.data;
+        } else if (!result || !result.locked) {
+          // Backend offline fallback: daftarkan secara lokal
+          isOffline = true;
+          savedUser = {
+            id: 'usr-' + Date.now().toString().slice(-6),
+            name,
+            role,
+            jobdesk,
+            title: jobdesk,
+            email: email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            workspace_access: ['ruangkreasi', 'panen-kunci'],
+            bound_device_id: apiService.getDeviceId(),
+            bound_device_name: apiService.getDeviceName(),
+            qr_data: qrCode
+          };
+        }
+
+        if (savedUser) {
           sessionStorage.removeItem('pending_registration_qr');
-          feedback.innerHTML = '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar! Mengalihkan ke sistem...</span>';
+          feedback.innerHTML = isOffline
+            ? '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar (Mode Lokal)!</span><br><span class="text-[11px] text-amber-600">Backend offline — data disimpan di penyimpanan lokal browser.</span>'
+            : '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar! Mengalihkan ke sistem...</span>';
           
-          const savedUser = {
-            ...result.data,
+          const fullUser = {
+            ...savedUser,
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName()
           };
-          localStorage.setItem('creative_office_user', JSON.stringify(savedUser));
+
+          try {
+            const custom = JSON.parse(localStorage.getItem('creative_office_custom_users') || '[]');
+            const exIdx = custom.findIndex(u => u.name === fullUser.name || u.email === fullUser.email);
+            if (exIdx >= 0) custom[exIdx] = fullUser;
+            else custom.unshift(fullUser);
+            localStorage.setItem('creative_office_custom_users', JSON.stringify(custom));
+          } catch(e) {}
+
+          localStorage.setItem('creative_office_user', JSON.stringify(fullUser));
+          localStorage.setItem('creative_office_auth_user', JSON.stringify(fullUser));
 
           setTimeout(() => {
             window.location.href = 'index.html#/dashboard';
@@ -377,9 +412,44 @@
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">how_to_reg</span><span>Daftarkan QR & Masuk</span>`;
       } catch (err) {
-        feedback.innerHTML = `<span class="text-rose-500 font-semibold">⚠️ Terjadi kesalahan: ${err.message}</span>`;
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">how_to_reg</span><span>Daftarkan QR & Masuk</span>`;
+        console.warn('[register.html] Exception submit registrasi, beralih ke offline mode:', err);
+        
+        try {
+          sessionStorage.removeItem('pending_registration_qr');
+          const fallbackUser = {
+            id: 'usr-' + Date.now().toString().slice(-6),
+            name,
+            role,
+            jobdesk,
+            title: jobdesk,
+            email: email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            workspace_access: ['ruangkreasi', 'panen-kunci'],
+            boundDeviceId: apiService.getDeviceId(),
+            boundDeviceName: apiService.getDeviceName(),
+            qr_data: qrCode
+          };
+
+          feedback.innerHTML = '<span class="text-emerald-600 font-bold">✅ Berhasil Terdaftar (Mode Lokal)!</span><br><span class="text-[11px] text-amber-600">Mengalihkan ke sistem...</span>';
+
+          try {
+            const custom = JSON.parse(localStorage.getItem('creative_office_custom_users') || '[]');
+            custom.unshift(fallbackUser);
+            localStorage.setItem('creative_office_custom_users', JSON.stringify(custom));
+          } catch(e) {}
+
+          localStorage.setItem('creative_office_user', JSON.stringify(fallbackUser));
+          localStorage.setItem('creative_office_auth_user', JSON.stringify(fallbackUser));
+
+          setTimeout(() => {
+            window.location.href = 'index.html#/dashboard';
+          }, 800);
+          return;
+        } catch (innerErr) {
+          feedback.innerHTML = `<span class="text-rose-500 font-semibold">⚠️ Terjadi kesalahan: ${err.message}</span>`;
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">how_to_reg</span><span>Daftarkan QR & Masuk</span>`;
+        }
       }
     });
   </script>
