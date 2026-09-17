@@ -218,6 +218,31 @@ export class ProjectService {
   }
 
   /**
+   * Memperbarui data proyek berdasarkan ID dan sinkronkan ke storage + backend
+   * @param {string} projectId
+   * @param {Object} updates
+   * @returns {Project|null}
+   */
+  updateProject(projectId, updates = {}) {
+    const project = this.getProject(projectId);
+    if (!project) return null;
+
+    Object.assign(project, updates);
+    this.saveToStorage();
+
+    // Sinkronkan ke PostgreSQL di backend
+    apiService.updateProject(project.id, updates).catch(err => {
+      console.warn('[ProjectService] Gagal update project di backend:', err.message);
+    });
+
+    if (this.eventBus) {
+      this.eventBus.emit('project:updated', { project });
+      this.eventBus.emit('projects:updated', this.projects);
+    }
+    return project;
+  }
+
+  /**
    * Menghapus proyek berdasarkan ID
    * @param {string} projectId
    * @returns {Project|null}

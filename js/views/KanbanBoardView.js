@@ -129,10 +129,29 @@ export class KanbanBoardView extends BaseView {
       }
     });
 
+    // Auto-update kanban whenever theme is changed by admin
+    this._onThemeChanged = ({ workspace, projectId, theme }) => {
+      if (workspace === this.currentWorkspace || (this.projectId && projectId === this.projectId)) {
+        if (theme) {
+          if (this.project) this.project.theme = theme;
+          localStorage.setItem(`board_theme_${this.currentWorkspace}`, JSON.stringify(theme));
+        }
+        if (this.element) {
+          this.mount(this.element);
+        }
+      }
+    };
+    this.eventBus.on('board:theme_changed', this._onThemeChanged);
+
     // Auto-update kanban whenever board members change across tabs or background
     this._onStorageUpdate = (e) => {
       if (!e.key) return;
       if (e.key.startsWith('board_members_') || e.key === 'board_members_updated_trigger') {
+        if (this.element) {
+          this.mount(this.element);
+        }
+      }
+      if (e.key === `board_theme_${this.currentWorkspace}`) {
         if (this.element) {
           this.mount(this.element);
         }
@@ -197,6 +216,9 @@ export class KanbanBoardView extends BaseView {
     }
     if (this._onAuthChanged) {
       this.eventBus.off('auth:login', this._onAuthChanged);
+    }
+    if (this._onThemeChanged) {
+      this.eventBus.off('board:theme_changed', this._onThemeChanged);
     }
     if (this._onStorageUpdate) {
       window.removeEventListener('storage', this._onStorageUpdate);
@@ -648,6 +670,14 @@ export class KanbanBoardView extends BaseView {
   }
 
   acceptPendingInvite(inviteId) {
+    const perms = this.getPermissions();
+    if (!perms.canManageMembers) {
+      if (this.notificationService) {
+        this.notificationService.warning('Akses ditolak: Hanya Admin atau PM yang dapat meng-ACC anggota baru.');
+      }
+      return;
+    }
+
     const pending = this.getPendingInvites();
     const inv = pending.find(i => i.id === inviteId);
     if (!inv) return;
@@ -740,6 +770,14 @@ export class KanbanBoardView extends BaseView {
   }
 
   removePendingInvite(inviteId) {
+    const perms = this.getPermissions();
+    if (!perms.canManageMembers) {
+      if (this.notificationService) {
+        this.notificationService.warning('Akses ditolak: Hanya Admin atau PM yang dapat menolak permintaan bergabung.');
+      }
+      return;
+    }
+
     const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
     const curProjId = this.projectId || localStorage.getItem('active_project_id') || currentWs;
     const relatedKeys = new Set([currentWs, curProjId]);
@@ -956,14 +994,17 @@ export class KanbanBoardView extends BaseView {
     const pendingInvites = this.getPendingInvites();
     const availableWorkspaces = this.getAvailableWorkspacesAndProjects();
 
-    // Board theme wallpaper
-    const savedTheme = localStorage.getItem(`board_theme_${this.currentWorkspace}`);
-    let theme = null;
-    if (savedTheme) {
-      try { theme = JSON.parse(savedTheme); } catch (e) { }
+    // Board theme wallpaper: prioritaskan tema dari projek yang dibuat/disetel admin agar di mobile user sama persis!
+    let theme = this.project?.theme || null;
+    if (!theme) {
+      const savedTheme = localStorage.getItem(`board_theme_${this.currentWorkspace}`) ||
+                         (this.projectId ? localStorage.getItem(`board_theme_${this.projectId}`) : null);
+      if (savedTheme) {
+        try { theme = JSON.parse(savedTheme); } catch (e) { }
+      }
     }
     if (!theme) {
-      theme = this.project?.theme || {
+      theme = {
         type: 'image',
         value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
         name: 'City Skyline'
@@ -2113,7 +2154,7 @@ export class KanbanBoardView extends BaseView {
 
             <div class="flex items-center gap-1.5 shrink-0">
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                ${boardMembers.length} Aktif ${pendingInvites.length > 0 ? `• ${pendingInvites.length} Tertunda` : ''}
+                ${boardMembers.length} Aktif ${perms.canManageMembers && pendingInvites.length > 0 ? `• ${pendingInvites.length} Tertunda` : ''}
               </span>
               <button class="btn-close-modal w-6 h-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer" title="Tutup">
                 <span class="material-symbols-outlined text-[16px]">close</span>
@@ -2209,7 +2250,7 @@ export class KanbanBoardView extends BaseView {
             `;
           }).join('')}
 
-            ${pendingInvites.length > 0 ? `
+            ${perms.canManageMembers && pendingInvites.length > 0 ? `
               <!-- Section: Permintaan Bergabung (Perlu ACC Admin) -->
               <div class="mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 flex flex-col gap-1.5">
                 <div class="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 px-1">
@@ -2479,12 +2520,32 @@ export class KanbanBoardView extends BaseView {
             <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Ubah Tema Wallpaper</h4>
             <div class="grid grid-cols-2 gap-2.5">
               <button
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-pink-500 text-left transition-all cursor-pointer"
+                data-theme-type="gradient"
+                data-theme-name="Berry Pink"
+                data-theme-val="linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)"
+              >
+                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Berry Pink</div>
+              </button>
+
+              <button
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-pink-500 text-left transition-all cursor-pointer"
+                data-theme-type="gradient"
+                data-theme-name="Sweet Pink"
+                data-theme-val="linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #f472b6 100%)"
+              >
+                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #f472b6 100%)"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Sweet Pink</div>
+              </button>
+
+              <button
                 class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-blue-500 text-left transition-all cursor-pointer"
                 data-theme-type="image"
                 data-theme-name="City Skyline"
                 data-theme-val="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80"
               >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5" style="background-image: url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=300&q=80')"></div>
+                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=300&q=80')"></div>
                 <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">City Skyline</div>
               </button>
 
@@ -2494,7 +2555,7 @@ export class KanbanBoardView extends BaseView {
                 data-theme-name="Sunset City"
                 data-theme-val="https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1600&q=80"
               >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5" style="background-image: url('https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=300&q=80')"></div>
+                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=300&q=80')"></div>
                 <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Sunset City</div>
               </button>
 
@@ -2504,17 +2565,17 @@ export class KanbanBoardView extends BaseView {
                 data-theme-name="Neon Cyber"
                 data-theme-val="linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)"
               >
-                <div class="h-14 rounded-lg mb-1.5" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)"></div>
+                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)"></div>
                 <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Neon Dark</div>
               </button>
 
               <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-blue-500 text-left transition-all cursor-pointer"
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-emerald-500 text-left transition-all cursor-pointer"
                 data-theme-type="gradient"
                 data-theme-name="Deep Forest"
                 data-theme-val="linear-gradient(135deg, #064e3b 0%, #022c22 100%)"
               >
-                <div class="h-14 rounded-lg mb-1.5" style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%)"></div>
+                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%)"></div>
                 <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Deep Forest</div>
               </button>
             </div>
@@ -3714,6 +3775,10 @@ export class KanbanBoardView extends BaseView {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this._closeAllPopups();
+        const retProj = this.projectId || localStorage.getItem('active_project_id') || this.currentWorkspace;
+        const retWs = this.currentWorkspace || localStorage.getItem('active_workspace') || retProj;
+        if (retProj) localStorage.setItem('profile_return_project', retProj);
+        if (retWs) localStorage.setItem('profile_return_workspace', retWs);
         this.eventBus.emit('navigate', { view: 'profile' });
       });
     });
@@ -3950,7 +4015,24 @@ export class KanbanBoardView extends BaseView {
         const name = btn.getAttribute('data-theme-name');
         const val = btn.getAttribute('data-theme-val');
         const themeObj = { type, name, value: val };
+
         localStorage.setItem(`board_theme_${this.currentWorkspace}`, JSON.stringify(themeObj));
+        if (this.projectId) {
+          localStorage.setItem(`board_theme_${this.projectId}`, JSON.stringify(themeObj));
+        }
+
+        // Update project object di ProjectService & PostgreSQL backend
+        const targetProjId = this.projectId || (this.project ? this.project.id : null);
+        if (targetProjId && this.projectService) {
+          this.project = this.projectService.updateProject(targetProjId, { theme: themeObj });
+        } else if (this.project) {
+          this.project.theme = themeObj;
+        }
+
+        if (this.eventBus) {
+          this.eventBus.emit('board:theme_changed', { workspace: this.currentWorkspace, projectId: targetProjId, theme: themeObj });
+        }
+
         this._closeAllPopups();
         if (this.notificationService) {
           this.notificationService.success(`Tema papan diubah ke "${name}".`);

@@ -76,10 +76,9 @@ export class ProfileView extends BaseView {
 
           <!-- Top Navigation & Breadcrumb -->
           <div class="flex items-center justify-between gap-4 pb-3 border-b border-surface-border">
-            <div class="flex items-center gap-2 text-[13px] text-text-secondary">
-              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer font-medium" title="Kembali ke Beranda">
+              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer font-semibold px-2.5 py-1 rounded-lg hover:bg-surface-container" title="Kembali ke Papan Projek">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                <span>Kembali</span>
+                <span>Kembali ke Papan Projek</span>
               </button>
               <span class="text-text-muted">/</span>
               <span class="font-bold text-text-primary">Pengaturan Profil</span>
@@ -276,11 +275,28 @@ export class ProfileView extends BaseView {
   }
 
   bindEvents() {
-    // Back navigation button
+    // Back navigation button: kembali ke papan kanban projek yang dikirim oleh admin
     const backBtn = this.element.querySelector('#btn-profile-back');
     const cancelBtn = this.element.querySelector('#btn-cancel-profile-edit');
     const handleBack = () => {
-      this.eventBus.emit('navigate', { view: 'dashboard' });
+      const returnProj = localStorage.getItem('profile_return_project') ||
+                         localStorage.getItem('user_invited_project') ||
+                         localStorage.getItem('active_project_id');
+
+      const returnWs = localStorage.getItem('profile_return_workspace') ||
+                       localStorage.getItem('user_invited_workspace') ||
+                       localStorage.getItem('active_workspace') ||
+                       returnProj;
+
+      if (returnProj) {
+        this.eventBus.emit('navigate', {
+          view: 'kanban',
+          projectId: returnProj,
+          workspace: returnWs
+        });
+      } else {
+        this.eventBus.emit('navigate', { view: 'dashboard' });
+      }
     };
     if (backBtn) backBtn.addEventListener('click', handleBack);
     if (cancelBtn) cancelBtn.addEventListener('click', handleBack);
@@ -402,6 +418,9 @@ export class ProfileView extends BaseView {
           if (dispName) dispName.textContent = updatedUser.name;
           if (dispEmail) dispEmail.textContent = updatedUser.email;
           this.pendingAvatarUrl = null;
+          if (this.notificationService) {
+            this.notificationService.success('Profil berhasil diperbarui!');
+          }
         }
       });
     }

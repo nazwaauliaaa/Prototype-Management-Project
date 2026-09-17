@@ -160,6 +160,56 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/projects/:id - Dukung juga metode PATCH
+router.patch('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const p = req.body;
+
+    const existing = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Proyek tidak ditemukan' });
+    }
+
+    const current = existing.rows[0];
+
+    const name = p.name !== undefined ? p.name : current.name;
+    const description = p.description !== undefined ? p.description : current.description;
+    const status = p.status !== undefined ? p.status : current.status;
+    const type = p.type !== undefined ? p.type : current.type;
+    const progress = p.progress !== undefined ? Number(p.progress) : current.progress;
+    const priority = p.priority !== undefined ? p.priority : current.priority;
+    const startDate = p.startDate !== undefined ? p.startDate : current.start_date;
+    const dueDate = p.dueDate !== undefined ? p.dueDate : current.due_date;
+    const members = p.members !== undefined ? JSON.stringify(p.members) : JSON.stringify(current.members);
+    const tasksCount = p.tasksCount !== undefined ? JSON.stringify(p.tasksCount) : JSON.stringify(current.tasks_count);
+    const budget = p.budget !== undefined ? p.budget : current.budget;
+    const theme = p.theme !== undefined ? JSON.stringify(p.theme) : JSON.stringify(current.theme);
+
+    const query = `
+      UPDATE projects SET
+        name = $1, description = $2, status = $3, type = $4,
+        progress = $5, priority = $6, start_date = $7, due_date = $8,
+        members = $9::jsonb, tasks_count = $10::jsonb, budget = $11,
+        theme = $12::jsonb, updated_at = NOW()
+      WHERE id = $13
+      RETURNING *
+    `;
+
+    const values = [
+      name, description, status, type,
+      progress, priority, startDate, dueDate,
+      members, tasksCount, budget, theme, id
+    ];
+
+    const result = await pool.query(query, values);
+    res.json({ success: true, data: formatProject(result.rows[0]) });
+  } catch (err) {
+    console.error('Error PATCH /api/projects/:id:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // DELETE /api/projects/:id - Hapus satu proyek
 router.delete('/:id', async (req, res) => {
   try {
