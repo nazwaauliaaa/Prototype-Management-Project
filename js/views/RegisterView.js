@@ -147,24 +147,96 @@ export class RegisterView extends BaseView {
 
               <!-- Role & Jobdesk Row -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- Role -->
-                <div>
-                  <label for="select-reg-role" class="block text-[12px] font-bold text-slate-800 mb-1">
+                <!-- Role (In-Card Custom Dropdown, 100% Mobile Safe) -->
+                <div class="relative z-20" id="wrapper-reg-custom-role">
+                  <label class="block text-[12px] font-bold text-slate-800 mb-1">
                     Peran / Otoritas <span class="text-rose-500">*</span>
                   </label>
-                  <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-slate-400 pointer-events-none">badge</span>
-                    <select
-                      id="select-reg-role"
-                      name="role"
-                      class="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 focus:border-purple-600 rounded-xl text-[12.5px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium appearance-none"
+                  
+                  <!-- Hidden native select for form data compatibility -->
+                  <select
+                    id="select-reg-role"
+                    name="role"
+                    class="hidden"
+                  >
+                    <option value="user" ${defaultRole === 'user' ? 'selected' : ''}>Kontributor / User</option>
+                    <option value="manajement-project" ${defaultRole === 'manajement-project' ? 'selected' : ''}>Project Manager</option>
+                    <option value="qa" ${defaultRole === 'qa' ? 'selected' : ''}>Quality Assurance</option>
+                    <option value="admin" ${defaultRole === 'admin' ? 'selected' : ''}>Administrator</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    id="btn-reg-custom-role-trigger"
+                    class="w-full pl-3 pr-3 py-2 bg-white border border-slate-200 hover:border-purple-500 focus:border-purple-600 rounded-xl text-[12.5px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium flex items-center justify-between gap-2 cursor-pointer"
+                    aria-expanded="false"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="material-symbols-outlined text-[18px] text-purple-600 shrink-0">badge</span>
+                      <span id="reg-custom-role-text" class="truncate font-medium text-slate-800">${
+                        defaultRole === 'admin' ? 'Administrator' :
+                        defaultRole === 'manajement-project' ? 'Project Manager' :
+                        defaultRole === 'qa' ? 'Quality Assurance' : 'Kontributor / User'
+                      }</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 shrink-0" id="reg-custom-role-chevron">expand_more</span>
+                  </button>
+
+                  <div
+                    id="reg-custom-role-menu"
+                    class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+                  >
+                    <button
+                      type="button"
+                      class="btn-reg-role-option w-full px-3.5 py-2.5 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer ${defaultRole === 'user' ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-800'}"
+                      data-role-val="user"
+                      data-role-label="Kontributor / User"
                     >
-                      <option value="user" ${defaultRole === 'user' ? 'selected' : ''}>Kontributor / User</option>
-                      <option value="manajement-project" ${defaultRole === 'manajement-project' ? 'selected' : ''}>Project Manager</option>
-                      <option value="qa" ${defaultRole === 'qa' ? 'selected' : ''}>Quality Assurance</option>
-                      <option value="admin" ${defaultRole === 'admin' ? 'selected' : ''}>Administrator</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-[18px] text-slate-400 pointer-events-none">arrow_drop_down</span>
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                        <span class="truncate">Kontributor / User</span>
+                      </div>
+                      ${defaultRole === 'user' ? '<span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>' : ''}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-reg-role-option w-full px-3.5 py-2.5 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer ${defaultRole === 'manajement-project' ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-800'}"
+                      data-role-val="manajement-project"
+                      data-role-label="Project Manager"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                        <span class="truncate">Project Manager</span>
+                      </div>
+                      ${defaultRole === 'manajement-project' ? '<span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>' : ''}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-reg-role-option w-full px-3.5 py-2.5 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer ${defaultRole === 'qa' ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-800'}"
+                      data-role-val="qa"
+                      data-role-label="Quality Assurance"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span class="truncate">Quality Assurance</span>
+                      </div>
+                      ${defaultRole === 'qa' ? '<span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>' : ''}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-reg-role-option w-full px-3.5 py-2.5 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer ${defaultRole === 'admin' ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-800'}"
+                      data-role-val="admin"
+                      data-role-label="Administrator"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                        <span class="truncate">Administrator</span>
+                      </div>
+                      ${defaultRole === 'admin' ? '<span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>' : ''}
+                    </button>
                   </div>
                 </div>
 
@@ -295,6 +367,86 @@ export class RegisterView extends BaseView {
         }
       });
     }
+
+    // Custom Role Dropdown logic (bounded within card width, mobile safe)
+    const wrapperRole = this.element.querySelector('#wrapper-reg-custom-role');
+    const roleTrigger = this.element.querySelector('#btn-reg-custom-role-trigger');
+    const roleMenu = this.element.querySelector('#reg-custom-role-menu');
+    const roleChevron = this.element.querySelector('#reg-custom-role-chevron');
+    const roleText = this.element.querySelector('#reg-custom-role-text');
+    const roleOptions = this.element.querySelectorAll('.btn-reg-role-option');
+
+    const toggleRoleMenu = (show) => {
+      if (!roleMenu) return;
+      const willOpen = show !== undefined ? show : roleMenu.classList.contains('hidden');
+      if (willOpen) {
+        if (wrapperRole) wrapperRole.style.zIndex = '50';
+        roleMenu.classList.remove('hidden');
+        if (roleChevron) roleChevron.classList.add('rotate-180');
+        if (roleTrigger) roleTrigger.setAttribute('aria-expanded', 'true');
+      } else {
+        if (wrapperRole) wrapperRole.style.zIndex = '';
+        roleMenu.classList.add('hidden');
+        if (roleChevron) roleChevron.classList.remove('rotate-180');
+        if (roleTrigger) roleTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    if (roleTrigger) {
+      roleTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleRoleMenu();
+      });
+    }
+
+    roleOptions.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const val = btn.dataset.roleVal;
+        const label = btn.dataset.roleLabel;
+
+        if (roleSelect) {
+          roleSelect.value = val;
+          // Dispatch change event to trigger existing auto preset for jobdeskInput
+          roleSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (roleText) {
+          roleText.textContent = label;
+        }
+
+        roleOptions.forEach(otherBtn => {
+          const isMatch = otherBtn.dataset.roleVal === val;
+          otherBtn.className = `btn-reg-role-option w-full px-3.5 py-2.5 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer ${
+            isMatch ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-800'
+          }`;
+          const existingCheck = otherBtn.querySelector('.material-symbols-outlined');
+          if (isMatch && !existingCheck) {
+            const checkSpan = document.createElement('span');
+            checkSpan.className = 'material-symbols-outlined text-[16px] text-purple-600 shrink-0';
+            checkSpan.textContent = 'check';
+            otherBtn.appendChild(checkSpan);
+          } else if (!isMatch && existingCheck) {
+            existingCheck.remove();
+          }
+        });
+
+        toggleRoleMenu(false);
+      });
+    });
+
+    const handleOutsideClickReg = (e) => {
+      if (!this.element?.isConnected) {
+        document.removeEventListener('click', handleOutsideClickReg);
+        return;
+      }
+      if (!roleTrigger?.contains(e.target) && !roleMenu?.contains(e.target)) {
+        toggleRoleMenu(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClickReg);
 
     // Cancel / Back to Auth
     if (cancelBtn) {
