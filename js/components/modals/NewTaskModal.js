@@ -86,15 +86,69 @@ export class NewTaskModal extends BaseModal {
             />
           </div>
 
-          <!-- Penanggung Jawab (PIC) -->
-          <div>
+          <!-- Penanggung Jawab (PIC) (In-Modal Custom Dropdown, 100% Mobile Safe) -->
+          <div class="relative z-30" id="wrapper-custom-pic-select">
             <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Penanggung Jawab (PIC)</label>
-            <select id="new-task-pic" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium cursor-pointer">
-              ${members.map(m => `
-                <option value="${m.name}|${m.initials}|${m.role}">${m.name} (${m.role})</option>
+            
+            <select id="new-task-pic" class="hidden">
+              ${members.map((m, idx) => `
+                <option value="${m.name}|${m.initials}|${m.role}" ${idx === 0 ? 'selected' : ''}>${m.name} (${m.role})</option>
               `).join('')}
               <option value="__new_member__">+ Tambah Orang Baru...</option>
             </select>
+
+            <button
+              type="button"
+              id="btn-custom-pic-trigger"
+              class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-border text-text-primary focus:outline-none focus:border-primary font-medium flex items-center justify-between gap-2 transition-all cursor-pointer hover:border-primary/50 text-[12.5px]"
+              aria-expanded="false"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center shrink-0" id="custom-pic-avatar">
+                  ${members[0]?.initials || 'PIC'}
+                </span>
+                <span id="custom-pic-text" class="truncate font-medium text-text-primary">
+                  ${members[0] ? `${members[0].name} (${members[0].role})` : 'Pilih PIC...'}
+                </span>
+              </div>
+              <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-pic-chevron">expand_more</span>
+            </button>
+
+            <div
+              id="custom-pic-menu"
+              class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 max-h-56 overflow-y-auto transition-all animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar"
+            >
+              ${members.map((m, idx) => `
+                <button
+                  type="button"
+                  class="btn-pic-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${idx === 0 ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                  data-pic-val="${m.name}|${m.initials}|${m.role}"
+                  data-pic-label="${m.name} (${m.role})"
+                  data-pic-initials="${m.initials || 'PIC'}"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-bold flex items-center justify-center shrink-0">
+                      ${m.initials || 'PIC'}
+                    </span>
+                    <span class="truncate">${m.name} (${m.role})</span>
+                  </div>
+                  ${idx === 0 ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                </button>
+              `).join('')}
+              <div class="border-t border-surface-border my-1"></div>
+              <button
+                type="button"
+                class="btn-pic-option w-full px-3 py-2 text-left text-[12.5px] font-bold flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors cursor-pointer"
+                data-pic-val="__new_member__"
+                data-pic-label="+ Tambah Orang Baru..."
+                data-pic-initials="+"
+              >
+                <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 text-[13px] font-bold flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[14px]">add</span>
+                </span>
+                <span>+ Tambah Orang Baru...</span>
+              </button>
+            </div>
           </div>
 
           <!-- Formulir Tambah Orang Baru (Full-Width Card) -->
@@ -112,7 +166,7 @@ export class NewTaskModal extends BaseModal {
               </span>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="font-caption-meta text-[10.5px] font-semibold text-text-secondary uppercase tracking-wider block mb-1">
                   Nama Lengkap <span class="text-rose-500">*</span>
@@ -411,16 +465,79 @@ export class NewTaskModal extends BaseModal {
     const newPicWrapper = modalRoot.querySelector('#new-pic-field-wrapper');
     const newPicNameInput = modalRoot.querySelector('#input-new-pic-name');
 
-    if (picSelect && newPicWrapper) {
-      picSelect.addEventListener('change', () => {
-        if (picSelect.value === '__new_member__') {
-          newPicWrapper.classList.remove('hidden');
-          if (newPicNameInput) newPicNameInput.focus();
-        } else {
-          newPicWrapper.classList.add('hidden');
-        }
+    // Custom PIC Dropdown handling (confined within modal)
+    const picTrigger = modalRoot.querySelector('#btn-custom-pic-trigger');
+    const picMenu = modalRoot.querySelector('#custom-pic-menu');
+    const picChevron = modalRoot.querySelector('#custom-pic-chevron');
+    const picText = modalRoot.querySelector('#custom-pic-text');
+    const picAvatar = modalRoot.querySelector('#custom-pic-avatar');
+    const picOptions = modalRoot.querySelectorAll('.btn-pic-option');
+
+    const togglePicMenu = (show) => {
+      if (!picMenu) return;
+      const willOpen = show !== undefined ? show : picMenu.classList.contains('hidden');
+      if (willOpen) {
+        picMenu.classList.remove('hidden');
+        if (picChevron) picChevron.classList.add('rotate-180');
+        if (picTrigger) picTrigger.setAttribute('aria-expanded', 'true');
+        if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
+        if (statusMenu && !statusMenu.classList.contains('hidden')) toggleStatusMenu(false);
+      } else {
+        picMenu.classList.add('hidden');
+        if (picChevron) picChevron.classList.remove('rotate-180');
+        if (picTrigger) picTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    if (picTrigger) {
+      picTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePicMenu();
       });
     }
+
+    picOptions.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const picVal = btn.dataset.picVal;
+        const picLabel = btn.dataset.picLabel;
+        const picInitials = btn.dataset.picInitials;
+
+        if (picSelect) {
+          picSelect.value = picVal;
+          if (picVal === '__new_member__') {
+            if (newPicWrapper) newPicWrapper.classList.remove('hidden');
+            if (newPicNameInput) newPicNameInput.focus();
+          } else {
+            if (newPicWrapper) newPicWrapper.classList.add('hidden');
+          }
+        }
+
+        if (picText) picText.textContent = picLabel;
+        if (picAvatar) picAvatar.textContent = picInitials;
+
+        picOptions.forEach(o => {
+          if (o.dataset.picVal === '__new_member__') return;
+          const isMatch = o.dataset.picVal === picVal;
+          o.className = `btn-pic-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${
+            isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'
+          }`;
+          const existingCheck = o.querySelector('.material-symbols-outlined');
+          if (isMatch && !existingCheck) {
+            const checkSpan = document.createElement('span');
+            checkSpan.className = 'material-symbols-outlined text-[16px] text-primary shrink-0';
+            checkSpan.textContent = 'check';
+            o.appendChild(checkSpan);
+          } else if (!isMatch && existingCheck) {
+            existingCheck.remove();
+          }
+        });
+
+        togglePicMenu(false);
+      });
+    });
 
     // Custom Status & Priority Dropdowns handling (strictly confined within modal, responsive in mobile & desktop)
     const prioTrigger = modalRoot.querySelector('#btn-custom-priority-trigger');
@@ -437,6 +554,7 @@ export class NewTaskModal extends BaseModal {
         prioMenu.classList.remove('hidden');
         if (prioChevron) prioChevron.classList.add('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
+        if (picMenu && !picMenu.classList.contains('hidden')) togglePicMenu(false);
         if (statusMenu && !statusMenu.classList.contains('hidden')) toggleStatusMenu(false);
       } else {
         prioMenu.classList.add('hidden');
@@ -500,6 +618,7 @@ export class NewTaskModal extends BaseModal {
         statusMenu.classList.remove('hidden');
         if (statusChevron) statusChevron.classList.add('rotate-180');
         if (statusTrigger) statusTrigger.setAttribute('aria-expanded', 'true');
+        if (picMenu && !picMenu.classList.contains('hidden')) togglePicMenu(false);
         if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
       } else {
         statusMenu.classList.add('hidden');
@@ -558,6 +677,9 @@ export class NewTaskModal extends BaseModal {
     }
 
     const handleOutsideClickNewTask = (e) => {
+      if (!picTrigger?.contains(e.target) && !picMenu?.contains(e.target)) {
+        togglePicMenu(false);
+      }
       if (!prioTrigger?.contains(e.target) && !prioMenu?.contains(e.target)) {
         togglePrioMenu(false);
       }

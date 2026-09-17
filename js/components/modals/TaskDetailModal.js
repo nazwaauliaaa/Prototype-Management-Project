@@ -643,6 +643,9 @@ export class TaskDetailModal extends BaseModal {
   renderEditForm(task) {
     const members = this.getRegisteredMembers();
     const currentPicName = task.pic?.name || (task.assignee ? task.assignee.replace(/\s*\(.*?\)\s*/, '').trim() : '');
+    const matchedMember = members.find(m => currentPicName && (m.name.toLowerCase().includes(currentPicName.toLowerCase()) || currentPicName.toLowerCase().includes(m.name.toLowerCase()))) || members[0];
+    const currentPicInitials = matchedMember ? matchedMember.initials : (task.pic?.initials || 'PIC');
+    const currentPicLabel = matchedMember ? `${matchedMember.name} (${matchedMember.role})` : (currentPicName || 'Pilih PIC...');
 
     return `
       <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col max-h-[92vh] modal-content-box animate-in fade-in zoom-in duration-150">
@@ -818,12 +821,12 @@ export class TaskDetailModal extends BaseModal {
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <!-- Penanggung Jawab (PIC) -->
-            <div>
+            <!-- Penanggung Jawab (PIC) (In-Modal Custom Dropdown, 100% Mobile Safe) -->
+            <div class="relative z-20" id="wrapper-custom-edit-pic">
               <label class="font-caption-meta text-[11px] text-text-muted font-bold uppercase tracking-wider block mb-1.5">
                 Penanggung Jawab (PIC)
               </label>
-              <select id="edit-task-pic" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary font-medium focus:outline-none focus:border-primary cursor-pointer text-[13px]">
+              <select id="edit-task-pic" class="hidden">
                 ${members.map(m => {
                   const isSelected = currentPicName && (m.name.toLowerCase().includes(currentPicName.toLowerCase()) || currentPicName.toLowerCase().includes(m.name.toLowerCase()));
                   return `
@@ -833,6 +836,49 @@ export class TaskDetailModal extends BaseModal {
                   `;
                 }).join('')}
               </select>
+
+              <button
+                type="button"
+                id="btn-custom-edit-pic-trigger"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary font-medium focus:outline-none focus:border-primary flex items-center justify-between gap-2 transition-all cursor-pointer hover:border-primary/50 text-[13px]"
+                aria-expanded="false"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-6 h-6 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center shrink-0" id="custom-edit-pic-avatar">
+                    ${currentPicInitials}
+                  </span>
+                  <span id="custom-edit-pic-text" class="truncate font-medium text-text-primary">
+                    ${currentPicLabel}
+                  </span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-edit-pic-chevron">expand_more</span>
+              </button>
+
+              <div
+                id="custom-edit-pic-menu"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 max-h-56 overflow-y-auto transition-all animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar"
+              >
+                ${members.map(m => {
+                  const isSelected = currentPicName && (m.name.toLowerCase().includes(currentPicName.toLowerCase()) || currentPicName.toLowerCase().includes(m.name.toLowerCase()));
+                  return `
+                    <button
+                      type="button"
+                      class="btn-edit-pic-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${isSelected ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}"
+                      data-value="${m.name}|${m.initials}|${m.role}"
+                      data-label="${m.name} (${m.role})"
+                      data-initials="${m.initials || 'PIC'}"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-bold flex items-center justify-center shrink-0">
+                          ${m.initials || 'PIC'}
+                        </span>
+                        <span class="truncate">${m.name} (${m.role})</span>
+                      </div>
+                      ${isSelected ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
             </div>
 
             <!-- Timeline -->
@@ -970,6 +1016,13 @@ export class TaskDetailModal extends BaseModal {
       const hiddenEditPrio = modalRoot.querySelector('#edit-task-priority');
       const editPrioText = modalRoot.querySelector('#custom-edit-priority-text');
 
+      const editPicTrigger = modalRoot.querySelector('#btn-custom-edit-pic-trigger');
+      const editPicMenu = modalRoot.querySelector('#custom-edit-pic-menu');
+      const editPicChevron = modalRoot.querySelector('#custom-edit-pic-chevron');
+      const hiddenEditPic = modalRoot.querySelector('#edit-task-pic');
+      const editPicText = modalRoot.querySelector('#custom-edit-pic-text');
+      const editPicAvatar = modalRoot.querySelector('#custom-edit-pic-avatar');
+
       const toggleEditStatus = (show) => {
         if (!editStatusMenu) return;
         const willOpen = show !== undefined ? show : editStatusMenu.classList.contains('hidden');
@@ -978,6 +1031,7 @@ export class TaskDetailModal extends BaseModal {
           if (editStatusChevron) editStatusChevron.classList.add('rotate-180');
           if (editStatusTrigger) editStatusTrigger.setAttribute('aria-expanded', 'true');
           if (editPrioMenu && !editPrioMenu.classList.contains('hidden')) toggleEditPrio(false);
+          if (editPicMenu && !editPicMenu.classList.contains('hidden')) toggleEditPic(false);
         } else {
           editStatusMenu.classList.add('hidden');
           if (editStatusChevron) editStatusChevron.classList.remove('rotate-180');
@@ -993,10 +1047,27 @@ export class TaskDetailModal extends BaseModal {
           if (editPrioChevron) editPrioChevron.classList.add('rotate-180');
           if (editPrioTrigger) editPrioTrigger.setAttribute('aria-expanded', 'true');
           if (editStatusMenu && !editStatusMenu.classList.contains('hidden')) toggleEditStatus(false);
+          if (editPicMenu && !editPicMenu.classList.contains('hidden')) toggleEditPic(false);
         } else {
           editPrioMenu.classList.add('hidden');
           if (editPrioChevron) editPrioChevron.classList.remove('rotate-180');
           if (editPrioTrigger) editPrioTrigger.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const toggleEditPic = (show) => {
+        if (!editPicMenu) return;
+        const willOpen = show !== undefined ? show : editPicMenu.classList.contains('hidden');
+        if (willOpen) {
+          editPicMenu.classList.remove('hidden');
+          if (editPicChevron) editPicChevron.classList.add('rotate-180');
+          if (editPicTrigger) editPicTrigger.setAttribute('aria-expanded', 'true');
+          if (editStatusMenu && !editStatusMenu.classList.contains('hidden')) toggleEditStatus(false);
+          if (editPrioMenu && !editPrioMenu.classList.contains('hidden')) toggleEditPrio(false);
+        } else {
+          editPicMenu.classList.add('hidden');
+          if (editPicChevron) editPicChevron.classList.remove('rotate-180');
+          if (editPicTrigger) editPicTrigger.setAttribute('aria-expanded', 'false');
         }
       };
 
@@ -1072,12 +1143,53 @@ export class TaskDetailModal extends BaseModal {
         });
       });
 
+      if (editPicTrigger) {
+        editPicTrigger.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleEditPic();
+        });
+      }
+
+      modalRoot.querySelectorAll('.btn-edit-pic-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const val = btn.dataset.value;
+          const label = btn.dataset.label;
+          const initials = btn.dataset.initials;
+          if (hiddenEditPic) hiddenEditPic.value = val;
+          if (editPicText) editPicText.textContent = label;
+          if (editPicAvatar) editPicAvatar.textContent = initials;
+
+          modalRoot.querySelectorAll('.btn-edit-pic-option').forEach(o => {
+            const isMatch = o.dataset.value === val;
+            o.className = `btn-edit-pic-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${
+              isMatch ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'
+            }`;
+            const existingCheck = o.querySelector('.material-symbols-outlined');
+            if (isMatch && !existingCheck) {
+              const checkSpan = document.createElement('span');
+              checkSpan.className = 'material-symbols-outlined text-[16px] text-primary shrink-0';
+              checkSpan.textContent = 'check';
+              o.appendChild(checkSpan);
+            } else if (!isMatch && existingCheck) {
+              existingCheck.remove();
+            }
+          });
+          toggleEditPic(false);
+        });
+      });
+
       const handleOutsideClickEditTask = (e) => {
         if (!editStatusTrigger?.contains(e.target) && !editStatusMenu?.contains(e.target)) {
           toggleEditStatus(false);
         }
         if (!editPrioTrigger?.contains(e.target) && !editPrioMenu?.contains(e.target)) {
           toggleEditPrio(false);
+        }
+        if (!editPicTrigger?.contains(e.target) && !editPicMenu?.contains(e.target)) {
+          toggleEditPic(false);
         }
       };
       document.addEventListener('click', handleOutsideClickEditTask);
