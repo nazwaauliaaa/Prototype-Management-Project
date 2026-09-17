@@ -312,18 +312,19 @@ export class WorkspacesView extends BaseView {
               </div>
 
               <!-- Kategori / Divisi -->
-              <div>
+              <div class="w-full min-w-0">
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
                 <select
                   id="select-ws-new-workspace-tag"
-                  class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
+                  class="w-full max-w-full truncate bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer block"
+                  style="max-width: 100%; text-overflow: ellipsis; box-sizing: border-box;"
                 >
-                  <option value="Dev / Creative Hub" selected>Dev / Creative Hub</option>
+                  <option value="Dev / Creative Hub" selected>Dev / Creative</option>
                   <option value="Produk / Inovasi">Produk / Inovasi</option>
-                  <option value="Studio / Digital & AI">Studio / Digital & AI</option>
-                  <option value="SaaS / Security & Core">SaaS / Security & Core</option>
-                  <option value="Cloud / Infrastruktur">Cloud / Infrastruktur</option>
-                  <option value="Marketing / Kampanye">Marketing / Kampanye</option>
+                  <option value="Studio / Digital & AI">Digital & AI</option>
+                  <option value="SaaS / Security & Core">SaaS & Security</option>
+                  <option value="Cloud / Infrastruktur">Cloud Infra</option>
+                  <option value="Marketing / Kampanye">Marketing</option>
                 </select>
               </div>
 
