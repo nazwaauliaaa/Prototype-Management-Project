@@ -1450,15 +1450,6 @@ export class KanbanBoardView extends BaseView {
 
             <!-- Utility Icons Pill Container -->
             <div class="flex items-center gap-0.5 bg-white/10 p-0.5 rounded-xl border border-white/10 shrink-0">
-              <!-- Filter Icon (Funnel) -->
-              <button
-                id="btn-board-filter"
-                class="w-7.5 h-7.5 rounded-lg hover:bg-white/20 ${this.activeFilter !== 'all' ? 'text-amber-300 bg-white/20' : 'text-white/90'} hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-                title="Filter Kartu"
-                type="button"
-              >
-                <span class="material-symbols-outlined text-[19px]">filter_list</span>
-              </button>
 
               <!-- Star Favorite Icon -->
               <button
