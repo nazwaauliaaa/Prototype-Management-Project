@@ -150,11 +150,13 @@ export class CreateBoardModal extends BaseModal {
       }
     ];
 
-    this.selectedTheme = this.themes[0]; // Default to City Skyline
+    const berryTheme = this.themes.find(t => t.id === 'berry-fuchsia') || this.themes[0];
+    this.selectedTheme = berryTheme;
   }
 
   render(data = {}) {
-    this.selectedTheme = this.themes[0];
+    const berryTheme = this.themes.find(t => t.id === 'berry-fuchsia') || this.themes[0];
+    this.selectedTheme = berryTheme;
     const prefillTitle = data?.prefillTitle || '';
 
     return `

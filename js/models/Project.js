@@ -27,11 +27,11 @@ export class Project {
     this.name = name;
     this.isUserCreated = isUserCreated;
     this.theme = theme || {
-      id: 'skyline',
-      name: 'City Skyline',
-      type: 'image',
-      thumb: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80',
-      value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80'
+      id: 'berry-fuchsia',
+      name: 'Berry Fuchsia',
+      type: 'gradient',
+      thumb: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)',
+      value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
     };
     this.description = description;
     this.workspace = workspace;

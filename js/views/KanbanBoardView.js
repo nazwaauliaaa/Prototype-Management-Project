@@ -284,18 +284,56 @@ export class KanbanBoardView extends BaseView {
     this.setWorkspace(this.currentWorkspace);
   }
 
+  formatProjectTitle(name) {
+    if (!name) return 'LayarBaca';
+    const s = String(name).trim();
+    const sLower = s.toLowerCase();
+    if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
+    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'CreativOffive';
+    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci')) return 'PananKunci';
+    if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
+    if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
+
+    // Strip trailing slug patterns like -hub-2521, _hub_123, -2521
+    const cleaned = s.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d{3,}$/gi, '').trim();
+    return cleaned || s;
+  }
+
   getWorkspaceName(wsKey) {
-    if (!wsKey) return 'Projek';
+    if (!wsKey) return 'LayarBaca';
     if (this.projectService) {
-      const found = this.projectService.getAllProjects().find(p => p.workspace === wsKey || p.id === wsKey);
-      if (found) return found.name;
+      const projects = this.projectService.getAllProjects();
+      const sKey = String(wsKey).toLowerCase().trim();
+      const found = projects.find(p => 
+        (p.workspace && String(p.workspace).toLowerCase() === sKey) || 
+        (p.id && String(p.id).toLowerCase() === sKey) ||
+        (p.name && String(p.name).toLowerCase() === sKey) ||
+        (p.workspace && sKey.includes(String(p.workspace).toLowerCase()))
+      );
+      if (found) return this.formatProjectTitle(found.name);
     }
     try {
       const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
       const found = custom.find(w => w.id === wsKey);
-      if (found && (found.title || found.name)) return found.title || found.name;
+      if (found && (found.title || found.name)) return this.formatProjectTitle(found.title || found.name);
     } catch (e) { }
-    return wsKey.charAt(0).toUpperCase() + wsKey.slice(1);
+
+    const rawStr = String(wsKey);
+    const cleanKey = rawStr.toLowerCase().replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_\s]+/g, '');
+    const knownNames = {
+      'layarbaca': 'LayarBaca',
+      'creativoffive': 'CreativOffive',
+      'creativoffice': 'CreativOffive',
+      'panankunci': 'PananKunci',
+      'panenkunci': 'PananKunci',
+      'aikreativ': 'AIKreativ',
+      'sharinginaja': 'Sharinginaja'
+    };
+    if (knownNames[cleanKey]) {
+      return knownNames[cleanKey];
+    }
+    const stripped = rawStr.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d+$/g, '');
+    return stripped.split(/[-_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
   _compressImage(file, maxSize = 256, quality = 0.85) {
@@ -730,7 +768,7 @@ export class KanbanBoardView extends BaseView {
         initials: newMember.initials,
         workspace: this.currentWorkspace,
         projectId: this.projectId || this.currentWorkspace,
-        boardTitle: this.project ? this.project.name : (this.getWorkspaceName ? this.getWorkspaceName(this.currentWorkspace) : this.currentWorkspace),
+        boardTitle: this.formatProjectTitle(this.project ? this.project.name : (this.getWorkspaceName ? this.getWorkspaceName(this.currentWorkspace) : this.currentWorkspace)),
         acceptedAt: newMember.acceptedAt
       };
       if (exAppIdx >= 0) {
@@ -934,13 +972,13 @@ export class KanbanBoardView extends BaseView {
       canPowerUps: isAdmin,
       canAutomation: isAdmin,
       canChangeVisibility: isAdmin,
-      canAddList: isAdmin || isPM,
+      canAddList: true,
       canDeleteList: isAdmin || isPM,
       canRenameList: true,
       canListActions: isAdmin || isPM,
       canClearColumn: isAdmin || isPM,
-      canAddCard: isAdmin || isPM || isQA,
-      canDeleteCard: isAdmin || isPM,
+      canAddCard: true,
+      canDeleteCard: isAdmin || isPM || isUser,
       canShiftColumns: true,
       canManageMembers: isAdmin || isPM,
       canChangeTheme: isAdmin || isPM
@@ -988,7 +1026,8 @@ export class KanbanBoardView extends BaseView {
 
     const perms = this.getPermissions();
     const currentWsName = this.getWorkspaceName(this.currentWorkspace);
-    const boardTitle = this.project ? this.project.name : currentWsName;
+    const rawTitle = this.project ? this.project.name : currentWsName;
+    const boardTitle = this.formatProjectTitle(rawTitle);
     this._ensureCurrentUserInBoardMembers();
     const boardMembers = this.getBoardMembers();
     const pendingInvites = this.getPendingInvites();
@@ -1003,12 +1042,54 @@ export class KanbanBoardView extends BaseView {
         try { theme = JSON.parse(savedTheme); } catch (e) { }
       }
     }
-    if (!theme) {
-      theme = {
-        type: 'image',
-        value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
-        name: 'City Skyline'
-      };
+
+    const curWsLower = String(this.currentWorkspace || '').toLowerCase();
+    const curProjLower = String(this.projectId || '').toLowerCase();
+    const bTitleLower = String(boardTitle || '').toLowerCase();
+    const isLayarBaca = curWsLower.includes('layarbaca') || curProjLower.includes('layarbaca') || bTitleLower.includes('layar');
+    const isOldDefaultSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
+
+    if (!theme || (isOldDefaultSkyline && isLayarBaca)) {
+      if (isLayarBaca) {
+        theme = {
+          type: 'gradient',
+          name: 'Berry Fuchsia',
+          value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
+        };
+      } else if (curWsLower.includes('creativoffive') || curProjLower.includes('creativoffive')) {
+        theme = {
+          type: 'gradient',
+          name: 'Neon Cyber',
+          value: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)'
+        };
+      } else if (curWsLower.includes('panan') || curProjLower.includes('panan')) {
+        theme = {
+          type: 'gradient',
+          name: 'Deep Forest',
+          value: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)'
+        };
+      } else if (curWsLower.includes('aikreativ') || curProjLower.includes('aikreativ')) {
+        theme = {
+          type: 'gradient',
+          name: 'Royal Indigo',
+          value: 'linear-gradient(135deg, #3730a3 0%, #6366f1 50%, #818cf8 100%)'
+        };
+      } else if (curWsLower.includes('sharinginaja') || curProjLower.includes('sharinginaja')) {
+        theme = {
+          type: 'gradient',
+          name: 'Sunset Peach',
+          value: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)'
+        };
+      } else {
+        theme = {
+          type: 'gradient',
+          name: 'Berry Fuchsia',
+          value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
+        };
+      }
+      try {
+        localStorage.setItem(`board_theme_${this.currentWorkspace}`, JSON.stringify(theme));
+      } catch (e) { }
     }
 
     // Filter tasks for this project / workspace
@@ -1263,7 +1344,7 @@ export class KanbanBoardView extends BaseView {
       </style>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full flex-1 min-h-[calc(100vh-var(--topbar-height))] sm:min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
+      <div class="flex flex-col w-full flex-1 h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100dvh-var(--topbar-height))] min-h-0 relative transition-all duration-300 select-none overflow-hidden" style="${bgStyle}">
         
         <!-- Board Top Header Bar (Trello Toolbar) -->
         <div class="w-full px-3 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-2 sm:gap-3 text-white z-30 relative overflow-x-auto scrollbar-none shrink-0">
@@ -1271,7 +1352,6 @@ export class KanbanBoardView extends BaseView {
           <!-- Left Section: Back Button + Action Buttons -->
           <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
             
-            ${!perms.isUser ? `
             <button
               id="btn-kanban-back-home"
               class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
@@ -1283,9 +1363,7 @@ export class KanbanBoardView extends BaseView {
             </button>
 
             <span class="text-white/30 hidden sm:inline shrink-0">|</span>
-            ` : ''}
 
-            ${!perms.isUser ? `
             <!-- Trello View Switcher Button -->
             <button
               id="btn-board-view-switch"
@@ -1318,7 +1396,6 @@ export class KanbanBoardView extends BaseView {
               <span class="hidden md:inline font-medium">Pilih Projek</span>
               <span class="material-symbols-outlined text-[15px]">expand_more</span>
             </button>
-            ` : ''}
 
             <!-- Role Badge Indicator -->
             <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
@@ -1580,38 +1657,6 @@ export class KanbanBoardView extends BaseView {
           <!-- Kanban Columns Stream (Responsive Full 1-Screen Fit) -->
           <div class="flex-1 w-full max-w-full overflow-hidden flex flex-col min-h-0 h-full" id="kanban-scroll-area">
 
-            <!-- Role-Specific Banner: QA Review Mode -->
-            ${perms.isQA ? `
-              <div class="mx-3 sm:mx-6 mb-2 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-7 h-7 rounded-lg bg-emerald-500/30 flex items-center justify-center shrink-0">
-                    <span class="material-symbols-outlined text-[18px] text-emerald-300">fact_check</span>
-                  </div>
-                  <div class="min-w-0 text-[12px]">
-                    <span class="font-bold text-white">Mode Quality Assurance (QA)</span>
-                    <span class="text-emerald-200/90 ml-1.5 hidden md:inline">— Tinjau, uji, dan validasi kartu pada kolom <strong>Review QA</strong> sebelum siap diluncurkan.</span>
-                  </div>
-                </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-600/90 text-white text-[10.5px] font-bold tracking-wider shrink-0 uppercase shadow-xs">QA Reviewer</span>
-              </div>
-            ` : ''}
-
-            <!-- Role-Specific Banner: User / Contributor Mode -->
-            ${perms.isUser ? `
-              <div class="mx-3 sm:mx-6 mb-2 py-1.5 px-3 rounded-xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md text-sky-100 flex items-center justify-between gap-3 shadow-sm shrink-0">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-7 h-7 rounded-lg bg-sky-500/30 flex items-center justify-center shrink-0">
-                    <span class="material-symbols-outlined text-[18px] text-sky-300">person</span>
-                  </div>
-                  <div class="min-w-0 text-[12px]">
-                    <span class="font-bold text-white">Mode Kontributor</span>
-                    <span class="text-sky-200/90 ml-1.5 hidden md:inline">— Tampilan terfokus untuk mengerjakan tugas Anda dan memantau status deliverable.</span>
-                  </div>
-                </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10.5px] font-bold tracking-wider shrink-0 uppercase shadow-xs">Member</span>
-              </div>
-            ` : ''}
-
             <!-- Banner Indikator Filter Berdasarkan -->
             ${this.activeFilter !== 'all' ? `
               <div class="mx-3 sm:mx-6 mb-3 px-4 py-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 backdrop-blur-md text-indigo-100 flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-200">
@@ -1641,7 +1686,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-1 pb-20 sm:pb-24 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
+            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-16 sm:pb-20 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
               ${this.columns.map(col => {
       const colTasks = allTasks.filter(t => t.status === col.id);
@@ -1651,7 +1696,7 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col h-full max-h-full min-h-0 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/25 shadow-lg w-[265px] sm:w-[285px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all"
+                    class="kanban-column flex flex-col h-full max-h-full min-h-[320px] sm:min-h-0 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/25 shadow-lg w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
@@ -1896,7 +1941,7 @@ export class KanbanBoardView extends BaseView {
                       }).join('')}
 
                       ${colTasks.length === 0 ? `
-                        <div class="p-4 rounded-xl border border-dashed border-surface-border text-center text-text-muted text-[11px] flex flex-col items-center justify-center gap-1 min-h-[90px] bg-white/40">
+                        <div class="flex-1 p-4 rounded-xl border border-dashed border-surface-border text-center text-text-muted text-[11px] flex flex-col items-center justify-center gap-1 min-h-[120px] bg-white/40">
                           <span class="material-symbols-outlined text-[18px] text-text-muted/60">inbox</span>
                           <span>Kolom kosong — lepaskan kartu di sini</span>
                         </div>
@@ -1906,7 +1951,7 @@ export class KanbanBoardView extends BaseView {
                     <!-- Quick Add Card Button in Column -->
                     ${perms.canAddCard ? `
                     <button
-                      class="btn-quick-add-col shrink-0 mt-2 py-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      class="btn-quick-add-col shrink-0 mt-auto pt-2 pb-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       data-column-id="${col.id}"
                       type="button"
                     >
@@ -1970,7 +2015,7 @@ export class KanbanBoardView extends BaseView {
         <!-- Floating Bottom Dock matching screenshot -->
         <nav
           id="kanban-bottom-dock"
-          class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 transition-all"
+          class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 transition-all"
         >
           <!-- 1. Inbox Button (Kiri) -->
           <button
@@ -1999,7 +2044,6 @@ export class KanbanBoardView extends BaseView {
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
 
-        ${!perms.isUser ? `
         <!-- Views Switcher Popover (Trello Style) -->
         <div
           id="popup-board-view-switch"
@@ -2116,6 +2160,7 @@ export class KanbanBoardView extends BaseView {
               <span>Kembali ke Beranda</span>
             </button>
 
+            ${perms.isAdmin || perms.isPM ? `
             <!-- Button Buat Projek Baru -->
             <button
               id="btn-header-create-new-project"
@@ -2125,9 +2170,9 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Buat Projek Baru</span>
             </button>
+            ` : ''}
           </div>
         </div>
-        ` : ''}
 
 
 

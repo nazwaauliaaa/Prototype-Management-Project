@@ -31,6 +31,19 @@ export class DashboardView extends BaseView {
     this.eventBus.on('tasks:updated', this._rerender);
   }
 
+  formatProjectTitle(name) {
+    if (!name) return 'LayarBaca';
+    const s = String(name).trim();
+    const sLower = s.toLowerCase();
+    if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
+    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'CreativOffive';
+    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci')) return 'PananKunci';
+    if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
+    if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
+    const cleaned = s.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d{3,}$/gi, '').trim();
+    return cleaned || s;
+  }
+
   render() {
     const user = this.authService ? this.authService.getCurrentUser() : null;
     const role = (user?.role || 'admin').toLowerCase();
@@ -143,11 +156,17 @@ export class DashboardView extends BaseView {
             <!-- Boards Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               ${userProjects.map(project => {
-                const theme = project.theme || {
-                  type: 'image',
-                  value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
-                  name: 'City Skyline'
-                };
+                const formattedName = this.formatProjectTitle(project.name);
+                let theme = project.theme;
+                const isSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
+                const isLayar = formattedName.toLowerCase().includes('layar') || (project.workspace || '').toLowerCase().includes('layar');
+                if (!theme || (isSkyline && isLayar)) {
+                  theme = {
+                    type: 'gradient',
+                    value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)',
+                    name: 'Berry Fuchsia'
+                  };
+                }
 
                 let bgStyle = '';
                 if (theme.type === 'image') {
@@ -166,12 +185,12 @@ export class DashboardView extends BaseView {
                     style="${bgStyle}"
                     role="button"
                     tabindex="0"
-                    title="Buka papan ${project.name}"
+                    title="Buka papan ${formattedName}"
                   >
                     <!-- Board Title -->
                     <div class="relative z-10 flex flex-col">
                       <h3 class="font-bold text-white text-[15px] sm:text-[16px] leading-tight drop-shadow-md truncate group-hover:text-white">
-                        ${project.name}
+                        ${formattedName}
                       </h3>
                       <span class="text-white/80 text-[11px] font-medium drop-shadow-sm mt-0.5 truncate">
                         ${project.workspace ? project.workspace.toUpperCase() : 'WORKSPACE'}
