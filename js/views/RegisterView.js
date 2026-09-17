@@ -139,7 +139,7 @@ export class RegisterView extends BaseView {
                     type="text"
                     required
                     value="${defaultName}"
-                    placeholder="Contoh: Muhamad Fazli Esfandiar"
+                    placeholder="Contoh: Dimas Anggara"
                     class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-purple-600 rounded-xl text-[13px] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                   />
                 </div>

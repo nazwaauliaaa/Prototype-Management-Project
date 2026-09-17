@@ -24,9 +24,7 @@ async function ensureDefaultUsers() {
           ('usr-003', 'Budi Pratama', 'qa', 'QA Lead', 'Quality Assurance & Kelaikan Deliverable', 'budi.pratama@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb),
           ('usr-004', 'Dimas Anggara', 'user', 'Creative Specialist', 'Desain Grafis & Konten Visual 3D', 'dimas.anggara@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dimas Anggara",\n  "role": "User",\n  "jobdesk": "Desain Grafis & Konten Visual 3D"\n}'),
           ('usr-005', 'Rizky Firmansyah', 'user', 'UI/UX Designer', 'Perancangan Antarmuka & Prototipe Web', 'rizky.firmansyah@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Rizky Firmansyah",\n  "role": "User",\n  "jobdesk": "Perancangan Antarmuka & Prototipe Web"\n}'),
-          ('usr-006', 'Dewi Sartika', 'user', 'Content Strategist', 'Penulisan Naskah & Strategi Publikasi', 'dewi.sartika@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dewi Sartika",\n  "role": "User",\n  "jobdesk": "Penulisan Naskah & Strategi Publikasi"\n}'),
-          ('usr-352837', 'Muhamad Fazli Esfandiar', 'user', 'Web development', 'Web development', 'muhamad.fazli.esfandiar@sampulkreativ.id', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Muhamad%20Fazli%20Esfandiar', '["ruangkreasi", "panen-kunci", "layarbaca"]'::jsonb, '{\n  "nama": "Muhamad Fazli Esfandiar",\n  "role": "User",\n  "jobdesk": "Web development"\n}'),
-          ('usr-admin-fazli', 'Muhamad Fazli Esfandiar', 'admin', 'System Administrator & Lead Developer', 'Administrator', 'muhamad.fazli.admin@sampulkreativ.id', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Muhamad%20Fazli%20Esfandiar%20Admin', '["ruangkreasi", "layarbaca", "aikreativ", "panen-kunci", "sharinginaja"]'::jsonb, '{\n  "nama": "Muhamad Fazli Esfandiar",\n  "role": "Admin",\n  "jobdesk": "Administrator"\n}')
+          ('usr-006', 'Dewi Sartika', 'user', 'Content Strategist', 'Penulisan Naskah & Strategi Publikasi', 'dewi.sartika@sampulkreativ.id', '', '["ruangkreasi"]'::jsonb, '{\n  "nama": "Dewi Sartika",\n  "role": "User",\n  "jobdesk": "Penulisan Naskah & Strategi Publikasi"\n}')
         ON CONFLICT (id) DO UPDATE SET
           qr_data = EXCLUDED.qr_data,
           jobdesk = EXCLUDED.jobdesk,
@@ -57,9 +55,9 @@ function extractUserFromPayload(raw) {
       } catch {}
     } else if (trimmed.includes(':')) {
       // Dukung format plain-text berbaris "Key: Value", misalnya:
-      // Nama: Muhamad Fazli Esfandiar
-      // Role: Admin
-      // Jobdesk: Web development
+      // Nama: Dimas Anggara
+      // Role: User
+      // Jobdesk: Creative Specialist
       parsed = {};
       const lines = trimmed.split(/[\r\n,]+/);
       for (const line of lines) {
@@ -90,8 +88,7 @@ function extractUserFromPayload(raw) {
   const role = getKey(['role', 'peran']) || 'user';
   const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
   const id = getKey(['id', 'userid', 'user_id']);
-  const isFazli = name && name.toLowerCase().includes('fazli');
-  const finalId = id || (isFazli ? (role.toLowerCase() === 'admin' ? 'usr-admin-fazli' : 'usr-352837') : `usr-${Date.now().toString().slice(-6)}`);
+  const finalId = id || `usr-${Date.now().toString().slice(-6)}`;
   const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
   const avatar = getKey(['avatar']);
 

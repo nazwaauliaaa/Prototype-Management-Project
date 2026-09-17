@@ -210,8 +210,19 @@ export class AuthView extends BaseView {
                 <!-- Top Camera Status Indicator Badge -->
                 <div id="camera-badge-info" class="hidden absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-status-success font-mono text-[9px] font-semibold items-center gap-1.5 z-30">
                   <span class="w-1.5 h-1.5 rounded-full bg-status-success animate-ping"></span>
-                  <span id="camera-badge-mode">KAMERA AKTIF (MIRROR)</span>
+                  <span id="camera-badge-mode">KAMERA DEPAN (MIRROR)</span>
                 </div>
+
+                <!-- Top Camera Switch Button (In Viewfinder) -->
+                <button
+                  id="btn-switch-camera"
+                  type="button"
+                  class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/75 hover:bg-purple-950/80 active:scale-95 text-white text-[10px] font-semibold flex items-center gap-1.5 border border-purple-400/40 backdrop-blur-md shadow-lg cursor-pointer z-30 transition-all group/cam"
+                  title="Ganti ke Kamera Depan / Belakang"
+                >
+                  <span id="icon-switch-camera" class="material-symbols-outlined text-[15px] text-emerald-400 group-hover/cam:rotate-180 transition-transform duration-300">flip_camera_ios</span>
+                  <span id="text-switch-camera" class="font-mono text-[9px] text-purple-200">Belakang</span>
+                </button>
 
                 <!-- Viewfinder Corner Reticles (Neon Purple Glow) -->
                 <div class="absolute top-3 left-3 w-5 h-5 flex flex-col justify-between pointer-events-none z-20">
@@ -259,6 +270,19 @@ export class AuthView extends BaseView {
                     <span id="camera-status-text" class="font-badge-micro text-[10px] text-white uppercase tracking-wider">Kamera Pemindai Aktif</span>
                   </div>
                 </div>
+              </div>
+
+              <!-- Mobile View Switch Camera Button (Depan / Belakang) -->
+              <div class="mt-2.5 flex items-center justify-center">
+                <button
+                  id="btn-switch-camera-mobile"
+                  type="button"
+                  class="w-full max-w-[280px] py-2 px-3.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/90 active:scale-[0.98] border border-purple-400/40 text-purple-100 hover:text-white text-[12px] font-semibold flex items-center justify-center gap-2 shadow-md shadow-purple-950/30 transition-all cursor-pointer group"
+                  title="Beralih antara Kamera Depan dan Kamera Belakang"
+                >
+                  <span id="icon-switch-camera-mobile" class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:rotate-180 transition-transform duration-300">cameraswitch</span>
+                  <span id="label-switch-camera-mobile">Ganti ke Kamera Belakang</span>
+                </button>
               </div>
 
               <p id="scanner-feedback" class="mt-2 text-center font-caption-meta text-[11px] text-text-muted">
@@ -473,14 +497,23 @@ export class AuthView extends BaseView {
     const cameraBadgeInfo = this.element.querySelector('#camera-badge-info');
     const cameraBadgeMode = this.element.querySelector('#camera-badge-mode');
 
+    // Camera Switch Selectors (Mobile & Desktop)
+    const btnSwitchCamera = this.element.querySelector('#btn-switch-camera');
+    const btnSwitchCameraMobile = this.element.querySelector('#btn-switch-camera-mobile');
+    const textSwitchCamera = this.element.querySelector('#text-switch-camera');
+    const labelSwitchCameraMobile = this.element.querySelector('#label-switch-camera-mobile');
+    const iconSwitchCamera = this.element.querySelector('#icon-switch-camera');
+    const iconSwitchCameraMobile = this.element.querySelector('#icon-switch-camera-mobile');
+
     this.isCameraOn = false;
-    this.isMirrored = true; // Automatically mirrored by default (scaleX -1)
+    this.facingMode = 'user'; // 'user' (depan/mirror) atau 'environment' (belakang/normal)
     this.cameraStream = null;
     this.simAnimId = null;
     this.barcodeDetectorInterval = null;
 
     const applyMirrorState = () => {
-      const transformValue = 'scaleX(-1)';
+      const isFront = this.facingMode === 'user';
+      const transformValue = isFront ? 'scaleX(-1)' : 'none';
       if (videoEl) {
         videoEl.style.transform = transformValue;
         videoEl.style.webkitTransform = transformValue;
@@ -490,12 +523,49 @@ export class AuthView extends BaseView {
         canvasEl.style.webkitTransform = transformValue;
       }
       if (cameraBadgeMode) {
-        cameraBadgeMode.textContent = 'KAMERA AKTIF (MIRROR)';
+        cameraBadgeMode.textContent = isFront ? 'KAMERA DEPAN (MIRROR)' : 'KAMERA BELAKANG';
       }
       if (cameraStatusText && this.isCameraOn) {
-        cameraStatusText.textContent = 'Kamera Pemindai Aktif';
+        cameraStatusText.textContent = isFront ? 'Kamera Depan Aktif' : 'Kamera Belakang Aktif';
+      }
+      if (textSwitchCamera) {
+        textSwitchCamera.textContent = isFront ? 'Belakang' : 'Depan';
+      }
+      if (labelSwitchCameraMobile) {
+        labelSwitchCameraMobile.textContent = isFront ? 'Ganti ke Kamera Belakang' : 'Ganti ke Kamera Depan';
+      }
+      if (iconSwitchCamera) {
+        iconSwitchCamera.classList.toggle('rotate-180', !isFront);
+      }
+      if (iconSwitchCameraMobile) {
+        iconSwitchCameraMobile.classList.toggle('rotate-180', !isFront);
       }
     };
+
+    const toggleCameraFacingMode = async () => {
+      this.facingMode = (this.facingMode === 'user') ? 'environment' : 'user';
+      const isFront = this.facingMode === 'user';
+      
+      if (this.notificationService) {
+        this.notificationService.info(`Beralih ke ${isFront ? 'Kamera Depan' : 'Kamera Belakang'}...`);
+      }
+      
+      await startCamera();
+    };
+
+    if (btnSwitchCamera) {
+      btnSwitchCamera.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCameraFacingMode();
+      });
+    }
+
+    if (btnSwitchCameraMobile) {
+      btnSwitchCameraMobile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCameraFacingMode();
+      });
+    }
 
     const stopCamera = () => {
       this.isCameraOn = false;
@@ -553,7 +623,7 @@ export class AuthView extends BaseView {
         for (let x = 0; x < canvasEl.width; x += step) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
-          ctx.lineTo(x, canvasEl.height);
+          ctx.lineTo(canvasEl.height);
           ctx.stroke();
         }
         for (let y = 0; y < canvasEl.height; y += step) {
@@ -573,10 +643,11 @@ export class AuthView extends BaseView {
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.stroke();
 
-        // HUD overlay text (clearly stating mirror orientation)
+        // HUD overlay text (clearly stating orientation)
+        const isFront = this.facingMode === 'user';
         ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
         ctx.font = '10px monospace';
-        ctx.fillText('CAM: SENSOR READY (MIRROR)', 12, 20);
+        ctx.fillText(`CAM: SENSOR READY (${isFront ? 'DEPAN/MIRROR' : 'BELAKANG'})`, 12, 20);
         ctx.fillText('AI DETECT: SCANNING...', 12, 35);
         ctx.fillText(new Date().toISOString().substring(11, 19) + ' WIB', canvasEl.width - 95, 20);
 
@@ -587,6 +658,14 @@ export class AuthView extends BaseView {
 
     const startCamera = async () => {
       this.isCameraOn = true;
+      if (this.cameraStream) {
+        this.cameraStream.getTracks().forEach(t => t.stop());
+        this.cameraStream = null;
+      }
+      if (this.barcodeDetectorInterval) {
+        clearInterval(this.barcodeDetectorInterval);
+        this.barcodeDetectorInterval = null;
+      }
       if (qrArea) qrArea.classList.add('hidden');
       if (activeOverlay) activeOverlay.classList.remove('hidden');
       if (cameraBadgeInfo) {
@@ -596,11 +675,11 @@ export class AuthView extends BaseView {
       if (cameraStatusDot) {
         cameraStatusDot.className = 'w-2 h-2 rounded-full bg-status-success animate-ping shrink-0';
       }
-      if (cameraStatusText) cameraStatusText.textContent = 'Kamera Pemindai Aktif';
       applyMirrorState();
 
+      const isFront = this.facingMode === 'user';
       if (feedback) {
-        feedback.innerHTML = `<span class="text-status-success font-semibold">Kamera Aktif (Mirror).</span> Arahkan barcode fisik kartu pegawai atau QR aplikasi seluler ke kamera.`;
+        feedback.innerHTML = `<span class="text-status-success font-semibold">${isFront ? 'Kamera Depan Aktif (Mirror)' : 'Kamera Belakang Aktif'}.</span> Arahkan barcode fisik kartu pegawai atau QR aplikasi seluler ke kamera.`;
       }
 
       try {
@@ -609,17 +688,25 @@ export class AuthView extends BaseView {
           try {
             stream = await navigator.mediaDevices.getUserMedia({
               video: {
-                facingMode: 'user',
+                facingMode: { ideal: this.facingMode },
                 aspectRatio: { ideal: 0.75 },
-                width: { ideal: 720 },
-                height: { ideal: 960 }
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
               }
             });
-          } catch (camErr) {
-            // Fallback for environment/any webcam
-            stream = await navigator.mediaDevices.getUserMedia({
-              video: { width: { ideal: 640 }, height: { ideal: 480 } }
-            });
+          } catch (camErr1) {
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                  facingMode: this.facingMode
+                }
+              });
+            } catch (camErr2) {
+              // Fallback for general webcam
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 } }
+              });
+            }
           }
 
           this.cameraStream = stream;
@@ -711,7 +798,7 @@ export class AuthView extends BaseView {
         feedback.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">Memverifikasi ke Supabase & Memvalidasi Perangkat...</span>`;
       }
 
-      // 1. Ekstrak data jika kode berupa JSON (seperti format QR Muhamad Fazli Esfandiar)
+      // 1. Ekstrak data jika kode berupa JSON
       let parsedUser = null;
       try {
         let parsed = null;
@@ -721,9 +808,9 @@ export class AuthView extends BaseView {
           } catch {}
         } else if (cleanCode.includes(':')) {
           // Mendukung format plain text:
-          // Nama: Muhamad Fazli Esfandiar
-          // Role: Admin
-          // Jobdesk: Web development
+          // Nama: Dimas Anggara
+          // Role: User
+          // Jobdesk: Creative Specialist
           parsed = {};
           const lines = cleanCode.split(/[\r\n,]+/);
           for (const line of lines) {
@@ -751,8 +838,7 @@ export class AuthView extends BaseView {
           const name = getKey(['name', 'nama']);
           const role = getKey(['role', 'peran']) || 'user';
           const jobdesk = getKey(['jobdesk', 'job', 'title', 'jabatan', 'posisi']) || 'Web development';
-          const isFazli = name && name.toLowerCase().includes('fazli');
-          const finalId = isFazli ? (role.toLowerCase() === 'admin' ? 'usr-admin-fazli' : 'usr-352837') : `usr-${Date.now().toString().slice(-6)}`;
+          const finalId = `usr-${Date.now().toString().slice(-6)}`;
           const email = getKey(['email']) || (name ? `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}${role.toLowerCase() === 'admin' ? '.admin' : ''}@sampulkreativ.id` : null);
 
           if (name) {
@@ -936,13 +1022,7 @@ export class AuthView extends BaseView {
       });
     }
 
-    // Tombol Cepat: QR Muhamad Fazli Esfandiar (Demo Pengujian Langsung)
-    const quickMyQrBtn = this.element.querySelector('#btn-quick-my-qr');
-    if (quickMyQrBtn) {
-      quickMyQrBtn.addEventListener('click', () => {
-        handleQrAuthentication('{"Nama":"Muhamad Fazli Esfandiar","Role":"User","Jobdesk":"Web development"}');
-      });
-    }
+
 
     // Modal Device Locked Close Listener
     const lockedModal = this.element.querySelector('#modal-device-locked');
