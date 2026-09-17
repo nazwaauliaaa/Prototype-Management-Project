@@ -862,7 +862,34 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // 2. Custom workspaces if any
+    // 2. Standard Workspace Portfolio (always available so users on mobile/fresh devices can switch projects)
+    const standardWorkspaces = [
+      { id: 'panen-kunci', name: 'PananKunci', code: 'PK', workspace: 'panen-kunci', category: 'SaaS & Infrastruktur' },
+      { id: 'layarbaca', name: 'LayarBaca', code: 'LB', workspace: 'layarbaca', category: 'Media & Publikasi' },
+      { id: 'creativoffive', name: 'CreativOffive', code: 'CO', workspace: 'creativoffive', category: 'Creative Hub' },
+      { id: 'aikreativ', name: 'AIKreativ', code: 'AI', workspace: 'aikreativ', category: 'AI & Otomasi' },
+      { id: 'sharinginaja', name: 'Sharinginaja', code: 'SH', workspace: 'sharinginaja', category: 'Cloud Asset Hub' }
+    ];
+
+    standardWorkspaces.forEach(sw => {
+      const match = list.some(item => 
+        (item.workspace && item.workspace.toLowerCase() === sw.workspace.toLowerCase()) || 
+        (item.id && item.id.toLowerCase() === sw.id.toLowerCase())
+      );
+      if (!match) {
+        list.push({
+          id: sw.id,
+          name: sw.name,
+          code: sw.code,
+          workspace: sw.workspace,
+          category: sw.category,
+          theme: null,
+          type: 'project'
+        });
+      }
+    });
+
+    // 3. Custom workspaces if any
     try {
       const customWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
       customWs.forEach(w => {
@@ -1015,8 +1042,8 @@ export class KanbanBoardView extends BaseView {
       canListActions: isAdmin || isPM,
       canClearColumn: isAdmin || isPM,
       canCollapseList: !isUser,
-      canSwitchView: !isUser,
-      canSwitchProject: !isUser,
+      canSwitchView: true,
+      canSwitchProject: true,
       canAddCard: true,
       canDeleteCard: isAdmin || isPM || isUser,
       canShiftColumns: true,
@@ -1143,8 +1170,9 @@ export class KanbanBoardView extends BaseView {
     const currentWs = (this.currentWorkspace || (this.project?.workspace || 'workspace-utama')).toLowerCase();
     const allTasks = this.taskService ? this.taskService.getTasks().filter(t => {
       if (this.highlightTaskId && t.id === this.highlightTaskId) return true;
-      const taskWs = (t.workspace || '').toLowerCase();
-      const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && taskWs === currentWs)) : (taskWs === currentWs);
+      const isPanenMatch = (currentWs.includes('panen') || currentWs.includes('panan')) && (taskWs.includes('panen') || taskWs.includes('panan'));
+      const isDirectMatch = taskWs === currentWs || isPanenMatch;
+      const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && isDirectMatch)) : isDirectMatch;
       if (!matchWs) return false;
       if (this.activeFilter === 'critical') return t.priority === 'Critical';
       if (this.activeFilter === 'high') return t.priority === 'High' || t.priority === 'Critical';
@@ -1412,11 +1440,11 @@ export class KanbanBoardView extends BaseView {
 
             <span class="text-white/30 shrink-0">|</span>
 
-            <!-- Trello View Switcher Button (Admin/PM/QA only) -->
+            <!-- Trello View Switcher Button -->
             ${perms.canSwitchView ? `
             <button
               id="btn-board-view-switch"
-              class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
               type="button"
               data-testid="view-switcher-button-more"
               aria-label="Views"
@@ -1427,6 +1455,7 @@ export class KanbanBoardView extends BaseView {
                   <path fill="currentColor" d="M13.25 13.5h1.25v-11h-1.25zm-11.75-2h1.25v-9H1.5zm5.75-2h1.5v-7h-1.5zm-3 2.125c0 .76-.616 1.375-1.375 1.375h-1.5C.615 13 0 12.384 0 11.625v-9.25C0 1.615.616 1 1.375 1h1.5c.76 0 1.375.616 1.375 1.375zm6-2c0 .76-.616 1.375-1.375 1.375h-1.75c-.76 0-1.375-.616-1.375-1.375v-7.25C5.75 1.615 6.366 1 7.125 1h1.75c.76 0 1.375.616 1.375 1.375zm5.75 4c0 .76-.616 1.375-1.375 1.375h-1.5c-.76 0-1.375-.616-1.375-1.375V2.375c0-.76.616-1.375 1.375-1.375h1.5C15.385 1 16 1.616 16 2.375z"></path>
                 </svg>
               </span>
+              <span class="hidden sm:inline font-medium text-[11.5px]">Tampilan</span>
               <span class="flex items-center justify-center">
                 <svg fill="none" viewBox="0 0 16 16" role="presentation" class="w-3.5 h-3.5">
                   <path fill="currentColor" d="m14.53 6.03-6 6a.75.75 0 0 1-1.004.052l-.056-.052-6-6 1.06-1.06L8 10.44l5.47-5.47z"></path>
@@ -1435,16 +1464,16 @@ export class KanbanBoardView extends BaseView {
             </button>
             ` : ''}
 
-            <!-- Icon Pindah Projek / Ruang Kerja (Admin/PM/QA only) -->
+            <!-- Icon Pindah Projek / Ruang Kerja -->
             ${perms.canSwitchProject ? `
             <button
               id="btn-header-switch-project"
-              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] sm:text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
               title="Pindah ke projek yang ada atau projek yang telah dibuat"
               type="button"
             >
               <span class="material-symbols-outlined text-[17px]">folder_open</span>
-              <span class="hidden md:inline font-medium">Pilih Projek</span>
+              <span class="font-medium text-[11.5px]">Pilih Projek</span>
               <span class="material-symbols-outlined text-[15px]">expand_more</span>
             </button>
             ` : ''}

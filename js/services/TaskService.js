@@ -75,7 +75,7 @@ export class TaskService {
       const stored = localStorage.getItem('creative_office_tasks');
       if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           const oldMockIds = new Set([
             'task-1', 'task-2', 'task-3', 'task-4', 'task-5',
             'task-6', 'task-7', 'task-8', 'task-9', 'task-10',
@@ -85,8 +85,10 @@ export class TaskService {
           this.tasks = parsed
             .filter(t => !oldMockIds.has(t.id))
             .map(t => new Task(t));
-          this.saveToStorage();
-          return;
+          if (this.tasks.length > 0) {
+            this.saveToStorage();
+            return;
+          }
         }
       }
     } catch (e) {
@@ -105,10 +107,81 @@ export class TaskService {
   }
 
   /**
-   * Initialize default tasks. Empty by default so only user-created tasks exist.
+   * Initialize default seed tasks for standard boards so fresh devices (e.g. mobile on Vercel) have active tasks
    */
   initDefaultTasks() {
-    this.tasks = [];
+    this.tasks = [
+      new Task({
+        id: 'task-pk-01',
+        code: '#PK-401',
+        title: 'Konfigurasi Redis Cache & Auth Microservice OAuth2',
+        description: 'Optimasi token validation store ke Redis cluster dengan target latensi <5ms.',
+        workspace: 'panen-kunci',
+        board: 'backend-core',
+        status: 'in-progress',
+        priority: 'High',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '18 - 24 Sep',
+        hours: 22,
+        qaProgress: { passed: 2, total: 4 }
+      }),
+      new Task({
+        id: 'task-pk-02',
+        code: '#PK-402',
+        title: 'Audit Keamanan Penetration Testing Multi-Tenant',
+        description: 'Verifikasi isolasi database tenant dan enkripsi data at rest AES-256.',
+        workspace: 'panen-kunci',
+        board: 'backend-core',
+        status: 'review-qa',
+        priority: 'Critical',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '20 - 26 Sep',
+        hours: 18,
+        qaProgress: { passed: 3, total: 4 }
+      }),
+      new Task({
+        id: 'task-pk-03',
+        code: '#PK-403',
+        title: 'Pemeriksaan SLA & Integrasi Payment Gateway SaaS',
+        description: 'Pengujian webhook callback redundan untuk transaksi otomatis.',
+        workspace: 'panen-kunci',
+        board: 'backend-core',
+        status: 'ready-launch',
+        priority: 'High',
+        pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+        timeline: '22 - 28 Sep',
+        hours: 16,
+        qaProgress: { passed: 4, total: 4 }
+      }),
+      new Task({
+        id: 'task-pk-04',
+        code: '#PK-404',
+        title: 'Setup Monitoring Datadog & CloudWatch Alerts',
+        description: 'Pemberitahuan otomatis saat latency API melebihi threshold 200ms.',
+        workspace: 'panen-kunci',
+        board: 'backend-core',
+        status: 'done',
+        priority: 'Medium',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '10 - 15 Sep',
+        hours: 12,
+        qaProgress: { passed: 4, total: 4 }
+      }),
+      new Task({
+        id: 'task-pk-05',
+        code: '#PK-405',
+        title: 'Dokumentasi OpenAPI & Swagger RESTful Endpoints',
+        description: 'Penyusunan panduan integrasi third-party API untuk mitra platform.',
+        workspace: 'panen-kunci',
+        board: 'backend-core',
+        status: 'backlog',
+        priority: 'Medium',
+        pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+        timeline: '25 - 30 Sep',
+        hours: 14,
+        qaProgress: { passed: 0, total: 3 }
+      })
+    ];
   }
 
   /**
@@ -127,10 +200,14 @@ export class TaskService {
     let result = this.tasks.filter(t => !oldMockIds.has(t.id));
 
     if (workspace && workspace !== 'all') {
-      result = result.filter(t => 
-        (t.workspace && t.workspace.toLowerCase() === workspace.toLowerCase()) ||
-        (t.projectId && t.projectId.toLowerCase() === workspace.toLowerCase())
-      );
+      const wsLower = workspace.toLowerCase();
+      result = result.filter(t => {
+        const tWs = (t.workspace || '').toLowerCase();
+        const tProj = (t.projectId || '').toLowerCase();
+        if (tWs === wsLower || tProj === wsLower) return true;
+        if ((wsLower.includes('panen') || wsLower.includes('panan')) && (tWs.includes('panen') || tWs.includes('panan'))) return true;
+        return false;
+      });
     }
     if (board) {
       result = result.filter(t => t.board && t.board.toLowerCase() === board.toLowerCase());
