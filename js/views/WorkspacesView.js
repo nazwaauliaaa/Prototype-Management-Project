@@ -728,12 +728,14 @@ export class WorkspacesView extends BaseView {
     const wsTagSelect = this.element.querySelector('#select-ws-new-workspace-tag');
     const wsPrioritySelect = this.element.querySelector('#select-ws-project-priority');
 
+    const wrapperWsCat = this.element.querySelector('#wrapper-ws-custom-category');
     const catTrigger = this.element.querySelector('#btn-ws-custom-category-trigger');
     const catMenu = this.element.querySelector('#ws-custom-category-menu');
     const catChevron = this.element.querySelector('#ws-custom-category-chevron');
     const catText = this.element.querySelector('#ws-custom-category-text');
     const catOptions = this.element.querySelectorAll('.btn-ws-category-option');
 
+    const wrapperWsPrio = this.element.querySelector('#wrapper-ws-custom-priority');
     const prioTrigger = this.element.querySelector('#btn-ws-custom-priority-trigger');
     const prioMenu = this.element.querySelector('#ws-custom-priority-menu');
     const prioChevron = this.element.querySelector('#ws-custom-priority-chevron');
@@ -745,11 +747,13 @@ export class WorkspacesView extends BaseView {
       if (!catMenu) return;
       const willOpen = show !== undefined ? show : catMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperWsCat) wrapperWsCat.style.zIndex = '50';
         catMenu.classList.remove('hidden');
         if (catChevron) catChevron.classList.add('rotate-180');
         if (catTrigger) catTrigger.setAttribute('aria-expanded', 'true');
         if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
       } else {
+        if (wrapperWsCat) wrapperWsCat.style.zIndex = '';
         catMenu.classList.add('hidden');
         if (catChevron) catChevron.classList.remove('rotate-180');
         if (catTrigger) catTrigger.setAttribute('aria-expanded', 'false');
@@ -760,11 +764,13 @@ export class WorkspacesView extends BaseView {
       if (!prioMenu) return;
       const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperWsPrio) wrapperWsPrio.style.zIndex = '50';
         prioMenu.classList.remove('hidden');
         if (prioChevron) prioChevron.classList.add('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
         if (catMenu && !catMenu.classList.contains('hidden')) toggleCatMenu(false);
       } else {
+        if (wrapperWsPrio) wrapperWsPrio.style.zIndex = '';
         prioMenu.classList.add('hidden');
         if (prioChevron) prioChevron.classList.remove('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
@@ -842,6 +848,10 @@ export class WorkspacesView extends BaseView {
     });
 
     const handleOutsideClickWs = (e) => {
+      if (!this.element?.isConnected) {
+        document.removeEventListener('click', handleOutsideClickWs);
+        return;
+      }
       if (!catTrigger?.contains(e.target) && !catMenu?.contains(e.target)) {
         toggleCatMenu(false);
       }

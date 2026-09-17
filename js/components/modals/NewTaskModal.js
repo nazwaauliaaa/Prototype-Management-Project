@@ -150,7 +150,7 @@ export class NewTaskModal extends BaseModal {
 
             <div
               id="custom-pic-menu"
-              class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 max-h-56 overflow-y-auto transition-all animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar"
+              class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white dark:bg-slate-900 border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 max-h-56 overflow-y-auto transition-all animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar"
             >
               ${members.map((m, idx) => `
                 <button
@@ -259,7 +259,7 @@ export class NewTaskModal extends BaseModal {
 
               <div
                 id="custom-priority-menu"
-                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white dark:bg-slate-900 border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
               >
                 <button type="button" class="btn-priority-option w-full px-3 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer text-text-primary" data-priority-id="Critical" data-priority-label="Kritis (Critical)" data-priority-color="bg-rose-500">
                   <div class="flex items-center gap-2 min-w-0">
@@ -289,7 +289,7 @@ export class NewTaskModal extends BaseModal {
               </div>
             </div>
 
-            <div class="relative z-20" id="wrapper-custom-status-select">
+            <div class="relative z-10" id="wrapper-custom-status-select">
               <label class="font-caption-meta text-[11px] text-text-muted font-semibold uppercase block mb-1">Status Awal</label>
               
               <!-- Hidden native select for form data compatibility -->
@@ -316,7 +316,7 @@ export class NewTaskModal extends BaseModal {
               <!-- In-Modal Dropdown Menu List: Absolute and bound strictly to column width -->
               <div
                 id="custom-status-menu"
-                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150 max-h-60 overflow-y-auto"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white dark:bg-slate-900 border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150 max-h-60 overflow-y-auto"
               >
                 ${boardColumns.map(c => {
                   const isMatch = c.id === currentSelectedCol.id;
@@ -437,6 +437,7 @@ export class NewTaskModal extends BaseModal {
     const newPicNameInput = modalRoot.querySelector('#input-new-pic-name');
 
     // Custom PIC Dropdown handling (confined within modal)
+    const wrapperPic = modalRoot.querySelector('#wrapper-custom-pic-select');
     const picTrigger = modalRoot.querySelector('#btn-custom-pic-trigger');
     const picMenu = modalRoot.querySelector('#custom-pic-menu');
     const picChevron = modalRoot.querySelector('#custom-pic-chevron');
@@ -448,12 +449,14 @@ export class NewTaskModal extends BaseModal {
       if (!picMenu) return;
       const willOpen = show !== undefined ? show : picMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperPic) wrapperPic.style.zIndex = '50';
         picMenu.classList.remove('hidden');
         if (picChevron) picChevron.classList.add('rotate-180');
         if (picTrigger) picTrigger.setAttribute('aria-expanded', 'true');
         if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
         if (statusMenu && !statusMenu.classList.contains('hidden')) toggleStatusMenu(false);
       } else {
+        if (wrapperPic) wrapperPic.style.zIndex = '';
         picMenu.classList.add('hidden');
         if (picChevron) picChevron.classList.remove('rotate-180');
         if (picTrigger) picTrigger.setAttribute('aria-expanded', 'false');
@@ -511,6 +514,7 @@ export class NewTaskModal extends BaseModal {
     });
 
     // Custom Status & Priority Dropdowns handling (strictly confined within modal, responsive in mobile & desktop)
+    const wrapperPrio = modalRoot.querySelector('#wrapper-custom-priority-select');
     const prioTrigger = modalRoot.querySelector('#btn-custom-priority-trigger');
     const prioMenu = modalRoot.querySelector('#custom-priority-menu');
     const prioChevron = modalRoot.querySelector('#custom-priority-chevron');
@@ -522,12 +526,14 @@ export class NewTaskModal extends BaseModal {
       if (!prioMenu) return;
       const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperPrio) wrapperPrio.style.zIndex = '50';
         prioMenu.classList.remove('hidden');
         if (prioChevron) prioChevron.classList.add('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
         if (picMenu && !picMenu.classList.contains('hidden')) togglePicMenu(false);
         if (statusMenu && !statusMenu.classList.contains('hidden')) toggleStatusMenu(false);
       } else {
+        if (wrapperPrio) wrapperPrio.style.zIndex = '';
         prioMenu.classList.add('hidden');
         if (prioChevron) prioChevron.classList.remove('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
@@ -575,6 +581,7 @@ export class NewTaskModal extends BaseModal {
       });
     });
 
+    const wrapperStatus = modalRoot.querySelector('#wrapper-custom-status-select');
     const statusTrigger = modalRoot.querySelector('#btn-custom-status-trigger');
     const statusMenu = modalRoot.querySelector('#custom-status-menu');
     const statusChevron = modalRoot.querySelector('#custom-status-chevron');
@@ -586,12 +593,14 @@ export class NewTaskModal extends BaseModal {
       if (!statusMenu) return;
       const willOpen = show !== undefined ? show : statusMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperStatus) wrapperStatus.style.zIndex = '50';
         statusMenu.classList.remove('hidden');
         if (statusChevron) statusChevron.classList.add('rotate-180');
         if (statusTrigger) statusTrigger.setAttribute('aria-expanded', 'true');
         if (picMenu && !picMenu.classList.contains('hidden')) togglePicMenu(false);
         if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
       } else {
+        if (wrapperStatus) wrapperStatus.style.zIndex = '';
         statusMenu.classList.add('hidden');
         if (statusChevron) statusChevron.classList.remove('rotate-180');
         if (statusTrigger) statusTrigger.setAttribute('aria-expanded', 'false');
@@ -648,6 +657,10 @@ export class NewTaskModal extends BaseModal {
     }
 
     const handleOutsideClickNewTask = (e) => {
+      if (!modalRoot.isConnected) {
+        document.removeEventListener('click', handleOutsideClickNewTask);
+        return;
+      }
       if (!picTrigger?.contains(e.target) && !picMenu?.contains(e.target)) {
         togglePicMenu(false);
       }

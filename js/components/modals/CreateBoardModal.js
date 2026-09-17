@@ -408,6 +408,7 @@ export class CreateBoardModal extends BaseModal {
     let workspaceUserEdited = false;
 
     // Custom Category Dropdown handlers (confined within modal)
+    const wrapperCat = container.querySelector('#wrapper-custom-board-category');
     const catTrigger = container.querySelector('#btn-custom-board-category-trigger');
     const catMenu = container.querySelector('#custom-board-category-menu');
     const catChevron = container.querySelector('#custom-board-category-chevron');
@@ -418,11 +419,13 @@ export class CreateBoardModal extends BaseModal {
       if (!catMenu) return;
       const willOpen = show !== undefined ? show : catMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperCat) wrapperCat.style.zIndex = '50';
         catMenu.classList.remove('hidden');
         if (catChevron) catChevron.classList.add('rotate-180');
         if (catTrigger) catTrigger.setAttribute('aria-expanded', 'true');
         if (prioMenu && !prioMenu.classList.contains('hidden')) togglePrioMenu(false);
       } else {
+        if (wrapperCat) wrapperCat.style.zIndex = '';
         catMenu.classList.add('hidden');
         if (catChevron) catChevron.classList.remove('rotate-180');
         if (catTrigger) catTrigger.setAttribute('aria-expanded', 'false');
@@ -464,6 +467,7 @@ export class CreateBoardModal extends BaseModal {
     });
 
     // Custom Priority Dropdown handlers
+    const wrapperPrio = container.querySelector('#wrapper-custom-board-priority');
     const prioTrigger = container.querySelector('#btn-custom-board-priority-trigger');
     const prioMenu = container.querySelector('#custom-board-priority-menu');
     const prioChevron = container.querySelector('#custom-board-priority-chevron');
@@ -475,11 +479,13 @@ export class CreateBoardModal extends BaseModal {
       if (!prioMenu) return;
       const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
       if (willOpen) {
+        if (wrapperPrio) wrapperPrio.style.zIndex = '50';
         prioMenu.classList.remove('hidden');
         if (prioChevron) prioChevron.classList.add('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
         if (catMenu && !catMenu.classList.contains('hidden')) toggleCatMenu(false);
       } else {
+        if (wrapperPrio) wrapperPrio.style.zIndex = '';
         prioMenu.classList.add('hidden');
         if (prioChevron) prioChevron.classList.remove('rotate-180');
         if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
@@ -523,6 +529,10 @@ export class CreateBoardModal extends BaseModal {
     });
 
     const handleOutsideClick = (e) => {
+      if (!container.isConnected) {
+        document.removeEventListener('click', handleOutsideClick);
+        return;
+      }
       if (!catTrigger?.contains(e.target) && !catMenu?.contains(e.target)) {
         toggleCatMenu(false);
       }
