@@ -129,11 +129,11 @@ body {
   animation: laserSweep 2.8s ease-in-out infinite;
 }
 
-/* Camera Viewfinder - strictly mirrored (selfie/natural mirror orientation) by default */
+/* Camera Viewfinder - strictly un-mirrored (normal orientation for QR & barcode scanning) */
 #camera-video-stream,
 #camera-sim-canvas {
-  transform: scaleX(-1) !important;
-  -webkit-transform: scaleX(-1) !important;
+  transform: none !important;
+  -webkit-transform: none !important;
   transition: transform 0.2s ease-in-out;
 }
 

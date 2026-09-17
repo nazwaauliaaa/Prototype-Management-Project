@@ -492,15 +492,14 @@ export class AuthView extends BaseView {
 
     const applyMirrorState = () => {
       const isFront = this.facingMode === 'user';
-      // Sesuai permintaan user: kamera depan TIDAK dibuat mirror (normal / transform: none)
-      const transformValue = 'none';
+      // Sesuai permintaan user: kamera (depan maupun belakang / mobile maupun desktop) TIDAK dibuat mirror
       if (videoEl) {
-        videoEl.style.transform = transformValue;
-        videoEl.style.webkitTransform = transformValue;
+        videoEl.style.setProperty('transform', 'none', 'important');
+        videoEl.style.setProperty('-webkit-transform', 'none', 'important');
       }
       if (canvasEl) {
-        canvasEl.style.transform = transformValue;
-        canvasEl.style.webkitTransform = transformValue;
+        canvasEl.style.setProperty('transform', 'none', 'important');
+        canvasEl.style.setProperty('-webkit-transform', 'none', 'important');
       }
       if (cameraBadgeMode) {
         cameraBadgeMode.textContent = isFront ? 'KAMERA DEPAN' : 'KAMERA BELAKANG';
