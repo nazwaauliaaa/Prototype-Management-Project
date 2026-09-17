@@ -10,16 +10,16 @@ function getDefaultBaseUrl() {
   
   const port = window.location.port;
   const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
+  const hostname = window.location.hostname || 'localhost';
 
-  // Jika di localhost / 127.0.0.1
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    // Port 3000 adalah Vite dev server yang memiliki konfigurasi proxy /api -> port 5000
-    if (port === '3000') {
-      return '/api';
-    }
-    // Jika Live Server (5500, 5501, 8080 dsb) atau port selain 3000, arahkan langsung ke backend port 5000
-    return 'http://localhost:5000/api';
+  // Port 3000 adalah Vite dev server yang memiliki konfigurasi proxy /api -> port 5000
+  if (port === '3000') {
+    return '/api';
+  }
+
+  // Jika diakses via localhost, 127.0.0.1, atau IP LAN (misal akses dari HP/mobile)
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^192\.168\./.test(hostname) || /^10\./.test(hostname)) {
+    return `http://${hostname}:5000/api`;
   }
 
   if (protocol === 'file:') {
@@ -67,21 +67,24 @@ export class ApiService {
     let res;
     let fallbackTried = false;
 
+    const host = (typeof window !== 'undefined' && window.location && window.location.hostname) || 'localhost';
+    const fallbackBaseUrl = `http://${host}:5000/api`;
+
     try {
       res = await fetch(targetUrl, { ...options, headers });
     } catch (netErr) {
       // Jika request awal gagal (misal koneksi ditolak di /api), coba langsung ke port 5000
-      if (!targetUrl.includes('localhost:5000')) {
+      if (!targetUrl.includes(':5000')) {
         try {
-          const fallbackUrl = `http://localhost:5000/api${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+          const fallbackUrl = `${fallbackBaseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
           res = await fetch(fallbackUrl, { ...options, headers });
-          this.baseUrl = 'http://localhost:5000/api';
+          this.baseUrl = fallbackBaseUrl;
           fallbackTried = true;
         } catch (fbErr) {
           throw new Error('Gagal menghubungi server backend PostgreSQL (port 5000). Pastikan server backend sudah berjalan.');
         }
       } else {
-        throw new Error('Gagal menghubungi server backend di http://localhost:5000. Pastikan server sudah berjalan.');
+        throw new Error('Gagal menghubungi server backend di port 5000. Pastikan server sudah berjalan.');
       }
     }
 
@@ -89,21 +92,21 @@ export class ApiService {
     const contentType = res.headers.get('content-type') || '';
     const isHtmlOrText = !contentType.includes('application/json');
 
-    if (isHtmlOrText && !fallbackTried && !targetUrl.includes('localhost:5000')) {
+    if (isHtmlOrText && !fallbackTried && !targetUrl.includes(':5000')) {
       // Respons bukan JSON dari web server static, coba ke port 5000
       try {
-        const fallbackUrl = `http://localhost:5000/api${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+        const fallbackUrl = `${fallbackBaseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
         const fallbackRes = await fetch(fallbackUrl, { ...options, headers });
         const fbContentType = fallbackRes.headers.get('content-type') || '';
         if (fbContentType.includes('application/json')) {
-          this.baseUrl = 'http://localhost:5000/api';
+          this.baseUrl = fallbackBaseUrl;
           res = fallbackRes;
         } else {
           throw new Error('Server backend di port 5000 belum berjalan.');
         }
       } catch (e) {
         // Fallback gagal karena server port 5000 belum aktif
-        throw new Error('Server backend PostgreSQL di http://localhost:5000 belum berjalan. Jalankan "npm run dev" atau "npm run server".');
+        throw new Error('Server backend PostgreSQL di port 5000 belum berjalan. Jalankan "npm run dev" atau "npm run server".');
       }
     }
 
@@ -232,11 +235,14 @@ export class ApiService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskData)
       });
-      if (!result.ok) throw new Error(`HTTP ${result.status}`);
+      if (!result.ok) {
+        const errMsg = result.data?.error || `HTTP ${result.status}`;
+        throw new Error(errMsg);
+      }
       return result.data.data;
     } catch (err) {
       console.warn('[ApiService] Gagal menyimpan task ke backend:', err.message);
-      return null;
+      throw err;
     }
   }
 

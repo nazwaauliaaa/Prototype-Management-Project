@@ -399,6 +399,7 @@ export class NewTaskModal extends BaseModal {
         let picName, picInitials, picRole;
 
         if (picVal === '__new_member__') {
+          const newPicNameInput = modalRoot.querySelector('#input-new-pic-name');
           const newPicRoleInput = modalRoot.querySelector('#input-new-pic-role');
           const customName = newPicNameInput ? newPicNameInput.value.trim() : '';
           const customRole = newPicRoleInput ? newPicRoleInput.value.trim() : 'Anggota Tim';

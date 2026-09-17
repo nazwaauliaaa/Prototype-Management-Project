@@ -4539,6 +4539,7 @@ export class KanbanBoardView extends BaseView {
         const newTask = this.taskService.addTask({
           title: val,
           workspace: this.currentWorkspace,
+          projectId: this.projectId || null,
           status: 'backlog',
           priority: 'Medium',
           pic: { name: 'Awa', initials: 'AW', role: 'Owner' }

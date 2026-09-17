@@ -19,25 +19,45 @@ export class TaskService {
   }
 
   /**
-   * Sinkronisasi data tugas dengan PostgreSQL melalui Backend API
+   * Sinkronisasi data tugas dengan PostgreSQL / Supabase melalui Backend API
    */
   async syncFromBackend() {
     try {
       const remoteTasks = await apiService.getTasks();
       if (Array.isArray(remoteTasks)) {
-        if (remoteTasks.length > 0) {
-          this.tasks = remoteTasks.map(t => new Task(t));
-          this.saveToStorage();
-          if (this.eventBus) {
-            this.eventBus.emit('tasks:updated', this.tasks);
-          }
-          console.log(`[TaskService] ✅ Berhasil menyinkronkan ${remoteTasks.length} tugas dari PostgreSQL.`);
-        } else if (this.tasks.length > 0) {
-          console.log('[TaskService] 🔄 Mengunggah tugas lokal ke database PostgreSQL...');
-          for (const t of this.tasks) {
-            await apiService.createTask(t);
+        const remoteMap = new Map();
+        remoteTasks.forEach(t => {
+          if (t && t.id) remoteMap.set(String(t.id), new Task(t));
+        });
+
+        // Cari task lokal yang belum ada di remote (Supabase) dan jadwalkan upload
+        const localTasksToUpload = [];
+        for (const localTask of this.tasks) {
+          if (localTask && localTask.id && !remoteMap.has(String(localTask.id))) {
+            localTasksToUpload.push(localTask);
+            remoteMap.set(String(localTask.id), localTask);
           }
         }
+
+        this.tasks = Array.from(remoteMap.values());
+        this.saveToStorage();
+        if (this.eventBus) {
+          this.eventBus.emit('tasks:updated', this.tasks);
+        }
+
+        // Upload task lokal yang belum tersimpan di Supabase
+        if (localTasksToUpload.length > 0) {
+          console.log(`[TaskService] 🔄 Mengunggah ${localTasksToUpload.length} tugas lokal ke database Supabase...`);
+          for (const task of localTasksToUpload) {
+            try {
+              await apiService.createTask(task);
+            } catch (upErr) {
+              console.warn('[TaskService] Gagal upload task lokal:', upErr.message);
+            }
+          }
+        }
+
+        console.log(`[TaskService] ✅ Berhasil menyinkronkan ${this.tasks.length} tugas dengan PostgreSQL/Supabase.`);
       }
     } catch (err) {
       console.warn('[TaskService] Backend PostgreSQL belum dapat dihubungi, menggunakan cache lokal.');
@@ -61,10 +81,9 @@ export class TaskService {
             'task-6', 'task-7', 'task-8', 'task-9', 'task-10',
             'task-11', 'task-12', 'task-13', 'task-14', 'task-15'
           ]);
-          const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
 
           this.tasks = parsed
-            .filter(t => !oldMockIds.has(t.id) && !oldWs.has((t.workspace || '').toLowerCase()))
+            .filter(t => !oldMockIds.has(t.id))
             .map(t => new Task(t));
           this.saveToStorage();
           return;
@@ -104,9 +123,8 @@ export class TaskService {
       'task-6', 'task-7', 'task-8', 'task-9', 'task-10',
       'task-11', 'task-12', 'task-13', 'task-14', 'task-15'
     ]);
-    const oldWs = new Set(['ruangkreasi', 'layarbaca', 'aikreativ', 'panen-kunci', 'sharinginaja']);
 
-    let result = this.tasks.filter(t => !oldMockIds.has(t.id) && !oldWs.has((t.workspace || '').toLowerCase()));
+    let result = this.tasks.filter(t => !oldMockIds.has(t.id));
 
     if (workspace && workspace !== 'all') {
       result = result.filter(t => 
@@ -142,15 +160,19 @@ export class TaskService {
    */
   addTask(taskData) {
     const newTask = new Task({
-      id: 'task-' + Date.now(),
+      id: taskData.id || 'task-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900),
       ...taskData
     });
     this.tasks.unshift(newTask);
     this.saveToStorage();
 
-    // Simpan ke PostgreSQL
-    apiService.createTask(newTask).catch(err => {
-      console.warn('[TaskService] Gagal sync task ke PostgreSQL:', err.message);
+    // Simpan ke PostgreSQL / Supabase secara asynchronous
+    apiService.createTask(newTask).then((saved) => {
+      if (saved) {
+        console.log(`[TaskService] ✅ Task "${newTask.title}" tersimpan di Supabase (${saved.id || newTask.id})`);
+      }
+    }).catch(err => {
+      console.warn('[TaskService] Gagal sync task ke Supabase:', err.message);
     });
 
     this.eventBus.emit('tasks:updated', this.tasks);

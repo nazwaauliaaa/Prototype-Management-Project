@@ -17,10 +17,13 @@ export class Task {
     assets = [],
     attachments = [],
     qaProgress = { passed: 0, total: 4 },
-    isStarred = false,
     tags = [],
     location = '',
     resolution = '',
+    projectId = null,
+    startDate = null,
+    endDate = null,
+    deadline = null,
     createdAt = new Date().toISOString()
   }) {
     this.id = id;
@@ -41,6 +44,10 @@ export class Task {
     this.tags = tags;
     this.location = location;
     this.resolution = resolution;
+    this.projectId = projectId;
+    this.startDate = startDate;
+    this.endDate = endDate;
+    this.deadline = deadline;
     this.createdAt = createdAt;
   }
 }
