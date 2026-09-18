@@ -928,20 +928,7 @@ export class KanbanBoardView extends BaseView {
   }
 
   getCurrentUser() {
-    let urlParams = null;
-    try {
-      urlParams = new URLSearchParams(window.location.search);
-      if (!urlParams.get('accept_invite') && window.location.hash.includes('?')) {
-        urlParams = new URLSearchParams(window.location.hash.slice(window.location.hash.indexOf('?')));
-      }
-    } catch (e) {}
-    const hasInviteParam = urlParams && (urlParams.has('accept_invite') || urlParams.has('invite') || urlParams.get('role') === 'user');
-    const isInvitedUser = Boolean(hasInviteParam || localStorage.getItem('active_user_role') === 'user' || localStorage.getItem('user_invited_workspace'));
-
-    if (isInvitedUser) {
-      localStorage.setItem('active_user_role', 'user');
-    }
-
+    let activeRole = localStorage.getItem('active_user_role');
     let u = null;
     if (this.authService && typeof this.authService.getCurrentUser === 'function') {
       u = this.authService.getCurrentUser();
@@ -950,70 +937,33 @@ export class KanbanBoardView extends BaseView {
       u = this.authService.restoreSession();
     }
 
-    if (u) {
-      if (isInvitedUser) {
-        return {
-          ...u,
-          name: (u.name && u.name !== 'Dr. Hendra Wijaya') ? u.name : (localStorage.getItem('active_user_name') || 'Anggota Tim'),
-          role: 'user',
-          title: 'Member Papan Proyek',
-          isAdmin: () => false,
-          isProjectManager: () => false,
-          isQA: () => false,
-          isUser: () => true
-        };
-      }
-      return u;
-    }
-
+    // Periksa apakah URL secara eksplisit memuat token undangan baru yang sedang dibuka
+    let urlParams = null;
     try {
-      const saved = localStorage.getItem('creative_office_auth_user') || localStorage.getItem('creative_office_user');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && (parsed.name || parsed.id)) {
-          if (isInvitedUser) {
-            return {
-              ...parsed,
-              name: (parsed.name && parsed.name !== 'Dr. Hendra Wijaya') ? parsed.name : (localStorage.getItem('active_user_name') || 'Anggota Tim'),
-              role: 'user',
-              title: 'Member Papan Proyek',
-              isAdmin: () => false,
-              isProjectManager: () => false,
-              isQA: () => false,
-              isUser: () => true
-            };
-          }
-          return {
-            ...parsed,
-            isAdmin: () => (parsed.role || '').toLowerCase() === 'admin',
-            isProjectManager: () => (parsed.role || '').toLowerCase() === 'manajement-project',
-            isQA: () => (parsed.role || '').toLowerCase() === 'qa',
-            isUser: () => (parsed.role || '').toLowerCase() === 'user'
-          };
-        }
+      urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.get('accept_invite') && window.location.hash.includes('?')) {
+        urlParams = new URLSearchParams(window.location.hash.slice(window.location.hash.indexOf('?')));
       }
     } catch (e) {}
+    const hasFreshInviteParam = Boolean(urlParams && (urlParams.has('accept_invite') || urlParams.has('invite')));
 
-    // Periksa apakah active_user_role adalah 'user'
-    const activeRole = localStorage.getItem('active_user_role');
-    const activeName = localStorage.getItem('active_user_name');
-    if (isInvitedUser || activeRole === 'user' || activeName) {
-      return {
-        name: (activeName && activeName !== 'Dr. Hendra Wijaya') ? activeName : 'Anggota Tim',
-        role: 'user',
-        title: 'Member Papan Proyek',
-        isAdmin: () => false,
-        isProjectManager: () => false,
-        isQA: () => false,
-        isUser: () => true
-      };
-    }
+    const roleName = (activeRole || u?.role || '').toLowerCase();
 
-    if (activeRole === 'admin') {
+    // 1. JIKA ROLE ADALAH ADMIN -> MUTLAK HAK ADMIN PENUH BISA MENGUBAH APAPUN!
+    if (!hasFreshInviteParam && (roleName === 'admin' || (u && typeof u.isAdmin === 'function' && u.isAdmin()))) {
+      localStorage.setItem('active_user_role', 'admin');
+      try {
+        localStorage.removeItem('user_invited_workspace');
+        localStorage.removeItem('user_invited_project');
+      } catch (e) {}
+
       return {
-        name: 'Dr. Hendra Wijaya',
+        ...(u || {}),
+        id: u?.id || 'usr-001',
+        name: u?.name || 'Dr. Hendra Wijaya',
         role: 'admin',
         title: 'Admin & Managing Director',
+        avatar: u?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v',
         isAdmin: () => true,
         isProjectManager: () => false,
         isQA: () => false,
@@ -1021,8 +971,40 @@ export class KanbanBoardView extends BaseView {
       };
     }
 
+    // 2. JIKA ROLE ADALAH MANAJER PROYEK (PM)
+    if (!hasFreshInviteParam && (roleName === 'manajement-project' || roleName === 'kreatif' || (u && typeof u.isProjectManager === 'function' && u.isProjectManager()))) {
+      return {
+        ...(u || {}),
+        name: u?.name || 'Sari Rahmawati',
+        role: 'manajement-project',
+        title: 'Project Manager & Operations Lead',
+        isAdmin: () => false,
+        isProjectManager: () => true,
+        isQA: () => false,
+        isUser: () => false
+      };
+    }
+
+    // 3. JIKA ROLE ADALAH QA
+    if (!hasFreshInviteParam && (roleName === 'qa' || roleName === 'teknis' || (u && typeof u.isQA === 'function' && u.isQA()))) {
+      return {
+        ...(u || {}),
+        name: u?.name || 'Budi Pratama',
+        role: 'qa',
+        title: 'QA Lead (Quality Assurance)',
+        isAdmin: () => false,
+        isProjectManager: () => false,
+        isQA: () => true,
+        isUser: () => false
+      };
+    }
+
+    // 4. JIKA ROLE USER / MEMBER (Masuk lewat tautan / QR / peran user)
+    // Hak akses terbatas: Hanya bisa melihat & memindahkan kartu
+    const activeName = localStorage.getItem('active_user_name');
     return {
-      name: activeName || 'Anggota Tim',
+      ...(u || {}),
+      name: (u && u.role === 'user' && u.name) ? u.name : (activeName || 'Anggota Tim'),
       role: 'user',
       title: 'Member Papan Proyek',
       isAdmin: () => false,

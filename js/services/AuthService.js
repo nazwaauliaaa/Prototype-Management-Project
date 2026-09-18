@@ -500,6 +500,10 @@ export class AuthService {
         localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
         localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
         localStorage.setItem('active_user_role', role);
+        if (role === 'admin') {
+          localStorage.removeItem('user_invited_workspace');
+          localStorage.removeItem('user_invited_project');
+        }
         if (this.currentUser.email) localStorage.setItem('active_user_email', this.currentUser.email);
         if (this.currentUser.name) localStorage.setItem('active_user_name', this.currentUser.name);
       } catch (e) {}
