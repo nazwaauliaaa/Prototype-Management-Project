@@ -125,7 +125,7 @@ export class Header {
               <!-- Popover Panel Notifikasi -->
               <div
                 id="header-notif-menu"
-                class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border z-50 overflow-hidden flex flex-col max-h-[500px]"
+                class="hidden absolute right-0 mt-2 w-80 sm:w-[410px] bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border z-50 overflow-hidden flex flex-col max-h-[520px] animate-in fade-in zoom-in-95 duration-150"
               >
                 <!-- Notification Header -->
                 <div class="px-4 py-3 border-b border-surface-border flex items-center justify-between bg-surface-container-low/40">
@@ -138,30 +138,45 @@ export class Header {
                       <p class="text-[10.5px] text-text-muted mt-0.5" id="notif-subtext">Tugas masuk & sedang dikerjakan</p>
                     </div>
                   </div>
-                  <span id="notif-total-badge" class="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">0 Tugas</span>
+                  <div class="flex items-center gap-2">
+                    <button
+                      id="btn-mark-all-read"
+                      type="button"
+                      class="text-[11px] font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 hover:underline flex items-center gap-0.5 cursor-pointer transition-colors"
+                      title="Tandai semua tugas sebagai sudah dibaca"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">done_all</span>
+                      <span>Tandai dibaca</span>
+                    </button>
+                    <span id="notif-total-badge" class="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">0 Baru</span>
+                  </div>
                 </div>
 
-                <!-- Notification Filter Tabs -->
-                <div class="px-3 pt-2 pb-1.5 border-b border-surface-border flex items-center gap-1.5 bg-surface-container-lowest text-[11.5px]">
-                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer bg-purple-600 text-white shadow-2xs" data-tab="all">
+                <!-- Notification Filter Tabs (including Riwayat) -->
+                <div class="px-3 pt-2 pb-1.5 border-b border-surface-border flex items-center gap-1.5 bg-surface-container-lowest text-[11.5px] overflow-x-auto no-scrollbar">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer bg-purple-600 text-white shadow-2xs shrink-0" data-tab="all">
                     Semua
                   </button>
-                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer" data-tab="inbox">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer shrink-0" data-tab="inbox">
                     📥 Tugas Masuk
                   </button>
-                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer" data-tab="ongoing">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer shrink-0" data-tab="ongoing">
                     ⏳ Sedang Dikerjakan
+                  </button>
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer shrink-0 flex items-center gap-1" data-tab="history">
+                    <span class="material-symbols-outlined text-[14px]">history</span>
+                    <span>Riwayat</span>
                   </button>
                 </div>
 
                 <!-- Notification List Container -->
-                <div id="notif-items-list" class="divide-y divide-surface-border/60 overflow-y-auto max-h-[320px] p-1 flex flex-col gap-0.5">
+                <div id="notif-items-list" class="divide-y divide-surface-border/60 overflow-y-auto max-h-[340px] p-1.5 flex flex-col gap-1">
                   <!-- Dynamic items -->
                 </div>
 
                 <!-- Notification Footer -->
                 <div class="p-2.5 border-t border-surface-border bg-surface-container-low/30 flex items-center justify-between">
-                  <span class="text-[11px] text-text-muted px-1.5">Klik tugas untuk melihat detail</span>
+                  <span class="text-[11px] text-text-muted px-1.5">Klik pesan untuk membaca & membuka tugas</span>
                   <button
                     id="btn-open-kanban-from-notif"
                     type="button"
@@ -265,6 +280,36 @@ export class Header {
     `;
   }
 
+  getReadNotifIds() {
+    try {
+      return new Set(JSON.parse(localStorage.getItem('creative_office_read_notif_ids') || '[]'));
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  markNotifAsRead(taskId) {
+    if (!taskId) return;
+    try {
+      const readSet = this.getReadNotifIds();
+      readSet.add(String(taskId));
+      localStorage.setItem('creative_office_read_notif_ids', JSON.stringify([...readSet]));
+      this.updateNotificationBadge();
+      this.renderNotificationList();
+    } catch (e) {}
+  }
+
+  markAllNotifsAsRead() {
+    try {
+      const allActive = this.getNotificationTasks('all');
+      const readSet = this.getReadNotifIds();
+      allActive.forEach(t => readSet.add(String(t.id)));
+      localStorage.setItem('creative_office_read_notif_ids', JSON.stringify([...readSet]));
+      this.updateNotificationBadge();
+      this.renderNotificationList();
+    } catch (e) {}
+  }
+
   getNotificationTasks(tab = 'all') {
     if (!this.taskService) {
       try {
@@ -295,17 +340,37 @@ export class Header {
       return s === 'in-progress' || s === 'in_progress' || s === 'doing' || s === 'review-qa' || s === 'review' || s === 'testing' || s === 'ready-launch';
     };
 
+    const isDoneStatus = (status) => {
+      const s = (status || '').toLowerCase();
+      return s === 'done' || s === 'completed';
+    };
+
+    const readSet = this.getReadNotifIds();
+
     let filtered = [];
     if (tab === 'inbox') {
       filtered = allTasks.filter(t => isInboxStatus(t.status));
     } else if (tab === 'ongoing') {
       filtered = allTasks.filter(t => isOngoingStatus(t.status));
+    } else if (tab === 'history') {
+      // Tab Riwayat: Menampilkan tugas yang sudah selesai (done) atau yang sudah pernah dibaca
+      filtered = allTasks.filter(t => isDoneStatus(t.status) || readSet.has(String(t.id)));
     } else {
       filtered = allTasks.filter(t => isInboxStatus(t.status) || isOngoingStatus(t.status));
     }
 
     const priorityWeight = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
     filtered.sort((a, b) => {
+      if (tab === 'history') {
+        // Riwayat: urutkan dari yang terbaru diperbarui/selesai
+        return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+      }
+
+      // Tab normal: yang belum dibaca (unread) muncul di paling atas
+      const aUnread = !readSet.has(String(a.id)) ? 1 : 0;
+      const bUnread = !readSet.has(String(b.id)) ? 1 : 0;
+      if (bUnread !== aUnread) return bUnread - aUnread;
+
       const pDiff = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
       if (pDiff !== 0) return pDiff;
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
@@ -317,15 +382,21 @@ export class Header {
   updateNotificationBadge() {
     if (!this.element) return;
     const allActive = this.getNotificationTasks('all');
+    const readSet = this.getReadNotifIds();
+
+    // Hitung pesan yang BELUM terbaca
+    const unreadTasks = allActive.filter(t => !readSet.has(String(t.id)));
+    const unreadCount = unreadTasks.length;
+
     const badgeCountEl = this.element.querySelector('#notif-badge-count');
     const badgeDotEl = this.element.querySelector('#notif-badge-dot');
     const totalBadgeEl = this.element.querySelector('#notif-total-badge');
     const subtextEl = this.element.querySelector('#notif-subtext');
+    const markAllBtn = this.element.querySelector('#btn-mark-all-read');
 
-    const count = allActive.length;
     if (badgeCountEl) {
-      if (count > 0) {
-        badgeCountEl.textContent = count > 99 ? '99+' : String(count);
+      if (unreadCount > 0) {
+        badgeCountEl.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
         badgeCountEl.classList.remove('hidden');
         if (badgeDotEl) badgeDotEl.classList.add('hidden');
       } else {
@@ -335,13 +406,28 @@ export class Header {
     }
 
     if (totalBadgeEl) {
-      totalBadgeEl.textContent = `${count} Tugas Aktif`;
+      if (unreadCount > 0) {
+        totalBadgeEl.textContent = `${unreadCount} Baru`;
+        totalBadgeEl.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300';
+      } else {
+        totalBadgeEl.textContent = 'Semua Terbaca';
+        totalBadgeEl.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300';
+      }
+    }
+
+    if (markAllBtn) {
+      if (unreadCount > 0) {
+        markAllBtn.classList.remove('opacity-40', 'pointer-events-none');
+      } else {
+        markAllBtn.classList.add('opacity-40', 'pointer-events-none');
+      }
     }
 
     if (subtextEl) {
       const inboxCount = this.getNotificationTasks('inbox').length;
       const ongoingCount = this.getNotificationTasks('ongoing').length;
-      subtextEl.textContent = `${inboxCount} masuk • ${ongoingCount} sedang dikerjakan`;
+      const historyCount = this.getNotificationTasks('history').length;
+      subtextEl.textContent = `${inboxCount} masuk • ${ongoingCount} aktif • ${historyCount} riwayat`;
     }
   }
 
@@ -351,20 +437,23 @@ export class Header {
     if (!listContainer) return;
 
     const tasks = this.getNotificationTasks(this.activeNotifTab);
+    const readSet = this.getReadNotifIds();
 
     if (tasks.length === 0) {
       const emptyMsg = this.activeNotifTab === 'inbox'
         ? 'Tidak ada tugas baru yang masuk saat ini.'
         : this.activeNotifTab === 'ongoing'
         ? 'Tidak ada tugas yang sedang dalam pengerjaan.'
+        : this.activeNotifTab === 'history'
+        ? 'Belum ada riwayat tugas selesai atau pesan yang sudah dibaca.'
         : 'Tidak ada tugas masuk atau yang sedang dikerjakan.';
 
       listContainer.innerHTML = `
         <div class="py-8 px-4 text-center flex flex-col items-center justify-center gap-2">
           <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-text-muted">
-            <span class="material-symbols-outlined text-[22px]">inbox</span>
+            <span class="material-symbols-outlined text-[22px]">${this.activeNotifTab === 'history' ? 'history' : 'inbox'}</span>
           </div>
-          <p class="text-[12.5px] font-semibold text-on-surface">Tidak ada tugas aktif</p>
+          <p class="text-[12.5px] font-semibold text-on-surface">Tidak ada notifikasi dalam kategori ini</p>
           <p class="text-[11px] text-text-muted max-w-[220px]">${emptyMsg}</p>
         </div>
       `;
@@ -381,6 +470,14 @@ export class Header {
 
     const statusBadge = (s) => {
       const st = (s || '').toLowerCase();
+      if (st === 'done' || st === 'completed') {
+        return `
+          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 shrink-0">
+            <span class="material-symbols-outlined text-[12px] text-emerald-600">check_circle</span>
+            <span>Selesai (Done)</span>
+          </span>
+        `;
+      }
       if (st === 'backlog' || st === 'todo' || st === 'to-do' || st === 'ready' || st === 'new') {
         return `
           <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200/60 shrink-0">
@@ -399,7 +496,7 @@ export class Header {
       }
       return `
         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 shrink-0">
-          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-spin"></span>
           <span>Sedang Dikerjakan</span>
         </span>
       `;
@@ -409,14 +506,25 @@ export class Header {
       const picName = task.pic?.name || 'Belum Ditugaskan';
       const picAvatar = task.pic?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(picName)}`;
       const boardName = task.board || task.workspace || 'Papan Utama';
+      const isUnread = !readSet.has(String(task.id));
 
       return `
         <div
-          class="notif-task-item p-2.5 rounded-xl hover:bg-surface-container/70 active:scale-[0.99] transition-all cursor-pointer flex flex-col gap-1.5 border border-transparent hover:border-surface-border group"
+          class="notif-task-item p-2.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border group relative ${
+            isUnread 
+              ? 'bg-purple-500/5 hover:bg-purple-500/10 border-purple-500/20 shadow-xs' 
+              : 'bg-surface-container-lowest hover:bg-surface-container/70 border-surface-border/50 opacity-85 hover:opacity-100'
+          }"
           data-task-id="${task.id}"
+          title="${isUnread ? 'Klik untuk membaca & membuka tugas' : 'Sudah dibaca - klik untuk membuka detail'}"
         >
           <div class="flex items-start justify-between gap-2">
-            <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              ${isUnread ? `
+                <span class="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 shrink-0 ring-2 ring-purple-200 dark:ring-purple-900 animate-pulse" title="Belum dibaca"></span>
+              ` : `
+                <span class="material-symbols-outlined text-[14px] text-text-muted shrink-0" title="Sudah dibaca">done</span>
+              `}
               <span class="text-[10px] font-mono font-semibold text-text-muted shrink-0">${task.code || '#TASK'}</span>
               <span class="text-[12.5px] font-semibold text-on-surface group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate">
                 ${task.title || 'Tanpa Judul'}
@@ -425,7 +533,7 @@ export class Header {
             ${statusBadge(task.status)}
           </div>
 
-          <div class="flex items-center justify-between text-[11px] text-text-muted mt-0.5">
+          <div class="flex items-center justify-between text-[11px] text-text-muted mt-0.5 pl-4">
             <div class="flex items-center gap-2 min-w-0">
               <div class="flex items-center gap-1 shrink-0">
                 <img src="${picAvatar}" alt="${picName}" class="w-4 h-4 rounded-full object-cover ring-1 ring-black/10" />
@@ -435,6 +543,7 @@ export class Header {
               <span class="truncate max-w-[90px]">${boardName}</span>
             </div>
             <div class="shrink-0 flex items-center gap-1.5">
+              ${isUnread ? '<span class="text-[9px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/80 px-1 py-0.2 rounded">Baru</span>' : ''}
               ${priorityBadge(task.priority)}
             </div>
           </div>
@@ -442,14 +551,20 @@ export class Header {
       `;
     }).join('');
 
-    // Event listener click task item to open task-detail modal
+    // Event listener click task item: Tandai pesan terbaca (angka berkurang) dan buka modal detail
     const taskItems = listContainer.querySelectorAll('.notif-task-item');
     taskItems.forEach(item => {
       item.addEventListener('click', () => {
         const taskId = item.getAttribute('data-task-id');
+        
+        // 1. Tandai pesan sebagai sudah terbaca -> angka badge berkurang!
+        this.markNotifAsRead(taskId);
+
+        // 2. Tutup panel popover
         const notifMenu = this.element.querySelector('#header-notif-menu');
         if (notifMenu) notifMenu.classList.add('hidden');
 
+        // 3. Buka modal detail tugas
         const allTasks = this.taskService ? this.taskService.getTasks() : [];
         const task = allTasks.find(t => String(t.id) === String(taskId));
         if (task) {
@@ -564,6 +679,15 @@ export class Header {
         this.renderNotificationList();
       });
     });
+
+    // Mark All as Read button
+    const markAllBtn = this.element.querySelector('#btn-mark-all-read');
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.markAllNotifsAsRead();
+      });
+    }
 
     // Open Kanban button from Notification panel footer
     const openKanbanNotifBtn = this.element.querySelector('#btn-open-kanban-from-notif');
