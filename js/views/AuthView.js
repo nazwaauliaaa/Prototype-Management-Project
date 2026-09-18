@@ -192,7 +192,7 @@ export class AuthView extends BaseView {
             <!-- Header & Brand -->
             <div class="relative z-10 flex flex-col items-center text-center mb-spacing-md">
               <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 shadow-sm p-spacing-xs flex items-center justify-center mb-spacing-sm">
-                <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-xl" src="assets/logo.svg" />
+                <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-xl" src="/assets/logo.png" />
               </div>
               
               <div class="flex items-center gap-2 mb-1">
@@ -859,6 +859,52 @@ export class AuthView extends BaseView {
         }
       };
 
+      // Helper pemeriksaan apakah akun / QR sudah pernah terdaftar
+      const checkExistingUser = (codeToCheck, userToCheck) => {
+        if (!userToCheck && !codeToCheck) return null;
+        const targetName = (userToCheck?.name || '').toLowerCase().trim();
+        const targetEmail = (userToCheck?.email || '').toLowerCase().trim();
+
+        // 1. Registered codes tracker
+        try {
+          const registered = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
+          if (codeToCheck && registered[codeToCheck]) return registered[codeToCheck];
+          if (targetEmail && registered[targetEmail]) return registered[targetEmail];
+          if (targetName && registered[targetName]) return registered[targetName];
+        } catch (e) {}
+
+        // 2. Custom users
+        const customUsers = this.authService?.customUsers || [];
+        const matchCustom = customUsers.find(u =>
+          (u.qr_data && u.qr_data === codeToCheck) ||
+          (targetEmail && u.email && u.email.toLowerCase().trim() === targetEmail) ||
+          (targetName && u.name && u.name.toLowerCase().trim() === targetName)
+        );
+        if (matchCustom) return matchCustom;
+
+        // 3. Approved users
+        try {
+          const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
+          const matchApproved = approved.find(u =>
+            (targetEmail && u.email && u.email.toLowerCase().trim() === targetEmail) ||
+            (targetName && u.name && u.name.toLowerCase().trim() === targetName)
+          );
+          if (matchApproved) return matchApproved;
+        } catch (e) {}
+
+        // 4. Role profiles in authService (Sari Rahmawati, Dr. Hendra, Budi Pratama, Dimas Anggara)
+        if (this.authService?.roleProfiles) {
+          const profiles = Object.values(this.authService.roleProfiles);
+          const matchProfile = profiles.find(p =>
+            (targetEmail && p.email && p.email.toLowerCase().trim() === targetEmail) ||
+            (targetName && p.name && p.name.toLowerCase().trim() === targetName)
+          );
+          if (matchProfile) return matchProfile;
+        }
+
+        return null;
+      };
+
       // Helper: Registrasi otomatis akun baru langsung ke Supabase dan navigasi ke Beranda
       const autoRegisterAndEnter = async (codeToReg, userToReg) => {
         if (!userToReg || !userToReg.name) {
@@ -876,10 +922,18 @@ export class AuthView extends BaseView {
 
         stopCamera();
 
+        const existingUser = checkExistingUser(codeToReg, userToReg);
+        const isAlreadyRegistered = Boolean(existingUser);
+
         if (feedback) {
-          feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">✨ QR Baru Terdeteksi! Menyimpan "${userToReg.name}" ke Supabase & mengunci perangkat...</span>`;
+          if (isAlreadyRegistered) {
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">QR Dikenali!</span> Mengalihkan ke Beranda...`;
+          } else {
+            feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">✨ QR Baru Terdeteksi! Menyimpan "${userToReg.name}" ke Supabase & mengunci perangkat...</span>`;
+          }
         }
-        if (this.notificationService) {
+
+        if (!isAlreadyRegistered && this.notificationService) {
           this.notificationService.info(`Mendaftarkan akun "${userToReg.name}" ke database Supabase...`);
         }
 
@@ -907,13 +961,32 @@ export class AuthView extends BaseView {
             return;
           }
 
+          const wasAlreadyRegistered = isAlreadyRegistered || (regResult && regResult.autoCreated === false) || Boolean(regResult && regResult.isExisting);
           const registeredData = (regResult && regResult.data) ? regResult.data : regPayload;
 
+          // Simpan ke daftar registered_qr_codes agar pemindaian berikutnya langsung dikenali
+          try {
+            const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
+            regMap[codeToReg] = registeredData.name;
+            if (registeredData.email) regMap[registeredData.email.toLowerCase().trim()] = registeredData.name;
+            if (registeredData.name) regMap[registeredData.name.toLowerCase().trim()] = registeredData.name;
+            localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
+          } catch (e) {}
+
           if (feedback) {
-            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Tersimpan di Supabase!</span> Mengalihkan ke Beranda...`;
+            if (wasAlreadyRegistered) {
+              feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Berhasil Login!</span> Mengalihkan ke Beranda...`;
+            } else {
+              feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Tersimpan di Supabase!</span> Mengalihkan ke Beranda...`;
+            }
           }
+
           if (this.notificationService) {
-            this.notificationService.success(`🎉 Akun "${registeredData.name}" berhasil terdaftar di Supabase! Selamat datang di Beranda.`);
+            if (wasAlreadyRegistered) {
+              this.notificationService.success(`Berhasil login sebagai ${registeredData.name}!`);
+            } else {
+              this.notificationService.success(`🎉 Akun "${registeredData.name}" berhasil terdaftar di Supabase! Selamat datang di Beranda.`);
+            }
           }
 
           const userInstance = this.authService.registerNewUser({
@@ -926,7 +999,7 @@ export class AuthView extends BaseView {
           });
 
           setTimeout(() => {
-            this.authService.loginAsUser(userInstance);
+            this.authService.loginAsUser(userInstance, { silent: true });
 
             const allowedWs = 'panen-kunci';
             const allowedProj = allowedWs;
@@ -962,7 +1035,24 @@ export class AuthView extends BaseView {
             loginMethod: 'qr',
             qr_data: codeToReg
           });
-          this.authService.loginAsUser(userInstance);
+
+          try {
+            const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
+            regMap[codeToReg] = userInstance.name;
+            if (userInstance.email) regMap[userInstance.email.toLowerCase().trim()] = userInstance.name;
+            if (userInstance.name) regMap[userInstance.name.toLowerCase().trim()] = userInstance.name;
+            localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
+          } catch (e) {}
+
+          if (this.notificationService) {
+            if (isAlreadyRegistered) {
+              this.notificationService.success(`Berhasil login sebagai ${userInstance.name}!`);
+            } else {
+              this.notificationService.success(`🎉 Akun "${userInstance.name}" berhasil terdaftar!`);
+            }
+          }
+
+          this.authService.loginAsUser(userInstance, { silent: true });
           const isUser = (userInstance.role || '').toLowerCase() === 'user';
           window.location.hash = isUser ? '#/kanban/panen-kunci' : '#/dashboard';
         }
@@ -987,11 +1077,19 @@ export class AuthView extends BaseView {
           const userFromDb = lookupData.data;
           stopCamera();
 
+          try {
+            const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
+            regMap[cleanCode] = userFromDb.name;
+            if (userFromDb.email) regMap[userFromDb.email.toLowerCase().trim()] = userFromDb.name;
+            if (userFromDb.name) regMap[userFromDb.name.toLowerCase().trim()] = userFromDb.name;
+            localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
+          } catch (e) {}
+
           if (feedback) {
-            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">QR Dikenali!</span> Mengunci perangkat & masuk...`;
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Berhasil Login!</span> Mengalihkan ke Beranda...`;
           }
           if (this.notificationService) {
-            this.notificationService.success(`🎉 Selamat datang kembali, ${userFromDb.name}!`);
+            this.notificationService.success(`Berhasil login sebagai ${userFromDb.name}!`);
           }
 
           const userInstance = this.authService.registerNewUser({
@@ -1004,7 +1102,7 @@ export class AuthView extends BaseView {
           });
 
           setTimeout(() => {
-            this.authService.loginAsUser(userInstance);
+            this.authService.loginAsUser(userInstance, { silent: true });
 
             const allowedWs = 'panen-kunci';
             const allowedProj = allowedWs;

@@ -991,7 +991,25 @@ export class TaskDetailModal extends BaseModal {
         this.modalManager.open(this.modalId, { task: this.currentTask, editMode: false });
       };
       if (switchToViewBtn) switchToViewBtn.addEventListener('click', switchBack);
-      if (cancelEditBtn) cancelEditBtn.addEventListener('click', switchBack);
+
+      if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.isEditMode = false;
+          this.modalManager.close(this.modalId);
+          const task = this.currentTask;
+          const targetProj = task?.projectId || localStorage.getItem('active_project_id') || localStorage.getItem('user_invited_project') || 'panen-kunci';
+          const targetWs = task?.workspace || localStorage.getItem('active_workspace') || localStorage.getItem('user_invited_workspace') || targetProj;
+          if (this.eventBus) {
+            this.eventBus.emit('navigate', {
+              view: 'kanban',
+              projectId: targetProj,
+              workspace: targetWs
+            });
+          }
+          window.location.hash = `#/kanban/${targetProj}`;
+        });
+      }
 
       const deleteFromEditBtn = modalRoot.querySelector('#btn-delete-from-edit');
       if (deleteFromEditBtn) {

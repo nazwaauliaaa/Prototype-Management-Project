@@ -225,7 +225,7 @@ export class AuthService {
    * Login langsung menggunakan objek User spesifik
    * @param {User} user
    */
-  loginAsUser(user) {
+  loginAsUser(user, options = {}) {
     if (!user) return false;
     this.currentUser = user instanceof User ? user : new User(user);
     this.isAuthenticated = true;
@@ -237,7 +237,9 @@ export class AuthService {
       if (this.currentUser.name) localStorage.setItem('active_user_name', this.currentUser.name);
     } catch (e) {}
     this.eventBus.emit('auth:login', this.currentUser);
-    this.notifications.success(`Masuk sebagai ${this.currentUser.name} (${this.currentUser.title || this.currentUser.role})`);
+    if (!options?.silent) {
+      this.notifications.success(`Masuk sebagai ${this.currentUser.name} (${this.currentUser.title || this.currentUser.role})`);
+    }
     return true;
   }
 

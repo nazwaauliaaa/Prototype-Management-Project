@@ -44,7 +44,7 @@ export class Header {
           <!-- Logo & Branding -->
           <div class="flex items-center gap-spacing-md">
             <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo" title="Creative Office - Beranda">
-              <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg" src="assets/logo.svg" />
+              <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg shadow-2xs" src="/assets/logo.png" />
               <span class="font-headline-md text-[13px] font-bold text-on-surface leading-none">Creative Office</span>
             </div>
           </div>
