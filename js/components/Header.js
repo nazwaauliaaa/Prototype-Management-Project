@@ -36,7 +36,7 @@ export class Header {
       role: 'kreatif'
     };
     const activeRole = localStorage.getItem('active_user_role');
-    const isUserRole = (user.role || '').toLowerCase() === 'user' || activeRole === 'user';
+    const isUserRole = activeRole === 'admin' ? false : ((user.role || '').toLowerCase() === 'user' || activeRole === 'user');
 
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
@@ -196,9 +196,9 @@ export class Header {
               <!-- Role Switcher Menu Popup -->
               <div
                 id="user-profile-menu"
-                class="hidden absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-border p-2 z-50 flex flex-col gap-1"
+                class="hidden absolute right-0 mt-2 w-72 bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border p-2.5 z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150"
               >
-                <div class="px-2 py-1.5 border-b border-surface-border mb-1 flex items-center gap-2.5">
+                <div class="px-2 py-1.5 border-b border-surface-border mb-0.5 flex items-center gap-2.5">
                   <img
                     alt="${user.name}"
                     class="w-10 h-10 rounded-full object-cover ring-1 ring-black/10 shrink-0"
@@ -208,18 +208,43 @@ export class Header {
                     <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Profil Anda</span>
                     <p class="text-[13px] font-bold text-primary mt-0.5 truncate">${user.name}</p>
                     <p class="text-[11px] text-text-secondary truncate">${user.email || 'user@sampulkreativ.id'}</p>
-                    <span class="inline-block mt-0.5 px-2 py-0.2 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-primary/10 text-primary'} text-[9.5px] font-bold capitalize">
-                      ${isUserRole ? 'Member • Anggota Papan' : user.role}
+                    <span class="inline-block mt-0.5 px-2 py-0.2 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'} text-[9.5px] font-bold capitalize">
+                      ${isUserRole ? 'Member • Akses Terbatas' : 'Admin • Hak Penuh Ubah Apapun'}
                     </span>
                   </div>
                 </div>
 
-                ${isUserRole ? `
-                <div class="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-800/40 text-[11px] text-sky-800 dark:text-sky-300 mb-1">
-                  <span class="font-semibold block mb-0.5">Akses Member Terbatas:</span>
-                  Hanya memiliki izin melihat & memindahkan kartu di Papan Kanban ini.
+                <!-- Quick Role Switcher Buttons -->
+                <div class="p-2 rounded-xl bg-surface-container-low border border-surface-border/70 flex flex-col gap-1.5">
+                  <span class="text-[10px] text-text-muted uppercase font-bold tracking-wider">Pilih Mode Peran:</span>
+                  <div class="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      class="btn-switch-header-role px-2.5 py-2 rounded-xl text-left text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${!isUserRole ? 'bg-purple-600 text-white shadow-xs' : 'bg-surface-container hover:bg-surface-container-high text-text-primary'}"
+                      data-target-role="admin"
+                      title="Masuk sebagai Admin: Hak penuh mengubah apapun"
+                    >
+                      <span class="material-symbols-outlined text-[15px]">admin_panel_settings</span>
+                      <div class="flex flex-col min-w-0 leading-tight">
+                        <span>Admin</span>
+                        <span class="text-[9px] opacity-80 font-normal">Hak Penuh</span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-switch-header-role px-2.5 py-2 rounded-xl text-left text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${isUserRole ? 'bg-sky-600 text-white shadow-xs' : 'bg-surface-container hover:bg-surface-container-high text-text-primary'}"
+                      data-target-role="user"
+                      title="Masuk sebagai Member: Akses geser kartu saja"
+                    >
+                      <span class="material-symbols-outlined text-[15px]">shield_person</span>
+                      <div class="flex flex-col min-w-0 leading-tight">
+                        <span>Member</span>
+                        <span class="text-[9px] opacity-80 font-normal">Geser Kartu</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-                ` : ''}
 
                 ${!isUserRole ? `
                 <button id="btn-header-profile" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
@@ -559,6 +584,21 @@ export class Header {
         e.stopPropagation();
         if (notifMenu) notifMenu.classList.add('hidden');
         profileMenu.classList.toggle('hidden');
+      });
+      // Quick Role Switcher Click Listeners
+      const roleBtns = profileMenu.querySelectorAll('.btn-switch-header-role');
+      roleBtns.forEach(rBtn => {
+        rBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const targetRole = rBtn.getAttribute('data-target-role');
+          if (targetRole && this.authService) {
+            profileMenu.classList.add('hidden');
+            this.authService.loginWithRole(targetRole);
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+          }
+        });
       });
     }
 

@@ -820,8 +820,8 @@ class CreativeOfficeApp {
     const eventBus = this.container.resolve('EventBus');
     const authService = this.container.resolve('AuthService');
 
-    const currentUser = authService ? authService.getCurrentUser() : null;
-    const isUserRole = (currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()))) || localStorage.getItem('active_user_role') === 'user';
+    const activeRole = localStorage.getItem('active_user_role');
+    const isUserRole = activeRole === 'admin' ? false : ((currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()))) || activeRole === 'user');
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban and auth
     if (isUserRole) {
