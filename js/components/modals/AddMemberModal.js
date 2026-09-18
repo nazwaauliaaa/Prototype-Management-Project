@@ -444,82 +444,18 @@ export class AddMemberModal extends BaseModal {
     const authService = this.container ? this.container.resolve('AuthService') : null;
     const authUser = authService ? authService.getCurrentUser() : null;
     const inviterName = authUser?.name || 'awaa';
-    const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
-
-    let activeTheme = null;
-    try {
-      const savedTheme = localStorage.getItem(`board_theme_${currentWs}`) || localStorage.getItem(`board_theme_${currentProjId}`);
-      if (savedTheme) activeTheme = JSON.parse(savedTheme);
-    } catch (e) {}
-
-    const projectService = this.container ? this.container.resolve('ProjectService') : null;
-    const project = projectService ? (projectService.getProjectById(currentProjId) || projectService.getAllProjects().find(p => p.workspace === currentWs || p.id === currentWs || p.id === currentProjId)) : null;
-
-    let customWs = null;
-    try {
-      const allWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
-      customWs = allWs.find(w => w.id === currentWs || w.title === currentTitle);
-    } catch (e) {}
-
-    const taskService = this.container ? this.container.resolve('TaskService') : null;
-    const boardTasks = taskService ? taskService.getTasksForBoard(project || { id: currentProjId, workspace: currentWs }) : [];
-
-    const compactProject = {
-      id: currentProjId,
-      workspace: currentWs,
-      name: currentTitle,
-      title: currentTitle,
-      tag: project?.tag || 'Dev / Creative Hub',
-      priority: project?.priority || 'High',
-      description: project?.description || `Ruang kerja dan deliverable proyek ${currentTitle}.`,
-      theme: activeTheme || project?.theme || null,
-      customWs: customWs ? { id: customWs.id, title: customWs.title, tag: customWs.tag, color: customWs.color } : null
-    };
-
-    const compactTasks = boardTasks.map(t => ({
-      id: t.id,
-      code: t.code,
-      title: t.title,
-      description: t.description || '',
-      status: t.status || 'todo',
-      columnId: t.columnId || t.status || 'todo',
-      priority: t.priority || 'Medium',
-      pic: t.pic || null,
-      timeline: t.timeline || null,
-      dueDate: t.dueDate || null,
-      hours: t.hours || 0,
-      labels: t.labels || [],
-      workspace: currentWs,
-      projectId: currentProjId
-    }));
 
     const paramsObj = {
       accept_invite: 'inv-qr-' + Date.now(),
-      name:          '',
-      email:         '',
-      role:          'user', // QR undangan juga selalu masuk sebagai user
+      role:          'user', // QR selalu masuk sebagai user
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
       inviter_name:  inviterName,
-      inviter_role:  inviterRole,
-      color:         '#2563eb',
-      via:           'qr',
-      project_data:  encodeURIComponent(JSON.stringify(compactProject))
+      via:           'qr'
     };
 
-    if (compactTasks.length > 0) {
-      paramsObj.tasks_data = encodeURIComponent(JSON.stringify(compactTasks));
-    }
-
-    if (activeTheme) {
-      if (activeTheme.type) paramsObj.theme_type = activeTheme.type;
-      if (activeTheme.name) paramsObj.theme_name = activeTheme.name;
-      if (activeTheme.value) paramsObj.theme_val = activeTheme.value;
-    }
-
     const params = new URLSearchParams(paramsObj);
-
     return `${origin}${pathname}?${params.toString()}#/kanban/${currentProjId}`;
   }
 
@@ -681,14 +617,19 @@ export class AddMemberModal extends BaseModal {
         <span class="material-symbols-outlined text-[16px] text-slate-400">expand_more</span>
       </button>`;
 
-    const qrUrl = this.generateQrLink();
-    const qrSvg = QRCodeGenerator.generate(qrUrl, { size: 104, darkColor: '#0f172a' });
+    let qrSvg = '';
+    try {
+      const qrUrl = this.generateQrLink();
+      qrSvg = QRCodeGenerator.generate(qrUrl, { size: 104, darkColor: '#0f172a' });
+    } catch (e) {
+      console.warn('QR code generation error:', e);
+    }
 
     return `
       <div class="relative w-full max-w-[580px] bg-white dark:bg-[#1d2125]
                   text-[#172b4d] dark:text-[#b6c2cf] rounded-2xl shadow-2xl
                   border border-[#dfe1e6] dark:border-[#333c43] overflow-hidden
-                  my-auto flex flex-col animate-in fade-in zoom-in duration-200">
+                  my-auto flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
 
         <!-- HEADER & INVITE SEARCH ROW -->
         <div class="IcTfl2a5Uq_10m">
@@ -772,7 +713,7 @@ export class AddMemberModal extends BaseModal {
             </div>
           </div>
 
-          <!-- Bottom Row: Sleek Action Buttons (Copy Link, Delete Link) -->
+          <!-- Bottom Row: Sleek Action Buttons (Copy Link, QR Code, Delete Link) -->
           <div class="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-slate-200/70 dark:border-slate-800/80">
             <div class="flex items-center gap-2 flex-wrap">
               <!-- Copy Link Button (Primary Pill) -->
@@ -780,6 +721,13 @@ export class AddMemberModal extends BaseModal {
                       class="h-7.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
                 <span class="material-symbols-outlined text-[14px]">content_copy</span>
                 <span>Copy link</span>
+              </button>
+
+              <!-- QR Code Toggle Button (Purple Pill) -->
+              <button type="button" id="btn-toggle-board-qr"
+                      class="h-7.5 px-3 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 text-[11.5px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95">
+                <span class="material-symbols-outlined text-[15px] text-purple-600 dark:text-purple-400">qr_code_2</span>
+                <span>QR Code Papan</span>
               </button>
             </div>
 
@@ -792,6 +740,56 @@ export class AddMemberModal extends BaseModal {
             </button>
           </div>
 
+        </div>
+
+        <!-- COLLAPSIBLE QR CODE CONTAINER -->
+        <div id="board-qr-panel" class="hidden px-5 py-4 bg-purple-50/60 dark:bg-purple-950/30 border-b border-purple-200/70 dark:border-purple-900/50 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div class="flex items-center gap-4">
+            <div class="p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-purple-200 dark:border-purple-800/60 shrink-0">
+              ${qrSvg}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 text-purple-800 dark:text-purple-200 font-bold text-[13px]">
+                <span class="material-symbols-outlined text-[17px] text-purple-600 dark:text-purple-400">qr_code_scanner</span>
+                <span>Pindai QR untuk Masuk ke Papan Ini</span>
+              </div>
+              <p class="text-[11.5px] text-slate-600 dark:text-slate-400 mt-1 leading-snug">
+                Siapapun yang memindai QR code ini melalui kamera ponsel akan otomatis bergabung ke <strong>${this.boardTitle}</strong> sebagai anggota tim.
+              </p>
+              <div class="flex items-center gap-2 mt-2.5">
+                <button type="button" id="btn-copy-qr-link" class="h-7.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11.5px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95">
+                  <span class="material-symbols-outlined text-[13px]">content_copy</span>
+                  <span>Salin Tautan QR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PENDING REQUESTS (Perlu ACC Admin) -->
+        ${this._renderPendingSection(pendingInvites)}
+
+        <!-- MEMBERS CONTENT (TAMPILAN ANGGOTA & UNDANGAN) -->
+        <div class="mPKaQevFgFe1YW px-5 py-3.5 flex flex-col flex-1 overflow-hidden min-h-[160px] max-h-[260px]">
+          <div class="flex items-center justify-between border-b border-[#dfe1e6] dark:border-[#333c43] pb-2 mb-2">
+            <div class="flex items-center gap-2 text-[13px] font-bold text-[#172b4d] dark:text-[#b6c2cf]">
+              <span>Anggota Papan</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-inherit" id="member-count-badge">
+                <span>${memberCount}</span>
+              </span>
+            </div>
+            <span class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[13px]">check_circle</span>
+              <span>Aktif via Tautan / QR</span>
+            </span>
+          </div>
+
+          <!-- Board members list -->
+          <div class="flex-1 overflow-y-auto pr-1">
+            <ul class="flex flex-col gap-1" id="board-members-list">
+              ${membersHTML}
+            </ul>
+          </div>
         </div>
 
         <!-- MODAL FOOTER -->
@@ -1002,6 +1000,7 @@ export class AddMemberModal extends BaseModal {
         createdAt: new Date().toISOString()
       };
       this.savePendingInvite(invite);
+      refreshMembersListUI();
 
       // 2. Generate tautan undangan & salin otomatis ke clipboard
       const link = this.generateInviteLink(invite);
@@ -1051,6 +1050,7 @@ export class AddMemberModal extends BaseModal {
           createdAt: new Date().toISOString()
         };
         this.savePendingInvite(inv);
+        refreshMembersListUI();
         const link = this.generateInviteLink(inv);
         try {
           await navigator.clipboard.writeText(link);
@@ -1061,6 +1061,30 @@ export class AddMemberModal extends BaseModal {
         } catch {
           if (this.notificationService) this.notificationService.success('Tautan berhasil disalin!');
         }
+      });
+    }
+
+    // 6b. Toggle QR Code Papan & Copy QR Link
+    const toggleQrBtn = modalRoot.querySelector('#btn-toggle-board-qr');
+    const qrPanel = modalRoot.querySelector('#board-qr-panel');
+    if (toggleQrBtn && qrPanel) {
+      toggleQrBtn.addEventListener('click', () => {
+        qrPanel.classList.toggle('hidden');
+      });
+    }
+
+    const copyQrLinkBtn = modalRoot.querySelector('#btn-copy-qr-link');
+    if (copyQrLinkBtn) {
+      copyQrLinkBtn.addEventListener('click', async () => {
+        const qrUrl = this.generateQrLink();
+        try {
+          await navigator.clipboard.writeText(qrUrl);
+          copyQrLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">check</span><span>Tautan QR Disalin!</span>`;
+          setTimeout(() => {
+            copyQrLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">content_copy</span><span>Salin Tautan QR</span>`;
+          }, 2000);
+          if (this.notificationService) this.notificationService.success('Tautan QR berhasil disalin ke clipboard!');
+        } catch (e) {}
       });
     }
 

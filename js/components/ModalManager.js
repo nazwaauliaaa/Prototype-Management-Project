@@ -17,7 +17,7 @@ export class ModalManager {
   init() {
     this.container = document.createElement('div');
     this.container.id = 'modal-container';
-    this.container.className = 'fixed inset-0 z-50 hidden items-center justify-center p-3 md:p-6 bg-on-background/75 backdrop-blur-xl overflow-y-auto modal-backdrop';
+    this.container.className = 'fixed inset-0 z-[99999] hidden items-center justify-center p-3 md:p-6 bg-black/70 backdrop-blur-md overflow-y-auto modal-backdrop';
     document.body.appendChild(this.container);
 
     // Global ESC key handler

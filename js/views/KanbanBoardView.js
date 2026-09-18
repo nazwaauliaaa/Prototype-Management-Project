@@ -3938,6 +3938,7 @@ export class KanbanBoardView extends BaseView {
     const openInviteMemberBtn = this.element.querySelector('#btn-open-invite-member');
     if (openInviteMemberBtn) {
       openInviteMemberBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         this._closeAllPopups();
         if (this.modalManager) {
@@ -4114,6 +4115,7 @@ export class KanbanBoardView extends BaseView {
     const shareBtn = this.element.querySelector('#btn-board-share');
     if (shareBtn) {
       shareBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         this._closeAllPopups();
         if (this.modalManager) {
