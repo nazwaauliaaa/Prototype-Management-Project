@@ -59,8 +59,14 @@ class CreativeOfficeApp {
 
   checkInviteToken() {
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const inviteToken = urlParams.get('accept_invite') || urlParams.get('invite');
+      // Support query parameters in both window.location.search and window.location.hash
+      let urlParams = new URLSearchParams(window.location.search);
+      let inviteToken = urlParams.get('accept_invite') || urlParams.get('invite');
+      if (!inviteToken && window.location.hash.includes('?')) {
+        const hashQuery = window.location.hash.slice(window.location.hash.indexOf('?'));
+        urlParams = new URLSearchParams(hashQuery);
+        inviteToken = urlParams.get('accept_invite') || urlParams.get('invite');
+      }
       if (!inviteToken) return;
 
       // Mark invite redirect as active — prevents auth:login from redirecting to dashboard
@@ -68,7 +74,7 @@ class CreativeOfficeApp {
 
       let rawName = urlParams.get('name') || '';
       let rawEmail = urlParams.get('email') || '';
-      const role = urlParams.get('role') || 'user';
+      const role = 'user'; // Invited members always join as User/Contributor
       const workspace = urlParams.get('ws') || urlParams.get('workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const projectId = urlParams.get('project_id') || urlParams.get('projectId') || workspace;
       const boardTitle = urlParams.get('board_title') || workspace;
@@ -77,11 +83,78 @@ class CreativeOfficeApp {
       const color = urlParams.get('color') || '#2563eb';
       const via = urlParams.get('via') || (inviteToken.startsWith('inv-qr-') ? 'qr' : 'link');
 
+      // 1. Unpack project_data (workspace metadata, category, theme) if present in URL
+      const rawProjectData = urlParams.get('project_data');
+      if (rawProjectData) {
+        try {
+          const parsedProject = JSON.parse(decodeURIComponent(rawProjectData));
+          if (parsedProject) {
+            // Register custom workspace into localStorage if needed
+            if (parsedProject.customWs) {
+              const wsKey = 'custom_workspaces';
+              const customWsList = JSON.parse(localStorage.getItem(wsKey) || '[]');
+              if (!customWsList.some(w => w.id === parsedProject.customWs.id || w.title === parsedProject.customWs.title)) {
+                customWsList.unshift({
+                  ...parsedProject.customWs,
+                  isCustom: true,
+                  iconSvg: `<svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>`
+                });
+                localStorage.setItem(wsKey, JSON.stringify(customWsList));
+              }
+            }
+
+            // Register project in ProjectService if not present
+            const projectService = this.container.resolve('ProjectService');
+            if (projectService) {
+              const existingProj = projectService.getProjectById(parsedProject.id);
+              if (!existingProj) {
+                projectService.addProject({
+                  id: parsedProject.id,
+                  name: parsedProject.name || parsedProject.title,
+                  workspace: parsedProject.workspace,
+                  tag: parsedProject.tag || 'Dev / Creative Hub',
+                  priority: parsedProject.priority || 'High',
+                  description: parsedProject.description || '',
+                  theme: parsedProject.theme || null,
+                  status: 'active',
+                  progress: 0,
+                  isUserCreated: true
+                });
+              }
+            }
+
+            // Sync theme
+            if (parsedProject.theme) {
+              localStorage.setItem(`board_theme_${parsedProject.workspace}`, JSON.stringify(parsedProject.theme));
+              localStorage.setItem(`board_theme_${parsedProject.id}`, JSON.stringify(parsedProject.theme));
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse project_data:', e);
+        }
+      }
+
+      // 2. Unpack tasks_data if present in URL — makes tasks appear on mobile immediately
+      const rawTasksData = urlParams.get('tasks_data');
+      if (rawTasksData) {
+        try {
+          const parsedTasks = JSON.parse(decodeURIComponent(rawTasksData));
+          if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
+            const taskService = this.container.resolve('TaskService');
+            if (taskService && typeof taskService.importTasks === 'function') {
+              taskService.importTasks(parsedTasks);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse tasks_data:', e);
+        }
+      }
+
       const authService = this.container.resolve('AuthService');
       const existingUser = authService ? authService.getCurrentUser() : null;
 
-      // If user is already logged in and link has no email, use logged-in user profile
-      if (existingUser && existingUser.email && !existingUser.email.endsWith('@workspace')) {
+      // Only reuse profile if existing user is a regular 'user', NOT an admin or PM session
+      if (existingUser && existingUser.role === 'user' && existingUser.email && !existingUser.email.endsWith('@workspace')) {
         if (!rawEmail) rawEmail = existingUser.email;
         if (!rawName || rawName === 'Anggota Baru') rawName = existingUser.name;
       }
@@ -94,7 +167,7 @@ class CreativeOfficeApp {
           boardTitle,
           inviterName,
           inviterRole,
-          role,
+          role: 'user',
           color,
           via,
           inviteToken,
@@ -103,7 +176,7 @@ class CreativeOfficeApp {
               inviteToken,
               rawName: submittedName,
               rawEmail: submittedEmail,
-              role,
+              role: 'user',
               workspace,
               projectId,
               boardTitle,
@@ -121,7 +194,7 @@ class CreativeOfficeApp {
         inviteToken,
         rawName,
         rawEmail,
-        role,
+        role: 'user',
         workspace,
         projectId,
         boardTitle,
@@ -303,18 +376,12 @@ class CreativeOfficeApp {
       const targetRuangName = cleanWsTitle.toLowerCase().startsWith('ruang') ? cleanWsTitle : `Ruang ${cleanWsTitle}`;
       const inviterNotice = `${inviterName}(${inviterRole}) mengundang anda ke ${targetRuangName}`;
 
-      // Map role to internal authorization role and jobdesk title
+      // All invited members entering via shared link or QR are strictly granted 'user' role
       let authRole = 'user';
-      let jobdeskTitle = 'Creative Specialist & Kontributor';
+      let jobdeskTitle = 'Editor & Anggota Tim Proyek';
       const lowerRole = (role || '').toLowerCase();
       
-      if (lowerRole.includes('admin')) {
-        authRole = 'admin';
-        jobdeskTitle = 'Admin & Pengelola Penuh Proyek';
-      } else if (lowerRole.includes('lead') || lowerRole.includes('manajemen') || lowerRole.includes('pm')) {
-        authRole = 'manajement-project';
-        jobdeskTitle = 'Creative Lead & Project Manager';
-      } else if (lowerRole.includes('pengamat') || lowerRole.includes('viewer') || lowerRole.includes('qa') || lowerRole.includes('observer')) {
+      if (lowerRole.includes('pengamat') || lowerRole.includes('viewer') || lowerRole.includes('qa') || lowerRole.includes('observer')) {
         authRole = 'qa';
         jobdeskTitle = 'Pengamat & Quality Assurance';
       } else {
@@ -330,7 +397,7 @@ class CreativeOfficeApp {
         role: authRole,
         title: jobdeskTitle,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=${color.replace('#','')}&color=fff&bold=true`,
-        workspaceAccess: [workspace, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca', 'aikreativ']
+        workspaceAccess: [workspace, projectId, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca', 'aikreativ', 'sharinginaja']
       });
       userInstance.loginMethod = via === 'qr' ? 'qr' : 'link';
 
@@ -338,11 +405,17 @@ class CreativeOfficeApp {
       if (authService) {
         authService.loginAsUser(userInstance);
       }
+      localStorage.setItem('active_user_role', authRole);
+      localStorage.setItem('active_user_name', finalName);
+      localStorage.setItem('active_user_email', finalEmail);
       sessionStorage.setItem('auth_login_method', via === 'qr' ? 'qr' : 'link');
 
-      // Sync theme if available from invite params
+      // Sync theme if available from invite params (check search and hash)
       try {
-        const urlParams = new URLSearchParams(window.location.search);
+        let urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.get('theme_type') && window.location.hash.includes('?')) {
+          urlParams = new URLSearchParams(window.location.hash.slice(window.location.hash.indexOf('?')));
+        }
         const tType = urlParams.get('theme_type');
         const tName = urlParams.get('theme_name');
         const tVal = urlParams.get('theme_val');
@@ -708,6 +781,9 @@ class CreativeOfficeApp {
     }
 
     if (!authService.isLoggedIn() && cleanHash !== 'auth' && cleanHash !== 'register') {
+      if (this._inviteRedirect) {
+        return;
+      }
       this.navigateTo('auth');
       return;
     }

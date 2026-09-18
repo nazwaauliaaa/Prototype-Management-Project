@@ -33,10 +33,10 @@ export class TaskService {
       } catch (e) {}
     }
 
-    // Polling otomatis setiap 3.5 detik agar HP/mobile otomatis mengikuti apa pun yang diubah di desktop
+    // Polling otomatis setiap 25 detik agar sinkronisasi background efisien dan tidak melebihi kuota API
     this.syncTimer = setInterval(() => {
       this.syncFromBackend(true);
-    }, 3500);
+    }, 25000);
 
     // Sinkronisasi instan saat user membuka tab / mengaktifkan layar HP
     if (typeof document !== 'undefined') {
@@ -259,6 +259,35 @@ export class TaskService {
         qaProgress: { passed: 0, total: 3 }
       })
     ];
+  }
+
+  /**
+   * Mengimpor daftar tugas (misalnya dari payload tautan share/QR) ke dalam TaskService & localStorage
+   * @param {Array<Object>} incomingTasks
+   */
+  importTasks(incomingTasks) {
+    if (!Array.isArray(incomingTasks) || incomingTasks.length === 0) return;
+    let changed = false;
+    incomingTasks.forEach(raw => {
+      if (!raw || !raw.id) return;
+      const existingIdx = this.tasks.findIndex(t => String(t.id) === String(raw.id));
+      const taskModel = new Task(raw);
+      if (existingIdx !== -1) {
+        this.tasks[existingIdx] = taskModel;
+        changed = true;
+      } else {
+        this.tasks.unshift(taskModel);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      this.saveToStorage();
+      if (this.eventBus) {
+        this.eventBus.emit('tasks:updated', this.tasks);
+      }
+      this.broadcastLocalChange();
+    }
   }
 
   /**

@@ -969,14 +969,26 @@ export class KanbanBoardView extends BaseView {
       };
     }
 
+    if (activeRole === 'admin') {
+      return {
+        name: 'Dr. Hendra Wijaya',
+        role: 'admin',
+        title: 'Admin & Managing Director',
+        isAdmin: () => true,
+        isProjectManager: () => false,
+        isQA: () => false,
+        isUser: () => false
+      };
+    }
+
     return {
-      name: 'Dr. Hendra Wijaya',
-      role: 'admin',
-      title: 'Admin & Managing Director',
-      isAdmin: () => true,
+      name: activeName || 'Anggota Tim',
+      role: 'user',
+      title: 'Editor & Anggota Tim Proyek',
+      isAdmin: () => false,
       isProjectManager: () => false,
       isQA: () => false,
-      isUser: () => false
+      isUser: () => true
     };
   }
 

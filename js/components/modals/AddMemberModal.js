@@ -349,7 +349,7 @@ export class AddMemberModal extends BaseModal {
     const currentTitle  = invite?.boardTitle || this.boardTitle       || currentWs;
 
     // Get inviter (Admin/PM) details
-    const authService = this.container.resolve('AuthService');
+    const authService = this.container ? this.container.resolve('AuthService') : null;
     const authUser = authService ? authService.getCurrentUser() : null;
     const inviterName = authUser?.name || 'awaa';
     const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
@@ -360,19 +360,67 @@ export class AddMemberModal extends BaseModal {
       if (savedTheme) activeTheme = JSON.parse(savedTheme);
     } catch (e) {}
 
+    // Extract project & workspace metadata so mobile client gets board structure immediately
+    const projectService = this.container ? this.container.resolve('ProjectService') : null;
+    const project = projectService ? (projectService.getProjectById(currentProjId) || projectService.getAllProjects().find(p => p.workspace === currentWs || p.id === currentWs || p.id === currentProjId)) : null;
+
+    let customWs = null;
+    try {
+      const allWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      customWs = allWs.find(w => w.id === currentWs || w.title === currentTitle);
+    } catch (e) {}
+
+    // Extract board tasks so mobile client gets all tasks created on desktop immediately
+    const taskService = this.container ? this.container.resolve('TaskService') : null;
+    const boardTasks = taskService ? taskService.getTasksForBoard(project || { id: currentProjId, workspace: currentWs }) : [];
+
+    const compactProject = {
+      id: currentProjId,
+      workspace: currentWs,
+      name: currentTitle,
+      title: currentTitle,
+      tag: project?.tag || 'Dev / Creative Hub',
+      priority: project?.priority || 'High',
+      description: project?.description || `Ruang kerja dan deliverable proyek ${currentTitle}.`,
+      theme: activeTheme || project?.theme || null,
+      customWs: customWs ? { id: customWs.id, title: customWs.title, tag: customWs.tag, color: customWs.color } : null
+    };
+
+    const compactTasks = boardTasks.map(t => ({
+      id: t.id,
+      code: t.code,
+      title: t.title,
+      description: t.description || '',
+      status: t.status || 'todo',
+      columnId: t.columnId || t.status || 'todo',
+      priority: t.priority || 'Medium',
+      pic: t.pic || null,
+      timeline: t.timeline || null,
+      dueDate: t.dueDate || null,
+      hours: t.hours || 0,
+      labels: t.labels || [],
+      workspace: currentWs,
+      projectId: currentProjId
+    }));
+
     const paramsObj = {
       accept_invite: invite?.id    || 'inv-' + Date.now(),
       name:          invite?.name  || '',
       email:         invite?.email || '',
-      role:          invite?.role  || 'Member',
+      role:          'user', // Undangan anggota selalu masuk sebagai role 'user'
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
       inviter_name:  inviterName,
       inviter_role:  inviterRole,
       color:         invite?.color || '#2563eb',
-      via:           invite?.via   || 'link'
+      via:           invite?.via   || 'link',
+      project_data:  encodeURIComponent(JSON.stringify(compactProject))
     };
+
+    if (compactTasks.length > 0) {
+      paramsObj.tasks_data = encodeURIComponent(JSON.stringify(compactTasks));
+    }
 
     if (activeTheme) {
       if (activeTheme.type) paramsObj.theme_type = activeTheme.type;
@@ -393,7 +441,7 @@ export class AddMemberModal extends BaseModal {
     const currentProjId = this.projectId        || localStorage.getItem('active_project_id') || currentWs;
     const currentTitle  = this.boardTitle       || currentWs;
 
-    const authService = this.container.resolve('AuthService');
+    const authService = this.container ? this.container.resolve('AuthService') : null;
     const authUser = authService ? authService.getCurrentUser() : null;
     const inviterName = authUser?.name || 'awaa';
     const inviterRole = authUser ? (authUser.isAdmin() ? 'admin' : (authUser.isProjectManager() ? 'PM' : 'admin')) : 'admin';
@@ -404,19 +452,65 @@ export class AddMemberModal extends BaseModal {
       if (savedTheme) activeTheme = JSON.parse(savedTheme);
     } catch (e) {}
 
+    const projectService = this.container ? this.container.resolve('ProjectService') : null;
+    const project = projectService ? (projectService.getProjectById(currentProjId) || projectService.getAllProjects().find(p => p.workspace === currentWs || p.id === currentWs || p.id === currentProjId)) : null;
+
+    let customWs = null;
+    try {
+      const allWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      customWs = allWs.find(w => w.id === currentWs || w.title === currentTitle);
+    } catch (e) {}
+
+    const taskService = this.container ? this.container.resolve('TaskService') : null;
+    const boardTasks = taskService ? taskService.getTasksForBoard(project || { id: currentProjId, workspace: currentWs }) : [];
+
+    const compactProject = {
+      id: currentProjId,
+      workspace: currentWs,
+      name: currentTitle,
+      title: currentTitle,
+      tag: project?.tag || 'Dev / Creative Hub',
+      priority: project?.priority || 'High',
+      description: project?.description || `Ruang kerja dan deliverable proyek ${currentTitle}.`,
+      theme: activeTheme || project?.theme || null,
+      customWs: customWs ? { id: customWs.id, title: customWs.title, tag: customWs.tag, color: customWs.color } : null
+    };
+
+    const compactTasks = boardTasks.map(t => ({
+      id: t.id,
+      code: t.code,
+      title: t.title,
+      description: t.description || '',
+      status: t.status || 'todo',
+      columnId: t.columnId || t.status || 'todo',
+      priority: t.priority || 'Medium',
+      pic: t.pic || null,
+      timeline: t.timeline || null,
+      dueDate: t.dueDate || null,
+      hours: t.hours || 0,
+      labels: t.labels || [],
+      workspace: currentWs,
+      projectId: currentProjId
+    }));
+
     const paramsObj = {
       accept_invite: 'inv-qr-' + Date.now(),
       name:          '',
       email:         '',
-      role:          this._qrPermission || 'Member',
+      role:          'user', // QR undangan juga selalu masuk sebagai user
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
       inviter_name:  inviterName,
       inviter_role:  inviterRole,
       color:         '#2563eb',
-      via:           'qr'
+      via:           'qr',
+      project_data:  encodeURIComponent(JSON.stringify(compactProject))
     };
+
+    if (compactTasks.length > 0) {
+      paramsObj.tasks_data = encodeURIComponent(JSON.stringify(compactTasks));
+    }
 
     if (activeTheme) {
       if (activeTheme.type) paramsObj.theme_type = activeTheme.type;
@@ -947,7 +1041,7 @@ export class AddMemberModal extends BaseModal {
           id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
           name: invName,
           email: invEmail,
-          role: this._linkPermission || 'Member',
+          role: (this._linkPermission || '').toLowerCase().includes('observer') ? 'Observer' : 'user',
           workspace: this.currentWorkspace,
           projectId: this.projectId || this.currentWorkspace,
           boardTitle: this.boardTitle,
