@@ -3580,14 +3580,20 @@ export class KanbanBoardView extends BaseView {
       switchGanttBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this._closeAllPopups();
-        this.eventBus.emit('navigate', { view: 'gantt', workspace: this.currentWorkspace, projectId: this.projectId });
+        const curProj = this.projectId || (this.project ? this.project.id : null) || this.currentWorkspace || 'panen-kunci';
+        const curWs = this.currentWorkspace || (this.project ? (this.project.workspace || this.project.id) : null) || curProj;
+        this.eventBus.emit('navigate', { view: 'gantt', workspace: curWs, projectId: curProj });
       });
     }
 
     // 1. Back to Home (Beranda) from Header
     const backHomeBtn = this.element.querySelector('#btn-kanban-back-home');
     if (backHomeBtn) {
-      backHomeBtn.addEventListener('click', () => {
+      backHomeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._closeAllPopups();
+        window.location.hash = '#/dashboard';
         this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }
@@ -3633,8 +3639,10 @@ export class KanbanBoardView extends BaseView {
     const popupGoHomeBtn = this.element.querySelector('#btn-popup-go-home');
     if (popupGoHomeBtn) {
       popupGoHomeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         this._closeAllPopups();
+        window.location.hash = '#/dashboard';
         this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }

@@ -29,12 +29,15 @@ export class GanttTimelineView extends BaseView {
     }
   }
 
-  setProject(projectId) {
+  setProject(projectId, workspace = null) {
     this.projectId = projectId;
+    if (workspace) {
+      this.currentWorkspace = workspace;
+    }
     if (this.projectService) {
       this.project = this.projectService.getProject(projectId);
       if (this.project) {
-        this.currentWorkspace = this.project.workspace || 'ruangkreasi';
+        this.currentWorkspace = this.project.workspace || this.currentWorkspace;
       }
     }
   }
@@ -52,12 +55,22 @@ export class GanttTimelineView extends BaseView {
       }
     }
 
-    const boardTitle = this.project ? this.project.name : 'My Trello Board';
-    const theme = this.project?.theme || {
-      type: 'gradient',
-      value: 'linear-gradient(135deg, #1e1b4b 0%, #3b0764 45%, #581c87 100%)',
-      name: 'Purple Dusk'
-    };
+    const boardTitle = this.project ? this.project.name : (this.currentWorkspace ? (this.currentWorkspace.charAt(0).toUpperCase() + this.currentWorkspace.slice(1)) : 'My Trello Board');
+    let theme = this.project?.theme || null;
+    if (!theme) {
+      const savedTheme = localStorage.getItem(`board_theme_${this.currentWorkspace}`) ||
+                         (this.projectId ? localStorage.getItem(`board_theme_${this.projectId}`) : null);
+      if (savedTheme) {
+        try { theme = JSON.parse(savedTheme); } catch (e) {}
+      }
+    }
+    if (!theme) {
+      theme = {
+        type: 'image',
+        name: 'City Skyline',
+        value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80'
+      };
+    }
 
     let bgStyle = '';
     if (theme.type === 'image') {
@@ -68,10 +81,18 @@ export class GanttTimelineView extends BaseView {
       bgStyle = `background: linear-gradient(135deg, #1e1b4b 0%, #3b0764 45%, #581c87 100%); min-height: 100%;`;
     }
 
-    // Retrieve tasks
-    let tasks = this.taskService ? this.taskService.getTasks(this.currentWorkspace) : [];
-    if (tasks.length === 0 && this.taskService) {
-      tasks = this.taskService.getTasks();
+    // Retrieve tasks for this board
+    let tasks = [];
+    if (this.taskService) {
+      if (typeof this.taskService.getTasksForBoard === 'function') {
+        tasks = this.taskService.getTasksForBoard(this.project || this.projectId, this.currentWorkspace);
+      }
+      if (tasks.length === 0) {
+        tasks = this.taskService.getTasks(this.currentWorkspace);
+      }
+      if (tasks.length === 0) {
+        tasks = this.taskService.getTasks();
+      }
     }
 
     // Filter tasks if filter is active
@@ -440,6 +461,14 @@ export class GanttTimelineView extends BaseView {
 
     if (viewSwitchBtn) viewSwitchBtn.addEventListener('click', toggleViewSwitch);
     if (dockViewsSwitchBtn) dockViewsSwitchBtn.addEventListener('click', toggleViewSwitch);
+
+    // Close floating Gantt / return to Kanban
+    const closeGanttBtn = this.element.querySelector('#btn-close-gantt-view');
+    if (closeGanttBtn) {
+      closeGanttBtn.addEventListener('click', () => {
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: this.projectId, workspace: this.currentWorkspace });
+      });
+    }
 
     // Switch buttons
     const kanbanBtn = this.element.querySelector('#btn-switch-view-kanban');

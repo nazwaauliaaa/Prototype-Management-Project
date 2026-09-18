@@ -48,16 +48,6 @@ export class DashboardView extends BaseView {
     const user = this.authService ? this.authService.getCurrentUser() : null;
     const role = (user?.role || 'admin').toLowerCase();
 
-    // Safeguard: Role user strictly directed to Kanban
-    if (role === 'user') {
-      const allowedWs = (user?.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-      const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
-      setTimeout(() => {
-        this.eventBus.emit('navigate', { view: 'kanban', projectId: allowedProj, workspace: allowedWs });
-      }, 0);
-      return `<div class="p-8 flex items-center justify-center text-slate-500 text-sm">Mengalihkan ke Papan Kanban...</div>`;
-    }
-
     // Default mock project IDs that were excluded
     const defaultIds = new Set([
       'proj-creativ-office', 'proj-aikreativ', 'proj-trello-board', 
@@ -67,7 +57,8 @@ export class DashboardView extends BaseView {
 
     const allProjects = this.projectService ? this.projectService.getAllProjects() : [];
     // User created projects (either flagged or newly created with non-default ID)
-    const userProjects = allProjects.filter(p => p.isUserCreated || !defaultIds.has(p.id));
+    const filteredProjects = allProjects.filter(p => p.isUserCreated || !defaultIds.has(p.id));
+    const userProjects = filteredProjects.length > 0 ? filteredProjects : allProjects;
 
     // Determine polite time greeting
     const hour = new Date().getHours();
