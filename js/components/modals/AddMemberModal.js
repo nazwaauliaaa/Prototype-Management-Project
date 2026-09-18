@@ -403,11 +403,12 @@ export class AddMemberModal extends BaseModal {
       projectId: currentProjId
     }));
 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const paramsObj = {
       accept_invite: invite?.id    || 'inv-' + Date.now(),
-      name:          invite?.name  || '',
-      email:         invite?.email || '',
-      role:          'user', // Undangan anggota selalu masuk sebagai role 'user'
+      name:          invite?.name  || 'Anggota Baru',
+      email:         invite?.email || `member.${randomSuffix}@gmail.com`,
+      role:          'user', // Undangan anggota selalu masuk sebagai role 'user' (Member)
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,
@@ -445,9 +446,12 @@ export class AddMemberModal extends BaseModal {
     const authUser = authService ? authService.getCurrentUser() : null;
     const inviterName = authUser?.name || 'awaa';
 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const paramsObj = {
       accept_invite: 'inv-qr-' + Date.now(),
-      role:          'user', // QR selalu masuk sebagai user
+      name:          'Anggota Baru',
+      email:         `member.${randomSuffix}@gmail.com`,
+      role:          'user', // QR selalu masuk sebagai user (Member)
       ws:            currentWs,
       project_id:    currentProjId,
       board_title:   currentTitle,

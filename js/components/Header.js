@@ -35,7 +35,8 @@ export class Header {
       avatar: '',
       role: 'kreatif'
     };
-    const isUserRole = (user.role || '').toLowerCase() === 'user';
+    const activeRole = localStorage.getItem('active_user_role');
+    const isUserRole = (user.role || '').toLowerCase() === 'user' || activeRole === 'user';
 
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
@@ -80,7 +81,7 @@ export class Header {
           <div class="flex-1 max-w-xl mx-1 sm:mx-4 hidden sm:flex items-center justify-center sm:justify-start min-w-0">
             <button id="btn-header-user-kanban-badge" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 text-[11px] sm:text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60 truncate cursor-pointer transition-all active:scale-98" title="Buka Papan Kanban" type="button">
               <span class="material-symbols-outlined text-[15px] sm:text-[16px] shrink-0">view_week</span>
-              <span class="truncate">Papan Kanban • User</span>
+              <span class="truncate">Papan Kanban • Member</span>
             </button>
           </div>
           `}

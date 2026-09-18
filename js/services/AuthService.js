@@ -121,6 +121,15 @@ export class AuthService {
       }
 
       if (u && (u.name || u.id)) {
+        const activeRole = localStorage.getItem('active_user_role');
+        if (activeRole === 'user' && (u.role || '').toLowerCase() !== 'user') {
+          u.role = 'user';
+          u.title = 'Member Papan Proyek';
+          if (u.name === 'Dr. Hendra Wijaya') {
+            u.name = localStorage.getItem('active_user_name') || 'Anggota Tim';
+          }
+        }
+
         this.currentUser = new User(u);
         this.isAuthenticated = true;
 

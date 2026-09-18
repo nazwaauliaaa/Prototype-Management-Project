@@ -928,27 +928,67 @@ export class KanbanBoardView extends BaseView {
   }
 
   getCurrentUser() {
-    if (this.authService && typeof this.authService.getCurrentUser === 'function') {
-      const u = this.authService.getCurrentUser();
-      if (u) return u;
+    let urlParams = null;
+    try {
+      urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.get('accept_invite') && window.location.hash.includes('?')) {
+        urlParams = new URLSearchParams(window.location.hash.slice(window.location.hash.indexOf('?')));
+      }
+    } catch (e) {}
+    const hasInviteParam = urlParams && (urlParams.has('accept_invite') || urlParams.has('invite') || urlParams.get('role') === 'user');
+    const isInvitedUser = Boolean(hasInviteParam || localStorage.getItem('active_user_role') === 'user' || localStorage.getItem('user_invited_workspace'));
+
+    if (isInvitedUser) {
+      localStorage.setItem('active_user_role', 'user');
     }
-    // Coba pulihkan sesi jika belum aktif di AuthService
-    if (this.authService && typeof this.authService.restoreSession === 'function') {
-      const restored = this.authService.restoreSession();
-      if (restored) return restored;
+
+    let u = null;
+    if (this.authService && typeof this.authService.getCurrentUser === 'function') {
+      u = this.authService.getCurrentUser();
+    }
+    if (!u && this.authService && typeof this.authService.restoreSession === 'function') {
+      u = this.authService.restoreSession();
+    }
+
+    if (u) {
+      if (isInvitedUser) {
+        return {
+          ...u,
+          name: (u.name && u.name !== 'Dr. Hendra Wijaya') ? u.name : (localStorage.getItem('active_user_name') || 'Anggota Tim'),
+          role: 'user',
+          title: 'Member Papan Proyek',
+          isAdmin: () => false,
+          isProjectManager: () => false,
+          isQA: () => false,
+          isUser: () => true
+        };
+      }
+      return u;
     }
 
     try {
       const saved = localStorage.getItem('creative_office_auth_user') || localStorage.getItem('creative_office_user');
       if (saved) {
-        const u = JSON.parse(saved);
-        if (u && (u.name || u.id)) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.name || parsed.id)) {
+          if (isInvitedUser) {
+            return {
+              ...parsed,
+              name: (parsed.name && parsed.name !== 'Dr. Hendra Wijaya') ? parsed.name : (localStorage.getItem('active_user_name') || 'Anggota Tim'),
+              role: 'user',
+              title: 'Member Papan Proyek',
+              isAdmin: () => false,
+              isProjectManager: () => false,
+              isQA: () => false,
+              isUser: () => true
+            };
+          }
           return {
-            ...u,
-            isAdmin: () => (u.role || '').toLowerCase() === 'admin',
-            isProjectManager: () => (u.role || '').toLowerCase() === 'manajement-project',
-            isQA: () => (u.role || '').toLowerCase() === 'qa',
-            isUser: () => (u.role || '').toLowerCase() === 'user'
+            ...parsed,
+            isAdmin: () => (parsed.role || '').toLowerCase() === 'admin',
+            isProjectManager: () => (parsed.role || '').toLowerCase() === 'manajement-project',
+            isQA: () => (parsed.role || '').toLowerCase() === 'qa',
+            isUser: () => (parsed.role || '').toLowerCase() === 'user'
           };
         }
       }
@@ -957,11 +997,11 @@ export class KanbanBoardView extends BaseView {
     // Periksa apakah active_user_role adalah 'user'
     const activeRole = localStorage.getItem('active_user_role');
     const activeName = localStorage.getItem('active_user_name');
-    if (activeRole === 'user' || activeName) {
+    if (isInvitedUser || activeRole === 'user' || activeName) {
       return {
-        name: activeName || 'User',
+        name: (activeName && activeName !== 'Dr. Hendra Wijaya') ? activeName : 'Anggota Tim',
         role: 'user',
-        title: 'Editor & Anggota Tim Proyek',
+        title: 'Member Papan Proyek',
         isAdmin: () => false,
         isProjectManager: () => false,
         isQA: () => false,
@@ -984,7 +1024,7 @@ export class KanbanBoardView extends BaseView {
     return {
       name: activeName || 'Anggota Tim',
       role: 'user',
-      title: 'Editor & Anggota Tim Proyek',
+      title: 'Member Papan Proyek',
       isAdmin: () => false,
       isProjectManager: () => false,
       isQA: () => false,
@@ -995,10 +1035,10 @@ export class KanbanBoardView extends BaseView {
   getPermissions() {
     const user = this.getCurrentUser();
     const role = (user.role || 'manajement-project').toLowerCase();
-    const isAdmin = typeof user.isAdmin === 'function' ? user.isAdmin() : (role === 'admin' || role === 'eksekutif');
-    const isPM = typeof user.isProjectManager === 'function' ? user.isProjectManager() : (role === 'manajement-project' || role === 'kreatif');
-    const isQA = typeof user.isQA === 'function' ? user.isQA() : (role === 'qa' || role === 'teknis');
     const isUser = typeof user.isUser === 'function' ? user.isUser() : (role === 'user');
+    const isAdmin = isUser ? false : (typeof user.isAdmin === 'function' ? user.isAdmin() : (role === 'admin' || role === 'eksekutif'));
+    const isPM = isUser ? false : (typeof user.isProjectManager === 'function' ? user.isProjectManager() : (role === 'manajement-project' || role === 'kreatif'));
+    const isQA = isUser ? false : (typeof user.isQA === 'function' ? user.isQA() : (role === 'qa' || role === 'teknis'));
 
     // Visual badge styles for board toolbar
     let badgeLabel = 'Manajer Proyek';
@@ -1008,7 +1048,14 @@ export class KanbanBoardView extends BaseView {
     let badgeIconColor = 'text-blue-300';
     let badgeTextColor = 'text-blue-100';
 
-    if (isAdmin) {
+    if (isUser) {
+      badgeLabel = 'Member';
+      badgeIcon = 'shield_person';
+      badgeBg = 'bg-sky-500/30';
+      badgeBorder = 'border border-sky-400/50';
+      badgeIconColor = 'text-sky-300';
+      badgeTextColor = 'text-sky-100';
+    } else if (isAdmin) {
       badgeLabel = 'Admin';
       badgeIcon = 'admin_panel_settings';
       badgeBg = 'bg-purple-500/30';
@@ -1022,13 +1069,6 @@ export class KanbanBoardView extends BaseView {
       badgeBorder = 'border border-emerald-400/50';
       badgeIconColor = 'text-emerald-300';
       badgeTextColor = 'text-emerald-100';
-    } else if (isUser) {
-      badgeLabel = 'Member';
-      badgeIcon = 'shield_person';
-      badgeBg = 'bg-sky-500/30';
-      badgeBorder = 'border border-sky-400/50';
-      badgeIconColor = 'text-sky-300';
-      badgeTextColor = 'text-sky-100';
     }
 
     return {

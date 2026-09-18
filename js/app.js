@@ -52,8 +52,8 @@ class CreativeOfficeApp {
   init() {
     this.registerServices();
     this.registerModals();
-    this.initShell();
     this.checkInviteToken();
+    this.initShell();
     this.setupRouter();
   }
 
@@ -153,41 +153,30 @@ class CreativeOfficeApp {
       const authService = this.container.resolve('AuthService');
       const existingUser = authService ? authService.getCurrentUser() : null;
 
-      // Only reuse profile if existing user is a regular 'user', NOT an admin or PM session
+      // When opening an invite link or QR code, ANY existing admin or PM session on this device
+      // MUST be cleared immediately so they are strictly logged in as a Member, NOT an Admin!
+      if (existingUser && (existingUser.role || '').toLowerCase() !== 'user') {
+        if (typeof authService.logout === 'function') {
+          authService.logout();
+        }
+        try {
+          localStorage.removeItem('creative_office_auth_user');
+          localStorage.removeItem('creative_office_user');
+          localStorage.setItem('active_user_role', 'user');
+        } catch (e) {}
+      }
+
+      // Reuse profile only if existing user is already a regular 'user' (Member)
       if (existingUser && existingUser.role === 'user' && existingUser.email && !existingUser.email.endsWith('@workspace')) {
         if (!rawEmail) rawEmail = existingUser.email;
         if (!rawName || rawName === 'Anggota Baru') rawName = existingUser.name;
       }
 
-      // If still no email, display join modal so user can input their real name and Gmail
+      // If no name or email supplied, auto-assign valid Member credentials for instant zero-friction join
+      if (!rawName) rawName = 'Anggota Baru';
       if (!rawEmail) {
-        this.showInviteJoinModal({
-          workspace,
-          projectId,
-          boardTitle,
-          inviterName,
-          inviterRole,
-          role: 'user',
-          color,
-          via,
-          inviteToken,
-          onSubmit: (submittedName, submittedEmail) => {
-            this._processInviteJoin({
-              inviteToken,
-              rawName: submittedName,
-              rawEmail: submittedEmail,
-              role: 'user',
-              workspace,
-              projectId,
-              boardTitle,
-              inviterName,
-              inviterRole,
-              color,
-              via
-            });
-          }
-        });
-        return;
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        rawEmail = `member.${randomSuffix}@gmail.com`;
       }
 
       this._processInviteJoin({
@@ -436,12 +425,14 @@ class CreativeOfficeApp {
       localStorage.setItem('user_invited_project', resolvedProjectId);
       this.activeWorkspace = workspace;
 
-      // Create confirmed Board Member record
+      // Create confirmed Board Member record (strictly Member)
+      const lowerRole = (role || 'user').toLowerCase();
+      const memberRoleDisplay = lowerRole === 'observer' ? 'Observer' : 'Member';
       const newMember = {
         id: 'mem-' + Date.now(),
         name: finalName,
         email: finalEmail,
-        role: role === 'Anggota' ? 'Editor' : (lowerRole === 'admin' ? 'Admin' : (lowerRole === 'observer' ? 'Observer' : 'Member')),
+        role: memberRoleDisplay,
         roleDescription: jobdeskTitle,
         color,
         initials: finalName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
@@ -470,7 +461,7 @@ class CreativeOfficeApp {
           id: inviteToken || ('inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)),
           name: finalName,
           email: finalEmail,
-          role: role === 'Anggota' ? 'Editor' : (lowerRole === 'admin' ? 'Admin' : (lowerRole === 'observer' ? 'Observer' : 'Member')),
+          role: memberRoleDisplay,
           roleDescription: jobdeskTitle,
           color,
           initials: finalName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM',
@@ -614,7 +605,7 @@ class CreativeOfficeApp {
           </div>
           <div class="flex flex-col min-w-0">
             <span class="text-[9.5px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Role & Hak Akses</span>
-            <span class="text-[12px] font-bold text-slate-800 dark:text-slate-200 truncate">User (${jobdeskTitle})</span>
+            <span class="text-[12px] font-bold text-slate-800 dark:text-slate-200 truncate">Member (${jobdeskTitle})</span>
           </div>
         </div>
 
@@ -830,7 +821,7 @@ class CreativeOfficeApp {
     const authService = this.container.resolve('AuthService');
 
     const currentUser = authService ? authService.getCurrentUser() : null;
-    const isUserRole = currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()));
+    const isUserRole = (currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()))) || localStorage.getItem('active_user_role') === 'user';
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban and auth
     if (isUserRole) {
