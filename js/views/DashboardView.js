@@ -187,6 +187,9 @@ export class DashboardView extends BaseView {
                   bgStyle = `background-color: ${theme.value};`;
                 }
 
+                const boardTasks = this.taskService ? this.taskService.getTasksForBoard(project) : [];
+                const taskCount = this.taskService ? boardTasks.length : (project.tasksCount?.total ?? 0);
+
                 return `
                   <div 
                     class="board-card group relative h-28 sm:h-32 rounded-xl overflow-hidden p-3.5 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between border border-black/10 active:scale-[0.98]"
@@ -210,7 +213,7 @@ export class DashboardView extends BaseView {
                     <!-- Bottom Footer inside card -->
                     <div class="relative z-10 flex items-center justify-between text-white/90 text-[11px]">
                       <span class="bg-black/30 backdrop-blur-xs px-2 py-0.5 rounded-md font-mono text-[10.5px]">
-                        ${project.tasksCount ? `${project.tasksCount.total} Tugas` : 'Kanban'}
+                        ${taskCount} Tugas
                       </span>
                       <div class="w-6 h-6 rounded-md bg-white/15 backdrop-blur-xs flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-[15px]">arrow_forward</span>

@@ -1157,20 +1157,15 @@ export class KanbanBoardView extends BaseView {
     }
 
     // Filter tasks for this project / workspace
-    const currentWs = (this.currentWorkspace || (this.project?.workspace || 'workspace-utama')).toLowerCase();
-    const allTasks = this.taskService ? this.taskService.getTasks().filter(t => {
+    const boardTasks = this.taskService ? (typeof this.taskService.getTasksForBoard === 'function' ? this.taskService.getTasksForBoard(this.project || { id: this.projectId, workspace: this.currentWorkspace }) : this.taskService.getTasks()) : [];
+    const allTasks = boardTasks.filter(t => {
       if (this.highlightTaskId && t.id === this.highlightTaskId) return true;
-      const taskWs = (t.workspace || '').toLowerCase();
-      const isPanenMatch = (currentWs.includes('panen') || currentWs.includes('panan')) && (taskWs.includes('panen') || taskWs.includes('panan'));
-      const isDirectMatch = taskWs === currentWs || isPanenMatch;
-      const matchWs = this.projectId ? (t.projectId === this.projectId || (!t.projectId && isDirectMatch)) : isDirectMatch;
-      if (!matchWs) return false;
       if (this.activeFilter === 'critical') return t.priority === 'Critical';
       if (this.activeFilter === 'high') return t.priority === 'High' || t.priority === 'Critical';
       if (this.activeFilter === 'done') return t.status === 'done';
       if (this.activeFilter === 'in-progress') return t.status === 'in-progress';
       return true;
-    }) : [];
+    });
 
     // Background style according to theme
     let bgStyle = '';
@@ -2093,7 +2088,7 @@ export class KanbanBoardView extends BaseView {
           <div class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-0.5" id="header-projects-list">
             ${availableWorkspaces.map(item => {
       const isCurrent = (this.projectId && item.id === this.projectId) || (!this.projectId && item.workspace === this.currentWorkspace);
-      const taskCount = this.taskService ? this.taskService.getTasks().filter(t => (item.type === 'project' && t.projectId === item.id) || (!t.projectId && t.workspace === item.workspace)).length : 0;
+      const taskCount = this.taskService ? (typeof this.taskService.getTasksForBoard === 'function' ? this.taskService.getTasksForBoard(item).length : this.taskService.getTasks().filter(t => (item.type === 'project' && t.projectId === item.id) || (!t.projectId && t.workspace === item.workspace)).length) : 0;
 
       return `
                 <button

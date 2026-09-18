@@ -676,7 +676,7 @@ export class CreateBoardModal extends BaseModal {
           },
           status: 'active',
           progress: 0,
-          tasksCount: { total: 3, completed: 0 },
+          tasksCount: { total: 2, completed: 0 },
           isUserCreated: true
         });
 

@@ -293,6 +293,54 @@ export class TaskService {
   }
 
   /**
+   * Mengambil semua tugas untuk board/proyek tertentu (sinkron dengan filter KanbanBoardView)
+   * @param {Object|string} projectOrId - Project object atau projectId/workspace
+   * @param {string} [workspace]
+   * @returns {Task[]}
+   */
+  getTasksForBoard(projectOrId, workspace = null) {
+    let projectId = null;
+    let targetWs = '';
+    let projectName = '';
+
+    if (projectOrId && typeof projectOrId === 'object') {
+      projectId = projectOrId.id || projectOrId.projectId || null;
+      targetWs = projectOrId.workspace || projectOrId.id || '';
+      projectName = projectOrId.name || projectOrId.title || '';
+    } else if (typeof projectOrId === 'string') {
+      projectId = projectOrId;
+      targetWs = workspace || projectOrId;
+    }
+
+    const currentWs = String(targetWs || 'workspace-utama').toLowerCase().trim();
+    const projIdStr = projectId ? String(projectId).trim() : null;
+    const cleanProjName = projectName ? projectName.toLowerCase().replace(/[-_\s]+/g, '') : '';
+
+    return this.getTasks().filter(t => {
+      // 1. Direct projectId match
+      if (projIdStr && t.projectId && String(t.projectId) === projIdStr) {
+        return true;
+      }
+      // 2. Jika tugas terikat dengan projectId lain yang berbeda, abaikan
+      if (projIdStr && t.projectId && String(t.projectId) !== projIdStr) {
+        return false;
+      }
+
+      const taskWs = String(t.workspace || '').toLowerCase().trim();
+      const cleanTaskWs = taskWs.replace(/[-_\s]+/g, '');
+
+      const isPanenMatch = (currentWs.includes('panen') || currentWs.includes('panan')) && (taskWs.includes('panen') || taskWs.includes('panan'));
+      const isNameMatch = Boolean(cleanProjName && cleanTaskWs && cleanProjName === cleanTaskWs);
+      const isDirectMatch = taskWs === currentWs || isPanenMatch || isNameMatch;
+
+      if (projIdStr) {
+        return !t.projectId && isDirectMatch;
+      }
+      return isDirectMatch;
+    });
+  }
+
+  /**
    * Find a single task by ID or code
    * @param {string} idOrCode
    * @returns {Task|undefined}
