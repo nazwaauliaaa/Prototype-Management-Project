@@ -152,13 +152,41 @@ export class ProjectService {
    */
   getProject(idOrCode) {
     if (!idOrCode) return undefined;
-    const search = String(idOrCode).toLowerCase().trim();
-    return this.projects.find(p => 
-      (p.id && String(p.id).toLowerCase() === search) || 
-      (p.code && String(p.code).toLowerCase() === search) || 
-      (p.name && String(p.name).toLowerCase() === search) ||
-      (p.workspace && String(p.workspace).toLowerCase() === search)
+    const rawSearch = String(idOrCode).toLowerCase().trim();
+    const cleanSearch = rawSearch.replace(/[^a-z0-9]/g, '');
+
+    // 1. Direct exact match
+    let match = this.projects.find(p => 
+      (p.id && String(p.id).toLowerCase() === rawSearch) || 
+      (p.code && String(p.code).toLowerCase() === rawSearch) || 
+      (p.name && String(p.name).toLowerCase() === rawSearch) ||
+      (p.workspace && String(p.workspace).toLowerCase() === rawSearch)
     );
+    if (match) return match;
+
+    // 2. Normalized alphanumeric match
+    match = this.projects.find(p => {
+      const pId = String(p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const pCode = String(p.code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const pName = String(p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const pWs = String(p.workspace || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return pId === cleanSearch || pCode === cleanSearch || pName === cleanSearch || pWs === cleanSearch ||
+             (pWs && (pWs.startsWith(cleanSearch) || cleanSearch.startsWith(pWs))) ||
+             (pName && (pName.startsWith(cleanSearch) || cleanSearch.startsWith(pName)));
+    });
+    if (match) return match;
+
+    // 3. Panen / Panan alias match
+    if (cleanSearch.includes('panen') || cleanSearch.includes('panan')) {
+      match = this.projects.find(p => {
+        const pName = String(p.name || '').toLowerCase();
+        const pWs = String(p.workspace || '').toLowerCase();
+        return pName.includes('panen') || pName.includes('panan') || pWs.includes('panen') || pWs.includes('panan');
+      });
+      if (match) return match;
+    }
+
+    return undefined;
   }
 
   /**

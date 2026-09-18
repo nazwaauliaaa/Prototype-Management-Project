@@ -78,10 +78,10 @@ export class Header {
           </div>
           ` : `
           <div class="flex-1 max-w-xl mx-1 sm:mx-4 flex items-center justify-center sm:justify-start min-w-0">
-            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 text-[11px] sm:text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60 truncate">
+            <button id="btn-header-user-kanban-badge" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 text-[11px] sm:text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60 truncate cursor-pointer transition-all active:scale-98" title="Buka Papan Kanban" type="button">
               <span class="material-symbols-outlined text-[15px] sm:text-[16px] shrink-0">view_week</span>
               <span class="truncate">Papan Kanban • User</span>
-            </div>
+            </button>
           </div>
           `}
 
@@ -202,7 +202,25 @@ export class Header {
     const brand = this.element.querySelector('#header-brand-logo');
     if (brand) {
       brand.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'dashboard' });
+        const user = this.authService ? this.authService.getCurrentUser() : null;
+        const isUserRole = (user?.role || '').toLowerCase() === 'user';
+        if (isUserRole) {
+          const curWs = (user?.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+          const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
+          this.eventBus.emit('navigate', { view: 'kanban', projectId: curProj, workspace: curWs });
+        } else {
+          this.eventBus.emit('navigate', { view: 'dashboard' });
+        }
+      });
+    }
+
+    const kanbanBadge = this.element.querySelector('#btn-header-user-kanban-badge');
+    if (kanbanBadge) {
+      kanbanBadge.addEventListener('click', () => {
+        const user = this.authService ? this.authService.getCurrentUser() : null;
+        const curWs = (user?.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: curProj, workspace: curWs });
       });
     }
 

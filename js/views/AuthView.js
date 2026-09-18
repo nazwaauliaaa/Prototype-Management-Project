@@ -936,16 +936,20 @@ export class AuthView extends BaseView {
             localStorage.setItem('user_invited_workspace', allowedWs);
             localStorage.setItem('user_invited_project', allowedProj);
 
-            // Arahkan langsung ke halaman Beranda
+            const isUser = (userInstance.role || '').toLowerCase() === 'user';
+            const targetView = isUser ? 'kanban' : 'dashboard';
+            const targetHash = isUser ? `#/kanban/${allowedProj}` : '#/dashboard';
+
+            // Arahkan sesuai role
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
               eb.emit('navigate', {
-                view: 'dashboard',
+                view: targetView,
                 projectId: allowedProj,
                 workspace: allowedWs
               });
             }
-            window.location.hash = '#/dashboard';
+            window.location.hash = targetHash;
           }, 450);
         } catch (regErr) {
           console.warn('[AuthView] Error registrasi otomatis:', regErr);
@@ -959,7 +963,8 @@ export class AuthView extends BaseView {
             qr_data: codeToReg
           });
           this.authService.loginAsUser(userInstance);
-          window.location.hash = '#/dashboard';
+          const isUser = (userInstance.role || '').toLowerCase() === 'user';
+          window.location.hash = isUser ? '#/kanban/panen-kunci' : '#/dashboard';
         }
       };
 
@@ -1010,16 +1015,20 @@ export class AuthView extends BaseView {
             localStorage.setItem('user_invited_workspace', allowedWs);
             localStorage.setItem('user_invited_project', allowedProj);
 
-            // Arahkan ke Beranda
+            // Arahkan ke Kanban jika role user, ke Beranda jika role lain
+            const isUser = (userInstance.role || '').toLowerCase() === 'user';
+            const targetView = isUser ? 'kanban' : 'dashboard';
+            const targetHash = isUser ? `#/kanban/${allowedProj}` : '#/dashboard';
+
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
               eb.emit('navigate', {
-                view: 'dashboard',
+                view: targetView,
                 projectId: allowedProj,
                 workspace: allowedWs
               });
             }
-            window.location.hash = '#/dashboard';
+            window.location.hash = targetHash;
           }, 400);
           return;
         }
@@ -1266,7 +1275,14 @@ export class AuthView extends BaseView {
       }
       setTimeout(() => {
         this.authService.loginWithRole(role);
-        window.location.hash = '#/dashboard';
+        if (role === 'user') {
+          const u = this.authService.getCurrentUser();
+          const allowedWs = (u?.workspaceAccess && u.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+          const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+          window.location.hash = `#/kanban/${allowedProj}`;
+        } else {
+          window.location.hash = '#/dashboard';
+        }
       }, 700);
     };
 
@@ -1291,7 +1307,9 @@ export class AuthView extends BaseView {
             stopCamera();
             const role = (user.role || '').toLowerCase();
             if (role === 'user') {
-              window.location.hash = '#/kanban/panen-kunci';
+              const allowedWs = (user.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+              const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+              window.location.hash = `#/kanban/${allowedProj}`;
             } else {
               window.location.hash = '#/dashboard';
             }

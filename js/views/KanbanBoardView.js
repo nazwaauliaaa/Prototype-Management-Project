@@ -263,12 +263,14 @@ export class KanbanBoardView extends BaseView {
           const raw = localStorage.getItem('creative_office_projects');
           if (raw) {
             const arr = JSON.parse(raw);
-            const search = String(projectId).toLowerCase().trim();
-            const found = arr.find(p => 
-              (p.id && String(p.id).toLowerCase() === search) || 
-              (p.workspace && String(p.workspace).toLowerCase() === search) ||
-              (p.name && String(p.name).toLowerCase() === search)
-            );
+            const search = String(projectId).toLowerCase().replace(/[^a-z0-9]/g, '');
+            const found = arr.find(p => {
+              const pId = String(p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const pName = String(p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const pWs = String(p.workspace || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const isPanen = (search.includes('panen') || search.includes('panan')) && (pName.includes('panen') || pName.includes('panan') || pWs.includes('panen') || pWs.includes('panan'));
+              return pId === search || pName === search || pWs.includes(search) || search.includes(pName) || isPanen;
+            });
             if (found) this.project = found;
           }
         } catch (e) {}
@@ -1063,12 +1065,14 @@ export class KanbanBoardView extends BaseView {
           const raw = localStorage.getItem('creative_office_projects');
           if (raw) {
             const arr = JSON.parse(raw);
-            const search = String(this.projectId).toLowerCase().trim();
-            const found = arr.find(p => 
-              (p.id && String(p.id).toLowerCase() === search) || 
-              (p.workspace && String(p.workspace).toLowerCase() === search) ||
-              (p.name && String(p.name).toLowerCase() === search)
-            );
+            const search = String(this.projectId).toLowerCase().replace(/[^a-z0-9]/g, '');
+            const found = arr.find(p => {
+              const pId = String(p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const pName = String(p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const pWs = String(p.workspace || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const isPanen = (search.includes('panen') || search.includes('panan')) && (pName.includes('panen') || pName.includes('panan') || pWs.includes('panen') || pWs.includes('panan'));
+              return pId === search || pName === search || pWs.includes(search) || search.includes(pName) || isPanen;
+            });
             if (found) this.project = found;
           }
         } catch (e) {}
@@ -1112,8 +1116,10 @@ export class KanbanBoardView extends BaseView {
       if (savedTheme) {
         try {
           const parsed = JSON.parse(savedTheme);
-          // Hapus Sunset Peach yang tidak sengaja ter-cache di mobile sharinginaja agar kembali selaras dengan desktop
-          if (parsed && parsed.name === 'Sunset Peach' && (curWsLower.includes('sharinginaja') || curProjLower.includes('sharinginaja'))) {
+          // Hapus Deep Forest atau Sunset Peach yang tidak sengaja ter-cache dari fallback lama agar kembali selaras dengan desktop
+          const isDeepForestCached = parsed && parsed.name === 'Deep Forest' && (curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan'));
+          const isSunsetPeachCached = parsed && parsed.name === 'Sunset Peach' && (curWsLower.includes('sharinginaja') || curProjLower.includes('sharinginaja'));
+          if (isDeepForestCached || isSunsetPeachCached) {
             theme = null;
           } else {
             theme = parsed;
@@ -1124,34 +1130,18 @@ export class KanbanBoardView extends BaseView {
 
     const isLayarBaca = curWsLower.includes('layarbaca') || curProjLower.includes('layarbaca') || bTitleLower.includes('layar');
     const isOldDefaultSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
+    const isPananKunci = curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan');
+    const isDeepForestPanen = theme && theme.name === 'Deep Forest' && isPananKunci;
 
-    if (!theme || (isOldDefaultSkyline && isLayarBaca)) {
+    if (!theme || (isOldDefaultSkyline && isLayarBaca) || isDeepForestPanen) {
       if (isLayarBaca) {
         theme = {
           type: 'gradient',
           name: 'Berry Fuchsia',
           value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
         };
-      } else if (curWsLower.includes('creativoffive') || curProjLower.includes('creativoffive')) {
-        theme = {
-          type: 'gradient',
-          name: 'Neon Cyber',
-          value: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)'
-        };
-      } else if (curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan')) {
-        theme = {
-          type: 'gradient',
-          name: 'Deep Forest',
-          value: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)'
-        };
-      } else if (curWsLower.includes('aikreativ') || curProjLower.includes('aikreativ')) {
-        theme = {
-          type: 'gradient',
-          name: 'Royal Indigo',
-          value: 'linear-gradient(135deg, #3730a3 0%, #6366f1 50%, #818cf8 100%)'
-        };
       } else {
-        // Default wallpaper resmi seluruh board (City Skyline pemandangan kota malam Unsplash) sama persis dengan desktop view
+        // Default wallpaper resmi seluruh board (City Skyline pemandangan kota malam Unsplash) sama persis dengan kartu papan di dashboard
         theme = {
           type: 'image',
           name: 'City Skyline',

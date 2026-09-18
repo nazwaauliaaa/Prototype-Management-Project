@@ -639,12 +639,14 @@ class CreativeOfficeApp {
     eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
       const authService = this.container.resolve('AuthService');
       const currentUser = authService ? authService.getCurrentUser() : null;
-      const allowedViewsForUser = ['dashboard', '', 'kanban', 'auth', 'register', 'profile', 'profil', 'user-profile'];
-      if (currentUser && currentUser.role === 'user' && !allowedViewsForUser.includes(view)) {
-        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-        const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
-        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
-        return;
+      const isUserRole = currentUser && currentUser.role === 'user';
+      if (isUserRole) {
+        if (!view || view === 'dashboard' || view === 'beranda' || !['kanban', 'board', 'project', 'profile', 'profil', 'user-profile', 'auth'].includes(view)) {
+          const allowedWs = workspace || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+          const allowedProj = projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+          this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+          return;
+        }
       }
 
       if (workspace) {
@@ -717,17 +719,15 @@ class CreativeOfficeApp {
     const viewName = parts[0];
     const param = parts[1];
 
-    // ROUTE GUARD: Role 'user' only permitted to access 'dashboard', 'kanban', 'auth', 'register', and 'profile'
-    const allowedViewsForUser = ['dashboard', '', 'kanban', 'board', 'project', 'auth', 'register', 'profile', 'profil', 'user-profile'];
-    if (isUserRole && !allowedViewsForUser.includes(viewName)) {
-      const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-      const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
-      const notif = this.container.resolve('NotificationService');
-      if (notif) {
-        notif.warning('Akses Terbatas: Sebagai User, Anda dapat mengakses Beranda, Papan Proyek, dan Profil.');
+    // ROUTE GUARD: Role 'user' only permitted to access 'kanban', 'board', 'project', 'profile', and 'auth'
+    // Role 'user' is NOT permitted to view 'dashboard' and must immediately enter Kanban
+    if (isUserRole) {
+      if (!viewName || viewName === 'dashboard' || viewName === 'beranda' || !['kanban', 'board', 'project', 'profile', 'profil', 'user-profile', 'auth'].includes(viewName)) {
+        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        return;
       }
-      this.navigateTo('dashboard');
-      return;
     }
 
     if (viewName === 'workspace') {
@@ -758,11 +758,14 @@ class CreativeOfficeApp {
     const currentUser = authService ? authService.getCurrentUser() : null;
     const isUserRole = currentUser && currentUser.role === 'user';
 
-    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to dashboard, kanban, auth, profile
-    const allowedViewsForUser = ['dashboard', '', 'kanban', 'board', 'project', 'auth', 'profile', 'profil', 'user-profile'];
-    if (isUserRole && !allowedViewsForUser.includes(viewName)) {
-      viewName = 'dashboard';
-      params = {};
+    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban, profile, and auth (never dashboard)
+    if (isUserRole) {
+      if (!viewName || viewName === 'dashboard' || viewName === 'beranda' || !['kanban', 'board', 'project', 'profile', 'profil', 'user-profile', 'auth'].includes(viewName)) {
+        const allowedWs = params.workspace || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const allowedProj = params.projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+        viewName = 'kanban';
+        params = { ...params, projectId: allowedProj, workspace: allowedWs };
+      }
     }
 
     // Redirect obsolete register route to auth

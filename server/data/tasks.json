@@ -1,5 +1,89 @@
 [
   {
+    "id": "task-1789626231217-115",
+    "code": "#PK-622",
+    "title": "Tugas Baru",
+    "description": "",
+    "workspace": "panen-kunci",
+    "board": "backend-core",
+    "status": "ready-launch",
+    "priority": "Medium",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "",
+    "hours": 0,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1789698743858
+  },
+  {
+    "id": "task-1789626382411-393",
+    "code": "#PK-934",
+    "title": "Tugas Baru",
+    "description": "",
+    "workspace": "panen-kunci",
+    "board": "backend-core",
+    "status": "review-qa",
+    "priority": "Medium",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "",
+    "hours": 0,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1789698742032
+  },
+  {
+    "id": "task-1789626716325-842",
+    "code": "#PK-162",
+    "title": "Tugas Baru",
+    "description": "",
+    "workspace": "panen-kunci",
+    "board": "backend-core",
+    "status": "in-progress",
+    "priority": "Medium",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "",
+    "hours": 0,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1789698740281
+  },
+  {
     "id": "task-pk-01",
     "code": "#PK-401",
     "title": "Konfigurasi Redis Cache & Auth Microservice OAuth2",
