@@ -136,7 +136,7 @@ export class Header {
                 />
                 <div class="hidden sm:flex flex-col">
                   <span class="text-[12.5px] text-on-surface font-semibold leading-tight">${user.name}</span>
-                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${isUserRole ? 'User' : (user.role || 'Member')}</span>
+                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${isUserRole ? 'Member' : (user.role || 'Member')}</span>
                 </div>
                 <span class="material-symbols-outlined text-text-muted text-[16px] group-hover:text-text-primary transition-colors">expand_more</span>
               </button>
@@ -157,22 +157,24 @@ export class Header {
                     <p class="text-[13px] font-bold text-primary mt-0.5 truncate">${user.name}</p>
                     <p class="text-[11px] text-text-secondary truncate">${user.email || 'user@sampulkreativ.id'}</p>
                     <span class="inline-block mt-0.5 px-2 py-0.2 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-primary/10 text-primary'} text-[9.5px] font-bold capitalize">
-                      ${isUserRole ? 'User • Anggota Terundang' : user.role}
+                      ${isUserRole ? 'Member • Anggota Papan' : user.role}
                     </span>
                   </div>
                 </div>
 
                 ${isUserRole ? `
                 <div class="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-800/40 text-[11px] text-sky-800 dark:text-sky-300 mb-1">
-                  <span class="font-semibold block mb-0.5">Akses Terbatas:</span>
-                  Anda hanya memiliki izin akses pada Papan Kanban proyek yang telah diundang.
+                  <span class="font-semibold block mb-0.5">Akses Member Terbatas:</span>
+                  Hanya memiliki izin melihat & memindahkan kartu di Papan Kanban ini.
                 </div>
                 ` : ''}
 
+                ${!isUserRole ? `
                 <button id="btn-header-profile" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
                   <span class="material-symbols-outlined text-[16px] text-primary">manage_accounts</span>
                   <span>Pengaturan Profil</span>
                 </button>
+                ` : ''}
 
                 <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer">
                   <span class="material-symbols-outlined text-[16px]">logout</span>

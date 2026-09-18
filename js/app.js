@@ -377,27 +377,18 @@ class CreativeOfficeApp {
       const inviterNotice = `${inviterName}(${inviterRole}) mengundang anda ke ${targetRuangName}`;
 
       // All invited members entering via shared link or QR are strictly granted 'user' role
-      let authRole = 'user';
-      let jobdeskTitle = 'Editor & Anggota Tim Proyek';
-      const lowerRole = (role || '').toLowerCase();
-      
-      if (lowerRole.includes('pengamat') || lowerRole.includes('viewer') || lowerRole.includes('qa') || lowerRole.includes('observer')) {
-        authRole = 'qa';
-        jobdeskTitle = 'Pengamat & Quality Assurance';
-      } else {
-        authRole = 'user';
-        jobdeskTitle = 'Editor & Anggota Tim Proyek';
-      }
+      const authRole = 'user';
+      const jobdeskTitle = 'Member Papan Proyek';
 
       // Create User Model instance with confirmed valid email
       const userInstance = new User({
         id: 'usr-' + Date.now(),
         name: finalName,
         email: finalEmail,
-        role: authRole,
+        role: 'user',
         title: jobdeskTitle,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=${color.replace('#','')}&color=fff&bold=true`,
-        workspaceAccess: [workspace, projectId, 'workspace-utama', 'ruangkreasi', 'panen-kunci', 'layarbaca', 'aikreativ', 'sharinginaja']
+        workspaceAccess: [workspace, projectId]
       });
       userInstance.loginMethod = via === 'qr' ? 'qr' : 'link';
 
@@ -712,11 +703,11 @@ class CreativeOfficeApp {
     eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
       const authService = this.container.resolve('AuthService');
       const currentUser = authService ? authService.getCurrentUser() : null;
-      const isUserRole = currentUser && currentUser.role === 'user';
+      const isUserRole = currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()));
       if (isUserRole) {
-        if (!view || !['dashboard', 'beranda', 'kanban', 'board', 'project', 'gantt', 'timeline', 'profile', 'profil', 'user-profile', 'auth'].includes(view)) {
-          const allowedWs = workspace || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-          const allowedProj = projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+        if (view !== 'kanban' && view !== 'auth') {
           this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
           return;
         }
@@ -789,18 +780,20 @@ class CreativeOfficeApp {
     }
 
     const currentUser = authService.getCurrentUser();
-    const isUserRole = currentUser && currentUser.role === 'user';
+    const isUserRole = currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()));
 
     const parts = cleanHash.split('/');
     const viewName = parts[0];
     const param = parts[1];
 
-    // ROUTE GUARD: Role 'user' only permitted to access 'kanban', 'board', 'project', 'gantt', 'timeline', 'profile', and 'auth'
-    // Role 'user' is NOT permitted to view 'dashboard' and must immediately enter Kanban
+    // STRICT ROUTE GUARD: Role 'user' only permitted to access 'kanban' and 'auth'
+    // Role 'user' is pinned to their kanban board and cannot navigate to any other view
     if (isUserRole) {
-      if (!viewName || !['dashboard', 'beranda', 'kanban', 'board', 'project', 'gantt', 'timeline', 'profile', 'profil', 'user-profile', 'auth'].includes(viewName)) {
-        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-        const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+      const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+
+      if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'login') {
+        window.location.hash = `#/kanban/${allowedProj}`;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
         return;
       }
@@ -837,13 +830,14 @@ class CreativeOfficeApp {
     const authService = this.container.resolve('AuthService');
 
     const currentUser = authService ? authService.getCurrentUser() : null;
-    const isUserRole = currentUser && currentUser.role === 'user';
+    const isUserRole = currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()));
 
-    // ROUTE GUARD ENFORCEMENT: Restrict user role strictly to allowed routes
+    // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban and auth
     if (isUserRole) {
-      if (!viewName || !['dashboard', 'beranda', 'kanban', 'board', 'project', 'gantt', 'timeline', 'profile', 'profil', 'user-profile', 'auth'].includes(viewName)) {
-        const allowedWs = params.workspace || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-        const allowedProj = params.projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+      const allowedWs = params.workspace || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const allowedProj = params.projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+
+      if (viewName !== 'kanban' && viewName !== 'auth') {
         viewName = 'kanban';
         params = { ...params, projectId: allowedProj, workspace: allowedWs };
       }
@@ -883,11 +877,23 @@ class CreativeOfficeApp {
       return;
     }
 
-    // Authenticated views: show header, sidebar, workspace bar, and bottom nav
+    // Authenticated views: show header; hide sidebar & bottom nav for user role
     if (headerHost) headerHost.classList.remove('hidden');
-    if (sidebarHost) sidebarHost.classList.remove('hidden');
+    if (sidebarHost) {
+      if (isUserRole) {
+        sidebarHost.classList.add('hidden');
+      } else {
+        sidebarHost.classList.remove('hidden');
+      }
+    }
     const bottomNavHost2 = document.getElementById('app-bottom-nav');
-    if (bottomNavHost2) bottomNavHost2.classList.remove('hidden');
+    if (bottomNavHost2) {
+      if (isUserRole) {
+        bottomNavHost2.classList.add('hidden');
+      } else {
+        bottomNavHost2.classList.remove('hidden');
+      }
+    }
 
     // Workspace tab bar is disabled/removed
     if (this.workspaceTabBar) {

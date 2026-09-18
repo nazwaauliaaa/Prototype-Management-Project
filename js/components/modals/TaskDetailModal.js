@@ -87,21 +87,23 @@ export class TaskDetailModal extends BaseModal {
     if (data && data.tab) {
       this.activeTab = data.tab;
     }
-    if (data && (data.editMode !== undefined || data.isEditing !== undefined)) {
+    const authUser = this.container.resolve('AuthService').getCurrentUser();
+    const role = (authUser?.role || 'manajement-project').toLowerCase();
+    const isAdmin = authUser ? (typeof authUser.isAdmin === 'function' ? authUser.isAdmin() : (role === 'admin' || role === 'eksekutif')) : false;
+    const isPM = authUser ? (typeof authUser.isProjectManager === 'function' ? authUser.isProjectManager() : (role === 'manajement-project' || role === 'kreatif')) : true;
+    const isQA = authUser ? (typeof authUser.isQA === 'function' ? authUser.isQA() : (role === 'qa' || role === 'teknis')) : false;
+    const isUser = authUser ? (typeof authUser.isUser === 'function' ? authUser.isUser() : (role === 'user')) : false;
+
+    if (isUser) {
+      this.isEditMode = false;
+    } else if (data && (data.editMode !== undefined || data.isEditing !== undefined)) {
       this.isEditMode = !!(data.editMode || data.isEditing);
     }
     this.editUploadedAttachments = [...(task.attachments || task.assets || [])];
 
-    if (this.isEditMode) {
+    if (this.isEditMode && !isUser) {
       return this.renderEditForm(task);
     }
-
-    const authUser = this.container.resolve('AuthService').getCurrentUser();
-    const role = (authUser?.role || 'manajement-project').toLowerCase();
-    const isAdmin = authUser ? authUser.isAdmin() : false;
-    const isPM = authUser ? authUser.isProjectManager() : true;
-    const isQA = authUser ? authUser.isQA() : false;
-    const isUser = authUser ? authUser.isUser() : false;
 
     const registeredMembers = this.getRegisteredMembers();
     const picName = task.pic?.name || (task.assignee ? task.assignee.replace(/\s*\(.*?\)\s*/, '').trim() : '');
@@ -163,11 +165,17 @@ export class TaskDetailModal extends BaseModal {
                 </span>
               </div>
 
-              <!-- Title (Clickable to Edit) -->
+              <!-- Title -->
+              ${!isUser ? `
               <h2 id="title-click-to-edit" class="text-[19px] sm:text-[22px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug break-words mt-2.5 mb-1.5 cursor-pointer hover:text-primary transition-colors flex items-center gap-2 group/h2" title="Klik untuk mengedit tugas ini">
                 <span>${task.title}</span>
                 <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover/h2:text-primary opacity-0 group-hover/h2:opacity-100 transition-opacity">edit</span>
               </h2>
+              ` : `
+              <h2 class="text-[19px] sm:text-[22px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug break-words mt-2.5 mb-1.5">
+                <span>${task.title}</span>
+              </h2>
+              `}
 
               <!-- Description -->
               <p class="text-[13px] sm:text-[13.5px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
@@ -177,6 +185,7 @@ export class TaskDetailModal extends BaseModal {
 
             <!-- Right: Action Buttons & Close Button -->
             <div class="flex items-center gap-2 shrink-0 pt-0.5">
+              ${!isUser ? `
               <!-- Edit Task Button -->
               <button 
                 id="btn-modal-edit-task" 
@@ -187,6 +196,7 @@ export class TaskDetailModal extends BaseModal {
                 <span class="material-symbols-outlined text-[16px]">edit</span>
                 <span>Edit Tugas</span>
               </button>
+              ` : ''}
 
               ${!isUser ? `
               <button 
@@ -1321,6 +1331,9 @@ export class TaskDetailModal extends BaseModal {
     const editBtn = modalRoot.querySelector('#btn-modal-edit-task');
     const titleEdit = modalRoot.querySelector('#title-click-to-edit');
     const enterEditMode = () => {
+      const authUser = this.container.resolve('AuthService').getCurrentUser();
+      const isUser = authUser ? (typeof authUser.isUser === 'function' ? authUser.isUser() : authUser.role === 'user') : false;
+      if (isUser) return;
       this.isEditMode = true;
       this.modalManager.open(this.modalId, { task: this.currentTask, editMode: true });
     };

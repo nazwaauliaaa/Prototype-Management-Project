@@ -1023,8 +1023,8 @@ export class KanbanBoardView extends BaseView {
       badgeIconColor = 'text-emerald-300';
       badgeTextColor = 'text-emerald-100';
     } else if (isUser) {
-      badgeLabel = 'Kontributor';
-      badgeIcon = 'person';
+      badgeLabel = 'Member';
+      badgeIcon = 'shield_person';
       badgeBg = 'bg-sky-500/30';
       badgeBorder = 'border border-sky-400/50';
       badgeIconColor = 'text-sky-300';
@@ -1045,24 +1045,26 @@ export class KanbanBoardView extends BaseView {
       badgeIconColor,
       badgeTextColor,
       roleTitle: user.title || badgeLabel,
-      // Granular capabilities
-      canShare: isAdmin || isPM,
-      canPowerUps: isAdmin,
-      canAutomation: isAdmin,
-      canChangeVisibility: isAdmin,
+      // Granular capabilities: strictly locked down for user/member except moving kanban
+      canShare: !isUser && (isAdmin || isPM),
+      canPowerUps: !isUser && isAdmin,
+      canAutomation: !isUser && isAdmin,
+      canChangeVisibility: !isUser && isAdmin,
       canAddList: !isUser,
-      canDeleteList: isAdmin || isPM,
+      canDeleteList: !isUser && (isAdmin || isPM),
       canRenameList: !isUser,
-      canListActions: isAdmin || isPM,
-      canClearColumn: isAdmin || isPM,
+      canListActions: !isUser && (isAdmin || isPM),
+      canClearColumn: !isUser && (isAdmin || isPM),
       canCollapseList: !isUser,
-      canSwitchView: true,
-      canSwitchProject: true,
-      canAddCard: true,
-      canDeleteCard: isAdmin || isPM || isUser,
+      canSwitchView: !isUser,
+      canSwitchProject: !isUser,
+      canAddCard: !isUser,
+      canDeleteCard: !isUser && (isAdmin || isPM),
+      canEditCard: !isUser,
       canShiftColumns: true,
-      canManageMembers: isAdmin || isPM,
-      canChangeTheme: isAdmin || isPM
+      canManageMembers: !isUser && (isAdmin || isPM),
+      canChangeTheme: !isUser && (isAdmin || isPM),
+      canMoveCard: true
     };
   }
 
@@ -1484,8 +1486,9 @@ export class KanbanBoardView extends BaseView {
             ` : ''}
           </div>
 
-          <!-- Right: Titik 3 (More Menu Button) -->
+          <!-- Right: Menu for Admin/PM, Member Indicator for User -->
           <div class="flex items-center gap-1.5 shrink-0">
+            ${!perms.isUser ? `
             <button
               id="btn-board-more-menu"
               class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0 border border-white/10"
@@ -1494,6 +1497,17 @@ export class KanbanBoardView extends BaseView {
             >
               <span class="material-symbols-outlined text-[20px]">more_horiz</span>
             </button>
+            ` : `
+            <button
+              id="btn-board-avatar"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11px] font-semibold backdrop-blur-md transition-all cursor-pointer shadow-xs border border-white/10"
+              title="Lihat Anggota Papan"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">group</span>
+              <span>${boardMembers.length} Anggota</span>
+            </button>
+            `}
           </div>
 
         </div>
@@ -1866,6 +1880,7 @@ export class KanbanBoardView extends BaseView {
                               <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
                                 ${task.priority}
                               </span>
+                              ${perms.canEditCard ? `
                               <button
                                 class="btn-edit-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-primary hover:bg-primary/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
                                 data-task-id="${task.id}"
@@ -1874,6 +1889,7 @@ export class KanbanBoardView extends BaseView {
                               >
                                 <span class="material-symbols-outlined text-[15px]">edit</span>
                               </button>
+                              ` : ''}
                               ${perms.canDeleteCard ? `
                               <button
                                 class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
@@ -2002,8 +2018,8 @@ export class KanbanBoardView extends BaseView {
 
         </div>
 
-        <!-- Floating Bottom Dock matching screenshot -->
-        <!-- Floating Bottom Dock matching screenshot -->
+        <!-- Floating Bottom Dock matching screenshot (Admin & PM only) -->
+        ${!perms.isUser ? `
         <nav
           id="kanban-bottom-dock"
           class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 transition-all"
@@ -2032,6 +2048,7 @@ export class KanbanBoardView extends BaseView {
             ${!this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
           </button>
         </nav>
+        ` : ''}
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
 
@@ -2261,7 +2278,7 @@ export class KanbanBoardView extends BaseView {
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
-                  ${isOwnerOrCurrent ? `
+                  ${isOwnerOrCurrent && !perms.isUser ? `
                     <button type="button" class="btn-goto-profile text-[10px] font-bold px-2 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-0.5" title="Buka Halaman Profil untuk Ganti Foto / Info">
                       <span class="material-symbols-outlined text-[12px]">edit</span>
                       <span>Edit Foto</span>
@@ -3514,7 +3531,8 @@ export class KanbanBoardView extends BaseView {
     }
 
     if (this.modalManager) {
-      this.modalManager.open('task-detail', { task, editMode: true });
+      const permsCheck = this.getPermissions();
+      this.modalManager.open('task-detail', { task, editMode: !permsCheck.isUser, isEditing: !permsCheck.isUser });
     }
   }
 
