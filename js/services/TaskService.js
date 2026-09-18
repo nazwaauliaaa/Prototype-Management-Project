@@ -257,6 +257,122 @@ export class TaskService {
         timeline: '25 - 30 Sep',
         hours: 14,
         qaProgress: { passed: 0, total: 3 }
+      }),
+
+      // AIKreativ default tasks
+      new Task({
+        id: 'task-ai-01',
+        code: '#AI-101',
+        title: 'Konfigurasi Model AI & Integrasi Vision API',
+        description: 'Optimasi inference prompt dan response parser untuk pipeline visual.',
+        workspace: 'aikreativ',
+        board: 'studio-ai',
+        status: 'in-progress',
+        priority: 'High',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '18 - 24 Sep',
+        hours: 20,
+        qaProgress: { passed: 2, total: 4 }
+      }),
+      new Task({
+        id: 'task-ai-02',
+        code: '#AI-102',
+        title: 'Implementasi Pipeline Otomasi & Webhook Server',
+        description: 'Setup routing background worker dan queue microservice.',
+        workspace: 'aikreativ',
+        board: 'studio-ai',
+        status: 'backlog',
+        priority: 'Medium',
+        pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+        timeline: '20 - 26 Sep',
+        hours: 15,
+        qaProgress: { passed: 1, total: 3 }
+      }),
+      new Task({
+        id: 'task-ai-03',
+        code: '#AI-103',
+        title: 'Audit Latensi & Quality Assurance Model AI',
+        description: 'Pengujian throughput pemrosesan data di server staging.',
+        workspace: 'aikreativ',
+        board: 'studio-ai',
+        status: 'review-qa',
+        priority: 'Critical',
+        pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+        timeline: '22 - 28 Sep',
+        hours: 18,
+        qaProgress: { passed: 3, total: 4 }
+      }),
+      new Task({
+        id: 'task-ai-04',
+        code: '#AI-104',
+        title: 'Deploy Model ke Staging & Integrasi Frontend',
+        description: 'Verifikasi integrasi websocket dan update real-time antarmuka.',
+        workspace: 'aikreativ',
+        board: 'studio-ai',
+        status: 'ready-launch',
+        priority: 'High',
+        pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+        timeline: '24 - 30 Sep',
+        hours: 14,
+        qaProgress: { passed: 4, total: 4 }
+      }),
+      new Task({
+        id: 'task-ai-05',
+        code: '#AI-105',
+        title: 'Dokumentasi SDK & Panduan Operasional Studio',
+        description: 'Penyusunan handbook standar operasional dan arsitektur.',
+        workspace: 'aikreativ',
+        board: 'studio-ai',
+        status: 'done',
+        priority: 'Low',
+        pic: { name: 'Dimas Anggara', initials: 'DA', role: 'Kontributor' },
+        timeline: '10 - 16 Sep',
+        hours: 10,
+        qaProgress: { passed: 3, total: 3 }
+      }),
+
+      // Sharinginaja default tasks
+      new Task({
+        id: 'task-sh-01',
+        code: '#SH-101',
+        title: 'Kickoff & Setup Ruang Kolaborasi Tim',
+        description: 'Pembagian peran anggota, jadwal deliverable, dan milestone awal.',
+        workspace: 'sharinginaja',
+        board: 'sprint-1',
+        status: 'in-progress',
+        priority: 'High',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '18 - 25 Sep',
+        hours: 16,
+        qaProgress: { passed: 1, total: 3 }
+      }),
+      new Task({
+        id: 'task-sh-02',
+        code: '#SH-102',
+        title: 'Penyusunan Konten Desain & Aset Grafis Promosi',
+        description: 'Pembuatan variasi visual materi kampanye dan preview deliverable.',
+        workspace: 'sharinginaja',
+        board: 'sprint-1',
+        status: 'backlog',
+        priority: 'Medium',
+        pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+        timeline: '20 - 27 Sep',
+        hours: 14,
+        qaProgress: { passed: 0, total: 2 }
+      }),
+      new Task({
+        id: 'task-sh-03',
+        code: '#SH-103',
+        title: 'Finalisasi Ulasan Mutu & Verifikasi QA',
+        description: 'Uji fungsionalitas seluruh alur kerja proyek sebelum rilis.',
+        workspace: 'sharinginaja',
+        board: 'sprint-1',
+        status: 'ready-launch',
+        priority: 'Critical',
+        pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+        timeline: '25 - 30 Sep',
+        hours: 12,
+        qaProgress: { passed: 3, total: 3 }
       })
     ];
   }
@@ -345,7 +461,7 @@ export class TaskService {
     const projIdStr = projectId ? String(projectId).trim() : null;
     const cleanProjName = projectName ? projectName.toLowerCase().replace(/[-_\s]+/g, '') : '';
 
-    return this.getTasks().filter(t => {
+    let matched = this.getTasks().filter(t => {
       // 1. Direct projectId match
       if (projIdStr && t.projectId && String(t.projectId) === projIdStr) {
         return true;
@@ -367,6 +483,61 @@ export class TaskService {
       }
       return isDirectMatch;
     });
+
+    // Jika board belum memiliki tugas sama sekali, buatkan starter tasks otomatis agar papan langsung hidup
+    if (matched.length === 0 && currentWs !== 'workspace-utama') {
+      const boardLabel = projectName || targetWs || 'Proyek';
+      const cleanPrefix = (boardLabel.split(/[\s-_]+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'TSK');
+      const starterTasks = [
+        new Task({
+          id: `task-auto-${Date.now()}-1`,
+          code: `#${cleanPrefix}-101`,
+          title: `Kickoff & Ruang Lingkup: ${boardLabel}`,
+          description: `Penetapan sasaran tim, pembagian PIC, dan alur pengerjaan papan ${boardLabel}.`,
+          workspace: targetWs,
+          projectId: projIdStr || targetWs,
+          status: 'in-progress',
+          priority: 'High',
+          pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+          timeline: '18 - 25 Sep',
+          hours: 16,
+          qaProgress: { passed: 1, total: 3 }
+        }),
+        new Task({
+          id: `task-auto-${Date.now()}-2`,
+          code: `#${cleanPrefix}-102`,
+          title: `Penyusunan Konten & Kebutuhan Desain`,
+          description: `Riset kebutuhan visual, wireframe, dan validasi aset deliverable.`,
+          workspace: targetWs,
+          projectId: projIdStr || targetWs,
+          status: 'backlog',
+          priority: 'Medium',
+          pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+          timeline: '22 - 28 Sep',
+          hours: 12,
+          qaProgress: { passed: 0, total: 2 }
+        }),
+        new Task({
+          id: `task-auto-${Date.now()}-3`,
+          code: `#${cleanPrefix}-103`,
+          title: `Ulasan Mutu QA & Finalisasi Deliverable`,
+          description: `Pemeriksaan standar kualitas dan verifikasi sebelum persetujuan akhir.`,
+          workspace: targetWs,
+          projectId: projIdStr || targetWs,
+          status: 'ready-launch',
+          priority: 'Critical',
+          pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+          timeline: '25 - 30 Sep',
+          hours: 14,
+          qaProgress: { passed: 3, total: 3 }
+        })
+      ];
+      starterTasks.forEach(t => this.tasks.unshift(t));
+      this.saveToStorage();
+      matched = starterTasks;
+    }
+
+    return matched;
   }
 
   /**

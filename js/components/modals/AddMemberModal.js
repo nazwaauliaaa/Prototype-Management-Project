@@ -983,8 +983,9 @@ export class AddMemberModal extends BaseModal {
       const colors = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#db2777'];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-      const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'aikreativ';
-      const currentProj = this.projectId || currentWs;
+      const currentWs = this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const currentProj = this.projectId || localStorage.getItem('active_project_id') || currentWs;
+      const currentTitle = this.boardTitle || this.currentWorkspace || 'Papan Proyek';
 
       // 1. Simpan sebagai PENDING INVITE (Bukan langsung Board Members)
       // Pengguna baru masuk ke Board Members setelah mengklik tautan undangan
@@ -992,10 +993,10 @@ export class AddMemberModal extends BaseModal {
         id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
         name,
         email,
-        role: selectedRole,
+        role: (selectedRole || '').toLowerCase().includes('observer') ? 'Observer' : 'user',
         workspace: currentWs,
         projectId: currentProj,
-        boardTitle: this.boardTitle,
+        boardTitle: currentTitle,
         color: randomColor,
         via: 'link',
         createdAt: new Date().toISOString()
@@ -1042,9 +1043,9 @@ export class AddMemberModal extends BaseModal {
           name: invName,
           email: invEmail,
           role: (this._linkPermission || '').toLowerCase().includes('observer') ? 'Observer' : 'user',
-          workspace: this.currentWorkspace,
-          projectId: this.projectId || this.currentWorkspace,
-          boardTitle: this.boardTitle,
+          workspace: this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci',
+          projectId: this.projectId || localStorage.getItem('active_project_id') || this.currentWorkspace || 'panen-kunci',
+          boardTitle: this.boardTitle || this.currentWorkspace || 'Papan Proyek',
           color: '#2563eb',
           via: 'link',
           createdAt: new Date().toISOString()

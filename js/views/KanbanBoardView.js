@@ -1426,6 +1426,7 @@ export class KanbanBoardView extends BaseView {
           <!-- Left Section: Back Button + Action Buttons -->
           <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
             
+            ${!perms.isUser ? `
             <button
               id="btn-kanban-back-home"
               class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] sm:text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
@@ -1437,6 +1438,7 @@ export class KanbanBoardView extends BaseView {
             </button>
 
             <span class="text-white/30 shrink-0">|</span>
+            ` : ''}
 
             <!-- Trello View Switcher Button (Compact Icon Button) -->
             ${perms.canSwitchView ? `
