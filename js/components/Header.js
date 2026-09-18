@@ -229,37 +229,6 @@ export class Header {
                   </div>
                 </div>
 
-                <!-- Quick Role Switcher Buttons -->
-                <div class="p-2 rounded-xl bg-surface-container-low border border-surface-border/70 flex flex-col gap-1.5">
-                  <span class="text-[10px] text-text-muted uppercase font-bold tracking-wider">Pilih Mode Peran:</span>
-                  <div class="grid grid-cols-2 gap-1.5">
-                    <button
-                      type="button"
-                      class="btn-switch-header-role px-2.5 py-2 rounded-xl text-left text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${!isUserRole ? 'bg-purple-600 text-white shadow-xs' : 'bg-surface-container hover:bg-surface-container-high text-text-primary'}"
-                      data-target-role="admin"
-                      title="Masuk sebagai Admin: Hak penuh mengubah apapun"
-                    >
-                      <span class="material-symbols-outlined text-[15px]">admin_panel_settings</span>
-                      <div class="flex flex-col min-w-0 leading-tight">
-                        <span>Admin</span>
-                        <span class="text-[9px] opacity-80 font-normal">Hak Penuh</span>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      class="btn-switch-header-role px-2.5 py-2 rounded-xl text-left text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${isUserRole ? 'bg-sky-600 text-white shadow-xs' : 'bg-surface-container hover:bg-surface-container-high text-text-primary'}"
-                      data-target-role="user"
-                      title="Masuk sebagai Member: Akses geser kartu saja"
-                    >
-                      <span class="material-symbols-outlined text-[15px]">shield_person</span>
-                      <div class="flex flex-col min-w-0 leading-tight">
-                        <span>Member</span>
-                        <span class="text-[9px] opacity-80 font-normal">Geser Kartu</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
 
                 ${!isUserRole ? `
                 <button id="btn-header-profile" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
@@ -708,21 +677,6 @@ export class Header {
         e.stopPropagation();
         if (notifMenu) notifMenu.classList.add('hidden');
         profileMenu.classList.toggle('hidden');
-      });
-      // Quick Role Switcher Click Listeners
-      const roleBtns = profileMenu.querySelectorAll('.btn-switch-header-role');
-      roleBtns.forEach(rBtn => {
-        rBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          const targetRole = rBtn.getAttribute('data-target-role');
-          if (targetRole && this.authService) {
-            profileMenu.classList.add('hidden');
-            this.authService.loginWithRole(targetRole);
-            setTimeout(() => {
-              window.location.reload();
-            }, 100);
-          }
-        });
       });
     }
 
