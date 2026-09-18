@@ -396,6 +396,12 @@
             if (exIdx >= 0) custom[exIdx] = fullUser;
             else custom.unshift(fullUser);
             localStorage.setItem('creative_office_custom_users', JSON.stringify(custom));
+
+            const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
+            if (qrCode) regMap[qrCode.trim()] = fullUser.name;
+            if (fullUser.email) regMap[fullUser.email.toLowerCase().trim()] = fullUser.name;
+            if (fullUser.name) regMap[fullUser.name.toLowerCase().trim()] = fullUser.name;
+            localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
           } catch(e) {}
 
           localStorage.setItem('creative_office_user', JSON.stringify(fullUser));

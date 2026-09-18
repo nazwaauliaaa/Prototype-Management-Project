@@ -864,11 +864,12 @@ export class AuthView extends BaseView {
         if (!userToCheck && !codeToCheck) return null;
         const targetName = (userToCheck?.name || '').toLowerCase().trim();
         const targetEmail = (userToCheck?.email || '').toLowerCase().trim();
+        const cleanTargetCode = (codeToCheck || '').toString().trim();
 
         // 1. Registered codes tracker
         try {
           const registered = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
-          if (codeToCheck && registered[codeToCheck]) return registered[codeToCheck];
+          if (cleanTargetCode && registered[cleanTargetCode]) return registered[cleanTargetCode];
           if (targetEmail && registered[targetEmail]) return registered[targetEmail];
           if (targetName && registered[targetName]) return registered[targetName];
         } catch (e) {}
@@ -876,7 +877,7 @@ export class AuthView extends BaseView {
         // 2. Custom users
         const customUsers = this.authService?.customUsers || [];
         const matchCustom = customUsers.find(u =>
-          (u.qr_data && u.qr_data === codeToCheck) ||
+          (cleanTargetCode && (u.qr_data === cleanTargetCode || u.rawCode === cleanTargetCode)) ||
           (targetEmail && u.email && u.email.toLowerCase().trim() === targetEmail) ||
           (targetName && u.name && u.name.toLowerCase().trim() === targetName)
         );
@@ -886,6 +887,7 @@ export class AuthView extends BaseView {
         try {
           const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
           const matchApproved = approved.find(u =>
+            (cleanTargetCode && (u.qr_data === cleanTargetCode || u.rawCode === cleanTargetCode)) ||
             (targetEmail && u.email && u.email.toLowerCase().trim() === targetEmail) ||
             (targetName && u.name && u.name.toLowerCase().trim() === targetName)
           );
@@ -929,12 +931,8 @@ export class AuthView extends BaseView {
           if (isAlreadyRegistered) {
             feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">QR Dikenali!</span> Mengalihkan ke Beranda...`;
           } else {
-            feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">✨ QR Baru Terdeteksi! Menyimpan "${userToReg.name}" ke Supabase & mengunci perangkat...</span>`;
+            feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">✨ Mendaftarkan QR baru...</span>`;
           }
-        }
-
-        if (!isAlreadyRegistered && this.notificationService) {
-          this.notificationService.info(`Mendaftarkan akun "${userToReg.name}" ke database Supabase...`);
         }
 
         const regPayload = {
@@ -967,7 +965,9 @@ export class AuthView extends BaseView {
           // Simpan ke daftar registered_qr_codes agar pemindaian berikutnya langsung dikenali
           try {
             const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
-            regMap[codeToReg] = registeredData.name;
+            if (codeToReg) regMap[codeToReg.trim()] = registeredData.name;
+            if (regPayload.rawCode) regMap[regPayload.rawCode.trim()] = registeredData.name;
+            if (registeredData.qr_data) regMap[registeredData.qr_data.trim()] = registeredData.name;
             if (registeredData.email) regMap[registeredData.email.toLowerCase().trim()] = registeredData.name;
             if (registeredData.name) regMap[registeredData.name.toLowerCase().trim()] = registeredData.name;
             localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
@@ -977,7 +977,7 @@ export class AuthView extends BaseView {
             if (wasAlreadyRegistered) {
               feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Berhasil Login!</span> Mengalihkan ke Beranda...`;
             } else {
-              feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Tersimpan di Supabase!</span> Mengalihkan ke Beranda...`;
+              feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ QR Berhasil Teregistrasi!</span> Mengalihkan ke Beranda...`;
             }
           }
 
@@ -985,7 +985,7 @@ export class AuthView extends BaseView {
             if (wasAlreadyRegistered) {
               this.notificationService.success(`Berhasil login sebagai ${registeredData.name}!`);
             } else {
-              this.notificationService.success(`🎉 Akun "${registeredData.name}" berhasil terdaftar di Supabase! Selamat datang di Beranda.`);
+              this.notificationService.success(`Akun "${registeredData.name}" berhasil teregistrasi!`);
             }
           }
 
@@ -1038,17 +1038,26 @@ export class AuthView extends BaseView {
 
           try {
             const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
-            regMap[codeToReg] = userInstance.name;
+            if (codeToReg) regMap[codeToReg.trim()] = userInstance.name;
+            if (regPayload.rawCode) regMap[regPayload.rawCode.trim()] = userInstance.name;
             if (userInstance.email) regMap[userInstance.email.toLowerCase().trim()] = userInstance.name;
             if (userInstance.name) regMap[userInstance.name.toLowerCase().trim()] = userInstance.name;
             localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
           } catch (e) {}
 
+          if (feedback) {
+            if (isAlreadyRegistered) {
+              feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Berhasil Login!</span> Mengalihkan ke Beranda...`;
+            } else {
+              feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ QR Berhasil Teregistrasi!</span> Mengalihkan ke Beranda...`;
+            }
+          }
+
           if (this.notificationService) {
             if (isAlreadyRegistered) {
               this.notificationService.success(`Berhasil login sebagai ${userInstance.name}!`);
             } else {
-              this.notificationService.success(`🎉 Akun "${userInstance.name}" berhasil terdaftar!`);
+              this.notificationService.success(`Akun "${userInstance.name}" berhasil teregistrasi!`);
             }
           }
 
@@ -1079,7 +1088,8 @@ export class AuthView extends BaseView {
 
           try {
             const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
-            regMap[cleanCode] = userFromDb.name;
+            if (cleanCode) regMap[cleanCode.trim()] = userFromDb.name;
+            if (userFromDb.qr_data) regMap[userFromDb.qr_data.trim()] = userFromDb.name;
             if (userFromDb.email) regMap[userFromDb.email.toLowerCase().trim()] = userFromDb.name;
             if (userFromDb.name) regMap[userFromDb.name.toLowerCase().trim()] = userFromDb.name;
             localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));

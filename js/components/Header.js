@@ -57,13 +57,10 @@ export class Header {
               <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[17px] pointer-events-none">search</span>
               <input
                 id="global-search-input"
-                class="w-full h-8 pl-8 pr-12 bg-surface-container-low rounded-lg text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 text-[13px] border border-surface-border transition-all"
+                class="w-full h-8 pl-8 pr-3 bg-surface-container-low rounded-lg text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 text-[13px] border border-surface-border transition-all"
                 placeholder="Search..."
                 type="text"
               />
-              <div class="absolute right-2 flex items-center pointer-events-none">
-                <kbd class="px-1.5 py-0.5 rounded bg-surface-container-lowest text-text-muted text-[10px] font-mono font-medium shadow-2xs border border-surface-border">⌘K</kbd>
-              </div>
             </div>
 
             <!-- Create Button in purple -->
@@ -111,17 +108,71 @@ export class Header {
             </div>
             ` : ''}
 
-            <!-- Notifications Button -->
-            <button
-              id="btn-header-notif"
-              aria-label="Notifikasi"
-              class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative cursor-pointer"
-              type="button"
-              title="Notifikasi"
-            >
-              <span class="material-symbols-outlined text-[19px]">notifications</span>
-              <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-urgent"></span>
-            </button>
+            <!-- Notifications Dropdown / Popover -->
+            <div class="relative" id="header-notif-container">
+              <button
+                id="btn-header-notif"
+                aria-label="Notifikasi Tugas"
+                class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative cursor-pointer"
+                type="button"
+                title="Notifikasi Tugas Masuk & Sedang Dikerjakan"
+              >
+                <span class="material-symbols-outlined text-[19px]">notifications</span>
+                <span id="notif-badge-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-urgent animate-pulse"></span>
+                <span id="notif-badge-count" class="hidden absolute -top-1 -right-1 px-1 min-w-[17px] h-[17px] rounded-full bg-purple-600 text-white text-[9.5px] font-bold flex items-center justify-center shadow-xs border border-surface-container-lowest">0</span>
+              </button>
+
+              <!-- Popover Panel Notifikasi -->
+              <div
+                id="header-notif-menu"
+                class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border z-50 overflow-hidden flex flex-col max-h-[500px]"
+              >
+                <!-- Notification Header -->
+                <div class="px-4 py-3 border-b border-surface-border flex items-center justify-between bg-surface-container-low/40">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center">
+                      <span class="material-symbols-outlined text-[17px]">notifications_active</span>
+                    </div>
+                    <div>
+                      <h4 class="text-[13px] font-bold text-on-surface leading-none">Notifikasi Tugas</h4>
+                      <p class="text-[10.5px] text-text-muted mt-0.5" id="notif-subtext">Tugas masuk & sedang dikerjakan</p>
+                    </div>
+                  </div>
+                  <span id="notif-total-badge" class="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">0 Tugas</span>
+                </div>
+
+                <!-- Notification Filter Tabs -->
+                <div class="px-3 pt-2 pb-1.5 border-b border-surface-border flex items-center gap-1.5 bg-surface-container-lowest text-[11.5px]">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer bg-purple-600 text-white shadow-2xs" data-tab="all">
+                    Semua
+                  </button>
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer" data-tab="inbox">
+                    📥 Tugas Masuk
+                  </button>
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer" data-tab="ongoing">
+                    ⏳ Sedang Dikerjakan
+                  </button>
+                </div>
+
+                <!-- Notification List Container -->
+                <div id="notif-items-list" class="divide-y divide-surface-border/60 overflow-y-auto max-h-[320px] p-1 flex flex-col gap-0.5">
+                  <!-- Dynamic items -->
+                </div>
+
+                <!-- Notification Footer -->
+                <div class="p-2.5 border-t border-surface-border bg-surface-container-low/30 flex items-center justify-between">
+                  <span class="text-[11px] text-text-muted px-1.5">Klik tugas untuk melihat detail</span>
+                  <button
+                    id="btn-open-kanban-from-notif"
+                    type="button"
+                    class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-[11.5px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <span>Buka Kanban</span>
+                    <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <!-- User Profile Dropdown / Switcher -->
             <div class="relative ml-0.5">
@@ -189,6 +240,202 @@ export class Header {
     `;
   }
 
+  getNotificationTasks(tab = 'all') {
+    if (!this.taskService) {
+      try {
+        this.taskService = this.container.resolve('TaskService');
+      } catch (e) {}
+    }
+
+    let allTasks = [];
+    if (this.taskService && typeof this.taskService.getTasks === 'function') {
+      allTasks = this.taskService.getTasks();
+    } else {
+      try {
+        allTasks = JSON.parse(localStorage.getItem('creative_office_tasks') || '[]');
+      } catch (e) {
+        allTasks = [];
+      }
+    }
+
+    if (!Array.isArray(allTasks)) allTasks = [];
+
+    const isInboxStatus = (status) => {
+      const s = (status || '').toLowerCase();
+      return s === 'backlog' || s === 'todo' || s === 'to-do' || s === 'ready' || s === 'new';
+    };
+
+    const isOngoingStatus = (status) => {
+      const s = (status || '').toLowerCase();
+      return s === 'in-progress' || s === 'in_progress' || s === 'doing' || s === 'review-qa' || s === 'review' || s === 'testing' || s === 'ready-launch';
+    };
+
+    let filtered = [];
+    if (tab === 'inbox') {
+      filtered = allTasks.filter(t => isInboxStatus(t.status));
+    } else if (tab === 'ongoing') {
+      filtered = allTasks.filter(t => isOngoingStatus(t.status));
+    } else {
+      filtered = allTasks.filter(t => isInboxStatus(t.status) || isOngoingStatus(t.status));
+    }
+
+    const priorityWeight = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+    filtered.sort((a, b) => {
+      const pDiff = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+      if (pDiff !== 0) return pDiff;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    return filtered;
+  }
+
+  updateNotificationBadge() {
+    if (!this.element) return;
+    const allActive = this.getNotificationTasks('all');
+    const badgeCountEl = this.element.querySelector('#notif-badge-count');
+    const badgeDotEl = this.element.querySelector('#notif-badge-dot');
+    const totalBadgeEl = this.element.querySelector('#notif-total-badge');
+    const subtextEl = this.element.querySelector('#notif-subtext');
+
+    const count = allActive.length;
+    if (badgeCountEl) {
+      if (count > 0) {
+        badgeCountEl.textContent = count > 99 ? '99+' : String(count);
+        badgeCountEl.classList.remove('hidden');
+        if (badgeDotEl) badgeDotEl.classList.add('hidden');
+      } else {
+        badgeCountEl.classList.add('hidden');
+        if (badgeDotEl) badgeDotEl.classList.add('hidden');
+      }
+    }
+
+    if (totalBadgeEl) {
+      totalBadgeEl.textContent = `${count} Tugas Aktif`;
+    }
+
+    if (subtextEl) {
+      const inboxCount = this.getNotificationTasks('inbox').length;
+      const ongoingCount = this.getNotificationTasks('ongoing').length;
+      subtextEl.textContent = `${inboxCount} masuk • ${ongoingCount} sedang dikerjakan`;
+    }
+  }
+
+  renderNotificationList() {
+    if (!this.element) return;
+    const listContainer = this.element.querySelector('#notif-items-list');
+    if (!listContainer) return;
+
+    const tasks = this.getNotificationTasks(this.activeNotifTab);
+
+    if (tasks.length === 0) {
+      const emptyMsg = this.activeNotifTab === 'inbox'
+        ? 'Tidak ada tugas baru yang masuk saat ini.'
+        : this.activeNotifTab === 'ongoing'
+        ? 'Tidak ada tugas yang sedang dalam pengerjaan.'
+        : 'Tidak ada tugas masuk atau yang sedang dikerjakan.';
+
+      listContainer.innerHTML = `
+        <div class="py-8 px-4 text-center flex flex-col items-center justify-center gap-2">
+          <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-text-muted">
+            <span class="material-symbols-outlined text-[22px]">inbox</span>
+          </div>
+          <p class="text-[12.5px] font-semibold text-on-surface">Tidak ada tugas aktif</p>
+          <p class="text-[11px] text-text-muted max-w-[220px]">${emptyMsg}</p>
+        </div>
+      `;
+      return;
+    }
+
+    const priorityBadge = (p) => {
+      const prio = p || 'Medium';
+      if (prio === 'Critical') return '<span class="px-1.5 py-0.2 text-[9.5px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-200/60 dark:bg-rose-950/60 dark:text-rose-300">Critical</span>';
+      if (prio === 'High') return '<span class="px-1.5 py-0.2 text-[9.5px] font-bold rounded bg-amber-50 text-amber-600 border border-amber-200/60 dark:bg-amber-950/60 dark:text-amber-300">High</span>';
+      if (prio === 'Low') return '<span class="px-1.5 py-0.2 text-[9.5px] font-bold rounded bg-slate-100 text-slate-600 border border-slate-200/60 dark:bg-slate-800 dark:text-slate-300">Low</span>';
+      return '<span class="px-1.5 py-0.2 text-[9.5px] font-bold rounded bg-blue-50 text-blue-600 border border-blue-200/60 dark:bg-blue-950/60 dark:text-blue-300">Medium</span>';
+    };
+
+    const statusBadge = (s) => {
+      const st = (s || '').toLowerCase();
+      if (st === 'backlog' || st === 'todo' || st === 'to-do' || st === 'ready' || st === 'new') {
+        return `
+          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200/60 shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+            <span>Tugas Masuk</span>
+          </span>
+        `;
+      }
+      if (st === 'review-qa' || st === 'review') {
+        return `
+          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+            <span>Review QA</span>
+          </span>
+        `;
+      }
+      return `
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span>Sedang Dikerjakan</span>
+        </span>
+      `;
+    };
+
+    listContainer.innerHTML = tasks.map(task => {
+      const picName = task.pic?.name || 'Belum Ditugaskan';
+      const picAvatar = task.pic?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(picName)}`;
+      const boardName = task.board || task.workspace || 'Papan Utama';
+
+      return `
+        <div
+          class="notif-task-item p-2.5 rounded-xl hover:bg-surface-container/70 active:scale-[0.99] transition-all cursor-pointer flex flex-col gap-1.5 border border-transparent hover:border-surface-border group"
+          data-task-id="${task.id}"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-1.5 min-w-0 flex-1">
+              <span class="text-[10px] font-mono font-semibold text-text-muted shrink-0">${task.code || '#TASK'}</span>
+              <span class="text-[12.5px] font-semibold text-on-surface group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate">
+                ${task.title || 'Tanpa Judul'}
+              </span>
+            </div>
+            ${statusBadge(task.status)}
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] text-text-muted mt-0.5">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="flex items-center gap-1 shrink-0">
+                <img src="${picAvatar}" alt="${picName}" class="w-4 h-4 rounded-full object-cover ring-1 ring-black/10" />
+                <span class="truncate max-w-[110px] text-text-secondary">${picName}</span>
+              </div>
+              <span class="text-surface-border shrink-0">•</span>
+              <span class="truncate max-w-[90px]">${boardName}</span>
+            </div>
+            <div class="shrink-0 flex items-center gap-1.5">
+              ${priorityBadge(task.priority)}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Event listener click task item to open task-detail modal
+    const taskItems = listContainer.querySelectorAll('.notif-task-item');
+    taskItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const taskId = item.getAttribute('data-task-id');
+        const notifMenu = this.element.querySelector('#header-notif-menu');
+        if (notifMenu) notifMenu.classList.add('hidden');
+
+        const allTasks = this.taskService ? this.taskService.getTasks() : [];
+        const task = allTasks.find(t => String(t.id) === String(taskId));
+        if (task) {
+          const user = this.authService ? this.authService.getCurrentUser() : null;
+          const isUserRole = (user?.role || '').toLowerCase() === 'user';
+          this.modalManager.open('task-detail', { task, editMode: !isUserRole, isEditing: !isUserRole });
+        }
+      });
+    });
+  }
+
   renderToDOM() {
     if (!this.hostElement) return;
     this.hostElement.innerHTML = this.render();
@@ -248,8 +495,6 @@ export class Header {
       });
     }
 
-
-
     const newTaskBtn = this.element.querySelector('#btn-header-new-task');
     if (newTaskBtn) {
       newTaskBtn.addEventListener('click', () => {
@@ -260,27 +505,71 @@ export class Header {
       });
     }
 
+    // Interactive Notification Panel Toggle & Tabs
     const notifBtn = this.element.querySelector('#btn-header-notif');
-    if (notifBtn) {
-      notifBtn.addEventListener('click', () => {
-        const notifService = this.container.resolve('NotificationService');
-        notifService.info('Semua sistem tersinkronisasi. Tidak ada kendala baru.');
+    const notifMenu = this.element.querySelector('#header-notif-menu');
+    const profileMenu = this.element.querySelector('#user-profile-menu');
+
+    if (notifBtn && notifMenu) {
+      notifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (profileMenu) profileMenu.classList.add('hidden');
+        const isCurrentlyHidden = notifMenu.classList.contains('hidden');
+        notifMenu.classList.toggle('hidden');
+        if (isCurrentlyHidden) {
+          this.renderNotificationList();
+          this.updateNotificationBadge();
+        }
+      });
+    }
+
+    // Tabs in Notification Panel
+    const notifTabs = this.element.querySelectorAll('.btn-notif-tab');
+    notifTabs.forEach(tabBtn => {
+      tabBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tab = tabBtn.getAttribute('data-tab');
+        this.activeNotifTab = tab;
+
+        notifTabs.forEach(b => {
+          b.className = 'btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer';
+        });
+        tabBtn.className = 'btn-notif-tab px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer bg-purple-600 text-white shadow-2xs';
+
+        this.renderNotificationList();
+      });
+    });
+
+    // Open Kanban button from Notification panel footer
+    const openKanbanNotifBtn = this.element.querySelector('#btn-open-kanban-from-notif');
+    if (openKanbanNotifBtn) {
+      openKanbanNotifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (notifMenu) notifMenu.classList.add('hidden');
+        const user = this.authService ? this.authService.getCurrentUser() : null;
+        const curWs = (user?.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: curProj, workspace: curWs });
       });
     }
 
     const profileBtn = this.element.querySelector('#btn-user-profile');
-    const profileMenu = this.element.querySelector('#user-profile-menu');
     if (profileBtn && profileMenu) {
       profileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (notifMenu) notifMenu.classList.add('hidden');
         profileMenu.classList.toggle('hidden');
-      });
-
-      document.addEventListener('click', () => {
-        profileMenu.classList.add('hidden');
       });
     }
 
+    document.addEventListener('click', (e) => {
+      if (profileMenu && !e.target.closest('#btn-user-profile') && !e.target.closest('#user-profile-menu')) {
+        profileMenu.classList.add('hidden');
+      }
+      if (notifMenu && !e.target.closest('#btn-header-notif') && !e.target.closest('#header-notif-menu')) {
+        notifMenu.classList.add('hidden');
+      }
+    });
 
     const profileEditBtn = this.element.querySelector('#btn-header-profile');
     if (profileEditBtn) {
@@ -298,7 +587,7 @@ export class Header {
       });
     }
 
-    // Global Search Desktop & Keyboard shortcut ⌘K / Ctrl+K
+    // Global Search Desktop
     const searchInput = this.element.querySelector('#global-search-input');
     if (searchInput) {
       searchInput.addEventListener('focus', () => {
@@ -317,5 +606,8 @@ export class Header {
         this.modalManager.open('search');
       }
     });
+
+    // Initial badge update
+    this.updateNotificationBadge();
   }
 }
