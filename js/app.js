@@ -720,6 +720,7 @@ class CreativeOfficeApp {
 
     // Listen to auth events
     eventBus.on('auth:logout', () => {
+      window.location.hash = '#/auth';
       this.navigateTo('auth');
     });
 
@@ -780,7 +781,7 @@ class CreativeOfficeApp {
     // STRICT ROUTE GUARD: Role 'user' only permitted to access 'kanban' and 'auth'
     // Role 'user' is pinned to their kanban board and cannot navigate to any other view
     if (isUserRole) {
-      const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const allowedWs = (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
 
       if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'login') {
@@ -819,13 +820,14 @@ class CreativeOfficeApp {
     const sidebarHost = document.getElementById('app-sidebar');
     const eventBus = this.container.resolve('EventBus');
     const authService = this.container.resolve('AuthService');
+    const currentUser = authService ? authService.getCurrentUser() : null;
 
     const activeRole = localStorage.getItem('active_user_role');
     const isUserRole = activeRole === 'admin' ? false : ((currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()))) || activeRole === 'user');
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban and auth
     if (isUserRole) {
-      const allowedWs = params.workspace || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+      const allowedWs = params.workspace || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = params.projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
 
       if (viewName !== 'kanban' && viewName !== 'auth') {
