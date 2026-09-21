@@ -217,6 +217,32 @@ body[data-role="user"] #app-header header {
   display: block;
 }
 
+/* ── Notification Button & Badge ── */
+#btn-header-notif {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#btn-header-notif:hover {
+  transform: translateY(-1px);
+}
+
+#btn-header-notif:active {
+  transform: translateY(0) scale(0.95);
+}
+
+#notif-badge-count {
+  animation: notifPulse 3s infinite ease-in-out;
+}
+
+@keyframes notifPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
 /* ── Page-Specific Backdrop Atmospheres ── */
 /* Workspaces Page */
 body[data-page="workspaces"] .workspaces-page {

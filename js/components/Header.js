@@ -221,74 +221,74 @@ export class Header {
               <button
                 id="btn-header-notif"
                 aria-label="Notifikasi Tugas"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors relative cursor-pointer"
+                class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 border border-white/15 hover:border-purple-400/40 text-white flex items-center justify-center transition-all relative cursor-pointer group shadow-sm"
                 type="button"
                 title="Notifikasi Tugas Masuk & Sedang Dikerjakan"
               >
-                <span class="material-symbols-outlined text-[19px]">notifications</span>
-                <span id="notif-badge-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-urgent animate-pulse"></span>
-                <span id="notif-badge-count" class="hidden absolute -top-1 -right-1 px-1 min-w-[17px] h-[17px] rounded-full bg-purple-600 text-white text-[9.5px] font-bold flex items-center justify-center shadow-xs border border-surface-container-lowest">0</span>
+                <span class="material-symbols-outlined text-[19px] text-white/85 group-hover:text-purple-300 transition-colors">notifications</span>
+                <span id="notif-badge-dot" class="hidden absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-[#0c071e] shadow-xs animate-pulse"></span>
+                <span id="notif-badge-count" class="hidden absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[9.5px] font-extrabold flex items-center justify-center shadow-md shadow-purple-600/40 border-2 border-[#0c071e] ring-1 ring-purple-400/50 leading-none pointer-events-none">0</span>
               </button>
 
               <!-- Popover Panel Notifikasi -->
               <div
                 id="header-notif-menu"
-                class="hidden absolute right-0 mt-2 w-80 sm:w-[410px] bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border z-50 overflow-hidden flex flex-col max-h-[520px] animate-in fade-in zoom-in-95 duration-150"
+                class="hidden absolute right-0 mt-2 w-80 sm:w-[410px] bg-[#120d28]/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/15 z-50 overflow-hidden flex flex-col max-h-[520px] animate-in fade-in zoom-in-95 duration-150 text-white"
               >
                 <!-- Notification Header -->
-                <div class="px-4 py-3 border-b border-surface-border flex items-center justify-between bg-surface-container-low/40">
+                <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/5">
                   <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center">
+                    <div class="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center shadow-xs">
                       <span class="material-symbols-outlined text-[17px]">notifications_active</span>
                     </div>
                     <div>
-                      <h4 class="text-[13px] font-bold text-on-surface leading-none">Notifikasi Tugas</h4>
-                      <p class="text-[10.5px] text-text-muted mt-0.5" id="notif-subtext">Tugas masuk & sedang dikerjakan</p>
+                      <h4 class="text-[13px] font-bold text-white leading-none">Notifikasi Tugas</h4>
+                      <p class="text-[10.5px] text-white/60 mt-0.5" id="notif-subtext">Tugas masuk & sedang dikerjakan</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
                       id="btn-mark-all-read"
                       type="button"
-                      class="text-[11px] font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 hover:underline flex items-center gap-0.5 cursor-pointer transition-colors"
+                      class="text-[11px] font-semibold text-purple-300 hover:text-white flex items-center gap-0.5 cursor-pointer transition-colors"
                       title="Tandai semua tugas sebagai sudah dibaca"
                     >
                       <span class="material-symbols-outlined text-[14px]">done_all</span>
                       <span>Tandai dibaca</span>
                     </button>
-                    <span id="notif-total-badge" class="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">0 Baru</span>
+                    <span id="notif-total-badge" class="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-500/20 border border-purple-400/30 text-purple-300">0 Baru</span>
                   </div>
                 </div>
 
                 <!-- Notification Filter Tabs (including Riwayat) -->
-                <div class="px-3 pt-2 pb-1.5 border-b border-surface-border flex items-center gap-1.5 bg-surface-container-lowest text-[11.5px] overflow-x-auto no-scrollbar">
+                <div class="px-3 pt-2 pb-1.5 border-b border-white/10 flex items-center gap-1.5 bg-[#0e0a22]/80 text-[11.5px] overflow-x-auto no-scrollbar">
                   <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer bg-purple-600 text-white shadow-2xs shrink-0" data-tab="all">
                     Semua
                   </button>
-                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer shrink-0" data-tab="inbox">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer shrink-0" data-tab="inbox">
                     📥 Tugas Masuk
                   </button>
-                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer shrink-0" data-tab="ongoing">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer shrink-0" data-tab="ongoing">
                     ⏳ Sedang Dikerjakan
                   </button>
-                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-text-secondary hover:bg-surface-container transition-all cursor-pointer shrink-0 flex items-center gap-1" data-tab="history">
+                  <button type="button" class="btn-notif-tab px-2.5 py-1 rounded-lg font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer shrink-0 flex items-center gap-1" data-tab="history">
                     <span class="material-symbols-outlined text-[14px]">history</span>
                     <span>Riwayat</span>
                   </button>
                 </div>
 
                 <!-- Notification List Container -->
-                <div id="notif-items-list" class="divide-y divide-surface-border/60 overflow-y-auto max-h-[340px] p-1.5 flex flex-col gap-1">
+                <div id="notif-items-list" class="divide-y divide-white/5 overflow-y-auto max-h-[340px] p-1.5 flex flex-col gap-1 custom-scrollbar">
                   <!-- Dynamic items -->
                 </div>
 
                 <!-- Notification Footer -->
-                <div class="p-2.5 border-t border-surface-border bg-surface-container-low/30 flex items-center justify-between">
-                  <span class="text-[11px] text-text-muted px-1.5">Klik pesan untuk membaca & membuka tugas</span>
+                <div class="p-2.5 border-t border-white/10 bg-white/5 flex items-center justify-between">
+                  <span class="text-[11px] text-white/50 px-1.5">Klik pesan untuk membaca & membuka tugas</span>
                   <button
                     id="btn-open-kanban-from-notif"
                     type="button"
-                    class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-[11.5px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                    class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11.5px] font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-white/10"
                   >
                     <span>Buka Kanban</span>
                     <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
@@ -301,19 +301,19 @@ export class Header {
             <div class="relative ml-0.5">
               <button
                 id="btn-user-profile"
-                class="flex items-center gap-2 pl-1 pr-1.5 py-1 rounded-lg hover:bg-surface-container transition-colors group cursor-pointer text-left"
+                class="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group cursor-pointer text-left"
                 type="button"
               >
                 <img
                   alt="Profile"
-                  class="w-7 h-7 rounded-full object-cover ring-1 ring-black/10"
+                  class="w-7 h-7 rounded-full object-cover ring-1 ring-purple-400/40"
                   src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
                 />
                 <div class="hidden sm:flex flex-col">
-                  <span class="text-[12.5px] text-on-surface font-semibold leading-tight">${user.name}</span>
-                  <span class="text-[10px] text-text-muted font-medium leading-tight capitalize">${isUserRole ? 'Member' : (user.role || 'Member')}</span>
+                  <span class="text-[12.5px] text-white font-semibold leading-tight">${user.name}</span>
+                  <span class="text-[10px] text-white/60 font-medium leading-tight capitalize">${isUserRole ? 'Member' : (user.role || 'Member')}</span>
                 </div>
-                <span class="material-symbols-outlined text-text-muted text-[16px] group-hover:text-text-primary transition-colors">expand_more</span>
+                <span class="material-symbols-outlined text-white/50 text-[16px] group-hover:text-white transition-colors">expand_more</span>
               </button>
 
               <!-- Role Switcher Menu Popup -->
@@ -490,10 +490,10 @@ export class Header {
     if (totalBadgeEl) {
       if (unreadCount > 0) {
         totalBadgeEl.textContent = `${unreadCount} Baru`;
-        totalBadgeEl.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300';
+        totalBadgeEl.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-400/30';
       } else {
         totalBadgeEl.textContent = 'Semua Terbaca';
-        totalBadgeEl.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300';
+        totalBadgeEl.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
       }
     }
 
