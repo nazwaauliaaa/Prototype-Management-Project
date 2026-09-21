@@ -300,16 +300,16 @@ export class AuthView extends BaseView {
               </p>
             </div>
 
-            <!-- Direct Login Choices: User / Admin (with Password) -->
+            <!-- Direct Login Choices: Admin / User -->
             <div class="relative z-10 w-full flex flex-col gap-2 mt-2">
               <button
                 id="btn-direct-login-user"
                 type="button"
-                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-[13px] shadow-md shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-indigo-400/30"
-                title="Langsung masuk ke Papan Proyek sebagai User / Member"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold text-[13px] shadow-md shadow-purple-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-purple-400/30"
+                title="Langsung masuk ke Dashboard sebagai Admin (Akses Penuh)"
               >
-                <span class="material-symbols-outlined text-[18px]">person</span>
-                <span>Masuk sebagai User (Papan Proyek)</span>
+                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                <span>Masuk sebagai Admin (Dashboard)</span>
                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
               </button>
 
@@ -317,10 +317,10 @@ export class AuthView extends BaseView {
                 id="btn-direct-login-admin"
                 type="button"
                 class="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-purple-200 hover:text-white font-semibold text-[11.5px] border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99]"
-                title="Masuk ke Panel Administrator (Perlu Kata Sandi)"
+                title="Masuk sebagai User / Member (Papan Proyek)"
               >
-                <span class="material-symbols-outlined text-[15px] text-amber-400">admin_panel_settings</span>
-                <span>Masuk sebagai Admin (Perlu Password)</span>
+                <span class="material-symbols-outlined text-[15px] text-blue-400">person</span>
+                <span>Masuk sebagai User (Papan Proyek)</span>
               </button>
             </div>
 
@@ -1720,10 +1720,26 @@ export class AuthView extends BaseView {
       });
     }
 
-    // 1. Direct User / Member Login
+    // 1. Direct Admin Login (diubah menjadi role admin)
     const btnDirectLoginUser = this.element.querySelector('#btn-direct-login-user');
     if (btnDirectLoginUser) {
       btnDirectLoginUser.addEventListener('click', (e) => {
+        e.preventDefault();
+        stopCamera();
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Masuk sebagai Admin... Membuka Dashboard!</span>`;
+        }
+
+        this.authService.loginWithRole('admin');
+        window.location.hash = '#/dashboard';
+      });
+    }
+
+    // 2. Direct User Login (Secondary)
+    const btnDirectLoginAdmin = this.element.querySelector('#btn-direct-login-admin');
+    if (btnDirectLoginAdmin) {
+      btnDirectLoginAdmin.addEventListener('click', (e) => {
         e.preventDefault();
         stopCamera();
 
@@ -1737,9 +1753,6 @@ export class AuthView extends BaseView {
         window.location.hash = `#/kanban/${curProj}`;
       });
     }
-
-    // 2. Admin Password Protected Login
-    const btnDirectLoginAdmin = this.element.querySelector('#btn-direct-login-admin');
     const adminPwdModal = this.element.querySelector('#modal-admin-password-prompt');
     const adminPwdInput = this.element.querySelector('#input-admin-password');
     const adminPwdError = this.element.querySelector('#admin-pwd-error-msg');
