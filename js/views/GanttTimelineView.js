@@ -64,11 +64,12 @@ export class GanttTimelineView extends BaseView {
         try { theme = JSON.parse(savedTheme); } catch (e) {}
       }
     }
-    if (!theme) {
+    const isOldSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
+    if (!theme || isOldSkyline) {
       theme = {
-        type: 'image',
-        name: 'City Skyline',
-        value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80'
+        type: 'gradient',
+        name: 'Creative Indigo',
+        value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)'
       };
     }
 

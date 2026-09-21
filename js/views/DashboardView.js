@@ -56,7 +56,7 @@ export class DashboardView extends BaseView {
         id: 'panen-kunci',
         name: 'Panen Kunci',
         workspace: 'panen-kunci',
-        theme: { type: 'image', value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1000&q=80', name: 'City Skyline' }
+        theme: { type: 'gradient', value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)', name: 'Creative Indigo' }
       },
       {
         id: 'layarbaca',
@@ -180,7 +180,7 @@ export class DashboardView extends BaseView {
         </section>
 
         <!-- 1. KEY METRICS STATS SUMMARY -->
-        <section class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex flex-col gap-1.5">
             <div class="flex items-center justify-between">
               <span class="text-[12px] font-medium text-text-secondary">Papan Aktif</span>
@@ -213,20 +213,6 @@ export class DashboardView extends BaseView {
             <span class="text-[24px] font-bold text-on-surface leading-tight">${completedTasks}</span>
             <span class="text-[11px] text-text-muted">Telah tervalidasi</span>
           </div>
-
-          <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex flex-col gap-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-[12px] font-medium text-text-secondary">Status Sistem</span>
-              <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center justify-center">
-                <span class="material-symbols-outlined text-[18px]">verified</span>
-              </span>
-            </div>
-            <div class="flex items-center gap-1.5 mt-0.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span class="text-[16px] font-bold text-emerald-700 dark:text-emerald-400">Siap Digunakan</span>
-            </div>
-            <span class="text-[11px] text-text-muted">Creative Office Cloud</span>
-          </div>
         </section>
 
         <!-- 2. BOARDS GRID SECTION -->
@@ -248,11 +234,13 @@ export class DashboardView extends BaseView {
               let theme = project.theme;
               const isSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
               const isLayar = formattedName.toLowerCase().includes('layar') || (project.workspace || '').toLowerCase().includes('layar');
-              if (!theme || (isSkyline && isLayar)) {
+              if (!theme || isSkyline) {
                 theme = {
                   type: 'gradient',
-                  value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)',
-                  name: 'Berry Fuchsia'
+                  value: isLayar
+                    ? 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
+                    : 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)',
+                  name: isLayar ? 'Berry Fuchsia' : 'Creative Indigo'
                 };
               }
 

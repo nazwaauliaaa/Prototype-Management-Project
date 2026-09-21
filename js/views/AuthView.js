@@ -300,18 +300,6 @@ export class AuthView extends BaseView {
               </p>
             </div>
 
-            <!-- Direct Login: Admin (with Password) -->
-            <div class="relative z-10 w-full flex flex-col gap-2 mt-2">
-              <button
-                id="btn-direct-login-admin"
-                type="button"
-                class="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-purple-200 hover:text-white font-semibold text-[12.5px] border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-                title="Masuk ke Panel Administrator (Perlu Kata Sandi)"
-              >
-                <span class="material-symbols-outlined text-[16px] text-amber-400">admin_panel_settings</span>
-                <span>Masuk sebagai Admin (Perlu Password)</span>
-              </button>
-            </div>
 
             <!-- Security Verification Footer -->
             <div class="mt-spacing-md pt-spacing-xs flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">

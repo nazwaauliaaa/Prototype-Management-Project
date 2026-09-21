@@ -1173,7 +1173,7 @@ export class KanbanBoardView extends BaseView {
     const isPanenKunci = curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan');
     const isDeepForestPanen = theme && theme.name === 'Deep Forest' && isPanenKunci;
 
-    if (!theme || (isOldDefaultSkyline && isLayarBaca) || isDeepForestPanen) {
+    if (!theme || isOldDefaultSkyline || isDeepForestPanen) {
       if (isLayarBaca) {
         theme = {
           type: 'gradient',
@@ -1181,11 +1181,11 @@ export class KanbanBoardView extends BaseView {
           value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)'
         };
       } else {
-        // Default wallpaper resmi seluruh board (City Skyline pemandangan kota malam Unsplash) sama persis dengan kartu papan di dashboard
+        // Default tema resmi papan Creative Office (Creative Indigo yang modern dan selaras dengan tema aplikasi)
         theme = {
-          type: 'image',
-          name: 'City Skyline',
-          value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80'
+          type: 'gradient',
+          name: 'Creative Indigo',
+          value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)'
         };
       }
       try {
@@ -2734,63 +2734,63 @@ export class KanbanBoardView extends BaseView {
             <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Ubah Tema Wallpaper</h4>
             <div class="grid grid-cols-2 gap-2.5">
               <button
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-purple-500 text-left transition-all cursor-pointer"
+                data-theme-type="gradient"
+                data-theme-name="Creative Indigo"
+                data-theme-val="linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)"
+              >
+                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Creative Indigo</div>
+              </button>
+
+              <button
                 class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-pink-500 text-left transition-all cursor-pointer"
                 data-theme-type="gradient"
-                data-theme-name="Berry Pink"
+                data-theme-name="Berry Fuchsia"
                 data-theme-val="linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)"
               >
                 <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Berry Pink</div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Berry Fuchsia</div>
               </button>
 
               <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-pink-500 text-left transition-all cursor-pointer"
-                data-theme-type="gradient"
-                data-theme-name="Sweet Pink"
-                data-theme-val="linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #f472b6 100%)"
-              >
-                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #f472b6 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Sweet Pink</div>
-              </button>
-
-              <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-blue-500 text-left transition-all cursor-pointer"
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-indigo-500 text-left transition-all cursor-pointer"
                 data-theme-type="image"
-                data-theme-name="City Skyline"
-                data-theme-val="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80"
+                data-theme-name="Creative Studio"
+                data-theme-val="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80"
               >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=300&q=80')"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">City Skyline</div>
+                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=300&q=80')"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Creative Studio</div>
               </button>
 
               <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-blue-500 text-left transition-all cursor-pointer"
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-indigo-500 text-left transition-all cursor-pointer"
                 data-theme-type="image"
-                data-theme-name="Sunset City"
-                data-theme-val="https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1600&q=80"
+                data-theme-name="Modern Office"
+                data-theme-val="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1600&q=80"
               >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=300&q=80')"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Sunset City</div>
+                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=300&q=80')"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Modern Office</div>
               </button>
 
               <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-blue-500 text-left transition-all cursor-pointer"
-                data-theme-type="gradient"
-                data-theme-name="Neon Cyber"
-                data-theme-val="linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)"
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-purple-500 text-left transition-all cursor-pointer"
+                data-theme-type="image"
+                data-theme-name="Fluid Mesh 3D"
+                data-theme-val="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80"
               >
-                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Neon Dark</div>
+                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80')"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Fluid Mesh 3D</div>
               </button>
 
               <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-emerald-500 text-left transition-all cursor-pointer"
+                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-slate-500 text-left transition-all cursor-pointer"
                 data-theme-type="gradient"
-                data-theme-name="Deep Forest"
-                data-theme-val="linear-gradient(135deg, #064e3b 0%, #022c22 100%)"
+                data-theme-name="Midnight Dark"
+                data-theme-val="linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
               >
-                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Deep Forest</div>
+                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"></div>
+                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Midnight Dark</div>
               </button>
             </div>
           </div>

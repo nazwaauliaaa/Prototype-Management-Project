@@ -13,51 +13,51 @@ export class CreateBoardModal extends BaseModal {
     this.modalManager = container.resolve('ModalManager');
     this.eventBus = container.resolve('EventBus');
 
-    // Predefined rich themes (Wallpapers, Gradients, Colors)
+    // Predefined rich themes (Wallpapers, Gradients, Colors) matching Creative Office modern theme
     this.themes = [
-      // Wallpapers / Photos
+      // 1. Modern Creative Workspaces & Studio Aesthetics (Wallpapers)
       {
-        id: 'skyline',
-        name: 'City Skyline',
+        id: 'studio-creative',
+        name: 'Creative Studio',
         type: 'image',
-        thumb: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=400&q=80',
-        value: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
+        thumb: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80',
+        value: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80',
         textColor: '#ffffff'
       },
       {
-        id: 'cyberpunk',
-        name: 'Cyberpunk Neon',
+        id: 'office-hub',
+        name: 'Modern Office',
         type: 'image',
-        thumb: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=400&q=80',
-        value: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1600&q=80',
+        thumb: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=400&q=80',
+        value: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1600&q=80',
         textColor: '#ffffff'
       },
       {
-        id: 'mountain',
-        name: 'Moody Mountain',
+        id: 'minimal-desk',
+        name: 'Minimalist Desk',
         type: 'image',
-        thumb: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-        value: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80',
+        thumb: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80',
+        value: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80',
         textColor: '#ffffff'
       },
       {
-        id: 'ocean',
-        name: 'Ocean Waves',
+        id: 'tech-lab',
+        name: 'Design Lab',
         type: 'image',
-        thumb: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-        value: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80',
+        thumb: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=80',
+        value: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80',
         textColor: '#ffffff'
       },
       {
-        id: 'cosmic',
-        name: 'Cosmic Nebula',
+        id: 'fluid-indigo',
+        name: 'Fluid Mesh 3D',
         type: 'image',
-        thumb: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=400&q=80',
-        value: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1600&q=80',
+        thumb: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
+        value: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80',
         textColor: '#ffffff'
       },
       {
-        id: 'architecture',
+        id: 'modern-arch',
         name: 'Modern Architecture',
         type: 'image',
         thumb: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80',
@@ -65,37 +65,13 @@ export class CreateBoardModal extends BaseModal {
         textColor: '#ffffff'
       },
 
-      // Gradients
+      // 2. Curated Modern Gradients (Tailored to App Palette)
       {
-        id: 'sunset-peach',
-        name: 'Sunset Peach',
+        id: 'creative-indigo',
+        name: 'Creative Indigo',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)',
-        value: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)',
-        textColor: '#ffffff'
-      },
-      {
-        id: 'ocean-breeze',
-        name: 'Ocean Breeze',
-        type: 'gradient',
-        thumb: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)',
-        value: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)',
-        textColor: '#ffffff'
-      },
-      {
-        id: 'royal-indigo',
-        name: 'Royal Indigo',
-        type: 'gradient',
-        thumb: 'linear-gradient(135deg, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
-        value: 'linear-gradient(135deg, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
-        textColor: '#ffffff'
-      },
-      {
-        id: 'emerald-aurora',
-        name: 'Emerald Aurora',
-        type: 'gradient',
-        thumb: 'linear-gradient(135deg, #065f46 0%, #10b981 50%, #34d399 100%)',
-        value: 'linear-gradient(135deg, #065f46 0%, #10b981 50%, #34d399 100%)',
+        thumb: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)',
+        value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)',
         textColor: '#ffffff'
       },
       {
@@ -114,14 +90,54 @@ export class CreateBoardModal extends BaseModal {
         value: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
         textColor: '#ffffff'
       },
-
-      // Solid Colors
       {
-        id: 'trello-blue',
-        name: 'Trello Blue',
+        id: 'emerald-aurora',
+        name: 'Emerald Aurora',
+        type: 'gradient',
+        thumb: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)',
+        value: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)',
+        textColor: '#ffffff'
+      },
+      {
+        id: 'ocean-flow',
+        name: 'Ocean Flow',
+        type: 'gradient',
+        thumb: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #06b6d4 100%)',
+        value: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #06b6d4 100%)',
+        textColor: '#ffffff'
+      },
+      {
+        id: 'sunset-studio',
+        name: 'Sunset Studio',
+        type: 'gradient',
+        thumb: 'linear-gradient(135deg, #581c87 0%, #9333ea 50%, #f97316 100%)',
+        value: 'linear-gradient(135deg, #581c87 0%, #9333ea 50%, #f97316 100%)',
+        textColor: '#ffffff'
+      },
+
+      // 3. Modern Pro Colors (Clean Minimalist Accents)
+      {
+        id: 'brand-indigo',
+        name: 'Brand Indigo',
         type: 'color',
-        thumb: '#0079bf',
-        value: '#0079bf',
+        thumb: '#4f46e5',
+        value: '#4f46e5',
+        textColor: '#ffffff'
+      },
+      {
+        id: 'creative-violet',
+        name: 'Creative Violet',
+        type: 'color',
+        thumb: '#7c3aed',
+        value: '#7c3aed',
+        textColor: '#ffffff'
+      },
+      {
+        id: 'deep-slate',
+        name: 'Deep Slate',
+        type: 'color',
+        thumb: '#1e293b',
+        value: '#1e293b',
         textColor: '#ffffff'
       },
       {
@@ -131,32 +147,16 @@ export class CreateBoardModal extends BaseModal {
         thumb: '#059669',
         value: '#059669',
         textColor: '#ffffff'
-      },
-      {
-        id: 'royal-purple',
-        name: 'Royal Purple',
-        type: 'color',
-        thumb: '#7c3aed',
-        value: '#7c3aed',
-        textColor: '#ffffff'
-      },
-      {
-        id: 'warm-amber',
-        name: 'Warm Amber',
-        type: 'color',
-        thumb: '#d97706',
-        value: '#d97706',
-        textColor: '#ffffff'
       }
     ];
 
-    const berryTheme = this.themes.find(t => t.id === 'berry-fuchsia') || this.themes[0];
-    this.selectedTheme = berryTheme;
+    const defaultTheme = this.themes.find(t => t.id === 'creative-indigo') || this.themes[0];
+    this.selectedTheme = defaultTheme;
   }
 
   render(data = {}) {
-    const berryTheme = this.themes.find(t => t.id === 'berry-fuchsia') || this.themes[0];
-    this.selectedTheme = berryTheme;
+    const defaultTheme = this.themes.find(t => t.id === 'creative-indigo') || this.themes[0];
+    this.selectedTheme = defaultTheme;
     const prefillTitle = data?.prefillTitle || '';
 
     return `
@@ -334,7 +334,7 @@ export class CreateBoardModal extends BaseModal {
             <div 
               id="board-theme-preview" 
               class="relative w-full h-20 rounded-xl p-3 flex flex-col justify-between shadow-xs border border-slate-200 overflow-hidden transition-all duration-300"
-              style="background-image: url('${this.selectedTheme.value}'); background-size: cover; background-position: center;"
+              style="${this.selectedTheme.type === 'image' ? `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${this.selectedTheme.value}') center center / cover no-repeat;` : `background: ${this.selectedTheme.value};`}"
             >
               <div class="relative z-10 flex items-center justify-between text-white/90 text-[10px]">
                 <span id="preview-theme-badge" class="bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded font-medium">Tema: ${this.selectedTheme.name}</span>
@@ -581,7 +581,7 @@ export class CreateBoardModal extends BaseModal {
         // Update preview styles
         if (previewEl) {
           if (foundTheme.type === 'image') {
-            previewEl.style.background = `url('${foundTheme.value}') center/cover no-repeat`;
+            previewEl.style.background = `linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${foundTheme.value}') center center / cover no-repeat`;
           } else {
             previewEl.style.background = foundTheme.value;
           }
