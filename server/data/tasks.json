@@ -1,5 +1,33 @@
 [
   {
+    "id": "task-kanban-board-test-01",
+    "code": "#PK-876",
+    "title": "Tugas Baru",
+    "description": "",
+    "workspace": "panen-kunci",
+    "board": "backend-core",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "",
+    "hours": 0,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1789962134013
+  },
+  {
     "id": "task-auto-1789956192659-1",
     "code": "#A-101",
     "title": "Kickoff & Ruang Lingkup: AIKreativ",
@@ -426,7 +454,7 @@
     "description": "Penetapan sasaran tim, pembagian PIC, dan alur pengerjaan papan LayarBaca.",
     "workspace": "layarbaca-hub-2521",
     "board": "kampanye-q3",
-    "status": "in-progress",
+    "status": "review-qa",
     "priority": "High",
     "pic": {
       "name": "Kevin Santoso",
@@ -445,7 +473,7 @@
     "location": "",
     "resolution": "",
     "projectId": "proj-1789378232523-158",
-    "updatedAt": 1789955170736
+    "updatedAt": 1789962215397
   },
   {
     "id": "task-auto-1789955166982-2",
@@ -566,7 +594,7 @@
     "description": "",
     "workspace": "panen-kunci",
     "board": "backend-core",
-    "status": "in-progress",
+    "status": "backlog",
     "priority": "Medium",
     "pic": {
       "name": "Kevin Santoso",
@@ -585,7 +613,7 @@
     "location": "",
     "resolution": "",
     "projectId": null,
-    "updatedAt": 1789698740281
+    "updatedAt": 1789962189061
   },
   {
     "id": "task-pk-01",

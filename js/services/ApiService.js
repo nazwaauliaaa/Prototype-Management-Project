@@ -384,6 +384,83 @@ export class ApiService {
   // ==================== QR LOOKUP & INVENTORY ====================
 
   /**
+   * Verifikasi QR Code ke API Eksternal Sampulkreativ (POST https://app.sampulkreativ.id/api/external/verify-qr)
+   * dan otomatis hubungkan data pengguna ke database Supabase
+   * @param {string} qrData
+   * @param {Object} options
+   */
+  async verifySampulkreativQr(qrData, options = {}) {
+    const payload = {
+      qr_data: qrData,
+      deviceId: this.getDeviceId(),
+      deviceName: this.getDeviceName(),
+      forceSwitch: Boolean(options.forceSwitch)
+    };
+
+    // 1. Coba lewat endpoint backend lokal /api/qr/verify-sampulkreativ (sinkron langsung ke Supabase)
+    try {
+      const result = await this.safeFetch('/qr/verify-sampulkreativ', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (result.data) {
+        return {
+          ok: result.ok,
+          status: result.status,
+          success: Boolean(result.data.success),
+          locked: Boolean(result.data.locked),
+          error: result.data.error,
+          boundDeviceName: result.data.boundDeviceName,
+          boundAt: result.data.boundAt,
+          source: result.data.source || 'sampulkreativ',
+          data: result.data.data || result.data.user
+        };
+      }
+    } catch (err) {
+      console.warn('[ApiService] Backend lokal belum terjangkau, mencoba akses langsung ke API Sampulkreativ...');
+    }
+
+    // 2. Direct fallback ke https://app.sampulkreativ.id/api/external/verify-qr jika backend offline
+    try {
+      const directRes = await fetch('https://app.sampulkreativ.id/api/external/verify-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'sampulkreativ-pm-secret-2026'
+        },
+        body: JSON.stringify({ qr_data: qrData })
+      });
+
+      const directData = await directRes.json();
+      if (directRes.ok && directData && directData.success !== false) {
+        const rawUser = directData.data || directData.user || directData;
+        return {
+          ok: true,
+          status: directRes.status,
+          success: true,
+          source: 'sampulkreativ-direct',
+          data: rawUser
+        };
+      } else {
+        return {
+          ok: false,
+          status: directRes.status,
+          success: false,
+          error: directData?.error || 'QR Code tidak terdaftar di Sampulkreativ'
+        };
+      }
+    } catch (directErr) {
+      return {
+        ok: false,
+        success: false,
+        error: directErr.message
+      };
+    }
+  }
+
+  /**
    * Cari entitas database berdasarkan kode QR yang dipindai dengan validasi Device Binding
    * @param {string} code
    */
