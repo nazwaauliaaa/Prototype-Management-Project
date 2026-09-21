@@ -528,6 +528,7 @@ export class AuthView extends BaseView {
   }
 
   bindEvents() {
+    this._unmounted = false;
     const feedback = this.element.querySelector('#scanner-feedback');
     const videoEl = this.element.querySelector('#camera-video-stream');
     const canvasEl = this.element.querySelector('#camera-sim-canvas');
@@ -682,6 +683,8 @@ export class AuthView extends BaseView {
 
     const startCanvasSimulation = () => {
       if (!canvasEl) return;
+      if (qrArea) qrArea.classList.add('hidden');
+      if (activeOverlay) activeOverlay.classList.remove('hidden');
       canvasEl.classList.remove('hidden');
       applyMirrorState();
       const ctx = canvasEl.getContext('2d');
@@ -736,6 +739,7 @@ export class AuthView extends BaseView {
     };
 
     const startCamera = async () => {
+      this._unmounted = false;
       this.isCameraOn = true;
       this._cameraStarting = true;
       if (!this._allStreams) this._allStreams = [];
@@ -827,9 +831,17 @@ export class AuthView extends BaseView {
           this.cameraStream = stream;
           if (videoEl) {
             videoEl.srcObject = stream;
+            videoEl.muted = true;
+            videoEl.setAttribute('playsinline', '');
             videoEl.classList.remove('hidden');
+            if (qrArea) qrArea.classList.add('hidden');
+            if (activeOverlay) activeOverlay.classList.remove('hidden');
             applyMirrorState();
-            await videoEl.play().catch(() => {});
+            try {
+              await videoEl.play();
+            } catch (playErr) {
+              console.warn('videoEl.play failed:', playErr);
+            }
 
             // Real-time QR Code scanning from camera video frame using jsQR
             const offscreenCanvas = document.createElement('canvas');
@@ -1145,12 +1157,44 @@ export class AuthView extends BaseView {
 
       // Helper: Registrasi otomatis akun baru langsung ke Supabase dan navigasi ke Beranda
       const autoRegisterAndEnter = async (codeToReg, userToReg) => {
+        // Fallback cerdas: Jika userToReg belum memiliki identitas nama terstruktur
+        if (!userToReg || !userToReg.name) {
+          const rawCodeStr = String(codeToReg || '').trim();
+          let candidateName = rawCodeStr.replace(/^https?:\/\/[^\/]+\/?/i, '').replace(/[^a-zA-Z0-9_\-\s]/g, ' ').trim();
+          if (candidateName && candidateName.length >= 2 && !candidateName.startsWith('{')) {
+            candidateName = candidateName.split(/[\s_\-]+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            userToReg = {
+              id: `usr-${Date.now().toString().slice(-6)}`,
+              name: candidateName,
+              role: 'user',
+              jobdesk: 'Anggota Tim & Kontributor',
+              title: 'Anggota Tim & Kontributor',
+              email: `${candidateName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+              qr_data: rawCodeStr
+            };
+          }
+        }
+
         if (!userToReg || !userToReg.name) {
           if (feedback) {
-            feedback.innerHTML = `<span class="text-rose-500 font-bold">⚠️ Kode QR belum terdaftar dan tidak memuat format identitas akun (Nama, Role, Jobdesk/Posisi, Email).</span>`;
+            feedback.innerHTML = `<span class="text-amber-400 font-bold">⚠️ QR belum terdaftar di Sampulkreativ.</span> <button id="btn-quick-enter-unregistered-qr" class="ml-1.5 underline font-bold text-white hover:text-purple-300 cursor-pointer">Masuk sebagai Pengguna Baru</button>`;
+            const quickBtn = this.element.querySelector('#btn-quick-enter-unregistered-qr');
+            if (quickBtn) {
+              quickBtn.onclick = () => {
+                const guestUser = {
+                  id: `usr-${Date.now().toString().slice(-6)}`,
+                  name: 'Anggota Baru',
+                  role: 'user',
+                  jobdesk: 'Anggota Tim & Kontributor',
+                  email: `member.${Date.now().toString().slice(-4)}@sampulkreativ.id`,
+                  qr_data: codeToReg
+                };
+                autoRegisterAndEnter(codeToReg, guestUser);
+              };
+            }
           }
           if (this.notificationService) {
-            this.notificationService.warning('Kode QR belum terdaftar dan tidak berisi data pengguna yang lengkap.');
+            this.notificationService.warning('Kode QR belum terdaftar di sistem Sampulkreativ.');
           }
           setTimeout(() => {
             this.isScanning = false;
@@ -1772,16 +1816,6 @@ export class AuthView extends BaseView {
         } catch (e) {}
       });
       this._allStreams = [];
-    }
-    if (this.barcodeDetectorInterval) {
-      clearInterval(this.barcodeDetectorInterval);
-      this.barcodeDetectorInterval = null;
-    }
-    if (this.cameraStream) {
-      try {
-        this.cameraStream.getTracks().forEach(t => t.stop());
-      } catch (e) {}
-      this.cameraStream = null;
     }
     if (this.barcodeDetectorInterval) {
       clearInterval(this.barcodeDetectorInterval);
