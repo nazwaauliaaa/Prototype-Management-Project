@@ -176,20 +176,20 @@ export class CreateBoardModal extends BaseModal {
     const prefillTitle = data?.prefillTitle || '';
 
     return `
-      <div class="relative w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-hidden transform transition-all duration-300 scale-100 translate-y-0 my-auto flex flex-col max-h-[90vh] overflow-y-auto modal-content-box animate-in fade-in zoom-in duration-200">
+      <div class="relative w-full max-w-lg bg-[#0e0a22]/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl shadow-purple-950/80 p-6 overflow-hidden transform transition-all duration-300 scale-100 translate-y-0 my-auto flex flex-col max-h-[90vh] overflow-y-auto modal-content-box animate-in fade-in zoom-in duration-200 text-white">
         
         <!-- Modal Header -->
-        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center">
               <span class="material-symbols-outlined text-[20px]">create_new_folder</span>
             </div>
             <div>
-              <h3 class="text-base font-bold text-slate-900">Tambah Proyek Baru</h3>
-              <p class="text-[11px] text-slate-500">Otomatis membuat ruang kerja baru untuk proyek Anda</p>
+              <h3 class="text-base font-bold text-white">Tambah Proyek Baru</h3>
+              <p class="text-[11px] text-white/60">Otomatis membuat ruang kerja baru untuk proyek Anda</p>
             </div>
           </div>
-          <button id="btn-close-create-project" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer" type="button" title="Tutup">
+          <button id="btn-close-create-project" class="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all cursor-pointer" type="button" title="Tutup">
             <span class="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
@@ -198,21 +198,21 @@ export class CreateBoardModal extends BaseModal {
         <form id="form-create-project" class="flex flex-col gap-3.5">
           <!-- Nama Proyek -->
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Proyek *</label>
+            <label class="block text-xs font-semibold text-white/80 mb-1">Nama Proyek *</label>
             <input 
               id="input-ws-project-name" 
               type="text" 
               required 
               value="${prefillTitle}"
               placeholder="Contoh: Kampanye LED Brand Launch Q4" 
-              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+              class="w-full bg-white/5 border border-white/15 focus:border-purple-400 focus:bg-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all"
               autofocus
             />
           </div>
 
           <!-- Kategori / Divisi (In-Modal Custom Dropdown, 100% Mobile Safe) -->
           <div class="w-full min-w-0 relative z-30" id="wrapper-custom-board-category">
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori / Divisi</label>
+            <label class="block text-xs font-semibold text-white/80 mb-1">Kategori / Divisi</label>
             
             <select id="select-ws-new-workspace-tag" class="hidden">
               <option value="Dev / Creative Hub" selected>Dev / Creative</option>
@@ -226,34 +226,34 @@ export class CreateBoardModal extends BaseModal {
             <button
               type="button"
               id="btn-custom-board-category-trigger"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-purple-400 text-slate-800 text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              class="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 hover:border-purple-400 text-white text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               aria-expanded="false"
             >
               <span id="custom-board-category-text" class="truncate font-medium">Dev / Creative</span>
-              <span class="material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 shrink-0" id="custom-board-category-chevron">expand_more</span>
+              <span class="material-symbols-outlined text-[18px] text-white/40 transition-transform duration-200 shrink-0" id="custom-board-category-chevron">expand_more</span>
             </button>
 
             <div
               id="custom-board-category-menu"
-              class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+              class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-[#0e0a22]/95 backdrop-blur-2xl border border-white/15 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
             >
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-purple-700 bg-purple-50/60 transition-colors cursor-pointer" data-value="Dev / Creative Hub" data-label="Dev / Creative">
+              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-white/10 hover:text-white text-purple-300 bg-purple-600/20 transition-colors cursor-pointer border-l-2 border-purple-400" data-value="Dev / Creative Hub" data-label="Dev / Creative">
                 <span class="truncate">Dev / Creative</span>
-                <span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>
+                <span class="material-symbols-outlined text-[16px] text-purple-300 shrink-0">check</span>
               </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Produk / Inovasi" data-label="Produk / Inovasi">
+              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Produk / Inovasi" data-label="Produk / Inovasi">
                 <span class="truncate">Produk / Inovasi</span>
               </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Studio / Digital & AI" data-label="Digital & AI">
+              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Studio / Digital & AI" data-label="Digital & AI">
                 <span class="truncate">Digital & AI</span>
               </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="SaaS / Security & Core" data-label="SaaS & Security">
+              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="SaaS / Security & Core" data-label="SaaS & Security">
                 <span class="truncate">SaaS & Security</span>
               </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Cloud / Infrastruktur" data-label="Cloud Infra">
+              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Cloud / Infrastruktur" data-label="Cloud Infra">
                 <span class="truncate">Cloud Infra</span>
               </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 text-slate-700 transition-colors cursor-pointer" data-value="Marketing / Kampanye" data-label="Marketing">
+              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Marketing / Kampanye" data-label="Marketing">
                 <span class="truncate">Marketing</span>
               </button>
             </div>
@@ -262,7 +262,7 @@ export class CreateBoardModal extends BaseModal {
           <!-- Prioritas & Deadline (Responsive: 1 col on mobile, 2 col on sm+) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="relative z-20" id="wrapper-custom-board-priority">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Prioritas</label>
+              <label class="block text-xs font-semibold text-white/80 mb-1">Prioritas</label>
               
               <select id="select-ws-project-priority" class="hidden">
                 <option value="Critical">Critical</option>
@@ -274,40 +274,40 @@ export class CreateBoardModal extends BaseModal {
               <button
                 type="button"
                 id="btn-custom-board-priority-trigger"
-                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-purple-400 text-slate-800 text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                class="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 hover:border-purple-400 text-white text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 aria-expanded="false"
               >
                 <div class="flex items-center gap-2 min-w-0">
                   <span id="custom-board-priority-dot" class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
                   <span id="custom-board-priority-text" class="truncate font-medium">High</span>
                 </div>
-                <span class="material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 shrink-0" id="custom-board-priority-chevron">expand_more</span>
+                <span class="material-symbols-outlined text-[18px] text-white/40 transition-transform duration-200 shrink-0" id="custom-board-priority-chevron">expand_more</span>
               </button>
 
               <div
                 id="custom-board-priority-menu"
-                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
+                class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-[#0e0a22]/95 backdrop-blur-2xl border border-white/15 rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
               >
-                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer" data-value="Critical" data-label="Critical" data-color="bg-rose-500">
+                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 text-white/80 transition-colors cursor-pointer" data-value="Critical" data-label="Critical" data-color="bg-rose-500">
                   <div class="flex items-center gap-2 min-w-0">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-rose-500"></span>
                     <span class="truncate">Critical</span>
                   </div>
                 </button>
-                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-slate-50 text-purple-700 bg-purple-50/60 transition-colors cursor-pointer" data-value="High" data-label="High" data-color="bg-amber-500">
+                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-white/10 text-purple-300 bg-purple-600/20 transition-colors cursor-pointer border-l-2 border-purple-400" data-value="High" data-label="High" data-color="bg-amber-500">
                   <div class="flex items-center gap-2 min-w-0">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500"></span>
                     <span class="truncate">High</span>
                   </div>
-                  <span class="material-symbols-outlined text-[16px] text-purple-600 shrink-0">check</span>
+                  <span class="material-symbols-outlined text-[16px] text-purple-300 shrink-0">check</span>
                 </button>
-                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer" data-value="Medium" data-label="Medium" data-color="bg-blue-500">
+                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 text-white/80 transition-colors cursor-pointer" data-value="Medium" data-label="Medium" data-color="bg-blue-500">
                   <div class="flex items-center gap-2 min-w-0">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500"></span>
                     <span class="truncate">Medium</span>
                   </div>
                 </button>
-                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer" data-value="Low" data-label="Low" data-color="bg-slate-400">
+                <button type="button" class="btn-board-priority-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 text-white/80 transition-colors cursor-pointer" data-value="Low" data-label="Low" data-color="bg-slate-400">
                   <div class="flex items-center gap-2 min-w-0">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-400"></span>
                     <span class="truncate">Low</span>
@@ -317,44 +317,44 @@ export class CreateBoardModal extends BaseModal {
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Target Deadline</label>
+              <label class="block text-xs font-semibold text-white/80 mb-1">Target Deadline</label>
               <input 
                 id="input-ws-project-due" 
                 type="text" 
                 placeholder="Contoh: Nov 2026" 
                 value="Des 2026" 
-                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                class="w-full bg-white/5 border border-white/15 focus:border-purple-400 focus:bg-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all"
               />
             </div>
           </div>
 
           <!-- Deskripsi Proyek -->
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Proyek</label>
+            <label class="block text-xs font-semibold text-white/80 mb-1">Deskripsi Proyek</label>
             <textarea 
               id="input-ws-project-desc" 
               rows="2" 
               placeholder="Keterangan sasaran proyek dan ruang lingkup pekerjaan..." 
-              class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+              class="w-full bg-white/5 border border-white/15 focus:border-purple-400 focus:bg-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all resize-none"
             ></textarea>
           </div>
 
           <!-- Tema Visual Papan & Preview -->
-          <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
+          <div class="flex flex-col gap-2 pt-1 border-t border-white/10">
             <div class="flex items-center justify-between">
-              <label class="block text-xs font-semibold text-slate-700">Tema Visual Papan</label>
-              <span id="selected-theme-name-label" class="text-[11px] text-purple-600 font-semibold">${this.selectedTheme.name}</span>
+              <label class="block text-xs font-semibold text-white/80">Tema Visual Papan</label>
+              <span id="selected-theme-name-label" class="text-[11px] text-purple-300 font-semibold">${this.selectedTheme.name}</span>
             </div>
 
             <!-- Mini Live Preview -->
             <div 
               id="board-theme-preview" 
-              class="relative w-full h-20 rounded-xl p-3 flex flex-col justify-between shadow-xs border border-slate-200 overflow-hidden transition-all duration-300"
+              class="relative w-full h-20 rounded-xl p-3 flex flex-col justify-between shadow-md border border-white/15 overflow-hidden transition-all duration-300"
               style="${this.selectedTheme.type === 'image' ? `background: linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62)), url('${this.selectedTheme.value}') center center / cover no-repeat;` : `background: ${this.selectedTheme.value};`}"
             >
               <div class="relative z-10 flex items-center justify-between text-white/90 text-[10px]">
-                <span id="preview-theme-badge" class="bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded font-medium">Tema: ${this.selectedTheme.name}</span>
-                <span id="preview-workspace-badge" class="bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded font-mono">WORKSPACE</span>
+                <span id="preview-theme-badge" class="bg-black/50 backdrop-blur-xs px-2 py-0.5 rounded font-medium">Tema: ${this.selectedTheme.name}</span>
+                <span id="preview-workspace-badge" class="bg-black/50 backdrop-blur-xs px-2 py-0.5 rounded font-mono">WORKSPACE</span>
               </div>
               <div class="relative z-10">
                 <span id="preview-board-title" class="text-white text-[13px] font-bold drop-shadow-md truncate block">
@@ -368,7 +368,7 @@ export class CreateBoardModal extends BaseModal {
               ${this.themes.map(theme => `
                 <button
                   type="button"
-                  class="theme-select-btn relative aspect-[14/10] rounded-lg overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${theme.id === this.selectedTheme.id ? 'border-purple-600 ring-2 ring-purple-600/30 scale-105' : 'border-transparent opacity-85 hover:opacity-100'}"
+                  class="theme-select-btn relative aspect-[14/10] rounded-lg overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${theme.id === this.selectedTheme.id ? 'border-purple-400 ring-2 ring-purple-400/40 scale-105' : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30'}"
                   data-theme-id="${theme.id}"
                   title="${theme.name}"
                   style="${theme.type === 'image' ? `background-image: url('${theme.thumb}'); background-size: cover; background-position: center;` : `background: ${theme.thumb};`}"
@@ -380,18 +380,18 @@ export class CreateBoardModal extends BaseModal {
           </div>
 
           <!-- Modal Footer Actions -->
-          <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-slate-100">
+          <div class="flex items-center justify-end gap-2.5 pt-4 mt-2 border-t border-white/10">
             <button 
               id="btn-cancel-create-project" 
               type="button" 
-              class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
+              class="px-4 py-2 rounded-xl text-xs font-semibold text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
             >
               Batal
             </button>
             <button 
               id="btn-submit-create-project" 
               type="submit" 
-              class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-600/25 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
+              class="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all cursor-pointer border border-purple-400/40"
             >
               <span class="material-symbols-outlined text-[16px]">save</span>
               <span>Simpan &amp; Buat Ruang Kerja</span>
@@ -467,11 +467,11 @@ export class CreateBoardModal extends BaseModal {
 
         catOptions.forEach(o => {
           const isMatch = o.getAttribute('data-value') === val;
-          o.className = `btn-board-category-option w-full px-3 py-2 text-left text-xs ${isMatch ? 'font-semibold text-purple-700 bg-purple-50/60' : 'font-medium text-slate-700'} flex items-center justify-between hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer`;
+          o.className = `btn-board-category-option w-full px-3 py-2 text-left text-xs ${isMatch ? 'font-semibold text-purple-300 bg-purple-600/20 border-l-2 border-purple-400' : 'font-medium text-white/80'} flex items-center justify-between hover:bg-white/10 hover:text-white transition-colors cursor-pointer`;
           const existingCheck = o.querySelector('.material-symbols-outlined');
           if (isMatch && !existingCheck) {
             const check = document.createElement('span');
-            check.className = 'material-symbols-outlined text-[16px] text-purple-600 shrink-0';
+            check.className = 'material-symbols-outlined text-[16px] text-purple-300 shrink-0';
             check.textContent = 'check';
             o.appendChild(check);
           } else if (!isMatch && existingCheck) {
@@ -529,11 +529,11 @@ export class CreateBoardModal extends BaseModal {
 
         prioOptions.forEach(o => {
           const isMatch = o.getAttribute('data-value') === val;
-          o.className = `btn-board-priority-option w-full px-3 py-2 text-left text-xs ${isMatch ? 'font-semibold text-purple-700 bg-purple-50/60' : 'font-medium text-slate-700'} flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer`;
+          o.className = `btn-board-priority-option w-full px-3 py-2 text-left text-xs ${isMatch ? 'font-semibold text-purple-300 bg-purple-600/20 border-l-2 border-purple-400' : 'font-medium text-white/80'} flex items-center justify-between hover:bg-white/10 hover:text-white transition-colors cursor-pointer`;
           const existingCheck = o.querySelector('.material-symbols-outlined');
           if (isMatch && !existingCheck) {
             const check = document.createElement('span');
-            check.className = 'material-symbols-outlined text-[16px] text-purple-600 shrink-0';
+            check.className = 'material-symbols-outlined text-[16px] text-purple-300 shrink-0';
             check.textContent = 'check';
             o.appendChild(check);
           } else if (!isMatch && existingCheck) {
@@ -588,11 +588,11 @@ export class CreateBoardModal extends BaseModal {
 
         // Active ring
         themeButtons.forEach(b => {
-          b.classList.remove('border-purple-600', 'ring-2', 'ring-purple-600/30', 'scale-105');
-          b.classList.add('border-transparent', 'opacity-85');
+          b.classList.remove('border-purple-400', 'ring-2', 'ring-purple-400/40', 'scale-105');
+          b.classList.add('border-white/10', 'opacity-75');
         });
-        btn.classList.add('border-purple-600', 'ring-2', 'ring-purple-600/30', 'scale-105');
-        btn.classList.remove('border-transparent', 'opacity-85');
+        btn.classList.add('border-purple-400', 'ring-2', 'ring-purple-400/40', 'scale-105');
+        btn.classList.remove('border-white/10', 'opacity-75');
 
         // Update preview styles
         if (previewEl) {
