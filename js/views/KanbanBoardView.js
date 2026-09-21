@@ -1546,6 +1546,16 @@ export class KanbanBoardView extends BaseView {
           <div class="flex items-center gap-1.5 shrink-0">
             ${!perms.isUser ? `
             <button
+              id="btn-kanban-change-bg"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] sm:text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/15 shrink-0"
+              title="Ubah Latar Papan (Pilihan Warna Elegan)"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[17px] text-purple-300">palette</span>
+              <span class="hidden sm:inline">Latar Elegan</span>
+            </button>
+
+            <button
               id="btn-board-more-menu"
               class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white/90 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0 border border-white/10"
               title="Menu Pengaturan Papan"
@@ -2636,27 +2646,31 @@ export class KanbanBoardView extends BaseView {
         <!-- 8. More Menu / Theme Drawer -->
         <div
           id="drawer-more-menu"
-          class="hidden fixed inset-y-0 right-0 z-50 w-80 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 p-5 flex flex-col gap-4 overflow-y-auto"
+          class="hidden fixed inset-y-0 right-0 z-50 w-84 bg-[#0e0a22]/95 backdrop-blur-2xl shadow-2xl shadow-purple-950/80 border-l border-white/15 p-5 flex flex-col gap-4 overflow-y-auto text-white"
+          style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.25) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.12) 0%, transparent 55%);"
         >
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-            <h3 class="font-bold text-[16px] text-slate-800 dark:text-white">Menu Papan</h3>
-            <button class="btn-close-drawer w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 cursor-pointer">
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <h3 class="font-bold text-[16px] text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-purple-400">dashboard_customize</span>
+              <span>Menu & Tema Papan</span>
+            </h3>
+            <button class="btn-close-drawer w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white cursor-pointer transition-colors">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
 
           <!-- 1. Anggota Papan & Share -->
-          <div class="flex flex-col gap-2 pb-3.5 border-b border-slate-200 dark:border-slate-800">
+          <div class="flex flex-col gap-2 pb-3.5 border-b border-white/10">
             <div class="flex items-center justify-between">
-              <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Anggota Papan</h4>
-              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <h4 class="text-[11.5px] font-bold text-white/60 uppercase tracking-wider">Anggota Papan</h4>
+              <span class="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 ${boardMembers.length} Anggota
               </span>
             </div>
 
             <button
               id="btn-board-avatar"
-              class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between transition-all cursor-pointer text-left"
+              class="w-full p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between transition-all cursor-pointer text-left"
               type="button"
               title="Lihat semua anggota papan"
             >
@@ -2664,31 +2678,31 @@ export class KanbanBoardView extends BaseView {
                 <div class="flex items-center -space-x-2 shrink-0">
                   ${boardMembers.slice(0, 3).map(m => `
                     ${m.avatar ? `
-                      <img src="${m.avatar}" alt="${m.name}" class="w-7 h-7 rounded-full object-cover border-2 border-white dark:border-slate-900 shadow-xs shrink-0" />
+                      <img src="${m.avatar}" alt="${m.name}" class="w-7 h-7 rounded-full object-cover border-2 border-[#0e0a22] shadow-xs shrink-0" />
                     ` : `
-                      <div class="w-7 h-7 rounded-full text-white font-bold text-[10px] flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs shrink-0" style="background-color: ${m.color || '#10b981'}">
+                      <div class="w-7 h-7 rounded-full text-white font-bold text-[10px] flex items-center justify-center border-2 border-[#0e0a22] shadow-xs shrink-0" style="background-color: ${m.color || '#10b981'}">
                         ${m.initials || (m.name ? m.name.slice(0, 1).toUpperCase() : 'U')}
                       </div>
                     `}
                   `).join('')}
                   ${boardMembers.length > 3 ? `
-                    <div class="w-7 h-7 rounded-full bg-slate-700 text-white font-bold text-[9px] flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs">
+                    <div class="w-7 h-7 rounded-full bg-purple-900/80 text-white font-bold text-[9px] flex items-center justify-center border-2 border-[#0e0a22] shadow-xs">
                       +${boardMembers.length - 3}
                     </div>
                   ` : ''}
                 </div>
                 <div class="min-w-0">
-                  <div class="text-[12.5px] font-bold text-slate-800 dark:text-white truncate">Daftar Anggota</div>
-                  <div class="text-[11px] text-slate-500 truncate">Lihat detail & kelola peran tim</div>
+                  <div class="text-[12.5px] font-bold text-white truncate">Daftar Anggota</div>
+                  <div class="text-[11px] text-white/60 truncate">Lihat detail & kelola peran tim</div>
                 </div>
               </div>
-              <span class="material-symbols-outlined text-[18px] text-slate-400">chevron_right</span>
+              <span class="material-symbols-outlined text-[18px] text-white/40">chevron_right</span>
             </button>
 
             ${perms.canShare ? `
             <button
               id="btn-board-share"
-              class="w-full py-2 px-3 rounded-xl bg-[#0c66e4] hover:bg-[#0055cc] active:scale-98 text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 active:scale-98 text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md border border-purple-400/35 cursor-pointer"
               type="button"
             >
               <span class="material-symbols-outlined text-[16px]">person_add</span>
@@ -2698,23 +2712,23 @@ export class KanbanBoardView extends BaseView {
           </div>
 
           <!-- 2. Opsi Papan (Bintangi & Visibilitas) -->
-          <div class="flex flex-col gap-1 pb-3.5 border-b border-slate-200 dark:border-slate-800">
-            <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-1">Opsi Papan</h4>
+          <div class="flex flex-col gap-1 pb-3.5 border-b border-white/10">
+            <h4 class="text-[11.5px] font-bold text-white/60 uppercase tracking-wider mb-1">Opsi Papan</h4>
 
             <!-- Bintangi Papan -->
             <button
               id="btn-star-board"
-              class="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-left transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+              class="w-full p-2.5 rounded-xl hover:bg-white/10 flex items-center justify-between text-left transition-colors cursor-pointer border border-transparent hover:border-white/10"
               type="button"
             >
               <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[20px] ${this.isStarred ? 'text-amber-400' : 'text-slate-400'}">${this.isStarred ? 'star' : 'star_border'}</span>
+                <span class="material-symbols-outlined text-[20px] ${this.isStarred ? 'text-amber-400' : 'text-white/40'}">${this.isStarred ? 'star' : 'star_border'}</span>
                 <div>
-                  <div class="text-[12.5px] font-semibold text-slate-800 dark:text-white">Bintangi Papan</div>
-                  <div class="text-[10.5px] text-slate-500">${this.isStarred ? 'Papan tersimpan di favorit' : 'Tambahkan ke daftar favorit'}</div>
+                  <div class="text-[12.5px] font-semibold text-white">Bintangi Papan</div>
+                  <div class="text-[10.5px] text-white/60">${this.isStarred ? 'Papan tersimpan di favorit' : 'Tambahkan ke daftar favorit'}</div>
                 </div>
               </div>
-              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${this.isStarred ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}">
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${this.isStarred ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30' : 'bg-white/10 text-white/60'}">
                 ${this.isStarred ? 'Favorit ⭐' : 'Belum'}
               </span>
             </button>
@@ -2723,95 +2737,248 @@ export class KanbanBoardView extends BaseView {
             ${perms.canChangeVisibility ? `
             <button
               id="btn-board-visibility"
-              class="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-left transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+              class="w-full p-2.5 rounded-xl hover:bg-white/10 flex items-center justify-between text-left transition-colors cursor-pointer border border-transparent hover:border-white/10"
               type="button"
             >
               <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[20px] text-slate-400">group</span>
+                <span class="material-symbols-outlined text-[20px] text-white/40">group</span>
                 <div>
-                  <div class="text-[12.5px] font-semibold text-slate-800 dark:text-white">Visibilitas Papan</div>
-                  <div class="text-[10.5px] text-slate-500">Akses: ${this.boardVisibility}</div>
+                  <div class="text-[12.5px] font-semibold text-white">Visibilitas Papan</div>
+                  <div class="text-[10.5px] text-white/60">Akses: ${this.boardVisibility}</div>
                 </div>
               </div>
-              <span class="material-symbols-outlined text-[18px] text-slate-400">chevron_right</span>
+              <span class="material-symbols-outlined text-[18px] text-white/40">chevron_right</span>
             </button>
             ` : ''}
           </div>
 
-          <!-- Background Themes Picker -->
-          <div class="flex flex-col gap-2">
-            <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Ubah Tema Wallpaper</h4>
-            <div class="grid grid-cols-2 gap-2.5">
-              <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-purple-500 text-left transition-all cursor-pointer"
-                data-theme-type="gradient"
-                data-theme-name="Creative Indigo"
-                data-theme-val="linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)"
-              >
-                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Creative Indigo</div>
-              </button>
+          <!-- Background Themes Picker: Elegan & Custom -->
+          <div id="section-board-themes" class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[12px] font-bold text-white/80 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-purple-400">palette</span>
+                <span>Warna & Tema Elegan</span>
+              </h4>
+              <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 font-bold uppercase">Koleksi Mewah</span>
+            </div>
+
+            <!-- 1. Custom Color Picker Studio (Interactive Customization) -->
+            <div class="p-3 rounded-2xl bg-white/5 border border-white/15 flex flex-col gap-2.5 backdrop-blur-md">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-white/90">Warna Kustom Sendiri</span>
+                <span class="text-[10px] text-purple-300 font-semibold">Gradien / Solid</span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <div class="flex-1 flex flex-col gap-1">
+                  <span class="text-[9.5px] text-white/60">Warna Awal</span>
+                  <div class="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-xl border border-white/10">
+                    <input id="input-custom-bg-1" type="color" value="#0b061a" class="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 shrink-0" />
+                    <span id="label-custom-bg-1" class="text-[10.5px] font-mono text-white/80">#0b061a</span>
+                  </div>
+                </div>
+
+                <div class="flex-1 flex flex-col gap-1">
+                  <span class="text-[9.5px] text-white/60">Warna Aksen</span>
+                  <div class="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-xl border border-white/10">
+                    <input id="input-custom-bg-2" type="color" value="#3b1d75" class="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 shrink-0" />
+                    <span id="label-custom-bg-2" class="text-[10.5px] font-mono text-white/80">#3b1d75</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Preview Tile -->
+              <div id="preview-custom-bg" class="h-10 rounded-xl border border-white/20 shadow-inner flex items-center justify-center text-[10.5px] font-semibold text-white/90" style="background: linear-gradient(135deg, #0b061a 0%, #3b1d75 100%)">
+                Pratinjau Kustom
+              </div>
 
               <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-pink-500 text-left transition-all cursor-pointer"
-                data-theme-type="gradient"
-                data-theme-name="Berry Fuchsia"
-                data-theme-val="linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)"
+                id="btn-apply-custom-bg"
+                type="button"
+                class="w-full py-2 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 active:scale-98 text-white text-[11.5px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-md border border-purple-400/35 cursor-pointer"
               >
-                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Berry Fuchsia</div>
+                <span class="material-symbols-outlined text-[15px]">check_circle</span>
+                <span>Terapkan Warna Kustom</span>
               </button>
+            </div>
 
-              <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-indigo-500 text-left transition-all cursor-pointer"
-                data-theme-type="image"
-                data-theme-name="Creative Studio"
-                data-theme-val="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80"
-              >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=300&q=80')"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Creative Studio</div>
-              </button>
+            <!-- 2. Gradien Mewah & Studio (Curated Luxury Gradients) -->
+            <div class="flex flex-col gap-1.5 pt-1">
+              <span class="text-[10px] font-bold text-white/50 uppercase tracking-wider">Gradien Mewah Pilihan</span>
+              <div class="grid grid-cols-2 gap-2">
+                <!-- Obsidian Violet -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-purple-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Obsidian Violet"
+                  data-theme-val="linear-gradient(135deg, #0b061a 0%, #1e113b 50%, #3b1d75 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #0b061a 0%, #1e113b 50%, #3b1d75 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Obsidian Violet</div>
+                  <div class="text-[9px] text-white/50 truncate">CreativOffice Signature</div>
+                </button>
 
-              <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-indigo-500 text-left transition-all cursor-pointer"
-                data-theme-type="image"
-                data-theme-name="Modern Office"
-                data-theme-val="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1600&q=80"
-              >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=300&q=80')"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Modern Office</div>
-              </button>
+                <!-- Royal Sapphire -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-blue-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Royal Sapphire"
+                  data-theme-val="linear-gradient(135deg, #040d21 0%, #0a2540 50%, #173b6c 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #040d21 0%, #0a2540 50%, #173b6c 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Royal Sapphire</div>
+                  <div class="text-[9px] text-white/50 truncate">Midnight Deep Blue</div>
+                </button>
 
-              <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-purple-500 text-left transition-all cursor-pointer"
-                data-theme-type="image"
-                data-theme-name="Fluid Mesh 3D"
-                data-theme-val="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80"
-              >
-                <div class="h-14 rounded-lg bg-cover bg-center mb-1.5 shadow-xs" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80')"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Fluid Mesh 3D</div>
-              </button>
+                <!-- Emerald Imperial -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-emerald-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Emerald Imperial"
+                  data-theme-val="linear-gradient(135deg, #021a14 0%, #064032 50%, #0c624d 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #021a14 0%, #064032 50%, #0c624d 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Emerald Imperial</div>
+                  <div class="text-[9px] text-white/50 truncate">Luxury British Jade</div>
+                </button>
 
-              <button
-                class="btn-select-theme p-2 rounded-xl border border-slate-200 hover:border-slate-500 text-left transition-all cursor-pointer"
-                data-theme-type="gradient"
-                data-theme-name="Midnight Dark"
-                data-theme-val="linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
-              >
-                <div class="h-14 rounded-lg mb-1.5 shadow-xs" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"></div>
-                <div class="text-[11.5px] font-bold text-slate-800 dark:text-white truncate">Midnight Dark</div>
-              </button>
+                <!-- Midnight Slate -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-slate-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Midnight Slate"
+                  data-theme-val="linear-gradient(135deg, #090a0f 0%, #161a23 50%, #282e3d 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #090a0f 0%, #161a23 50%, #282e3d 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Midnight Slate</div>
+                  <div class="text-[9px] text-white/50 truncate">Charcoal Luxury Noir</div>
+                </button>
+
+                <!-- Velvet Bordeaux -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-rose-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Velvet Bordeaux"
+                  data-theme-val="linear-gradient(135deg, #1f0409 0%, #3e0b17 50%, #681628 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #1f0409 0%, #3e0b17 50%, #681628 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Velvet Bordeaux</div>
+                  <div class="text-[9px] text-white/50 truncate">Deep Royal Wine</div>
+                </button>
+
+                <!-- Champagne Bronze -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-amber-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Champagne Bronze"
+                  data-theme-val="linear-gradient(135deg, #1c1006 0%, #38210c 50%, #5d3613 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #1c1006 0%, #38210c 50%, #5d3613 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Champagne Bronze</div>
+                  <div class="text-[9px] text-white/50 truncate">Warm Amber Noir</div>
+                </button>
+
+                <!-- Amethyst Royale -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-purple-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Amethyst Royale"
+                  data-theme-val="linear-gradient(135deg, #170426 0%, #330d52 50%, #59168f 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #170426 0%, #330d52 50%, #59168f 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Amethyst Royale</div>
+                  <div class="text-[9px] text-white/50 truncate">Deep Radiant Orchid</div>
+                </button>
+
+                <!-- Nordic Twilight -->
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-cyan-400/70 bg-white/5 hover:bg-white/10 text-left transition-all cursor-pointer group"
+                  data-theme-type="gradient"
+                  data-theme-name="Nordic Twilight"
+                  data-theme-val="linear-gradient(135deg, #03171e 0%, #073b4c 50%, #118ab2 100%)"
+                >
+                  <div class="h-11 rounded-lg mb-1.5 shadow-sm border border-white/10 group-hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg, #03171e 0%, #073b4c 50%, #118ab2 100%)"></div>
+                  <div class="text-[11px] font-bold text-white/90 truncate">Nordic Twilight</div>
+                  <div class="text-[9px] text-white/50 truncate">Aurora Oceanic Dusk</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Warna Solid Elegan (Minimalist Luxury Solids) -->
+            <div class="flex flex-col gap-1.5 pt-1">
+              <span class="text-[10px] font-bold text-white/50 uppercase tracking-wider">Warna Solid Minimalis</span>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-white/40 bg-white/5 hover:bg-white/10 text-center transition-all cursor-pointer group"
+                  data-theme-type="color"
+                  data-theme-name="Obsidian Solid"
+                  data-theme-val="#0b061a"
+                >
+                  <div class="h-8 rounded-lg mb-1 shadow-sm border border-white/10" style="background-color: #0b061a"></div>
+                  <div class="text-[10px] font-bold text-white/90 truncate">Obsidian</div>
+                </button>
+
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-white/40 bg-white/5 hover:bg-white/10 text-center transition-all cursor-pointer group"
+                  data-theme-type="color"
+                  data-theme-name="Midnight Navy Solid"
+                  data-theme-val="#0a192f"
+                >
+                  <div class="h-8 rounded-lg mb-1 shadow-sm border border-white/10" style="background-color: #0a192f"></div>
+                  <div class="text-[10px] font-bold text-white/90 truncate">Navy</div>
+                </button>
+
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-white/40 bg-white/5 hover:bg-white/10 text-center transition-all cursor-pointer group"
+                  data-theme-type="color"
+                  data-theme-name="Deep Forest Solid"
+                  data-theme-val="#04231c"
+                >
+                  <div class="h-8 rounded-lg mb-1 shadow-sm border border-white/10" style="background-color: #04231c"></div>
+                  <div class="text-[10px] font-bold text-white/90 truncate">Forest</div>
+                </button>
+
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-white/40 bg-white/5 hover:bg-white/10 text-center transition-all cursor-pointer group"
+                  data-theme-type="color"
+                  data-theme-name="Charcoal Matte Solid"
+                  data-theme-val="#161a23"
+                >
+                  <div class="h-8 rounded-lg mb-1 shadow-sm border border-white/10" style="background-color: #161a23"></div>
+                  <div class="text-[10px] font-bold text-white/90 truncate">Charcoal</div>
+                </button>
+
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-white/40 bg-white/5 hover:bg-white/10 text-center transition-all cursor-pointer group"
+                  data-theme-type="color"
+                  data-theme-name="Imperial Wine Solid"
+                  data-theme-val="#24060e"
+                >
+                  <div class="h-8 rounded-lg mb-1 shadow-sm border border-white/10" style="background-color: #24060e"></div>
+                  <div class="text-[10px] font-bold text-white/90 truncate">Wine</div>
+                </button>
+
+                <button
+                  class="btn-select-theme p-2 rounded-xl border border-white/10 hover:border-white/40 bg-white/5 hover:bg-white/10 text-center transition-all cursor-pointer group"
+                  data-theme-type="color"
+                  data-theme-name="Warm Mocha Solid"
+                  data-theme-val="#1c130d"
+                >
+                  <div class="h-8 rounded-lg mb-1 shadow-sm border border-white/10" style="background-color: #1c130d"></div>
+                  <div class="text-[10px] font-bold text-white/90 truncate">Mocha</div>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Board Actions -->
-          <div class="flex flex-col gap-2 border-t border-slate-200 dark:border-slate-800 pt-3">
-            <h4 class="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Aksi Papan</h4>
-            <button id="btn-export-board-json" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-[12.5px] font-semibold text-left transition-colors cursor-pointer">
+          <div class="flex flex-col gap-2 border-t border-white/10 pt-3">
+            <h4 class="text-[11.5px] font-bold text-white/60 uppercase tracking-wider">Aksi Papan</h4>
+            <button id="btn-export-board-json" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/10 text-white/90 text-[12.5px] font-semibold text-left transition-colors cursor-pointer">
               <span class="material-symbols-outlined text-[18px]">download</span>
               <span>Ekspor Data Papan (JSON)</span>
             </button>
-            <button id="btn-archive-board" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 text-[12.5px] font-semibold text-left transition-colors cursor-pointer">
+            <button id="btn-archive-board" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-500/20 text-rose-300 text-[12.5px] font-semibold text-left transition-colors cursor-pointer">
               <span class="material-symbols-outlined text-[18px]">archive</span>
               <span>Arsipkan Papan</span>
             </button>
@@ -4223,12 +4390,80 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // H. More Menu Drawer [...]
+    // H. More Menu Drawer & Custom Theme Picker
     const moreMenuBtn = this.element.querySelector('#btn-board-more-menu');
     if (moreMenuBtn) {
       moreMenuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this._togglePopup('#drawer-more-menu');
+      });
+    }
+
+    const quickThemeBtn = this.element.querySelector('#btn-kanban-change-bg');
+    if (quickThemeBtn) {
+      quickThemeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._togglePopup('#drawer-more-menu');
+        const themeSection = this.element.querySelector('#section-board-themes');
+        if (themeSection) {
+          setTimeout(() => themeSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        }
+      });
+    }
+
+    // Interactive Custom Color Generator Listeners
+    const customCol1 = this.element.querySelector('#input-custom-bg-1');
+    const customCol2 = this.element.querySelector('#input-custom-bg-2');
+    const customLbl1 = this.element.querySelector('#label-custom-bg-1');
+    const customLbl2 = this.element.querySelector('#label-custom-bg-2');
+    const customPreview = this.element.querySelector('#preview-custom-bg');
+    const btnApplyCustom = this.element.querySelector('#btn-apply-custom-bg');
+
+    const updateCustomPreview = () => {
+      if (!customCol1 || !customCol2 || !customPreview) return;
+      const c1 = customCol1.value || '#0b061a';
+      const c2 = customCol2.value || '#3b1d75';
+      if (customLbl1) customLbl1.textContent = c1;
+      if (customLbl2) customLbl2.textContent = c2;
+      customPreview.style.background = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
+    };
+
+    if (customCol1) customCol1.addEventListener('input', updateCustomPreview);
+    if (customCol2) customCol2.addEventListener('input', updateCustomPreview);
+
+    if (btnApplyCustom) {
+      btnApplyCustom.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const c1 = customCol1 ? customCol1.value : '#0b061a';
+        const c2 = customCol2 ? customCol2.value : '#3b1d75';
+        const customGradient = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
+        const themeObj = {
+          type: 'gradient',
+          name: `Custom (${c1} → ${c2})`,
+          value: customGradient
+        };
+
+        localStorage.setItem(`board_theme_${this.currentWorkspace}`, JSON.stringify(themeObj));
+        if (this.projectId) {
+          localStorage.setItem(`board_theme_${this.projectId}`, JSON.stringify(themeObj));
+        }
+
+        const targetProjId = this.projectId || (this.project ? this.project.id : null);
+        if (targetProjId && this.projectService) {
+          this.project = this.projectService.updateProject(targetProjId, { theme: themeObj });
+        } else if (this.project) {
+          this.project.theme = themeObj;
+        }
+
+        if (this.eventBus) {
+          this.eventBus.emit('board:theme_changed', { workspace: this.currentWorkspace, projectId: targetProjId, theme: themeObj });
+        }
+
+        this._closeAllPopups();
+        if (this.notificationService) {
+          this.notificationService.success('Warna latar kustom berhasil diterapkan ke papan.');
+        }
+        this.mount(this.element);
       });
     }
 

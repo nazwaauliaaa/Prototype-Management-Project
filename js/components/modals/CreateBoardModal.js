@@ -65,53 +65,69 @@ export class CreateBoardModal extends BaseModal {
         textColor: '#ffffff'
       },
 
-      // 2. Curated Modern Gradients (Tailored to App Palette)
+      // 2. Curated Luxury & Elegant Gradients (CreativOffice Signature)
       {
-        id: 'creative-indigo',
-        name: 'Creative Indigo',
+        id: 'obsidian-violet',
+        name: 'Obsidian Violet',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)',
-        value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)',
+        thumb: 'linear-gradient(135deg, #0b061a 0%, #1e113b 50%, #3b1d75 100%)',
+        value: 'linear-gradient(135deg, #0b061a 0%, #1e113b 50%, #3b1d75 100%)',
         textColor: '#ffffff'
       },
       {
-        id: 'berry-fuchsia',
-        name: 'Berry Fuchsia',
+        id: 'royal-sapphire',
+        name: 'Royal Sapphire',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)',
-        value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)',
+        thumb: 'linear-gradient(135deg, #040d21 0%, #0a2540 50%, #173b6c 100%)',
+        value: 'linear-gradient(135deg, #040d21 0%, #0a2540 50%, #173b6c 100%)',
         textColor: '#ffffff'
       },
       {
-        id: 'midnight-dark',
-        name: 'Midnight Dark',
+        id: 'emerald-imperial',
+        name: 'Emerald Imperial',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
-        value: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+        thumb: 'linear-gradient(135deg, #021a14 0%, #064032 50%, #0c624d 100%)',
+        value: 'linear-gradient(135deg, #021a14 0%, #064032 50%, #0c624d 100%)',
         textColor: '#ffffff'
       },
       {
-        id: 'emerald-aurora',
-        name: 'Emerald Aurora',
+        id: 'midnight-slate',
+        name: 'Midnight Slate',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)',
-        value: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)',
+        thumb: 'linear-gradient(135deg, #090a0f 0%, #161a23 50%, #282e3d 100%)',
+        value: 'linear-gradient(135deg, #090a0f 0%, #161a23 50%, #282e3d 100%)',
         textColor: '#ffffff'
       },
       {
-        id: 'ocean-flow',
-        name: 'Ocean Flow',
+        id: 'velvet-bordeaux',
+        name: 'Velvet Bordeaux',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #06b6d4 100%)',
-        value: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #06b6d4 100%)',
+        thumb: 'linear-gradient(135deg, #1f0409 0%, #3e0b17 50%, #681628 100%)',
+        value: 'linear-gradient(135deg, #1f0409 0%, #3e0b17 50%, #681628 100%)',
         textColor: '#ffffff'
       },
       {
-        id: 'sunset-studio',
-        name: 'Sunset Studio',
+        id: 'champagne-bronze',
+        name: 'Champagne Bronze',
         type: 'gradient',
-        thumb: 'linear-gradient(135deg, #581c87 0%, #9333ea 50%, #f97316 100%)',
-        value: 'linear-gradient(135deg, #581c87 0%, #9333ea 50%, #f97316 100%)',
+        thumb: 'linear-gradient(135deg, #1c1006 0%, #38210c 50%, #5d3613 100%)',
+        value: 'linear-gradient(135deg, #1c1006 0%, #38210c 50%, #5d3613 100%)',
+        textColor: '#ffffff'
+      },
+      {
+        id: 'amethyst-royale',
+        name: 'Amethyst Royale',
+        type: 'gradient',
+        thumb: 'linear-gradient(135deg, #170426 0%, #330d52 50%, #59168f 100%)',
+        value: 'linear-gradient(135deg, #170426 0%, #330d52 50%, #59168f 100%)',
+        textColor: '#ffffff'
+      },
+      {
+        id: 'nordic-twilight',
+        name: 'Nordic Twilight',
+        type: 'gradient',
+        thumb: 'linear-gradient(135deg, #03171e 0%, #073b4c 50%, #118ab2 100%)',
+        value: 'linear-gradient(135deg, #03171e 0%, #073b4c 50%, #118ab2 100%)',
         textColor: '#ffffff'
       },
 
