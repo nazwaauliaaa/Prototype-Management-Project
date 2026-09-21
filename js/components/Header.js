@@ -75,19 +75,19 @@ export class Header {
 
                 <!-- Administrator Section (Khusus Manajemen Pengguna) -->
                 ${!isUserRole ? `
-                <div class="flex flex-col gap-1 pt-0.5">
-                  <span class="px-2 text-[10px] font-bold text-teal-600 uppercase tracking-wider">Administrasi</span>
+                <div class="flex flex-col gap-1.5 pt-0.5">
+                  <span class="px-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">Administrasi Sistem</span>
                   <button
-                    id="btn-burger-user-mgmt"
+                    id="btn-dashboard-user-mgmt"
                     type="button"
-                    class="w-full text-left px-3 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/25 text-[12.5px] flex items-center justify-between font-semibold cursor-pointer transition-all active:scale-[0.98]"
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-[#2AB0B2] hover:bg-[#209092] active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-sm cursor-pointer"
                     title="Buka Halaman Manajemen Pengguna"
                   >
-                    <div class="flex items-center gap-2.5">
-                      <span class="material-symbols-outlined text-[19px] text-[#2AB0B2]">manage_accounts</span>
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
                       <span>Manajemen Pengguna</span>
                     </div>
-                    <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#2AB0B2] text-white">Admin</span>
+                    <span class="material-symbols-outlined text-[16px] text-white/80">arrow_forward</span>
                   </button>
                 </div>
                 ` : ''}
@@ -818,7 +818,7 @@ export class Header {
       });
     }
 
-    const burgerUserMgmtBtn = this.element.querySelector('#btn-burger-user-mgmt');
+    const burgerUserMgmtBtn = this.element.querySelector('#btn-dashboard-user-mgmt') || this.element.querySelector('#btn-burger-user-mgmt');
     if (burgerUserMgmtBtn) {
       burgerUserMgmtBtn.addEventListener('click', (e) => {
         e.preventDefault();

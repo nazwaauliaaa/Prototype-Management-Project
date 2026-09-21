@@ -157,40 +157,40 @@ export class DashboardView extends BaseView {
     const currentRoleConfig = roleConfigs[role] || roleConfigs['user'];
 
     return `
-      <div class="relative flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 gap-7 overflow-hidden">
+      <div class="relative flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-5 gap-4 sm:gap-5 overflow-hidden">
 
         <!-- Ambient Studio Glow Orbs -->
         <div class="creativoffice-orb ${currentRoleConfig.orbColor1} w-[460px] h-[460px] -top-24 -left-20"></div>
         <div class="creativoffice-orb ${currentRoleConfig.orbColor2} w-[420px] h-[420px] top-64 -right-16"></div>
 
-        <!-- 0. WELCOME ROLE GREETING BANNER -->
-        <section class="relative z-10 w-full rounded-2xl bg-gradient-to-r ${currentRoleConfig.accentGradient} p-5 sm:px-7 sm:py-6 border border-white/15 backdrop-blur-xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-4 min-w-0">
-            <div class="w-12 h-12 rounded-2xl ${currentRoleConfig.iconBg} border flex items-center justify-center shrink-0 shadow-lg shadow-black/20">
-              <span class="material-symbols-outlined text-[26px]">
+        <!-- 0. WELCOME ROLE GREETING BANNER (Kompak & Ringkas) -->
+        <section class="relative z-10 w-full rounded-xl bg-gradient-to-r ${currentRoleConfig.accentGradient} px-4 py-3 sm:px-5 sm:py-3.5 border border-white/15 backdrop-blur-xl shadow-md flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${currentRoleConfig.iconBg} border flex items-center justify-center shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[20px] sm:text-[22px]">
                 ${currentRoleConfig.icon}
               </span>
             </div>
             <div class="flex flex-col min-w-0">
-              <div class="flex items-center gap-2.5 flex-wrap">
-                <span class="text-[11px] font-mono font-bold tracking-wider uppercase text-white/70">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-mono font-bold tracking-wider uppercase text-white/70">
                   ${currentRoleConfig.studioTitle}
                 </span>
-                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border shadow-xs ${currentRoleConfig.badgeClass}">
+                <span class="px-2 py-0.2 rounded-full text-[9.5px] font-semibold border shadow-xs ${currentRoleConfig.badgeClass}">
                   ${currentRoleConfig.badge}
                 </span>
               </div>
-              <h1 class="text-[19px] sm:text-[22px] font-bold text-white tracking-tight leading-snug mt-0.5 drop-shadow-sm">
+              <h1 class="text-[14px] sm:text-[16px] font-bold text-white tracking-tight leading-snug mt-0.5 drop-shadow-sm truncate">
                 ${currentRoleConfig.greeting}
               </h1>
-              <p class="text-[12.5px] sm:text-[13px] text-white/80 mt-1 leading-normal">
+              <p class="text-[11px] sm:text-[11.5px] text-white/80 mt-0.5 leading-snug line-clamp-1 sm:line-clamp-none">
                 ${user ? `<span class="text-white font-semibold">${user.name}</span> <span class="text-white/40 mx-1">•</span>` : ''}${currentRoleConfig.desc}
               </p>
             </div>
           </div>
-          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/30 border border-white/10 backdrop-blur-md shrink-0">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-[11.5px] font-medium text-white/90">CreativOffice Cloud Online</span>
+          <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/30 border border-white/10 backdrop-blur-md shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[10.5px] font-medium text-white/90">CreativOffice Online</span>
           </div>
         </section>
 
