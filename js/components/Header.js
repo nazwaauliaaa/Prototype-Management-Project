@@ -50,8 +50,99 @@ export class Header {
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
         <div class="w-full h-topbar-height px-3 sm:px-5 flex items-center justify-between gap-3">
 
-          <!-- Logo & Branding -->
+          <!-- Left: Burger Menu & Branding -->
           <div class="flex items-center gap-2 sm:gap-3">
+            <div class="relative">
+              <button
+                id="btn-header-burger"
+                class="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 border border-white/10 transition-all cursor-pointer active:scale-95 shrink-0"
+                title="Menu Navigasi"
+                type="button"
+                aria-label="Buka Menu"
+              >
+                <span class="material-symbols-outlined text-[21px]">menu</span>
+              </button>
+
+              <!-- Burger Menu Flyout Panel -->
+              <div
+                id="header-burger-menu"
+                class="hidden absolute left-0 top-full mt-2 w-72 bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-surface-border p-3 z-50 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <div class="px-2 py-1.5 border-b border-surface-border flex items-center justify-between">
+                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-text-muted">Menu Navigasi</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${activeBadge.class}">${activeBadge.label}</span>
+                </div>
+
+                <!-- Administrator Section (Khusus Manajemen Pengguna) -->
+                ${!isUserRole ? `
+                <div class="flex flex-col gap-1 pt-0.5">
+                  <span class="px-2 text-[10px] font-bold text-teal-600 uppercase tracking-wider">Administrasi</span>
+                  <button
+                    id="btn-burger-user-mgmt"
+                    type="button"
+                    class="w-full text-left px-3 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/25 text-[12.5px] flex items-center justify-between font-semibold cursor-pointer transition-all active:scale-[0.98]"
+                    title="Buka Halaman Manajemen Pengguna"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <span class="material-symbols-outlined text-[19px] text-[#2AB0B2]">manage_accounts</span>
+                      <span>Manajemen Pengguna</span>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#2AB0B2] text-white">Admin</span>
+                  </button>
+                </div>
+                ` : ''}
+
+                <!-- Main Navigation Links -->
+                <div class="flex flex-col gap-1 pt-1">
+                  <span class="px-2 text-[10px] font-bold text-text-muted uppercase tracking-wider">Navigasi Utama</span>
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    data-route="dashboard"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-purple-400">space_dashboard</span>
+                    <span>Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    data-route="kanban"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-blue-400">view_kanban</span>
+                    <span>Papan Kanban</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    data-route="calendar"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-amber-400">calendar_today</span>
+                    <span>Jadwal & Kalender</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    data-route="workspaces"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-emerald-400">workspaces</span>
+                    <span>Ruang Kerja Tim</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    data-route="docs-sheets"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-rose-400">description</span>
+                    <span>Dokumen & SOP</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="flex items-center gap-2 cursor-pointer" id="header-brand-logo" title="CreativOffice - Beranda">
               <img alt="CreativOffice Logo" class="h-7.5 w-7.5 object-contain rounded-lg shadow-sm" src="/assets/logo.png" />
               <div class="flex flex-col">
@@ -89,17 +180,6 @@ export class Header {
             >
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Create</span>
-            </button>
-
-            <!-- Manajemen Pengguna quick nav for Admin -->
-            <button
-              id="btn-header-nav-users"
-              class="h-8 px-3 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 font-semibold text-[12.5px] flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
-              title="Buka Halaman Manajemen Pengguna"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[16px] text-teal-600 dark:text-teal-400">group</span>
-              <span>Pengguna</span>
             </button>
           </div>
           ` : `
@@ -720,15 +800,48 @@ export class Header {
       if (notifMenu && !e.target.closest('#btn-header-notif') && !e.target.closest('#header-notif-menu')) {
         notifMenu.classList.add('hidden');
       }
+      if (burgerMenu && !e.target.closest('#btn-header-burger') && !e.target.closest('#header-burger-menu')) {
+        burgerMenu.classList.add('hidden');
+      }
     });
 
-    const navUsersBtn = this.element.querySelector('#btn-header-nav-users');
-    if (navUsersBtn) {
-      navUsersBtn.addEventListener('click', () => {
+    // Burger Menu Toggle & Items
+    const burgerBtn = this.element.querySelector('#btn-header-burger');
+    const burgerMenu = this.element.querySelector('#header-burger-menu');
+
+    if (burgerBtn && burgerMenu) {
+      burgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (profileMenu) profileMenu.classList.add('hidden');
+        if (notifMenu) notifMenu.classList.add('hidden');
+        burgerMenu.classList.toggle('hidden');
+      });
+    }
+
+    const burgerUserMgmtBtn = this.element.querySelector('#btn-burger-user-mgmt');
+    if (burgerUserMgmtBtn) {
+      burgerUserMgmtBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (burgerMenu) burgerMenu.classList.add('hidden');
         window.location.hash = '#/users';
         this.eventBus.emit('navigate', { view: 'users' });
       });
     }
+
+    const burgerNavBtns = this.element.querySelectorAll('.btn-burger-nav');
+    burgerNavBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (burgerMenu) burgerMenu.classList.add('hidden');
+        const route = btn.getAttribute('data-route');
+        if (route) {
+          window.location.hash = `#/${route}`;
+          this.eventBus.emit('navigate', { view: route });
+        }
+      });
+    });
 
     const headerUserMgmtBtn = this.element.querySelector('#btn-header-user-mgmt');
     if (headerUserMgmtBtn) {

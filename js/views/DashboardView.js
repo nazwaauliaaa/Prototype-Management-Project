@@ -187,18 +187,6 @@ export class DashboardView extends BaseView {
                 ${user ? `<span class="text-white font-semibold">${user.name}</span> <span class="text-white/40 mx-1">•</span>` : ''}${currentRoleConfig.desc}
               </p>
             </div>
-          <div class="flex items-center gap-2 shrink-0">
-            ${role === 'admin' ? `
-            <button
-              id="btn-dashboard-user-mgmt"
-              type="button"
-              class="px-3.5 py-2 rounded-xl bg-[#2AB0B2] hover:bg-[#209092] active:scale-95 text-white text-[12.5px] font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-              title="Buka Halaman Manajemen Pengguna"
-            >
-              <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
-              <span>Manajemen Pengguna</span>
-            </button>
-            ` : ''}
           </div>
           <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/30 border border-white/10 backdrop-blur-md shrink-0">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -375,14 +363,6 @@ export class DashboardView extends BaseView {
         }
       });
     });
-
-    // Tombol Manajemen Pengguna
-    const userMgmtBtn = this.element ? this.element.querySelector('#btn-dashboard-user-mgmt') : null;
-    if (userMgmtBtn) {
-      userMgmtBtn.addEventListener('click', () => {
-        window.location.hash = '#/users';
-      });
-    }
 
     // Tombol Buat Papan Baru di kartu grid
     const cardCreateBtn = this.element ? this.element.querySelector('#btn-card-create-board') : null;
