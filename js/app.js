@@ -34,6 +34,7 @@ import { ProjectListView } from './views/ProjectListView.js';
 import { ProjectService } from './services/ProjectService.js';
 import { WorkspacesView } from './views/WorkspacesView.js';
 import { ProfileView } from './views/ProfileView.js';
+import { UserManagementView } from './views/UserManagementView.js';
 
 /**
  * CreativeOfficeApp - Bootstrap & Dependency Injection Root
@@ -972,6 +973,12 @@ class CreativeOfficeApp {
       case 'profil':
       case 'user-profile':
         this.currentView = new ProfileView(this.container);
+        break;
+      case 'users':
+      case 'user-management':
+      case 'manajemen-pengguna':
+      case 'pengguna':
+        this.currentView = new UserManagementView(this.container);
         break;
       default:
         this.currentView = new DashboardView(this.container);

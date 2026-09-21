@@ -73,6 +73,17 @@ export class Header {
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span>Create</span>
             </button>
+
+            <!-- Manajemen Pengguna quick nav for Admin -->
+            <button
+              id="btn-header-nav-users"
+              class="h-8 px-3 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 font-semibold text-[12.5px] flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Buka Halaman Manajemen Pengguna"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px] text-teal-600 dark:text-teal-400">group</span>
+              <span>Pengguna</span>
+            </button>
           </div>
           ` : `
           <div class="flex-1 max-w-xl mx-1 sm:mx-4 hidden sm:flex items-center justify-center sm:justify-start min-w-0">
@@ -229,6 +240,13 @@ export class Header {
                   </div>
                 </div>
 
+
+                ${!isUserRole ? `
+                <button id="btn-header-user-mgmt" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-teal-50 text-teal-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-[#2AB0B2] pointer-events-none">group</span>
+                  <span class="pointer-events-none font-semibold">Manajemen Pengguna</span>
+                </button>
+                ` : ''}
 
                 <button id="btn-header-profile" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
                   <span class="material-symbols-outlined text-[16px] text-primary pointer-events-none">manage_accounts</span>
@@ -686,6 +704,25 @@ export class Header {
         notifMenu.classList.add('hidden');
       }
     });
+
+    const navUsersBtn = this.element.querySelector('#btn-header-nav-users');
+    if (navUsersBtn) {
+      navUsersBtn.addEventListener('click', () => {
+        window.location.hash = '#/users';
+        this.eventBus.emit('navigate', { view: 'users' });
+      });
+    }
+
+    const headerUserMgmtBtn = this.element.querySelector('#btn-header-user-mgmt');
+    if (headerUserMgmtBtn) {
+      headerUserMgmtBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (profileMenu) profileMenu.classList.add('hidden');
+        window.location.hash = '#/users';
+        this.eventBus.emit('navigate', { view: 'users' });
+      });
+    }
 
     const profileEditBtn = this.element.querySelector('#btn-header-profile');
     if (profileEditBtn) {
