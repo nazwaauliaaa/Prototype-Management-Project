@@ -62,93 +62,103 @@ export class UserManagementView extends BaseView {
       : allUsers;
 
     return `
-      <div class="flex-1 bg-[#F0F2F5] p-4 md:p-8 select-none relative min-h-screen">
-        <datalist id="school-datalist">
-          <option value="SMKN 2 Sukabumi"></option>
-          <option value="SMK PGRI 1 Cimahi"></option>
-          <option value="Universitas Jenderal Achmad Yani"></option>
-        </datalist>
+      <div class="flex-1 p-4 md:p-8 select-none relative min-h-screen overflow-hidden text-white" style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%), radial-gradient(ellipse 70% 60% at 50% 40%, rgba(124, 58, 237, 0.16) 0%, transparent 70%), radial-gradient(rgba(192, 132, 252, 0.16) 1.2px, transparent 1.2px); background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px; background-attachment: fixed;">
+        <!-- Ambient Studio Glow Orbs -->
+        <div class="creativoffice-orb bg-purple-600/25 w-[460px] h-[460px] -top-24 -left-20"></div>
+        <div class="creativoffice-orb bg-amber-500/15 w-[420px] h-[420px] top-64 -right-16"></div>
 
-        <!-- Navigation Back & Quick Actions -->
-        <div class="flex items-center justify-between mb-4">
-          <button
-            id="btn-back-to-dashboard"
-            type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs border border-slate-200 transition-all cursor-pointer active:scale-95"
-            title="Kembali ke Dashboard Utama"
-          >
-            <span class="material-symbols-outlined text-[17px]">arrow_back</span>
-            <span>Kembali ke Dashboard</span>
-          </button>
+        <div class="relative z-10 max-w-7xl mx-auto flex flex-col gap-4 md:gap-6">
+          <datalist id="school-datalist">
+            <option value="SMKN 2 Sukabumi"></option>
+            <option value="SMK PGRI 1 Cimahi"></option>
+            <option value="Universitas Jenderal Achmad Yani"></option>
+          </datalist>
 
-          <span class="text-xs font-semibold text-slate-500 bg-white/70 px-3 py-1 rounded-lg border border-slate-200/60">
-            Total: <span class="text-[#1C3D3F] font-bold">${allUsers.length} Pengguna</span>
-          </span>
-        </div>
+          <!-- Navigation Back & Quick Actions -->
+          <div class="flex items-center justify-between">
+            <button
+              id="btn-back-to-dashboard"
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-xs font-semibold shadow-sm border border-white/15 backdrop-blur-md transition-all cursor-pointer active:scale-95"
+              title="Kembali ke Dashboard Utama"
+            >
+              <span class="material-symbols-outlined text-[17px]">arrow_back</span>
+              <span>Kembali ke Dashboard</span>
+            </button>
 
-        <!-- Page Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-[#1C3D3F]">Manajemen Pengguna</h1>
-            <p class="text-xs text-slate-500 mt-1">Kelola data karyawan, siswa PKL, hak akses, dan keterikatan perangkat</p>
+            <span class="text-xs font-semibold text-white/70 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/15 backdrop-blur-md">
+              Total: <span class="text-purple-300 font-bold">${allUsers.length} Pengguna</span>
+            </span>
           </div>
 
-          <div class="flex items-center gap-2.5">
-            <!-- Live Search Box -->
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-slate-400 text-[18px]">search</span>
-              <input
-                id="input-search-users"
-                type="text"
-                placeholder="Cari pengguna..."
-                value="${this.searchQuery}"
-                class="w-48 sm:w-60 h-10 pl-8 pr-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-xs"
-              />
+          <!-- Page Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-white/60">Sistem Administrasi</span>
+                <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-400/30">CreativOffice</span>
+              </div>
+              <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight mt-1 drop-shadow-sm">Manajemen Pengguna</h1>
+              <p class="text-xs text-white/60 mt-1">Kelola data karyawan, siswa PKL, hak akses, dan keterikatan perangkat</p>
             </div>
 
-            <button
-              id="btn-open-create-user-modal"
-              class="flex items-center justify-center gap-2 bg-[#2AB0B2] hover:bg-[#209092] text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
-              type="button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus" aria-hidden="true">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <line x1="19" x2="19" y1="8" y2="14"></line>
-                <line x1="22" x2="16" y1="11" y2="11"></line>
-              </svg>
-              <span>Buat Akun Baru</span>
-            </button>
-          </div>
-        </div>
+            <div class="flex items-center gap-2.5">
+              <!-- Live Search Box -->
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-white/40 text-[18px]">search</span>
+                <input
+                  id="input-search-users"
+                  type="text"
+                  placeholder="Cari pengguna..."
+                  value="${this.searchQuery}"
+                  class="w-48 sm:w-64 h-10 pl-9 pr-3 bg-white/10 hover:bg-white/15 focus:bg-white/15 rounded-xl border border-white/15 text-xs text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 backdrop-blur-md transition-all shadow-inner"
+                />
+              </div>
 
-        <!-- Users Table Card -->
-        <div class="bg-white rounded-2xl shadow-xs overflow-hidden border border-gray-100/50">
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-[650px]">
-              <thead>
-                <tr class="border-b border-gray-100 bg-gray-50/50">
-                  <th class="text-left px-5 py-4 text-sm font-semibold text-gray-700">Username</th>
-                  <th class="text-left px-5 py-4 text-sm font-semibold text-gray-700">Nama Lengkap</th>
-                  <th class="text-left px-5 py-4 text-sm font-semibold text-gray-700">Role</th>
-                  <th class="text-left px-5 py-4 text-sm font-semibold text-gray-700">Perangkat Terikat</th>
-                  <th class="text-left px-5 py-4 text-sm font-semibold text-gray-700">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${filteredUsers.length > 0
-                  ? filteredUsers.map(u => this._renderUserRow(u)).join('')
-                  : (allUsers.length === 0 ? this._renderEmptyState() : this._renderSearchEmptyState())
-                }
-              </tbody>
-            </table>
+              <button
+                id="btn-open-create-user-modal"
+                class="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-lg shadow-purple-950/50 border border-purple-400/35 transition-all cursor-pointer active:scale-95 shrink-0"
+                type="button"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" x2="19" y1="8" y2="14"></line>
+                  <line x1="22" x2="16" y1="11" y2="11"></line>
+                </svg>
+                <span>Buat Akun Baru</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- Modals -->
-        ${this._renderCreateModal()}
-        ${this._renderEditModal()}
-        ${this._renderPrintModal()}
+          <!-- Users Table Card -->
+          <div class="bg-[#120d28]/75 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/60 overflow-hidden border border-white/15">
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[650px]">
+                <thead>
+                  <tr class="border-b border-white/10 bg-white/5">
+                    <th class="text-left px-5 py-3.5 text-xs font-bold text-white/70 uppercase tracking-wider">Username</th>
+                    <th class="text-left px-5 py-3.5 text-xs font-bold text-white/70 uppercase tracking-wider">Nama Lengkap</th>
+                    <th class="text-left px-5 py-3.5 text-xs font-bold text-white/70 uppercase tracking-wider">Role</th>
+                    <th class="text-left px-5 py-3.5 text-xs font-bold text-white/70 uppercase tracking-wider">Perangkat Terikat</th>
+                    <th class="text-left px-5 py-3.5 text-xs font-bold text-white/70 uppercase tracking-wider">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  ${filteredUsers.length > 0
+                    ? filteredUsers.map(u => this._renderUserRow(u)).join('')
+                    : (allUsers.length === 0 ? this._renderEmptyState() : this._renderSearchEmptyState())
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Modals -->
+          ${this._renderCreateModal()}
+          ${this._renderEditModal()}
+          ${this._renderPrintModal()}
+        </div>
       </div>
     `;
   }
@@ -158,7 +168,7 @@ export class UserManagementView extends BaseView {
       <tr>
         <td colspan="5" class="py-16 px-4 text-center">
           <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
-            <div class="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#2AB0B2] mb-3.5 shadow-xs">
+            <div class="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 mb-3.5 shadow-md">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
@@ -166,14 +176,14 @@ export class UserManagementView extends BaseView {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
-            <h3 class="text-base font-bold text-[#1C3D3F]">Belum Ada Pengguna</h3>
-            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+            <h3 class="text-base font-bold text-white">Belum Ada Pengguna</h3>
+            <p class="text-xs text-white/60 mt-1 leading-relaxed">
               Belum ada pengguna yang mendaftar atau masuk ke dalam sistem. Akun akan muncul otomatis saat pengguna mendaftar, atau Anda dapat membuat akun baru sekarang.
             </p>
             <button
               id="btn-empty-create-user"
               type="button"
-              class="mt-4 inline-flex items-center justify-center gap-2 bg-[#2AB0B2] hover:bg-[#209092] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
+              class="mt-4 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-md border border-purple-400/35 transition-all cursor-pointer active:scale-95"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -193,10 +203,10 @@ export class UserManagementView extends BaseView {
     return `
       <tr>
         <td colspan="5" class="py-12 px-4 text-center">
-          <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-slate-400">
-            <span class="material-symbols-outlined text-[32px] text-slate-300 mb-1">search_off</span>
-            <p class="text-xs font-semibold text-slate-600">Tidak ada pengguna yang cocok</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Coba gunakan kata kunci pencarian yang lain</p>
+          <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-white/40">
+            <span class="material-symbols-outlined text-[32px] text-white/40 mb-1">search_off</span>
+            <p class="text-xs font-semibold text-white/80">Tidak ada pengguna yang cocok</p>
+            <p class="text-[11px] text-white/40 mt-0.5">Coba gunakan kata kunci pencarian yang lain</p>
           </div>
         </td>
       </tr>
@@ -205,34 +215,34 @@ export class UserManagementView extends BaseView {
 
   _renderUserRow(u) {
     const roleBadgeClass = u.role === 'admin'
-      ? 'bg-teal-50 text-teal-600'
-      : (u.role === 'student' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600');
+      ? 'bg-purple-500/20 text-purple-300 border border-purple-400/30'
+      : (u.role === 'student' ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/30' : 'bg-blue-500/20 text-blue-300 border border-blue-400/30');
 
     const deviceBadge = u.isDeviceBound
-      ? `<span class="font-semibold px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs inline-flex items-center gap-1" title="${u.device}">
-           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smartphone text-slate-500" aria-hidden="true">
+      ? `<span class="font-semibold px-2 py-1 bg-white/10 text-white/90 border border-white/10 rounded-lg text-xs inline-flex items-center gap-1" title="${u.device}">
+           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smartphone text-purple-300" aria-hidden="true">
              <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
              <path d="M12 18h.01"></path>
            </svg> ${u.device}
          </span>`
-      : `<span class="font-semibold px-2 py-1 bg-gray-50 text-gray-400 rounded text-xs">Belum Terikat</span>`;
+      : `<span class="font-semibold px-2 py-1 bg-white/5 text-white/40 border border-white/5 rounded-lg text-xs">Belum Terikat</span>`;
 
     return `
-      <tr class="border-b border-gray-55 last:border-0 hover:bg-gray-50/30 transition-colors" data-user-id="${u.id}">
-        <td class="px-5 py-4 text-sm font-mono text-[#1C3D3F] font-semibold">${u.username}</td>
-        <td class="px-5 py-4 text-sm text-gray-600 font-medium">
-          <div class="font-bold text-[#1C3D3F]">${u.fullName}</div>
-          ${u.nip ? `<div class="text-[10px] text-[#2AB0B2] font-mono font-bold mt-0.5">${u.nip}</div>` : ''}
-          <div class="text-xs text-gray-400 font-normal mt-0.5">${u.position}</div>
+      <tr class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors text-white" data-user-id="${u.id}">
+        <td class="px-5 py-4 text-sm font-mono text-purple-300 font-bold">${u.username}</td>
+        <td class="px-5 py-4 text-sm text-white/80 font-medium">
+          <div class="font-bold text-white">${u.fullName}</div>
+          ${u.nip ? `<div class="text-[10px] text-amber-300 font-mono font-bold mt-0.5">${u.nip}</div>` : ''}
+          <div class="text-xs text-white/50 font-normal mt-0.5">${u.position}</div>
           ${u.telegramChat ? `
-            <div class="text-[10px] text-gray-600 font-mono mt-0.5">
-              <span class="font-extrabold text-[#2AB0B2]">Telegram Chat:</span> ${u.telegramChat} <span class="text-gray-300">|</span> <span class="font-bold text-gray-400">ID:</span> ${u.telegramId || '-'}
+            <div class="text-[10px] text-white/60 font-mono mt-0.5">
+              <span class="font-extrabold text-teal-300">Telegram Chat:</span> ${u.telegramChat} <span class="text-white/20">|</span> <span class="font-bold text-white/40">ID:</span> ${u.telegramId || '-'}
             </div>
           ` : ''}
           ${u.apiDeposit ? `
             <div class="mt-1">
-              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-600 border border-teal-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key mr-1 text-teal-600" aria-hidden="true">
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-400/30">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key mr-1 text-purple-300" aria-hidden="true">
                   <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"></path>
                   <path d="m21 2-9.6 9.6"></path>
                   <circle cx="7.5" cy="15.5" r="5.5"></circle>
@@ -242,16 +252,16 @@ export class UserManagementView extends BaseView {
           ` : ''}
         </td>
         <td class="px-5 py-4">
-          <span class="px-2.5 py-1 rounded text-xs font-semibold capitalize ${roleBadgeClass}">${u.role}</span>
+          <span class="px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${roleBadgeClass}">${u.role}</span>
         </td>
         <td class="px-5 py-4 text-sm max-w-[160px] truncate">
           ${deviceBadge}
         </td>
         <td class="px-5 py-4">
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2">
             ${u.role !== 'admin' ? `
               <button
-                class="btn-user-login-direct text-teal-600 bg-teal-50 hover:bg-teal-100 border border-teal-200/80 px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-3xs"
+                class="btn-user-login-direct text-teal-300 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/30 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
                 data-id="${u.id}"
                 title="Masuk langsung ke dashboard ${u.username} tanpa QR"
                 type="button"
@@ -266,7 +276,7 @@ export class UserManagementView extends BaseView {
             ` : ''}
 
             <button
-              class="btn-user-edit text-gray-300 hover:text-[#2AB0B2] transition-colors cursor-pointer"
+              class="btn-user-edit text-white/50 hover:text-teal-300 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               data-id="${u.id}"
               title="Edit Akun"
               type="button"
@@ -278,7 +288,7 @@ export class UserManagementView extends BaseView {
 
             ${u.isDeviceBound ? `
               <button
-                class="btn-user-reset-device text-gray-300 hover:text-amber-500 transition-colors cursor-pointer"
+                class="btn-user-reset-device text-white/50 hover:text-amber-400 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                 data-id="${u.id}"
                 title="Reset Perangkat HP"
                 type="button"
@@ -292,7 +302,7 @@ export class UserManagementView extends BaseView {
 
             ${u.nip ? `
               <button
-                class="btn-user-print-card text-gray-300 hover:text-[#2AB0B2] transition-colors cursor-pointer"
+                class="btn-user-print-card text-white/50 hover:text-purple-300 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                 data-id="${u.id}"
                 title="Cetak Kartu Karyawan"
                 type="button"
@@ -305,7 +315,7 @@ export class UserManagementView extends BaseView {
             ` : ''}
 
             <button
-              class="btn-user-delete text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
+              class="btn-user-delete text-white/50 hover:text-rose-400 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               data-id="${u.id}"
               title="Hapus Akun Permanen"
               type="button"
@@ -326,30 +336,30 @@ export class UserManagementView extends BaseView {
 
   _renderCreateModal() {
     return `
-      <div id="modal-create-user" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
-          <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-            <h3 class="text-lg font-bold text-[#1C3D3F]">Buat Akun Baru</h3>
-            <button id="btn-close-create-user" class="text-gray-400 hover:text-gray-600 cursor-pointer" type="button">
+      <div id="modal-create-user" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-md w-full p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-white" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+            <h3 class="text-lg font-bold text-white">Buat Akun Baru</h3>
+            <button id="btn-close-create-user" class="text-white/50 hover:text-white cursor-pointer" type="button">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
 
           <form id="form-create-user" class="flex flex-col gap-3.5">
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Username (dengan @)</label>
-              <input id="input-new-username" type="text" placeholder="@contohuser" required class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Username (dengan @)</label>
+              <input id="input-new-username" type="text" placeholder="@contohuser" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Lengkap</label>
-              <input id="input-new-fullname" type="text" placeholder="Nama Lengkap Karyawan/Siswa" required class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Nama Lengkap</label>
+              <input id="input-new-fullname" type="text" placeholder="Nama Lengkap Karyawan/Siswa" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Role</label>
-                <select id="select-new-role" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2] bg-white">
+                <label class="block text-xs font-semibold text-white/80 mb-1">Role</label>
+                <select id="select-new-role" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
                   <option value="student">student (Siswa PKL)</option>
                   <option value="employee" selected>employee (Karyawan)</option>
                   <option value="admin">admin (Administrator)</option>
@@ -357,24 +367,24 @@ export class UserManagementView extends BaseView {
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Nomor Induk (NIP/NISN)</label>
-                <input id="input-new-nip" type="text" placeholder="2026..." class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+                <label class="block text-xs font-semibold text-white/80 mb-1">Nomor Induk (NIP/NISN)</label>
+                <input id="input-new-nip" type="text" placeholder="2026..." class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Posisi / Jabatan</label>
-              <input id="input-new-position" type="text" placeholder="Contoh: Frontend Developer / Siswa PKL" required class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Posisi / Jabatan</label>
+              <input id="input-new-position" type="text" placeholder="Contoh: Frontend Developer / Siswa PKL" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Asal Sekolah / Kampus (Opsional)</label>
-              <input id="input-new-school" list="school-datalist" type="text" placeholder="Pilih atau ketik asal sekolah..." class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Asal Sekolah / Kampus (Opsional)</label>
+              <input id="input-new-school" list="school-datalist" type="text" placeholder="Pilih atau ketik asal sekolah..." class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-2">
-              <button id="btn-cancel-create-user" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-100 cursor-pointer">Batal</button>
-              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#2AB0B2] hover:bg-[#209092] text-white shadow-xs cursor-pointer">Simpan Akun</button>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/10 mt-2">
+              <button id="btn-cancel-create-user" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white cursor-pointer transition-colors">Batal</button>
+              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md border border-purple-400/35 cursor-pointer transition-all">Simpan Akun</button>
             </div>
           </form>
         </div>
@@ -384,11 +394,11 @@ export class UserManagementView extends BaseView {
 
   _renderEditModal() {
     return `
-      <div id="modal-edit-user" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
-          <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-            <h3 class="text-lg font-bold text-[#1C3D3F]">Edit Data Pengguna</h3>
-            <button id="btn-close-edit-user" class="text-gray-400 hover:text-gray-600 cursor-pointer" type="button">
+      <div id="modal-edit-user" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-md w-full p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-white" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+            <h3 class="text-lg font-bold text-white">Edit Data Pengguna</h3>
+            <button id="btn-close-edit-user" class="text-white/50 hover:text-white cursor-pointer" type="button">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
@@ -397,19 +407,19 @@ export class UserManagementView extends BaseView {
             <input type="hidden" id="input-edit-user-id" />
 
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Username</label>
-              <input id="input-edit-username" type="text" readonly class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs bg-gray-50 text-gray-500 font-mono" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Username</label>
+              <input id="input-edit-username" type="text" readonly class="w-full px-3.5 py-2 rounded-xl border border-white/10 text-xs bg-white/5 text-white/50 font-mono" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Lengkap</label>
-              <input id="input-edit-fullname" type="text" required class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Nama Lengkap</label>
+              <input id="input-edit-fullname" type="text" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Role</label>
-                <select id="select-edit-role" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2] bg-white">
+                <label class="block text-xs font-semibold text-white/80 mb-1">Role</label>
+                <select id="select-edit-role" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
                   <option value="student">student</option>
                   <option value="employee">employee</option>
                   <option value="admin">admin</option>
@@ -417,31 +427,31 @@ export class UserManagementView extends BaseView {
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Nomor Induk (NIP/NISN)</label>
-                <input id="input-edit-nip" type="text" class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+                <label class="block text-xs font-semibold text-white/80 mb-1">Nomor Induk (NIP/NISN)</label>
+                <input id="input-edit-nip" type="text" class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Posisi / Jabatan</label>
-              <input id="input-edit-position" type="text" required class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+              <label class="block text-xs font-semibold text-white/80 mb-1">Posisi / Jabatan</label>
+              <input id="input-edit-position" type="text" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Telegram Chat</label>
-                <input id="input-edit-telegram-chat" type="text" placeholder="KIE Nama" class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+                <label class="block text-xs font-semibold text-white/80 mb-1">Telegram Chat</label>
+                <input id="input-edit-telegram-chat" type="text" placeholder="KIE Nama" class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Telegram ID</label>
-                <input id="input-edit-telegram-id" type="text" placeholder="-100..." class="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#2AB0B2]" />
+                <label class="block text-xs font-semibold text-white/80 mb-1">Telegram ID</label>
+                <input id="input-edit-telegram-id" type="text" placeholder="-100..." class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
               </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-2">
-              <button id="btn-cancel-edit-user" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-100 cursor-pointer">Batal</button>
-              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#2AB0B2] hover:bg-[#209092] text-white shadow-xs cursor-pointer">Simpan Perubahan</button>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/10 mt-2">
+              <button id="btn-cancel-edit-user" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white cursor-pointer transition-colors">Batal</button>
+              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md border border-purple-400/35 cursor-pointer transition-all">Simpan Perubahan</button>
             </div>
           </form>
         </div>
@@ -451,43 +461,43 @@ export class UserManagementView extends BaseView {
 
   _renderPrintModal() {
     return `
-      <div id="modal-print-user-card" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-center flex flex-col items-center">
-          <div class="w-full flex items-center justify-between pb-2 border-b border-gray-100 mb-4">
-            <h3 class="text-sm font-bold text-[#1C3D3F]">Kartu Pegawai / Siswa</h3>
-            <button id="btn-close-print-modal" class="text-gray-400 hover:text-gray-600 cursor-pointer" type="button">
+      <div id="modal-print-user-card" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-sm w-full p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-center flex flex-col items-center text-white" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
+          <div class="w-full flex items-center justify-between pb-2 border-b border-white/10 mb-4">
+            <h3 class="text-sm font-bold text-white">Kartu Pegawai / Siswa</h3>
+            <button id="btn-close-print-modal" class="text-white/50 hover:text-white cursor-pointer" type="button">
               <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
           </div>
 
           <!-- Card Mockup -->
-          <div id="print-card-badge" class="w-full aspect-[1.58/1] rounded-2xl p-4 bg-gradient-to-br from-[#1C3D3F] via-[#245255] to-[#2AB0B2] text-white shadow-xl flex flex-col justify-between text-left relative overflow-hidden mb-4">
+          <div id="print-card-badge" class="w-full aspect-[1.58/1] rounded-2xl p-4 bg-gradient-to-br from-[#1b123a] via-[#2a1758] to-[#401f80] border border-purple-400/35 text-white shadow-xl flex flex-col justify-between text-left relative overflow-hidden mb-4">
             <div class="flex items-center justify-between relative z-10">
               <div class="flex items-center gap-2">
                 <img src="/assets/logo.png" class="w-6 h-6 rounded-md object-contain bg-white/10 p-0.5" alt="Logo" />
                 <span class="text-[11px] font-bold tracking-wider uppercase">Sampulkreativ Technology</span>
               </div>
-              <span id="print-card-role" class="text-[9.5px] px-2 py-0.5 rounded-full bg-white/20 font-semibold uppercase">EMPLOYEE</span>
+              <span id="print-card-role" class="text-[9.5px] px-2 py-0.5 rounded-full bg-purple-500/30 border border-purple-400/40 text-purple-200 font-semibold uppercase">EMPLOYEE</span>
             </div>
 
             <div class="relative z-10 my-2">
               <h4 id="print-card-name" class="text-[15px] font-bold tracking-tight text-white">Nama Pengguna</h4>
-              <p id="print-card-pos" class="text-[11px] text-teal-200">Jabatan Pegawai</p>
-              <p id="print-card-nip" class="text-[10px] font-mono text-white/70 mt-1">2026...</p>
+              <p id="print-card-pos" class="text-[11px] text-purple-200">Jabatan Pegawai</p>
+              <p id="print-card-nip" class="text-[10px] font-mono text-amber-300 mt-1">2026...</p>
             </div>
 
             <div class="flex items-center justify-between relative z-10 text-[9.5px] text-white/80 border-t border-white/15 pt-1.5 font-mono">
-              <span id="print-card-username">@username</span>
-              <span>CREATIVE OFFICE ID</span>
+              <span id="print-card-username" class="text-purple-300">@username</span>
+              <span class="text-white/50">CREATIVE OFFICE ID</span>
             </div>
           </div>
 
           <div class="flex items-center gap-2 w-full">
-            <button id="btn-do-print" type="button" class="flex-1 py-2.5 rounded-xl bg-[#2AB0B2] hover:bg-[#209092] text-white font-bold text-xs shadow-sm cursor-pointer flex items-center justify-center gap-1.5 transition-all">
+            <button id="btn-do-print" type="button" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-xs shadow-md border border-purple-400/35 cursor-pointer flex items-center justify-center gap-1.5 transition-all">
               <span class="material-symbols-outlined text-[16px]">print</span>
               <span>Cetak Kartu</span>
             </button>
-            <button id="btn-cancel-print" type="button" class="px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold text-xs cursor-pointer">
+            <button id="btn-cancel-print" type="button" class="px-4 py-2.5 rounded-xl border border-white/15 hover:bg-white/10 text-white/80 font-semibold text-xs cursor-pointer transition-colors">
               Tutup
             </button>
           </div>
