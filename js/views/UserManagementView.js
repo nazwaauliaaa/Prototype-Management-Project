@@ -17,199 +17,17 @@ export class UserManagementView extends BaseView {
     this.isEditModalOpen = false;
     this.isPrintModalOpen = false;
 
-    this.defaultUsers = [
-      {
-        id: 'usr-admin',
-        username: '@admin',
-        fullName: 'Administrator',
-        position: 'Karyawan',
-        role: 'admin',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        nip: '',
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        school: ''
-      },
-      {
-        id: 'usr-cardinal',
-        username: '@cardinal',
-        fullName: 'Ahmadi Jaka Abdul Manaf',
-        position: 'Backend Developer',
-        role: 'employee',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202601010201',
-        telegramChat: 'KIE Ahmadi Jaka',
-        telegramId: '-1004361394716',
-        apiDeposit: '42x Setor',
-        school: 'Universitas Jenderal Achmad Yani'
-      },
-      {
-        id: 'usr-jax_ck',
-        username: '@jax_ck',
-        fullName: 'Fakhrul Miandi Rachman',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202606150202',
-        telegramChat: 'KIE Fakhrul Miandi Rachman',
-        telegramId: '-1004487898923',
-        apiDeposit: '355x Setor',
-        school: 'SMKN 2 Sukabumi'
-      },
-      {
-        id: 'usr-082127662477',
-        username: '@082127662477',
-        fullName: 'Hasan Al Farisi',
-        position: 'Direktur Operasional',
-        role: 'employee',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        nip: '201301010102',
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        school: ''
-      },
-      {
-        id: 'usr-firas123',
-        username: '@firas123',
-        fullName: 'M. Firas Faisal',
-        position: 'Direktur Utama',
-        role: 'employee',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        nip: '201301010101',
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        school: ''
-      },
-      {
-        id: 'usr-jambul004',
-        username: '@jambul004',
-        fullName: 'Mubarokah Denis Pratama',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Apple iPhone/iPad',
-        isDeviceBound: true,
-        nip: '202606290201',
-        telegramChat: 'KIE Mubarok Denis Pratama',
-        telegramId: '-1003617002619',
-        apiDeposit: '250x Setor',
-        school: 'SMK PGRI 1 Cimahi'
-      },
-      {
-        id: 'usr-fazlies',
-        username: '@fazlies',
-        fullName: 'Muhamad Fazli Esfandiar',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202606150201',
-        telegramChat: 'KIE Muhamad Fazli Esfandiar',
-        telegramId: '-1004323561346',
-        apiDeposit: '171x Setor',
-        school: 'SMKN 2 Sukabumi'
-      },
-      {
-        id: 'usr-myasirn',
-        username: '@myasirn',
-        fullName: 'Muhamad Yasir Noval',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202607200201',
-        telegramChat: 'KIE Muhammad Yasir Noval',
-        telegramId: '-1004204276629',
-        apiDeposit: '346x Setor',
-        school: 'SMK PGRI 1 Cimahi'
-      },
-      {
-        id: 'usr-myusronn7',
-        username: '@myusronn7',
-        fullName: 'Muhamad Yusron Noval',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202607200202',
-        telegramChat: 'KIE Muhamad Yusron Noval',
-        telegramId: '-1004352413181',
-        apiDeposit: '360x Setor',
-        school: 'SMK PGRI 1 Cimahi'
-      },
-      {
-        id: 'usr-yusariusly',
-        username: '@yusariusly',
-        fullName: 'Muhammad Yusar Ghani',
-        position: 'Frontend Developer',
-        role: 'employee',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202601010202',
-        telegramChat: 'Yusar Ghani',
-        telegramId: '-1003817211103',
-        apiDeposit: '23x Setor',
-        school: 'Universitas Jenderal Achmad Yani'
-      },
-      {
-        id: 'usr-nazwaaulial',
-        username: '@nazwaaulial',
-        fullName: 'Nazwa Aulia Latifah',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202606290202',
-        telegramChat: 'KIE Nazwa Aulia Latifah',
-        telegramId: '-1004340042541',
-        apiDeposit: '376x Setor',
-        school: 'SMKN 2 Sukabumi'
-      },
-      {
-        id: 'usr-stastii',
-        username: '@stastii',
-        fullName: 'Siti Asti Nurjanah',
-        position: 'Siswa PKL',
-        role: 'student',
-        device: 'Android (K)',
-        isDeviceBound: true,
-        nip: '202606290203',
-        telegramChat: 'KIE Siti Asti Nurjanah',
-        telegramId: '-1003715120301',
-        apiDeposit: '386x Setor',
-        school: 'SMKN 2 Sukabumi'
-      },
-      {
-        id: 'usr-jaka',
-        username: '@jaka',
-        fullName: 'Test-Jaka',
-        position: 'Tester',
-        role: 'employee',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        nip: '202607030200',
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        school: ''
-      }
-    ];
+    this.defaultUsers = [];
 
     this._initUsers();
   }
 
   _initUsers() {
     try {
-      const stored = localStorage.getItem('creative_office_managed_users');
-      if (!stored) {
-        localStorage.setItem('creative_office_managed_users', JSON.stringify(this.defaultUsers));
+      const resetKey = 'creative_office_managed_users_reset_empty_v2';
+      if (!localStorage.getItem(resetKey)) {
+        localStorage.setItem(resetKey, 'true');
+        localStorage.setItem('creative_office_managed_users', JSON.stringify([]));
       }
     } catch (e) {}
   }
@@ -221,7 +39,7 @@ export class UserManagementView extends BaseView {
         return JSON.parse(stored);
       }
     } catch (e) {}
-    return this.defaultUsers;
+    return [];
   }
 
   saveUsers(users) {
@@ -318,7 +136,10 @@ export class UserManagementView extends BaseView {
                 </tr>
               </thead>
               <tbody>
-                ${filteredUsers.map(u => this._renderUserRow(u)).join('')}
+                ${filteredUsers.length > 0
+                  ? filteredUsers.map(u => this._renderUserRow(u)).join('')
+                  : (allUsers.length === 0 ? this._renderEmptyState() : this._renderSearchEmptyState())
+                }
               </tbody>
             </table>
           </div>
@@ -329,6 +150,56 @@ export class UserManagementView extends BaseView {
         ${this._renderEditModal()}
         ${this._renderPrintModal()}
       </div>
+    `;
+  }
+
+  _renderEmptyState() {
+    return `
+      <tr>
+        <td colspan="5" class="py-16 px-4 text-center">
+          <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
+            <div class="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#2AB0B2] mb-3.5 shadow-xs">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-[#1C3D3F]">Belum Ada Pengguna</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Belum ada pengguna yang mendaftar atau masuk ke dalam sistem. Akun akan muncul otomatis saat pengguna mendaftar, atau Anda dapat membuat akun baru sekarang.
+            </p>
+            <button
+              id="btn-empty-create-user"
+              type="button"
+              class="mt-4 inline-flex items-center justify-center gap-2 bg-[#2AB0B2] hover:bg-[#209092] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <line x1="19" x2="19" y1="8" y2="14"></line>
+                <line x1="22" x2="16" y1="11" y2="11"></line>
+              </svg>
+              <span>Buat Akun Baru</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  _renderSearchEmptyState() {
+    return `
+      <tr>
+        <td colspan="5" class="py-12 px-4 text-center">
+          <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-slate-400">
+            <span class="material-symbols-outlined text-[32px] text-slate-300 mb-1">search_off</span>
+            <p class="text-xs font-semibold text-slate-600">Tidak ada pengguna yang cocok</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Coba gunakan kata kunci pencarian yang lain</p>
+          </div>
+        </td>
+      </tr>
     `;
   }
 
@@ -636,6 +507,33 @@ export class UserManagementView extends BaseView {
       });
     }
 
+    // Modal Create User
+    const btnOpenCreate = this.element.querySelector('#btn-open-create-user-modal');
+    const modalCreate = this.element.querySelector('#modal-create-user');
+    const btnCloseCreate = this.element.querySelector('#btn-close-create-user');
+    const btnCancelCreate = this.element.querySelector('#btn-cancel-create-user');
+    const formCreate = this.element.querySelector('#form-create-user');
+
+    const openCreateModal = () => {
+      if (modalCreate) {
+        modalCreate.classList.remove('hidden');
+        const firstInput = modalCreate.querySelector('input');
+        if (firstInput) setTimeout(() => firstInput.focus(), 60);
+      }
+    };
+
+    if (btnOpenCreate) {
+      btnOpenCreate.addEventListener('click', openCreateModal);
+    }
+
+    const bindEmptyBtn = () => {
+      const btnEmptyCreate = this.element.querySelector('#btn-empty-create-user');
+      if (btnEmptyCreate) {
+        btnEmptyCreate.addEventListener('click', openCreateModal);
+      }
+    };
+    bindEmptyBtn();
+
     // Live search input
     const searchInput = this.element.querySelector('#input-search-users');
     if (searchInput) {
@@ -654,24 +552,12 @@ export class UserManagementView extends BaseView {
                 (u.nip || '').toLowerCase().includes(query)
               )
             : allUsers;
-          tbody.innerHTML = filtered.map(u => this._renderUserRow(u)).join('');
+          tbody.innerHTML = filtered.length > 0
+            ? filtered.map(u => this._renderUserRow(u)).join('')
+            : (allUsers.length === 0 ? this._renderEmptyState() : this._renderSearchEmptyState());
           this._bindRowEvents();
+          bindEmptyBtn();
         }
-      });
-    }
-
-    // Modal Create User
-    const btnOpenCreate = this.element.querySelector('#btn-open-create-user-modal');
-    const modalCreate = this.element.querySelector('#modal-create-user');
-    const btnCloseCreate = this.element.querySelector('#btn-close-create-user');
-    const btnCancelCreate = this.element.querySelector('#btn-cancel-create-user');
-    const formCreate = this.element.querySelector('#form-create-user');
-
-    if (btnOpenCreate && modalCreate) {
-      btnOpenCreate.addEventListener('click', () => {
-        modalCreate.classList.remove('hidden');
-        const firstInput = modalCreate.querySelector('input');
-        if (firstInput) setTimeout(() => firstInput.focus(), 60);
       });
     }
 
