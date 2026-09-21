@@ -94,50 +94,50 @@ export class Header {
 
                 <!-- Main Navigation Links -->
                 <div class="flex flex-col gap-1 pt-1">
-                  <span class="px-2 text-[10px] font-bold text-gray-900 dark:text-gray-200 uppercase tracking-wider">Navigasi Utama</span>
+                  <span class="px-2 text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Navigasi Utama</span>
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
                     data-route="dashboard"
                   >
                     <span class="material-symbols-outlined text-[18px] text-purple-600 dark:text-purple-400">space_dashboard</span>
-                    <span class="text-black dark:text-white">Dashboard</span>
+                    <span class="text-purple-600 dark:text-purple-400">Dashboard</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
                     data-route="kanban"
                   >
                     <span class="material-symbols-outlined text-[18px] text-blue-600 dark:text-blue-400">view_kanban</span>
-                    <span class="text-black dark:text-white">Papan Kanban</span>
+                    <span class="text-blue-600 dark:text-blue-400">Papan Kanban</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
                     data-route="calendar"
                   >
                     <span class="material-symbols-outlined text-[18px] text-amber-600 dark:text-amber-400">calendar_today</span>
-                    <span class="text-black dark:text-white">Jadwal & Kalender</span>
+                    <span class="text-amber-600 dark:text-amber-400">Jadwal & Kalender</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
                     data-route="workspaces"
                   >
                     <span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">workspaces</span>
-                    <span class="text-black dark:text-white">Ruang Kerja Tim</span>
+                    <span class="text-emerald-600 dark:text-emerald-400">Ruang Kerja Tim</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
                     data-route="docs-sheets"
                   >
                     <span class="material-symbols-outlined text-[18px] text-rose-600 dark:text-rose-400">description</span>
-                    <span class="text-black dark:text-white">Dokumen & SOP</span>
+                    <span class="text-rose-600 dark:text-rose-400">Dokumen & SOP</span>
                   </button>
                 </div>
               </div>
