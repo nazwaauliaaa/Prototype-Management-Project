@@ -103,7 +103,7 @@ export class ProfileView extends BaseView {
             
             <!-- Avatar Section with Upload trigger -->
             <div class="relative group shrink-0 flex flex-col items-center">
-              <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-primary/40 shadow-md bg-surface-container-low flex items-center justify-center cursor-pointer">
+              <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-purple-400/50 shadow-md bg-white/5 flex items-center justify-center cursor-pointer">
                 <img 
                   id="profile-avatar-preview" 
                   src="${currentAvatar}" 
@@ -122,8 +122,8 @@ export class ProfileView extends BaseView {
                 </label>
               </div>
               <input type="file" id="input-profile-avatar" class="hidden" accept="image/png,image/jpeg,image/webp,image/gif" />
-              <span class="text-[10px] text-text-muted mt-1.5 flex items-center gap-1 font-medium">
-                <span class="material-symbols-outlined text-[12px] text-primary">touch_app</span>
+              <span class="text-[10px] text-white/60 mt-1.5 flex items-center gap-1 font-medium">
+                <span class="material-symbols-outlined text-[12px] text-purple-300">touch_app</span>
                 <span>Klik foto untuk ganti</span>
               </span>
             </div>
@@ -132,11 +132,11 @@ export class ProfileView extends BaseView {
             <div class="flex-1 text-center sm:text-left min-w-0 flex flex-col gap-2">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h2 class="text-[20px] sm:text-[22px] font-bold text-text-primary tracking-tight" id="display-profile-name">
+                  <h2 class="text-[20px] sm:text-[22px] font-bold text-white tracking-tight" id="display-profile-name">
                     ${this._escapeHtml(user.name)}
                   </h2>
-                  <p class="text-[13px] text-text-secondary font-mono flex items-center justify-center sm:justify-start gap-1 mt-0.5" id="display-profile-email">
-                    <span class="material-symbols-outlined text-[15px] text-primary">mail</span>
+                  <p class="text-[13px] text-white/70 font-mono flex items-center justify-center sm:justify-start gap-1 mt-0.5" id="display-profile-email">
+                    <span class="material-symbols-outlined text-[15px] text-purple-300">mail</span>
                     <span>${this._escapeHtml(user.email || 'user@sampulkreativ.id')}</span>
                   </p>
                 </div>
@@ -145,7 +145,7 @@ export class ProfileView extends BaseView {
                   <button 
                     type="button" 
                     id="btn-remove-avatar" 
-                    class="h-8.5 px-3 rounded-xl bg-surface-container hover:bg-rose-50 hover:text-rose-600 text-text-muted text-[12px] font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-surface-border"
+                    class="h-8.5 px-3 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-white/70 text-[12px] font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-white/10"
                     title="Gunakan avatar inisial nama"
                   >
                     <span class="material-symbols-outlined text-[16px]">delete</span>
@@ -155,12 +155,12 @@ export class ProfileView extends BaseView {
               </div>
 
               <!-- Presets Avatar Options -->
-              <div class="mt-2 pt-2.5 border-t border-surface-border/60 flex items-center gap-2 flex-wrap justify-center sm:justify-start text-[11px] text-text-muted">
+              <div class="mt-2 pt-2.5 border-t border-white/10 flex items-center gap-2 flex-wrap justify-center sm:justify-start text-[11px] text-white/60">
                 <span class="font-semibold">Pilihan Avatar Cepat:</span>
-                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer" data-seed="blue">🔵 Biru</button>
-                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold hover:ring-2 hover:ring-purple-400 transition-all cursor-pointer" data-seed="purple">🟣 Ungu</button>
-                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold hover:ring-2 hover:ring-emerald-400 transition-all cursor-pointer" data-seed="emerald">🟢 Hijau</button>
-                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold hover:ring-2 hover:ring-amber-400 transition-all cursor-pointer" data-seed="amber">🟡 Oranye</button>
+                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-blue-500/20 border border-blue-400/30 text-blue-200 font-bold hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer" data-seed="blue">🔵 Biru</button>
+                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-purple-500/20 border border-purple-400/30 text-purple-200 font-bold hover:ring-2 hover:ring-purple-400 transition-all cursor-pointer" data-seed="purple">🟣 Ungu</button>
+                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-bold hover:ring-2 hover:ring-emerald-400 transition-all cursor-pointer" data-seed="emerald">🟢 Hijau</button>
+                <button type="button" class="btn-avatar-preset px-2 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-200 font-bold hover:ring-2 hover:ring-amber-400 transition-all cursor-pointer" data-seed="amber">🟡 Oranye</button>
               </div>
             </div>
           </div>
@@ -169,29 +169,29 @@ export class ProfileView extends BaseView {
           <form id="form-edit-user-profile" class="flex flex-col gap-6">
 
             <!-- Section 1: Informasi Akun -->
-            <div class="p-6 rounded-2xl bg-surface-container-lowest border border-surface-border flex flex-col gap-4 shadow-xs">
-              <div class="flex items-center gap-2.5 pb-3 border-b border-surface-border">
-                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div class="p-6 rounded-2xl bg-[#0e0a22]/85 backdrop-blur-2xl border border-white/15 flex flex-col gap-4 shadow-2xl shadow-purple-950/70 text-white">
+              <div class="flex items-center gap-2.5 pb-3 border-b border-white/10">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center justify-center shrink-0">
                   <span class="material-symbols-outlined text-[19px]">badge</span>
                 </div>
                 <div>
-                  <h3 class="text-[15px] font-bold text-text-primary">Informasi Data Pribadi</h3>
-                  <p class="text-[12px] text-text-muted">Perbarui nama tampilan dan alamat email yang tercatat di papan proyek</p>
+                  <h3 class="text-[15px] font-bold text-white">Informasi Data Pribadi</h3>
+                  <p class="text-[12px] text-white/60">Perbarui nama tampilan dan alamat email yang tercatat di papan proyek</p>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Nama Lengkap -->
                 <div>
-                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
-                    Nama Lengkap <span class="text-rose-500">*</span>
+                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-white/80 mb-1.5">
+                    Nama Lengkap <span class="text-rose-400">*</span>
                   </label>
                   <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[18px]">person</span>
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-purple-300 text-[18px]">person</span>
                     <input 
                       type="text" 
                       id="input-profile-name" 
-                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-white/40 text-[13px] font-medium focus:outline-none focus:border-purple-400 focus:bg-white/10 focus:ring-2 focus:ring-purple-500/30 transition-all"
                       value="${this._escapeHtml(user.name)}"
                       placeholder="Contoh: Nazwa Aulia Latifah"
                       required
@@ -201,15 +201,15 @@ export class ProfileView extends BaseView {
 
                 <!-- Alamat Gmail / Email -->
                 <div>
-                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
-                    Alamat Gmail / Email <span class="text-rose-500">*</span>
+                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-white/80 mb-1.5">
+                    Alamat Gmail / Email <span class="text-rose-400">*</span>
                   </label>
                   <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[18px]">mail</span>
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-purple-300 text-[18px]">mail</span>
                     <input 
                       type="email" 
                       id="input-profile-email" 
-                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] font-medium font-mono focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-white/40 text-[13px] font-medium font-mono focus:outline-none focus:border-purple-400 focus:bg-white/10 focus:ring-2 focus:ring-purple-500/30 transition-all"
                       value="${this._escapeHtml(user.email || '')}"
                       placeholder="nama@gmail.com"
                       required
@@ -219,15 +219,15 @@ export class ProfileView extends BaseView {
 
                 <!-- Posisi / Peran Deskriptif -->
                 <div>
-                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
+                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-white/80 mb-1.5">
                     Jabatan / Posisi Tim
                   </label>
                   <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[18px]">work</span>
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-purple-300 text-[18px]">work</span>
                     <input 
                       type="text" 
                       id="input-profile-title" 
-                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-white/40 text-[13px] font-medium focus:outline-none focus:border-purple-400 focus:bg-white/10 focus:ring-2 focus:ring-purple-500/30 transition-all"
                       value="${this._escapeHtml(user.title || user.jobdesk || 'Editor & Anggota Tim Proyek')}"
                       placeholder="Contoh: UI/UX Designer / Content Creator"
                     />
@@ -236,15 +236,15 @@ export class ProfileView extends BaseView {
 
                 <!-- Nomor Telepon / WhatsApp -->
                 <div>
-                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">
+                  <label class="block text-[11.5px] font-bold uppercase tracking-wider text-white/80 mb-1.5">
                     No. Telepon / WhatsApp (Opsional)
                   </label>
                   <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[18px]">phone</span>
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-purple-300 text-[18px]">phone</span>
                     <input 
                       type="tel" 
                       id="input-profile-phone" 
-                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-lowest border border-surface-border text-text-primary text-[13px] font-medium font-mono focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      class="w-full h-10 pl-9 pr-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-white/40 text-[13px] font-medium font-mono focus:outline-none focus:border-purple-400 focus:bg-white/10 focus:ring-2 focus:ring-purple-500/30 transition-all"
                       value="${this._escapeHtml(user.phone || '')}"
                       placeholder="0812-3456-7890"
                     />
@@ -258,7 +258,7 @@ export class ProfileView extends BaseView {
               <button 
                 type="button" 
                 id="btn-cancel-profile-edit" 
-                class="px-5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-text-secondary text-[13px] font-medium transition-colors cursor-pointer"
+                class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/15 text-[13px] font-semibold transition-all cursor-pointer"
               >
                 Batal
               </button>
@@ -266,7 +266,7 @@ export class ProfileView extends BaseView {
               <button 
                 type="submit" 
                 id="btn-save-profile" 
-                class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[13px] flex items-center gap-2 shadow-md shadow-primary/20 transition-all cursor-pointer active:scale-98"
+                class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[13px] flex items-center gap-2 shadow-lg shadow-purple-600/30 border border-purple-400/40 transition-all cursor-pointer active:scale-98"
               >
                 <span class="material-symbols-outlined text-[18px]">check</span>
                 <span>Simpan Perubahan Profil</span>
