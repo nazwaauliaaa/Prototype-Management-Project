@@ -69,22 +69,22 @@ export class Header {
                 class="hidden absolute left-0 top-full mt-2 w-72 bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-surface-border p-3 z-50 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150"
               >
                 <div class="px-2 py-1.5 border-b border-surface-border flex items-center justify-between">
-                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-text-muted">Menu Navigasi</span>
+                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-gray-900 dark:text-gray-200">Menu Navigasi</span>
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${activeBadge.class}">${activeBadge.label}</span>
                 </div>
 
                 <!-- Administrator Section (Khusus Manajemen Pengguna) -->
                 ${!isUserRole ? `
                 <div class="flex flex-col gap-1.5 pt-0.5">
-                  <span class="px-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">Administrasi Sistem</span>
+                  <span class="px-1 text-[10px] font-bold text-gray-900 dark:text-gray-200 uppercase tracking-wider">Administrasi Sistem</span>
                   <button
                     id="btn-dashboard-user-mgmt"
                     type="button"
-                    class="w-full px-3.5 py-2.5 rounded-xl bg-[#2AB0B2] hover:bg-[#209092] active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-sm cursor-pointer"
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-[#2E1065] hover:bg-[#3B0764] border border-purple-800/60 active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-sm cursor-pointer"
                     title="Buka Halaman Manajemen Pengguna"
                   >
                     <div class="flex items-center gap-2">
-                      <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
+                      <span class="material-symbols-outlined text-[18px] text-purple-300">manage_accounts</span>
                       <span>Manajemen Pengguna</span>
                     </div>
                     <span class="material-symbols-outlined text-[16px] text-white/80">arrow_forward</span>
@@ -94,50 +94,50 @@ export class Header {
 
                 <!-- Main Navigation Links -->
                 <div class="flex flex-col gap-1 pt-1">
-                  <span class="px-2 text-[10px] font-bold text-text-muted uppercase tracking-wider">Navigasi Utama</span>
+                  <span class="px-2 text-[10px] font-bold text-gray-900 dark:text-gray-200 uppercase tracking-wider">Navigasi Utama</span>
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
                     data-route="dashboard"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-purple-400">space_dashboard</span>
-                    <span>Dashboard</span>
+                    <span class="material-symbols-outlined text-[18px] text-purple-600 dark:text-purple-400">space_dashboard</span>
+                    <span class="text-black dark:text-white">Dashboard</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
                     data-route="kanban"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-blue-400">view_kanban</span>
-                    <span>Papan Kanban</span>
+                    <span class="material-symbols-outlined text-[18px] text-blue-600 dark:text-blue-400">view_kanban</span>
+                    <span class="text-black dark:text-white">Papan Kanban</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
                     data-route="calendar"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-amber-400">calendar_today</span>
-                    <span>Jadwal & Kalender</span>
+                    <span class="material-symbols-outlined text-[18px] text-amber-600 dark:text-amber-400">calendar_today</span>
+                    <span class="text-black dark:text-white">Jadwal & Kalender</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
                     data-route="workspaces"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-emerald-400">workspaces</span>
-                    <span>Ruang Kerja Tim</span>
+                    <span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">workspaces</span>
+                    <span class="text-black dark:text-white">Ruang Kerja Tim</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-text-primary text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-surface-container text-black dark:text-white text-[12.5px] flex items-center gap-2.5 font-semibold cursor-pointer transition-colors"
                     data-route="docs-sheets"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-rose-400">description</span>
-                    <span>Dokumen & SOP</span>
+                    <span class="material-symbols-outlined text-[18px] text-rose-600 dark:text-rose-400">description</span>
+                    <span class="text-black dark:text-white">Dokumen & SOP</span>
                   </button>
                 </div>
               </div>
