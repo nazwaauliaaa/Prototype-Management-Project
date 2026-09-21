@@ -287,12 +287,13 @@ export class KanbanBoardView extends BaseView {
   }
 
   formatProjectTitle(name) {
-    if (!name) return 'LayarBaca';
+    if (!name) return 'Panen Kunci';
     const s = String(name).trim();
     const sLower = s.toLowerCase();
     if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
-    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'CreativOffive';
-    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci')) return 'PananKunci';
+    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'Creative Office';
+    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci')) return 'Panen Kunci';
+    if (sLower.includes('ruangkreasi') || sLower.includes('ruang kreasi')) return 'Ruang Kreasi';
     if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
     if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
 
@@ -302,7 +303,7 @@ export class KanbanBoardView extends BaseView {
   }
 
   getWorkspaceName(wsKey) {
-    if (!wsKey) return 'LayarBaca';
+    if (!wsKey) return 'Panen Kunci';
     if (this.projectService) {
       const projects = this.projectService.getAllProjects();
       const sKey = String(wsKey).toLowerCase().trim();
@@ -324,10 +325,13 @@ export class KanbanBoardView extends BaseView {
     const cleanKey = rawStr.toLowerCase().replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_\s]+/g, '');
     const knownNames = {
       'layarbaca': 'LayarBaca',
-      'creativoffive': 'CreativOffive',
-      'creativoffice': 'CreativOffive',
-      'panankunci': 'PananKunci',
-      'panenkunci': 'PananKunci',
+      'creativoffive': 'Creative Office',
+      'creativoffice': 'Creative Office',
+      'creativeoffice': 'Creative Office',
+      'ruangkreasi': 'Ruang Kreasi',
+      'panankunci': 'Panen Kunci',
+      'panenkunci': 'Panen Kunci',
+      'panen-kunci': 'Panen Kunci',
       'aikreativ': 'AIKreativ',
       'sharinginaja': 'Sharinginaja'
     };
@@ -866,9 +870,9 @@ export class KanbanBoardView extends BaseView {
 
     // 2. Standard Workspace Portfolio (always available so users on mobile/fresh devices can switch projects)
     const standardWorkspaces = [
-      { id: 'panen-kunci', name: 'PananKunci', code: 'PK', workspace: 'panen-kunci', category: 'SaaS & Infrastruktur' },
+      { id: 'panen-kunci', name: 'Panen Kunci', code: 'PK', workspace: 'panen-kunci', category: 'SaaS & Infrastruktur' },
       { id: 'layarbaca', name: 'LayarBaca', code: 'LB', workspace: 'layarbaca', category: 'Media & Publikasi' },
-      { id: 'creativoffive', name: 'CreativOffive', code: 'CO', workspace: 'creativoffive', category: 'Creative Hub' },
+      { id: 'creativoffice', name: 'Creative Office', code: 'CO', workspace: 'creativoffice', category: 'Creative Hub' },
       { id: 'aikreativ', name: 'AIKreativ', code: 'AI', workspace: 'aikreativ', category: 'AI & Otomasi' },
       { id: 'sharinginaja', name: 'Sharinginaja', code: 'SH', workspace: 'sharinginaja', category: 'Cloud Asset Hub' }
     ];
@@ -1230,6 +1234,32 @@ export class KanbanBoardView extends BaseView {
         }
         #kanban-board::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.6);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar,
+        [data-cards-area]::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track,
+        [data-cards-area]::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb,
+        [data-cards-area]::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.45);
+          border-radius: 999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+        [data-cards-area]::-webkit-scrollbar-thumb:hover {
+          background: rgba(100, 116, 139, 0.75);
+        }
+        .custom-scrollbar,
+        [data-cards-area] {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
         }
 
         .kanban-card {
@@ -1704,7 +1734,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-16 sm:pb-20 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
+            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-3 sm:pb-4 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
               ${this.columns.map((col, colIdx) => {
       const validColIds = this.columns.map(c => c.id);
@@ -2096,7 +2126,23 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[17px]">check</span>
             </button>
 
-            <!-- 2. Timeline (Gantt) -->
+            <!-- 2. Tabel (Table View) -->
+            <button id="btn-switch-view-table" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">table_chart</span>
+                <span>Tabel (Table)</span>
+              </div>
+            </button>
+
+            <!-- 3. Kalender (Calendar View) -->
+            <button id="btn-switch-view-calendar" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
+                <span>Kalender (Calendar)</span>
+              </div>
+            </button>
+
+            <!-- 4. Timeline (Gantt) -->
             <button id="btn-switch-view-gantt" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
               <div class="flex items-center gap-2.5">
                 <span class="material-symbols-outlined text-[18px] text-slate-400">timeline</span>
@@ -3463,7 +3509,7 @@ export class KanbanBoardView extends BaseView {
 
     if (this.taskService && Array.isArray(this.taskService.tasks)) {
       const taskIndex = this.taskService.tasks.findIndex(t => 
-        String(t.id) === String(actualTaskId) || String(t.code) === String(taskId)
+        String(t.id) === String(actualTaskId)
       );
 
       if (taskIndex !== -1) {

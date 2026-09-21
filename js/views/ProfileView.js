@@ -279,23 +279,43 @@ export class ProfileView extends BaseView {
     const backBtn = this.element.querySelector('#btn-profile-back');
     const cancelBtn = this.element.querySelector('#btn-cancel-profile-edit');
     const handleBack = () => {
-      const returnProj = localStorage.getItem('profile_return_project') ||
-                         localStorage.getItem('user_invited_project') ||
-                         localStorage.getItem('active_project_id');
+      // Revert pending avatar preview on cancel or back
+      const currentUser = this.authService ? this.authService.getCurrentUser() : null;
+      if (avatarImg && currentUser) {
+        avatarImg.src = currentUser.avatar || '';
+      }
+      this.pendingAvatarUrl = null;
 
-      const returnWs = localStorage.getItem('profile_return_workspace') ||
-                       localStorage.getItem('user_invited_workspace') ||
-                       localStorage.getItem('active_workspace') ||
-                       returnProj;
+      const user = this.authService ? this.authService.getCurrentUser() : null;
+      const isUserRole = (user?.role || '').toLowerCase() === 'user';
 
-      if (returnProj) {
+      if (!isUserRole) {
+        // Admin or Manager: return to previous view or dashboard
+        const fromView = localStorage.getItem('profile_opened_from_view');
+        if (fromView && fromView !== 'profile' && fromView !== 'profil') {
+          this.eventBus.emit('navigate', { view: fromView });
+          return;
+        }
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        this.eventBus.emit('navigate', { view: 'dashboard' });
+      } else {
+        // Regular user: pinned to their kanban board
+        const returnProj = localStorage.getItem('profile_return_project') ||
+                           localStorage.getItem('user_invited_project') ||
+                           localStorage.getItem('active_project_id') ||
+                           (user?.workspaceAccess && user.workspaceAccess[0]) || 'panen-kunci';
+        const returnWs = localStorage.getItem('profile_return_workspace') ||
+                         localStorage.getItem('user_invited_workspace') ||
+                         localStorage.getItem('active_workspace') ||
+                         returnProj;
         this.eventBus.emit('navigate', {
           view: 'kanban',
           projectId: returnProj,
           workspace: returnWs
         });
-      } else {
-        this.eventBus.emit('navigate', { view: 'dashboard' });
       }
     };
     if (backBtn) backBtn.addEventListener('click', handleBack);
@@ -327,32 +347,24 @@ export class ProfileView extends BaseView {
           if (compressed) {
             this.pendingAvatarUrl = compressed;
             if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
-            try {
-              localStorage.setItem('current_user_avatar_override', this.pendingAvatarUrl);
-              const u = this.authService.getCurrentUser();
-              if (u?.email) localStorage.setItem(`user_avatar_${u.email.toLowerCase().trim()}`, this.pendingAvatarUrl);
-              if (u?.name) localStorage.setItem(`user_avatar_${u.name.toLowerCase().trim()}`, this.pendingAvatarUrl);
-            } catch (err) {}
-            this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
-            this.notificationService.success('Foto profil berhasil diubah & diperbarui di semua tempat!');
+            this.notificationService.info('Foto dipilih! Klik "Simpan Perubahan" untuk menyimpan.');
           }
         }
       });
     }
 
-    // Reset avatar button
+    // Reset avatar button (deferred until save)
     if (removeAvatarBtn) {
       removeAvatarBtn.addEventListener('click', () => {
         const u = this.authService.getCurrentUser();
         const fallbackName = u?.name || 'User';
         this.pendingAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=2563eb&color=fff&bold=true`;
         if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
-        this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
-        this.notificationService.info('Avatar direset ke inisial nama dan diperbarui.');
+        this.notificationService.info('Avatar diubah ke inisial. Klik "Simpan Perubahan" untuk menyimpan.');
       });
     }
 
-    // Avatar Presets
+    // Avatar Presets (deferred until save)
     const presetBtns = this.element.querySelectorAll('.btn-avatar-preset');
     const presetColors = {
       blue: '2563eb',
@@ -368,8 +380,7 @@ export class ProfileView extends BaseView {
         const fallbackName = u?.name || 'User';
         this.pendingAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=${color}&color=fff&bold=true`;
         if (avatarImg) avatarImg.src = this.pendingAvatarUrl;
-        this.authService.updateCurrentUser({ avatar: this.pendingAvatarUrl });
-        this.notificationService.info(`Preset warna avatar diterapkan di semua tempat.`);
+        this.notificationService.info(`Preset warna avatar dipilih. Klik "Simpan Perubahan" untuk menyimpan.`);
       });
     });
 
@@ -412,6 +423,13 @@ export class ProfileView extends BaseView {
 
         const updatedUser = this.authService.updateCurrentUser(updates);
         if (updatedUser) {
+          if (updatedUser.avatar) {
+            try {
+              localStorage.setItem('current_user_avatar_override', updatedUser.avatar);
+              if (updatedUser.email) localStorage.setItem(`user_avatar_${updatedUser.email.toLowerCase().trim()}`, updatedUser.avatar);
+              if (updatedUser.name) localStorage.setItem(`user_avatar_${updatedUser.name.toLowerCase().trim()}`, updatedUser.avatar);
+            } catch (e) {}
+          }
           // Update display names on page
           const dispName = this.element.querySelector('#display-profile-name');
           const dispEmail = this.element.querySelector('#display-profile-email span:nth-child(2)');

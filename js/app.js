@@ -784,7 +784,7 @@ class CreativeOfficeApp {
       const allowedWs = (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
 
-      if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'login') {
+      if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'login' && viewName !== 'profile' && viewName !== 'profil') {
         window.location.hash = `#/kanban/${allowedProj}`;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
         return;
@@ -825,12 +825,12 @@ class CreativeOfficeApp {
     const activeRole = localStorage.getItem('active_user_role');
     const isUserRole = activeRole === 'admin' ? false : ((currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()))) || activeRole === 'user');
 
-    // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban and auth
+    // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban, profile, and auth
     if (isUserRole) {
       const allowedWs = params.workspace || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
       const allowedProj = params.projectId || localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
 
-      if (viewName !== 'kanban' && viewName !== 'auth') {
+      if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'profile' && viewName !== 'profil') {
         viewName = 'kanban';
         params = { ...params, projectId: allowedProj, workspace: allowedWs };
       }

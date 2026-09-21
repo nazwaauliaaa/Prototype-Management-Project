@@ -8,6 +8,7 @@ export class WorkspaceDashboardView extends BaseView {
   constructor(container) {
     super(container);
     this.notificationService = container.resolve('NotificationService');
+    this.modalManager = container.resolve('ModalManager');
     this.workspaceId = null;
   }
 
@@ -251,6 +252,12 @@ export class WorkspaceDashboardView extends BaseView {
     actionBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.getAttribute('data-action');
+        if (action === 'Proyek Baru' || action === 'Tambah Proyek') {
+          if (this.modalManager) {
+            this.modalManager.open('create-board', { workspace: this.workspaceId });
+            return;
+          }
+        }
         this.notificationService.info(`"${action}" — fitur segera hadir!`);
       });
     });

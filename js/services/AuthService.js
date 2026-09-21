@@ -66,7 +66,22 @@ export class AuthService {
       teknis: qaUser
     };
 
-    // Session state: restore from localStorage if present
+    // Hydrate role profiles with any previously saved custom edits so they persist across sessions
+    try {
+      ['admin', 'manajement-project', 'qa', 'user'].forEach(r => {
+        const savedRp = localStorage.getItem(`saved_role_profile_${r}`);
+        if (savedRp) {
+          try {
+            const parsed = JSON.parse(savedRp);
+            if (parsed && parsed.name && this.roleProfiles[r]) {
+              this.roleProfiles[r] = new User({ ...this.roleProfiles[r], ...parsed });
+            }
+          } catch (e) {}
+        }
+      });
+    } catch (e) {}
+
+    // Session state: restore from localStorage if active in current browser tab session
     this.currentUser = null;
     this.isAuthenticated = false;
     this.restoreSession();
@@ -77,11 +92,30 @@ export class AuthService {
   }
 
   /**
-   * Pulihkan sesi pengguna dari berbagai fallback storage agar tidak hilang saat reload browser
+   * Verifikasi kata sandi admin untuk keamanan panel admin
+   * @param {string} password
+   * @returns {boolean}
+   */
+  verifyAdminPassword(password) {
+    if (!password) return false;
+    const clean = String(password).trim();
+    return clean === 'admin123' || clean === 'sampulkreativ2026' || clean === 'admin';
+  }
+
+  /**
+   * Pulihkan sesi pengguna dari storage jika sesi tab browser masih aktif
    * @returns {User|null}
    */
   restoreSession() {
     try {
+      // Validasi sesi tab: Jika tab browser sebelumnya ditutup, sessionStorage musnah dan sesi habis
+      const isTabSessionActive = sessionStorage.getItem('creative_office_session_active');
+      if (!isTabSessionActive) {
+        this.currentUser = null;
+        this.isAuthenticated = false;
+        return null;
+      }
+
       let u = null;
       const saved = localStorage.getItem('creative_office_auth_user');
       if (saved) {
@@ -239,6 +273,7 @@ export class AuthService {
     this.currentUser = user instanceof User ? user : new User(user);
     this.isAuthenticated = true;
     try {
+      sessionStorage.setItem('creative_office_session_active', 'true');
       localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
       localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
       localStorage.setItem('active_user_role', this.currentUser.role || 'user');
@@ -297,9 +332,12 @@ export class AuthService {
       if (this.currentUser.title) rp.title = this.currentUser.title;
     }
 
-    // Persist to session localStorage
+    // Persist to session localStorage & role profile cache
     try {
       localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
+      if (this.currentUser.role) {
+        localStorage.setItem(`saved_role_profile_${this.currentUser.role}`, JSON.stringify(this.currentUser));
+      }
     } catch (e) {}
 
     // Persist dedicated avatar keys for robust recovery across views
@@ -497,6 +535,7 @@ export class AuthService {
       this.currentUser = this.roleProfiles[role];
       this.isAuthenticated = true;
       try {
+        sessionStorage.setItem('creative_office_session_active', 'true');
         localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
         localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
         localStorage.setItem('active_user_role', role);
@@ -542,6 +581,7 @@ export class AuthService {
       localStorage.removeItem('active_user_email');
       localStorage.removeItem('active_user_name');
       sessionStorage.removeItem('auth_login_method');
+      sessionStorage.removeItem('creative_office_session_active');
     } catch (e) {}
     this.eventBus.emit('auth:logout');
     this.notifications.info('Sesi Anda telah diakhiri.');

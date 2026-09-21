@@ -99,12 +99,23 @@ export class TaskService {
           if (t && t.id) remoteMap.set(String(t.id), new Task(t));
         });
 
-        // Cari task lokal yang belum ada di remote dan jadwalkan upload
+        // Cari task lokal yang belum ada di remote dan jadwalkan upload, atau jika lokal lebih baru pertahankan lokal
         const localTasksToUpload = [];
         for (const localTask of this.tasks) {
-          if (localTask && localTask.id && !remoteMap.has(String(localTask.id))) {
+          if (!localTask || !localTask.id) continue;
+          const remoteTask = remoteMap.get(String(localTask.id));
+          if (!remoteTask) {
             localTasksToUpload.push(localTask);
             remoteMap.set(String(localTask.id), localTask);
+          } else {
+            const localTime = new Date(localTask.updatedAt || localTask.createdAt || 0).getTime();
+            const remoteTime = new Date(remoteTask.updatedAt || remoteTask.createdAt || 0).getTime();
+            if (localTime >= remoteTime) {
+              remoteMap.set(String(localTask.id), localTask);
+              if (localTask.status !== remoteTask.status) {
+                apiService.updateTask(localTask.id, { status: localTask.status, updatedAt: localTime }).catch(() => {});
+              }
+            }
           }
         }
 
@@ -654,17 +665,18 @@ export class TaskService {
   updateTaskStatus(taskId, newStatus) {
     if (!taskId) return false;
     const clean = String(taskId).trim();
-    const task = this.tasks.find(t => 
-      String(t.id) === clean || 
-      String(t.code) === clean ||
-      (t.code && t.code.toLowerCase() === clean.toLowerCase())
-    );
+    // Strictly match by ID first to prevent collisions between tasks
+    let task = this.tasks.find(t => String(t.id) === clean);
+    if (!task) {
+      task = this.tasks.find(t => t.code && String(t.code).trim().toLowerCase() === clean.toLowerCase());
+    }
     if (task) {
       const oldStatus = task.status;
       task.status = newStatus;
+      task.updatedAt = Date.now();
       this.saveToStorage();
 
-      apiService.updateTask(task.id, { status: newStatus }).catch(err => {
+      apiService.updateTask(task.id, { status: newStatus, updatedAt: task.updatedAt }).catch(err => {
         console.warn('[TaskService] Gagal update status di PostgreSQL:', err.message);
       });
 

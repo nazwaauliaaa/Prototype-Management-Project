@@ -16,7 +16,7 @@ export class NotificationService {
   init() {
     this.container = document.createElement('div');
     this.container.id = 'toast-container';
-    this.container.className = 'fixed top-5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 z-[9999] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4';
+    this.container.className = 'fixed top-5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 z-[100000] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4';
     document.body.appendChild(this.container);
   }
 

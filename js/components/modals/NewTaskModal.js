@@ -769,8 +769,8 @@ export class NewTaskModal extends BaseModal {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const title = modalRoot.querySelector('#new-task-title').value;
-        const workspace = this._modalData?.workspace || localStorage.getItem('active_workspace') || 'ruangkreasi';
-        const projectId = this._modalData?.projectId || localStorage.getItem('active_project_id') || null;
+        const workspace = this._modalData?.workspace || localStorage.getItem('active_workspace') || localStorage.getItem('user_invited_workspace') || 'panen-kunci';
+        const projectId = this._modalData?.projectId || localStorage.getItem('active_project_id') || workspace;
         const priority = modalRoot.querySelector('#new-task-priority').value;
         const hours = modalRoot.querySelector('#new-task-hours')?.value
           ? parseInt(modalRoot.querySelector('#new-task-hours').value, 10)

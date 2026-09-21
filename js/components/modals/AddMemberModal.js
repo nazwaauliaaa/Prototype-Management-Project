@@ -1022,46 +1022,22 @@ export class AddMemberModal extends BaseModal {
     if (shareBtn)   shareBtn.addEventListener('click', handleShareAction);
     if (inputField) inputField.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); handleShareAction(); } });
 
-    // 6. Copy Link General
+    // 6. Copy Link General (copies share link without creating a pending join request)
     const copyLinkBtn = modalRoot.querySelector('[data-testid="board-invite-link-copy-button"]');
     if (copyLinkBtn) {
       copyLinkBtn.addEventListener('click', async () => {
-        const rawVal = inputField?.value.trim() || '';
-        let invName = '';
-        let invEmail = '';
-
-        if (rawVal) {
-          if (rawVal.includes('@')) {
-            invEmail = rawVal.toLowerCase();
-            const userPart = rawVal.split('@')[0];
-            invName = userPart.replace(/[._-]+/g, ' ').split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || userPart;
-          } else {
-            invName = rawVal.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            invEmail = `${rawVal.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
-          }
-        }
-
-        const inv = {
-          id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
-          name: invName,
-          email: invEmail,
+        const link = this.generateInviteLink({
           role: (this._linkPermission || '').toLowerCase().includes('observer') ? 'Observer' : 'user',
           workspace: this.currentWorkspace || localStorage.getItem('active_workspace') || 'panen-kunci',
           projectId: this.projectId || localStorage.getItem('active_project_id') || this.currentWorkspace || 'panen-kunci',
           boardTitle: this.boardTitle || this.currentWorkspace || 'Papan Proyek',
-          color: '#2563eb',
-          via: 'link',
-          createdAt: new Date().toISOString()
-        };
-        this.savePendingInvite(inv);
-        refreshMembersListUI();
-        const link = this.generateInviteLink(inv);
+        });
         try {
           await navigator.clipboard.writeText(link);
           const orig = copyLinkBtn.innerHTML;
           copyLinkBtn.innerHTML = `<span class="material-symbols-outlined text-[13px]">check</span><span>Copied!</span>`;
           setTimeout(() => { copyLinkBtn.innerHTML = orig; }, 2000);
-          if (this.notificationService) this.notificationService.success('Tautan papan berhasil disalin! Siapapun yang masuk via tautan ini akan langsung tercatat di Board members.');
+          if (this.notificationService) this.notificationService.success('Tautan papan berhasil disalin ke clipboard!');
         } catch {
           if (this.notificationService) this.notificationService.success('Tautan berhasil disalin!');
         }
