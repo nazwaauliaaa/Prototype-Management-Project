@@ -305,12 +305,12 @@ export class AuthView extends BaseView {
               <button
                 id="btn-admin-login-modal-trigger"
                 type="button"
-                class="w-full py-2.5 px-4 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 hover:text-white font-semibold text-[12.5px] border border-purple-500/40 hover:border-purple-400 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] shadow-sm"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold text-[13px] shadow-md shadow-purple-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-purple-400/30"
                 title="Masuk sebagai Administrator dengan Username & Kata Sandi"
               >
-                <span class="material-symbols-outlined text-[18px] text-amber-400">admin_panel_settings</span>
-                <span>Masuk sebagai Admin</span>
-                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                <span class="material-symbols-outlined text-[18px] text-amber-300">admin_panel_settings</span>
+                <span class="text-white font-bold tracking-wide">Masuk sebagai Admin</span>
+                <span class="material-symbols-outlined text-[16px] text-white/90">arrow_forward</span>
               </button>
             </div>
 
