@@ -37,7 +37,7 @@ export class DashboardView extends BaseView {
     const sLower = s.toLowerCase();
     if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
     if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'CreativOffive';
-    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci')) return 'PananKunci';
+    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci') || sLower.includes('panenkunci')) return 'PanenKunci';
     if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
     if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
     const cleaned = s.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d{3,}$/gi, '').trim();

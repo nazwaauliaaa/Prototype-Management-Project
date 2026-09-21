@@ -9,6 +9,186 @@ function sanitizeCode(code) {
   return code.trim();
 }
 
+const SAMPULKREATIV_API_URL = process.env.SAMPULKREATIV_API_URL || 'https://app.sampulkreativ.id/api/external/verify-qr';
+const SAMPULKREATIV_API_KEY = process.env.SAMPULKREATIV_API_KEY || 'sampulkreativ-pm-secret-2026';
+
+/**
+ * Panggil API eksternal Sampulkreativ untuk memverifikasi QR Code
+ * POST https://app.sampulkreativ.id/api/external/verify-qr
+ * Headers: Content-Type: application/json, x-api-key: sampulkreativ-pm-secret-2026
+ * Body: { qr_data: "..." }
+ */
+async function verifyWithSampulkreativApi(qrData) {
+  try {
+    const res = await fetch(SAMPULKREATIV_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': SAMPULKREATIV_API_KEY
+      },
+      body: JSON.stringify({ qr_data: qrData })
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return { success: false, status: res.status, error: `Respons dari server Sampulkreativ bukan JSON (HTTP ${res.status})` };
+    }
+
+    const data = await res.json();
+    return {
+      success: res.ok && Boolean(data.success !== false),
+      status: res.status,
+      data: data.data || data.user || data
+    };
+  } catch (err) {
+    console.error('[QR Router] Gagal menghubungi API Sampulkreativ:', err.message);
+    return { success: false, error: err.message, networkError: true };
+  }
+}
+
+/**
+ * Standarisasi profil pengguna dari respons API Sampulkreativ
+ */
+function normalizeSampulkreativUser(payload, rawQr) {
+  if (!payload || typeof payload !== 'object') return null;
+  const d = payload.data || payload.user || payload;
+
+  const getProp = (keys) => {
+    for (const k of keys) {
+      for (const key of Object.keys(d)) {
+        if (key.toLowerCase() === k.toLowerCase() && d[key]) {
+          return String(d[key]).trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  const rawName = getProp(['name', 'username', 'nama', 'user_name', 'full_name', 'fullname']) || 'Pengguna Sampulkreativ';
+  const rawRole = (getProp(['role', 'peran', 'user_role', 'role_name']) || 'user').toLowerCase();
+
+  // Normalisasi role ke 4 role valid Creative Office: admin | manajement-project | qa | user
+  let normalizedRole = 'user';
+  if (rawRole.includes('admin') || rawRole === 'direktur' || rawRole === 'executive') {
+    normalizedRole = 'admin';
+  } else if (rawRole.includes('pm') || rawRole.includes('project') || rawRole.includes('manajer') || rawRole.includes('manager')) {
+    normalizedRole = 'manajement-project';
+  } else if (rawRole.includes('qa') || rawRole.includes('quality') || rawRole.includes('tester') || rawRole.includes('testing')) {
+    normalizedRole = 'qa';
+  }
+
+  const rawJobdesk = getProp(['jobdesk', 'job', 'posisi', 'jabatan', 'title', 'position']) ||
+    (normalizedRole === 'admin' ? 'Admin & Managing Director' : 
+     normalizedRole === 'manajement-project' ? 'Project Manager' : 
+     normalizedRole === 'qa' ? 'QA Lead' : 'Anggota Tim & Kontributor');
+
+  const rawEmail = getProp(['email']) || (rawName ? `${rawName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id` : null);
+  const rawAvatar = getProp(['avatar', 'avatar_url', 'photo', 'image']) || 
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(rawName)}`;
+  const rawId = getProp(['id', 'userId', 'user_id']) || `usr-${Date.now().toString().slice(-6)}`;
+
+  return {
+    id: rawId,
+    name: rawName,
+    role: normalizedRole,
+    title: rawJobdesk,
+    jobdesk: rawJobdesk,
+    email: rawEmail,
+    avatar: rawAvatar,
+    qr_data: rawQr
+  };
+}
+
+/**
+ * Sinkronisasi data pengguna terverifikasi langsung ke tabel users di Supabase PostgreSQL
+ */
+async function syncSampulkreativUserToSupabase(userObj, rawQr, deviceId, deviceName, forceSwitch = false) {
+  const checkQuery = `
+    SELECT * FROM users 
+    WHERE id = $1 
+       OR (email IS NOT NULL AND LOWER(email) = LOWER($2)) 
+       OR LOWER(name) = LOWER($3)
+       OR (qr_data IS NOT NULL AND qr_data = $4)
+    LIMIT 1
+  `;
+  const existingRes = await pool.query(checkQuery, [userObj.id, userObj.email, userObj.name, rawQr]);
+
+  if (existingRes.rows.length > 0) {
+    const existing = existingRes.rows[0];
+    const boundDevId = existing.bound_device_id;
+    const boundDevName = existing.bound_device_name || 'Perangkat Lain';
+
+    // Device lock check
+    if (boundDevId && deviceId && boundDevId !== deviceId && !forceSwitch) {
+      return {
+        locked: true,
+        boundDeviceName: boundDevName,
+        boundAt: existing.bound_at,
+        data: existing
+      };
+    }
+
+    const updateQuery = `
+      UPDATE users 
+      SET name = COALESCE($1, name),
+          role = COALESCE($2, role),
+          title = COALESCE($3, title),
+          jobdesk = COALESCE($3, jobdesk),
+          email = COALESCE($4, email),
+          avatar = COALESCE($5, avatar),
+          qr_data = COALESCE($6, qr_data),
+          bound_device_id = COALESCE($7, bound_device_id),
+          bound_device_name = COALESCE($8, bound_device_name),
+          bound_at = CASE WHEN bound_device_id IS NULL OR bound_device_id != $7 THEN NOW() ELSE bound_at END,
+          updated_at = NOW()
+      WHERE id = $9
+      RETURNING *
+    `;
+    const updateRes = await pool.query(updateQuery, [
+      userObj.name,
+      userObj.role,
+      userObj.jobdesk,
+      userObj.email,
+      userObj.avatar,
+      rawQr,
+      deviceId || null,
+      deviceName || null,
+      existing.id
+    ]);
+
+    return {
+      locked: false,
+      isNew: false,
+      data: updateRes.rows[0]
+    };
+  } else {
+    const insertQuery = `
+      INSERT INTO users (id, name, role, title, jobdesk, email, avatar, workspace_access, bound_device_id, bound_device_name, bound_at, is_locked_to_device, qr_data)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), true, $11)
+      RETURNING *
+    `;
+    const insertRes = await pool.query(insertQuery, [
+      userObj.id,
+      userObj.name,
+      userObj.role,
+      userObj.title,
+      userObj.jobdesk,
+      userObj.email,
+      userObj.avatar,
+      JSON.stringify(['ruangkreasi', 'panen-kunci']),
+      deviceId || null,
+      deviceName || null,
+      rawQr
+    ]);
+
+    return {
+      locked: false,
+      isNew: true,
+      data: insertRes.rows[0]
+    };
+  }
+}
+
 /**
  * Helper untuk memastikan tabel users memiliki data seed awal jika masih kosong
  */
@@ -105,6 +285,103 @@ function extractUserFromPayload(raw) {
   }
   return null;
 }
+
+/**
+ * POST /api/qr/verify-sampulkreativ
+ * Memverifikasi QR Code ke API Eksternal Sampulkreativ (POST https://app.sampulkreativ.id/api/external/verify-qr)
+ * dan langsung menghubungkan serta menyinkronkan data pengguna ke database Supabase
+ */
+router.post('/verify-sampulkreativ', async (req, res) => {
+  try {
+    const qrData = sanitizeCode(req.body.qr_data || req.body.code || req.body.rawCode || '');
+    const deviceId = req.body.deviceId || req.headers['x-device-id'] || null;
+    const deviceName = req.body.deviceName || req.headers['user-agent']?.slice(0, 100) || 'Perangkat Utama';
+    const forceSwitch = Boolean(req.body.forceSwitch || req.body.forceUnbind);
+
+    if (!qrData) {
+      return res.status(400).json({ success: false, error: 'qr_data wajib disertakan' });
+    }
+
+    // 1. Panggil API Eksternal Sampulkreativ
+    const apiResult = await verifyWithSampulkreativApi(qrData);
+
+    if (apiResult.success && apiResult.data) {
+      const normalized = normalizeSampulkreativUser(apiResult.data, qrData);
+      if (normalized) {
+        // 2. Hubungkan langsung & sinkronkan ke database Supabase
+        const syncResult = await syncSampulkreativUserToSupabase(normalized, qrData, deviceId, deviceName, forceSwitch);
+
+        if (syncResult.locked) {
+          return res.status(403).json({
+            success: false,
+            locked: true,
+            source: 'sampulkreativ-api',
+            error: `Akses ditolak: Akun "${syncResult.data.name}" sedang terhubung di perangkat "${syncResult.boundDeviceName}".`,
+            boundDeviceName: syncResult.boundDeviceName,
+            boundAt: syncResult.boundAt,
+            data: syncResult.data
+          });
+        }
+
+        console.log(`[QR Router] ✅ Sukses verifikasi Sampulkreativ API & sinkronisasi Supabase: ${syncResult.data.name} (${syncResult.data.role})`);
+
+        return res.json({
+          success: true,
+          source: 'sampulkreativ-api',
+          message: `Berhasil diverifikasi via API Sampulkreativ dan disinkronkan ke Supabase!`,
+          isNew: syncResult.isNew,
+          data: syncResult.data
+        });
+      }
+    }
+
+    // 3. Fallback: jika API Sampulkreativ mengembalikan 404 / belum terdaftar, periksa database Supabase
+    try {
+      const localUserQuery = `
+        SELECT * FROM users 
+        WHERE id = $1 
+           OR qr_data = $1
+           OR (qr_data IS NOT NULL AND TRIM(qr_data) = TRIM($1))
+           OR (qr_data IS NOT NULL AND qr_data ILIKE '%' || $1 || '%')
+           OR LOWER(name) = LOWER($1) 
+           OR LOWER(email) = LOWER($1)
+        LIMIT 1
+      `;
+      const localRes = await pool.query(localUserQuery, [qrData]);
+      if (localRes.rows.length > 0) {
+        const row = localRes.rows[0];
+        if (row.bound_device_id && deviceId && row.bound_device_id !== deviceId && !forceSwitch) {
+          return res.status(403).json({
+            success: false,
+            locked: true,
+            source: 'supabase-db',
+            error: `Akses ditolak: Akun "${row.name}" sedang terhubung di perangkat "${row.bound_device_name}".`,
+            boundDeviceName: row.bound_device_name,
+            boundAt: row.bound_at,
+            data: row
+          });
+        }
+
+        return res.json({
+          success: true,
+          source: 'supabase-db',
+          message: `Ditemukan di database Supabase`,
+          data: row
+        });
+      }
+    } catch (e) {
+      console.warn('[QR Router] Fallback check Supabase error:', e.message);
+    }
+
+    return res.status(404).json({
+      success: false,
+      error: apiResult.error || 'Pengguna tidak ditemukan atau QR Code belum terdaftar di Sampulkreativ maupun database Supabase'
+    });
+  } catch (err) {
+    console.error('Error in /api/qr/verify-sampulkreativ:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /**
  * POST /api/qr/register-user
@@ -353,6 +630,40 @@ router.get('/lookup', async (req, res) => {
       }
     } catch (userErr) {
       console.warn('Tabel users belum siap atau error query:', userErr.message);
+    }
+
+    // B. Coba verifikasi ke API Eksternal Sampulkreativ jika belum ditemukan di tabel users lokal
+    try {
+      const sampulCheck = await verifyWithSampulkreativApi(code);
+      if (sampulCheck.success && sampulCheck.data) {
+        const normalized = normalizeSampulkreativUser(sampulCheck.data, code);
+        if (normalized) {
+          const syncResult = await syncSampulkreativUserToSupabase(normalized, code, deviceId, deviceName, forceSwitch);
+          if (syncResult.locked) {
+            return res.status(403).json({
+              success: false,
+              locked: true,
+              type: 'user',
+              error: `Akses ditolak: Akun "${syncResult.data.name}" sedang terhubung di perangkat "${syncResult.boundDeviceName}".`,
+              boundDeviceName: syncResult.boundDeviceName,
+              boundAt: syncResult.boundAt,
+              data: syncResult.data
+            });
+          }
+
+          return res.json({
+            success: true,
+            type: 'user',
+            found: true,
+            autoCreated: syncResult.isNew,
+            bound: true,
+            matchedBy: 'sampulkreativ-api',
+            data: syncResult.data
+          });
+        }
+      }
+    } catch (sampulErr) {
+      console.warn('[QR Router] Lookup API Sampulkreativ error:', sampulErr.message);
     }
 
     // C. Cek apakah ada di tabel projects

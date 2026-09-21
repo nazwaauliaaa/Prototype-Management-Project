@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n \"server,vite\" -c \"blue.bold,green.bold\" \"node server/index.js\" \"vite\"",
+    "dev": "concurrently -k -n \"server,vite\" -c \"blue.bold,green.bold\" \"node --watch server/index.js\" \"vite\"",
     "dev:vite": "vite",
     "server": "node server/index.js",
     "server:dev": "node --watch server/index.js",

@@ -119,6 +119,17 @@ export class AuthView extends BaseView {
 
   loginAsApprovedMember({ email, name, workspace, projectId }) {
     try {
+      if (typeof this.stopCamera === 'function') this.stopCamera();
+      if (typeof this._cleanupCamera === 'function') this._cleanupCamera();
+      if (this.cameraStream) {
+        try {
+          this.cameraStream.getTracks().forEach(t => {
+            try { t.enabled = false; t.stop(); } catch(e) {}
+          });
+          this.cameraStream = null;
+        } catch(e) {}
+      }
+
       const cleanWs = workspace || localStorage.getItem('active_workspace') || 'panen-kunci';
       const cleanProj = projectId || localStorage.getItem('active_project_id') || cleanWs;
       const cleanName = name || email.split('@')[0];
@@ -540,23 +551,71 @@ export class AuthView extends BaseView {
 
     const stopCamera = () => {
       this.isCameraOn = false;
+      this._cameraStarting = false;
+
       if (this.barcodeDetectorInterval) {
         clearInterval(this.barcodeDetectorInterval);
         this.barcodeDetectorInterval = null;
       }
+
+      // 1. Matikan semua track pada this.cameraStream
       if (this.cameraStream) {
-        this.cameraStream.getTracks().forEach(t => t.stop());
+        try {
+          this.cameraStream.getTracks().forEach(t => {
+            try {
+              t.enabled = false;
+              t.stop();
+            } catch (e) {}
+          });
+        } catch (e) {}
         this.cameraStream = null;
       }
+
+      // 2. Matikan semua track pada videoEl.srcObject
+      if (videoEl && videoEl.srcObject) {
+        try {
+          const s = videoEl.srcObject;
+          if (s && typeof s.getTracks === 'function') {
+            s.getTracks().forEach(t => {
+              try {
+                t.enabled = false;
+                t.stop();
+              } catch (e) {}
+            });
+          }
+        } catch (e) {}
+        try {
+          videoEl.pause();
+        } catch (e) {}
+        videoEl.srcObject = null;
+      }
+
+      // 3. Bersihkan seluruh media streams yang tersimpan di memori komponen
+      if (Array.isArray(this._allStreams)) {
+        this._allStreams.forEach(s => {
+          try {
+            if (s && typeof s.getTracks === 'function') {
+              s.getTracks().forEach(t => {
+                try {
+                  t.enabled = false;
+                  t.stop();
+                } catch (e) {}
+              });
+            }
+          } catch (e) {}
+        });
+        this._allStreams = [];
+      }
+
+      if (videoEl) {
+        videoEl.classList.add('hidden');
+      }
+
       if (this.simAnimId) {
         cancelAnimationFrame(this.simAnimId);
         this.simAnimId = null;
       }
-      if (videoEl) {
-        videoEl.pause();
-        videoEl.srcObject = null;
-        videoEl.classList.add('hidden');
-      }
+
       if (canvasEl) canvasEl.classList.add('hidden');
       if (activeOverlay) activeOverlay.classList.add('hidden');
       if (cameraBadgeInfo) {
@@ -570,6 +629,7 @@ export class AuthView extends BaseView {
       if (cameraStatusText) cameraStatusText.textContent = 'Kamera Siap';
     };
 
+    this.stopCamera = stopCamera;
     this._cleanupCamera = stopCamera;
 
     const startCanvasSimulation = () => {
@@ -629,9 +689,28 @@ export class AuthView extends BaseView {
 
     const startCamera = async () => {
       this.isCameraOn = true;
+      this._cameraStarting = true;
+      if (!this._allStreams) this._allStreams = [];
+
+      // Hentikan stream yang mungkin masih berjalan sebelumnya
       if (this.cameraStream) {
-        this.cameraStream.getTracks().forEach(t => t.stop());
+        try {
+          this.cameraStream.getTracks().forEach(t => {
+            try { t.enabled = false; t.stop(); } catch (e) {}
+          });
+        } catch (e) {}
         this.cameraStream = null;
+      }
+      if (videoEl && videoEl.srcObject) {
+        try {
+          const s = videoEl.srcObject;
+          if (s && s.getTracks) {
+            s.getTracks().forEach(t => {
+              try { t.enabled = false; t.stop(); } catch (e) {}
+            });
+          }
+        } catch (e) {}
+        videoEl.srcObject = null;
       }
       if (this.barcodeDetectorInterval) {
         clearInterval(this.barcodeDetectorInterval);
@@ -680,12 +759,29 @@ export class AuthView extends BaseView {
             }
           }
 
+          if (stream) {
+            this._allStreams.push(stream);
+          }
+
+          // Anti race-condition: jika user sudah login / kamera dimatikan saat getUserMedia berlangsung
+          if (!this.isCameraOn || this._unmounted) {
+            if (stream) {
+              stream.getTracks().forEach(t => {
+                try {
+                  t.enabled = false;
+                  t.stop();
+                } catch (e) {}
+              });
+            }
+            return;
+          }
+
           this.cameraStream = stream;
           if (videoEl) {
             videoEl.srcObject = stream;
             videoEl.classList.remove('hidden');
             applyMirrorState();
-            await videoEl.play();
+            await videoEl.play().catch(() => {});
 
             // Real-time QR Code scanning from camera video frame using jsQR
             const offscreenCanvas = document.createElement('canvas');
@@ -693,7 +789,7 @@ export class AuthView extends BaseView {
             let isScanningFrame = false;
 
             this.barcodeDetectorInterval = setInterval(() => {
-              if (!this.isCameraOn || !videoEl || videoEl.readyState < 2 || isScanningFrame) return;
+              if (!this.isCameraOn || this._unmounted || !videoEl || videoEl.readyState < 2 || isScanningFrame) return;
               try {
                 const w = videoEl.videoWidth;
                 const h = videoEl.videoHeight;
@@ -765,11 +861,130 @@ export class AuthView extends BaseView {
         return;
       }
 
-      if (feedback) {
-        feedback.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">Memverifikasi ke Supabase & Memvalidasi Perangkat...</span>`;
+      const handleDeviceLocked = (lockedRes, fallbackUser) => {
+        console.warn('[AuthView] Akses Ditolak: Terkunci di perangkat lain', lockedRes);
+        this.lastScannedLockedCode = cleanCode;
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-rose-500 font-bold">❌ Akses Ditolak: Akun Terkunci di Perangkat Lain!</span>`;
+        }
+
+        const lockedModal = this.element.querySelector('#modal-device-locked');
+        const titleEl = this.element.querySelector('#locked-user-title');
+        const descEl = this.element.querySelector('#locked-user-description');
+        const boundDevEl = this.element.querySelector('#locked-bound-device');
+
+        const boundName = lockedRes.boundDeviceName || 'Perangkat Utama Lain';
+        const userName = (lockedRes.data && lockedRes.data.name) || (fallbackUser && fallbackUser.name) || 'Pengguna';
+
+        if (titleEl) titleEl.textContent = `Akun "${userName}" Terkunci`;
+        if (descEl) {
+          descEl.innerHTML = `Akun <b>${userName}</b> saat ini sudah tersambung di <b>${boundName}</b>. Sesuai kebijakan keamanan, <b>perangkat ini tidak dapat mengakses akun tersebut</b> selama masih terikat pada perangkat resmi.`;
+        }
+        if (boundDevEl) boundDevEl.textContent = boundName;
+
+        if (lockedModal) lockedModal.classList.remove('hidden');
+        if (this.notificationService) {
+          this.notificationService.error(`Akses ditolak: Akun ${userName} terkunci di perangkat "${boundName}"!`);
+        }
+      };
+
+      // 1. Verifikasi Utama: Panggil API Eksternal Sampulkreativ
+      // POST https://app.sampulkreativ.id/api/external/verify-qr
+      // Header: x-api-key: sampulkreativ-pm-secret-2026, Content-Type: application/json
+      // Body: { "qr_data": "<hasil_scan_kamera>" }
+      // Otomatis disinkronkan langsung ke database Supabase (tabel users)
+      try {
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-purple-600 dark:text-purple-400 font-bold animate-pulse">🔍 Memverifikasi QR ke API Sampulkreativ & Supabase...</span>`;
+        }
+
+        const sampulRes = await apiService.verifySampulkreativQr(cleanCode, { forceSwitch });
+
+        if (sampulRes && sampulRes.locked) {
+          handleDeviceLocked(sampulRes, sampulRes.data);
+          return;
+        }
+
+        if (sampulRes && sampulRes.success && sampulRes.data) {
+          const verifiedUser = sampulRes.data;
+          stopCamera();
+
+          try {
+            const regMap = JSON.parse(localStorage.getItem('registered_qr_codes') || '{}');
+            if (cleanCode) regMap[cleanCode.trim()] = verifiedUser.name;
+            if (verifiedUser.qr_data) regMap[verifiedUser.qr_data.trim()] = verifiedUser.name;
+            if (verifiedUser.email) regMap[verifiedUser.email.toLowerCase().trim()] = verifiedUser.name;
+            if (verifiedUser.name) regMap[verifiedUser.name.toLowerCase().trim()] = verifiedUser.name;
+            localStorage.setItem('registered_qr_codes', JSON.stringify(regMap));
+          } catch (e) {}
+
+          if (feedback) {
+            feedback.innerHTML = `<span class="text-emerald-500 font-bold animate-pulse">✅ Terverifikasi via Sampulkreativ API!</span> Tersambung ke Supabase...`;
+          }
+          // Pastikan selalu tersinkronisasi ke database Supabase (tabel users)
+          try {
+            await apiService.registerUser({
+              id: verifiedUser.id,
+              name: verifiedUser.name,
+              role: verifiedUser.role,
+              jobdesk: verifiedUser.jobdesk || verifiedUser.title,
+              title: verifiedUser.title || verifiedUser.jobdesk,
+              email: verifiedUser.email,
+              avatar: verifiedUser.avatar,
+              qr_data: cleanCode,
+              workspace_access: ['ruangkreasi', 'panen-kunci']
+            });
+          } catch (syncErr) {
+            console.warn('[AuthView] Sync Supabase notice:', syncErr);
+          }
+
+          const userInstance = this.authService.registerNewUser({
+            ...verifiedUser,
+            workspaceAccess: verifiedUser.workspace_access || verifiedUser.workspaceAccess || ['ruangkreasi', 'panen-kunci'],
+            boundDeviceId: apiService.getDeviceId(),
+            boundDeviceName: apiService.getDeviceName(),
+            loginMethod: 'qr',
+            qr_data: cleanCode
+          });
+
+          setTimeout(() => {
+            stopCamera();
+            this.authService.loginAsUser(userInstance, { silent: true });
+
+            const allowedWs = 'panen-kunci';
+            const allowedProj = allowedWs;
+
+            localStorage.setItem('active_workspace', allowedWs);
+            localStorage.setItem('active_project_id', allowedProj);
+            localStorage.setItem('user_invited_workspace', allowedWs);
+            localStorage.setItem('user_invited_project', allowedProj);
+
+            const isUser = (userInstance.role || '').toLowerCase() === 'user';
+            const targetView = isUser ? 'kanban' : 'dashboard';
+            const targetHash = isUser ? `#/kanban/${allowedProj}` : '#/dashboard';
+
+            const eb = this.container ? this.container.resolve('EventBus') : null;
+            if (eb) {
+              eb.emit('navigate', {
+                view: targetView,
+                projectId: allowedProj,
+                workspace: allowedWs
+              });
+            }
+            window.location.hash = targetHash;
+          }, 400);
+          return;
+        }
+      } catch (sampulErr) {
+        console.warn('[AuthView] Verifikasi API Sampulkreativ dilewati ke fallback lokal:', sampulErr);
       }
 
-      // 1. Ekstrak data jika kode berupa JSON
+      if (feedback) {
+        feedback.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">Memeriksa database Supabase & Memvalidasi Perangkat...</span>`;
+      }
+
+      // 2. Ekstrak data jika kode berupa format JSON / teks terstruktur
       let parsedUser = null;
       try {
         let parsed = null;
@@ -829,35 +1044,8 @@ export class AuthView extends BaseView {
         console.warn('Gagal parse QR payload:', e);
       }
 
-      // 2. Jika bukan JSON langsung, lakukan lookup via backend
+      // 3. Jika bukan JSON langsung, lakukan lookup via backend Supabase
       let payloadToSend = parsedUser;
-      const handleDeviceLocked = (lockedRes, fallbackUser) => {
-        console.warn('[AuthView] Akses Ditolak: Terkunci di perangkat lain', lockedRes);
-        this.lastScannedLockedCode = cleanCode;
-
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-rose-500 font-bold">❌ Akses Ditolak: Akun Terkunci di Perangkat Lain!</span>`;
-        }
-
-        const lockedModal = this.element.querySelector('#modal-device-locked');
-        const titleEl = this.element.querySelector('#locked-user-title');
-        const descEl = this.element.querySelector('#locked-user-description');
-        const boundDevEl = this.element.querySelector('#locked-bound-device');
-
-        const boundName = lockedRes.boundDeviceName || 'Perangkat Utama Lain';
-        const userName = (lockedRes.data && lockedRes.data.name) || (fallbackUser && fallbackUser.name) || 'Pengguna';
-
-        if (titleEl) titleEl.textContent = `Akun "${userName}" Terkunci`;
-        if (descEl) {
-          descEl.innerHTML = `Akun <b>${userName}</b> saat ini sudah tersambung di <b>${boundName}</b>. Sesuai kebijakan keamanan, <b>perangkat ini tidak dapat mengakses akun tersebut</b> selama masih terikat pada perangkat resmi.`;
-        }
-        if (boundDevEl) boundDevEl.textContent = boundName;
-
-        if (lockedModal) lockedModal.classList.remove('hidden');
-        if (this.notificationService) {
-          this.notificationService.error(`Akses ditolak: Akun ${userName} terkunci di perangkat "${boundName}"!`);
-        }
-      };
 
       // Helper pemeriksaan apakah akun / QR sudah pernah terdaftar
       const checkExistingUser = (codeToCheck, userToCheck) => {
@@ -999,6 +1187,7 @@ export class AuthView extends BaseView {
           });
 
           setTimeout(() => {
+            stopCamera();
             this.authService.loginAsUser(userInstance, { silent: true });
 
             const allowedWs = 'panen-kunci';
@@ -1112,6 +1301,7 @@ export class AuthView extends BaseView {
           });
 
           setTimeout(() => {
+            stopCamera();
             this.authService.loginAsUser(userInstance, { silent: true });
 
             const allowedWs = 'panen-kunci';
@@ -1382,6 +1572,7 @@ export class AuthView extends BaseView {
         feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Autentikasi Terverifikasi!</span> Mengalihkan sesi ke Creative Office...`;
       }
       setTimeout(() => {
+        stopCamera();
         this.authService.loginWithRole(role);
         if (role === 'user') {
           const u = this.authService.getCurrentUser();
@@ -1474,8 +1665,39 @@ export class AuthView extends BaseView {
   }
 
   unmount() {
-    if (this._cleanupCamera) {
-      this._cleanupCamera();
+    this._unmounted = true;
+    if (typeof this.stopCamera === 'function') {
+      try { this.stopCamera(); } catch (e) {}
+    }
+    if (typeof this._cleanupCamera === 'function') {
+      try { this._cleanupCamera(); } catch (e) {}
+    }
+    if (this.cameraStream) {
+      try {
+        this.cameraStream.getTracks().forEach(t => {
+          try {
+            t.enabled = false;
+            t.stop();
+          } catch (e) {}
+        });
+        this.cameraStream = null;
+      } catch (e) {}
+    }
+    if (Array.isArray(this._allStreams)) {
+      this._allStreams.forEach(s => {
+        try {
+          if (s && typeof s.getTracks === 'function') {
+            s.getTracks().forEach(t => {
+              try { t.enabled = false; t.stop(); } catch (e) {}
+            });
+          }
+        } catch (e) {}
+      });
+      this._allStreams = [];
+    }
+    if (this.barcodeDetectorInterval) {
+      clearInterval(this.barcodeDetectorInterval);
+      this.barcodeDetectorInterval = null;
     }
     super.unmount();
   }

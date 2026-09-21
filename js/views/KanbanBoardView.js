@@ -292,7 +292,7 @@ export class KanbanBoardView extends BaseView {
     const sLower = s.toLowerCase();
     if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
     if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'CreativOffive';
-    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci')) return 'PananKunci';
+    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci') || sLower.includes('panenkunci')) return 'PanenKunci';
     if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
     if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
 
@@ -326,8 +326,8 @@ export class KanbanBoardView extends BaseView {
       'layarbaca': 'LayarBaca',
       'creativoffive': 'CreativOffive',
       'creativoffice': 'CreativOffive',
-      'panankunci': 'PananKunci',
-      'panenkunci': 'PananKunci',
+      'panankunci': 'PanenKunci',
+      'panenkunci': 'PanenKunci',
       'aikreativ': 'AIKreativ',
       'sharinginaja': 'Sharinginaja'
     };
@@ -866,7 +866,7 @@ export class KanbanBoardView extends BaseView {
 
     // 2. Standard Workspace Portfolio (always available so users on mobile/fresh devices can switch projects)
     const standardWorkspaces = [
-      { id: 'panen-kunci', name: 'PananKunci', code: 'PK', workspace: 'panen-kunci', category: 'SaaS & Infrastruktur' },
+      { id: 'panen-kunci', name: 'PanenKunci', code: 'PK', workspace: 'panen-kunci', category: 'SaaS & Infrastruktur' },
       { id: 'layarbaca', name: 'LayarBaca', code: 'LB', workspace: 'layarbaca', category: 'Media & Publikasi' },
       { id: 'creativoffive', name: 'CreativOffive', code: 'CO', workspace: 'creativoffive', category: 'Creative Hub' },
       { id: 'aikreativ', name: 'AIKreativ', code: 'AI', workspace: 'aikreativ', category: 'AI & Otomasi' },
@@ -1166,8 +1166,8 @@ export class KanbanBoardView extends BaseView {
 
     const isLayarBaca = curWsLower.includes('layarbaca') || curProjLower.includes('layarbaca') || bTitleLower.includes('layar');
     const isOldDefaultSkyline = theme?.value && typeof theme.value === 'string' && theme.value.includes('photo-1519501025264');
-    const isPananKunci = curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan');
-    const isDeepForestPanen = theme && theme.name === 'Deep Forest' && isPananKunci;
+    const isPanenKunci = curWsLower.includes('panen') || curProjLower.includes('panen') || curWsLower.includes('panan') || curProjLower.includes('panan');
+    const isDeepForestPanen = theme && theme.name === 'Deep Forest' && isPanenKunci;
 
     if (!theme || (isOldDefaultSkyline && isLayarBaca) || isDeepForestPanen) {
       if (isLayarBaca) {
