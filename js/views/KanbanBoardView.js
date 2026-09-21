@@ -1944,7 +1944,7 @@ export class KanbanBoardView extends BaseView {
                         >
                           <!-- Card Code & Priority & Delete Button -->
                           <div class="flex items-center justify-between gap-1.5">
-                            <span class="px-2 py-0.5 rounded bg-surface-container-low font-mono text-[10.5px] font-bold text-primary">
+                            <span class="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10.5px] font-bold text-white">
                               ${task.code || '#TASK'}
                             </span>
                             <div class="flex items-center gap-1">
