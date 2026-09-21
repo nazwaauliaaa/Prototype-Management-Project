@@ -41,14 +41,14 @@ export class SearchModal extends BaseModal {
     const results = this._performSearch(this.searchQuery, this.activeCategory);
 
     return `
-      <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border overflow-hidden my-auto flex flex-col h-[88vh] md:h-auto md:max-h-[85vh] modal-content-box animate-scale-in">
+      <div class="relative w-full max-w-2xl bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/80 border border-white/15 overflow-hidden my-auto flex flex-col h-[88vh] md:h-auto md:max-h-[85vh] modal-content-box animate-scale-in text-white">
         
         <!-- Top Search Input Header -->
-        <div class="p-3 sm:p-4 bg-surface-container-low border-b border-surface-border flex items-center gap-2.5 shrink-0">
+        <div class="p-3 sm:p-4 bg-white/5 border-b border-white/10 flex items-center gap-2.5 shrink-0">
           <!-- Back / Close icon for mobile -->
           <button
             id="btn-back-search"
-            class="w-9 h-9 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-container transition-colors shrink-0"
+            class="w-9 h-9 flex items-center justify-center rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
             title="Tutup Pencarian"
             type="button"
             aria-label="Kembali"
@@ -58,11 +58,11 @@ export class SearchModal extends BaseModal {
 
           <!-- Main Input Field -->
           <div class="relative flex-1 flex items-center">
-            <span class="material-symbols-outlined absolute left-3 text-text-muted text-[20px] pointer-events-none">search</span>
+            <span class="material-symbols-outlined absolute left-3 text-purple-300 text-[20px] pointer-events-none">search</span>
             <input
               id="search-modal-input"
               type="text"
-              class="w-full h-11 pl-10 pr-9 bg-surface-container-lowest rounded-xl font-body-default text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 border border-surface-border transition-all shadow-xs"
+              class="w-full h-11 pl-10 pr-9 bg-white/5 rounded-xl font-body-default text-[14px] text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:bg-white/10 border border-white/15 transition-all shadow-xs"
               placeholder="Cari tugas, SOP, izin Dishub, jadwal..."
               value="${this._escapeHtml(this.searchQuery)}"
               autocomplete="off"
@@ -70,7 +70,7 @@ export class SearchModal extends BaseModal {
             />
             <button
               id="btn-clear-search-input"
-              class="absolute right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-container transition-colors ${this.searchQuery ? '' : 'hidden'}"
+              class="absolute right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ${this.searchQuery ? '' : 'hidden'}"
               title="Hapus pencarian"
               type="button"
             >
@@ -81,7 +81,7 @@ export class SearchModal extends BaseModal {
           <!-- Desktop Close Button -->
           <button
             id="btn-close-search-modal"
-            class="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-container transition-colors shrink-0"
+            class="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
             title="Tutup (Esc)"
             type="button"
           >
@@ -90,30 +90,30 @@ export class SearchModal extends BaseModal {
         </div>
 
         <!-- Filter Category Tabs (Scrollable on mobile) -->
-        <div class="px-3 sm:px-4 py-2 border-b border-surface-border bg-surface-container-lowest/80 flex items-center gap-1.5 overflow-x-auto shrink-0" style="scrollbar-width:none;-ms-overflow-style:none;">
+        <div class="px-3 sm:px-4 py-2 border-b border-white/10 bg-white/5 flex items-center gap-1.5 overflow-x-auto shrink-0" style="scrollbar-width:none;-ms-overflow-style:none;">
           <button
-            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 ${this.activeCategory === 'all' ? 'bg-primary-container text-on-primary shadow-xs' : 'bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container'}"
+            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 cursor-pointer ${this.activeCategory === 'all' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10'}"
             data-category="all"
             type="button"
           >
             Semua
           </button>
           <button
-            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 ${this.activeCategory === 'task' ? 'bg-primary-container text-on-primary shadow-xs' : 'bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container'}"
+            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 cursor-pointer ${this.activeCategory === 'task' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10'}"
             data-category="task"
             type="button"
           >
             Tugas
           </button>
           <button
-            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 ${this.activeCategory === 'workspace' ? 'bg-primary-container text-on-primary shadow-xs' : 'bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container'}"
+            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 cursor-pointer ${this.activeCategory === 'workspace' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10'}"
             data-category="workspace"
             type="button"
           >
             Ruang Kerja
           </button>
           <button
-            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 ${this.activeCategory === 'calendar' ? 'bg-primary-container text-on-primary shadow-xs' : 'bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container'}"
+            class="search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 cursor-pointer ${this.activeCategory === 'calendar' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10'}"
             data-category="calendar"
             type="button"
           >
@@ -122,17 +122,17 @@ export class SearchModal extends BaseModal {
         </div>
 
         <!-- Search Content Area -->
-        <div id="search-modal-results" class="flex-1 overflow-y-auto p-3 sm:p-4 divide-y divide-surface-border/50">
+        <div id="search-modal-results" class="flex-1 overflow-y-auto p-3 sm:p-4 divide-y divide-white/10">
           ${this._renderResultsContent(results)}
         </div>
 
         <!-- Mobile Search Footer Bar -->
-        <div class="px-4 py-2 bg-surface-container-low border-t border-surface-border flex items-center justify-between text-[11px] text-text-muted shrink-0">
+        <div class="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between text-[11px] text-white/50 shrink-0">
           <div class="flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[14px]">bolt</span>
+            <span class="material-symbols-outlined text-[14px] text-purple-300">bolt</span>
             <span>Pencarian Cepat Mobile Creative Office</span>
           </div>
-          <span class="hidden sm:inline">Tekan <kbd class="px-1 py-0.5 rounded bg-surface-container-lowest border border-surface-border text-[10px]">ESC</kbd> untuk menutup</span>
+          <span class="hidden sm:inline">Tekan <kbd class="px-1 py-0.5 rounded bg-white/10 border border-white/15 text-white text-[10px]">ESC</kbd> untuk menutup</span>
         </div>
 
       </div>
@@ -201,9 +201,9 @@ export class SearchModal extends BaseModal {
 
         chips.forEach(c => {
           if (c.getAttribute('data-category') === cat) {
-            c.className = 'search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 bg-primary-container text-on-primary shadow-xs';
+            c.className = 'search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40';
           } else {
-            c.className = 'search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 bg-surface-container-low text-text-secondary hover:text-text-primary hover:bg-surface-container';
+            c.className = 'search-filter-chip px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all shrink-0 cursor-pointer bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10';
           }
         });
 
@@ -483,36 +483,36 @@ export class SearchModal extends BaseModal {
         <div class="py-3 flex flex-col gap-4">
           <!-- Suggestion Chips -->
           <div>
-            <span class="font-caption-meta text-[11px] text-text-muted uppercase font-bold tracking-wider block mb-2">
+            <span class="font-caption-meta text-[11px] text-white/60 uppercase font-bold tracking-wider block mb-2">
               Pencarian Cepat &amp; Populer
             </span>
             <div class="flex flex-wrap gap-2">
-              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-text-secondary hover:text-text-primary text-[12px] font-medium border border-surface-border transition-colors" data-query="Safe-Zone LED" type="button">
-                <span class="material-symbols-outlined text-[15px] text-primary">search</span>
+              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[12px] font-medium border border-white/10 transition-colors cursor-pointer" data-query="Safe-Zone LED" type="button">
+                <span class="material-symbols-outlined text-[15px] text-purple-300">search</span>
                 <span>Safe-Zone LED</span>
               </button>
-              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-text-secondary hover:text-text-primary text-[12px] font-medium border border-surface-border transition-colors" data-query="SOP Kalibrasi" type="button">
-                <span class="material-symbols-outlined text-[15px] text-status-success">menu_book</span>
+              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[12px] font-medium border border-white/10 transition-colors cursor-pointer" data-query="SOP Kalibrasi" type="button">
+                <span class="material-symbols-outlined text-[15px] text-emerald-400">menu_book</span>
                 <span>SOP Kalibrasi</span>
               </button>
-              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-text-secondary hover:text-text-primary text-[12px] font-medium border border-surface-border transition-colors" data-query="RuangKreasi" type="button">
-                <span class="material-symbols-outlined text-[15px] text-tertiary">workspaces</span>
+              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[12px] font-medium border border-white/10 transition-colors cursor-pointer" data-query="RuangKreasi" type="button">
+                <span class="material-symbols-outlined text-[15px] text-blue-400">workspaces</span>
                 <span>RuangKreasi</span>
               </button>
-              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-text-secondary hover:text-text-primary text-[12px] font-medium border border-surface-border transition-colors" data-query="Dishub" type="button">
-                <span class="material-symbols-outlined text-[15px] text-error-container">picture_as_pdf</span>
+              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[12px] font-medium border border-white/10 transition-colors cursor-pointer" data-query="Dishub" type="button">
+                <span class="material-symbols-outlined text-[15px] text-rose-400">picture_as_pdf</span>
                 <span>Izin Dishub</span>
               </button>
-              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-text-secondary hover:text-text-primary text-[12px] font-medium border border-surface-border transition-colors" data-query="Novastar" type="button">
-                <span class="material-symbols-outlined text-[15px] text-amber-500">memory</span>
+              <button class="search-suggestion-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[12px] font-medium border border-white/10 transition-colors cursor-pointer" data-query="Novastar" type="button">
+                <span class="material-symbols-outlined text-[15px] text-amber-400">memory</span>
                 <span>Novastar Controller</span>
               </button>
             </div>
           </div>
 
           <!-- Highlighted Quick Items -->
-          <div class="pt-3 border-t border-surface-border">
-            <span class="font-caption-meta text-[11px] text-text-muted uppercase font-bold tracking-wider block mb-2">
+          <div class="pt-3 border-t border-white/10">
+            <span class="font-caption-meta text-[11px] text-white/60 uppercase font-bold tracking-wider block mb-2">
               Item Prioritas
             </span>
             <div class="flex flex-col gap-1.5">
@@ -527,18 +527,18 @@ export class SearchModal extends BaseModal {
     if (results.length === 0) {
       return `
         <div class="py-12 flex flex-col items-center justify-center text-center px-4">
-          <div class="w-14 h-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-text-muted mb-3">
+          <div class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 mb-3 shadow-inner">
             <span class="material-symbols-outlined text-[32px]">search_off</span>
           </div>
-          <h4 class="font-headline-md text-[15px] font-bold text-text-primary mb-1">
+          <h4 class="font-headline-md text-[15px] font-bold text-white mb-1">
             Tidak ditemukan hasil untuk "${this._escapeHtml(this.searchQuery)}"
           </h4>
-          <p class="font-body-default text-[12px] text-text-muted max-w-sm mb-4">
+          <p class="font-body-default text-[12px] text-white/60 max-w-sm mb-4">
             Coba gunakan kata kunci yang lebih singkat, periksa ejaan, atau alihkan filter kategori ke "Semua".
           </p>
           <button
             id="btn-reset-search"
-            class="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-text-primary font-medium text-[12px] border border-surface-border transition-colors"
+            class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-[12px] border border-white/15 transition-all cursor-pointer shadow-xs"
             type="button"
           >
             Reset Pencarian
@@ -551,10 +551,10 @@ export class SearchModal extends BaseModal {
     return `
       <div class="py-1">
         <div class="flex items-center justify-between pb-2 mb-1">
-          <span class="font-caption-meta text-[11px] text-text-muted font-bold uppercase tracking-wider">
+          <span class="font-caption-meta text-[11px] text-white/60 font-bold uppercase tracking-wider">
             Hasil Pencarian (${results.length})
           </span>
-          <span class="font-caption-meta text-[11px] text-primary font-semibold">
+          <span class="font-caption-meta text-[11px] text-purple-300 font-semibold">
             Kueri: "${this._escapeHtml(this.searchQuery)}"
           </span>
         </div>
@@ -573,38 +573,38 @@ export class SearchModal extends BaseModal {
   _renderItemCard(item) {
     return `
       <div
-        class="search-result-item flex items-center gap-3 p-2.5 sm:p-3 rounded-xl hover:bg-surface-container-low active:bg-surface-container transition-colors cursor-pointer border border-transparent hover:border-surface-border group"
+        class="search-result-item flex items-center gap-3 p-2.5 sm:p-3 rounded-xl hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/10 group text-white"
         data-type="${item.type}"
         data-id="${item.id}"
         role="button"
         tabindex="0"
       >
         <!-- Icon -->
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg}">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} border border-white/10">
           <span class="material-symbols-outlined text-[20px]">${item.icon}</span>
         </div>
 
         <!-- Details -->
         <div class="flex-1 min-w-0 flex flex-col">
           <div class="flex items-center gap-2 mb-0.5">
-            <span class="font-badge-micro text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-container text-text-muted">
+            <span class="font-badge-micro text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-purple-200 border border-white/10">
               ${item.categoryLabel}
             </span>
-            <span class="font-headline-md text-[13px] font-bold text-text-primary truncate group-hover:text-primary transition-colors">
+            <span class="font-headline-md text-[13px] font-bold text-white truncate group-hover:text-purple-300 transition-colors">
               ${this._escapeHtml(item.title)}
             </span>
           </div>
-          <span class="font-caption-meta text-[11px] text-text-muted truncate">
+          <span class="font-caption-meta text-[11px] text-white/60 truncate">
             ${this._escapeHtml(item.subtitle)}
           </span>
         </div>
 
         <!-- Trailing Badge & Chevron -->
         <div class="flex items-center gap-2 shrink-0">
-          <span class="hidden sm:inline-block px-2 py-0.5 rounded-full font-badge-micro text-[10px] font-bold ${item.badgeBg}">
+          <span class="hidden sm:inline-block px-2 py-0.5 rounded-full font-badge-micro text-[10px] font-bold ${item.badgeBg} border border-white/10">
             ${item.badge}
           </span>
-          <span class="material-symbols-outlined text-[18px] text-text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+          <span class="material-symbols-outlined text-[18px] text-white/40 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all">
             chevron_right
           </span>
         </div>
