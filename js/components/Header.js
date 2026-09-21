@@ -143,16 +143,16 @@ export class Header {
               </div>
             </div>
 
-            <div class="flex items-center gap-2 cursor-pointer" id="header-brand-logo" title="CreativOffice - Beranda">
-              <img alt="CreativOffice Logo" class="h-7.5 w-7.5 object-contain rounded-lg shadow-sm" src="/assets/logo.png" />
-              <div class="flex flex-col">
+            <div class="flex items-center gap-2 cursor-pointer shrink-0" id="header-brand-logo" title="CreativOffice - Beranda">
+              <img alt="CreativOffice Logo" class="header-logo-img w-8 h-8 object-contain rounded-lg shadow-sm shrink-0" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px;" src="/assets/logo.png" />
+              <div class="flex flex-col shrink-0">
                 <span class="font-headline-md text-[13.5px] font-extrabold text-white leading-none tracking-tight">CreativOffice</span>
-                <span class="text-[9px] font-medium text-white/50 leading-tight">by Sampulkreativ</span>
+                <span class="text-[9.5px] font-medium text-white/60 leading-tight mt-0.5">by Sampulkreativ</span>
               </div>
             </div>
 
             <!-- Role Badge in Header -->
-            <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold border shadow-xs ${activeBadge.class}">
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border shadow-xs shrink-0 ${activeBadge.class}">
               <span class="material-symbols-outlined text-[13px]">${activeBadge.icon}</span>
               <span>${activeBadge.label}</span>
             </span>
