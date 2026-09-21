@@ -165,18 +165,6 @@ export class DashboardView extends BaseView {
               </p>
             </div>
           </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            <button
-              id="btn-dashboard-create-board"
-              type="button"
-              class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-[12.5px] font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-              title="Buat Papan Proyek Baru"
-            >
-              <span class="material-symbols-outlined text-[17px]">add_circle</span>
-              <span>Tambah Proyek</span>
-            </button>
-          </div>
         </section>
 
         <!-- 1. KEY METRICS STATS SUMMARY (Satu Baris, Kompak & Rapi) -->

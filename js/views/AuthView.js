@@ -300,6 +300,20 @@ export class AuthView extends BaseView {
               </p>
             </div>
 
+            <!-- Tombol Masuk sebagai Admin (dengan Username & Password) -->
+            <div class="relative z-10 w-full flex flex-col gap-2 mt-2">
+              <button
+                id="btn-admin-login-modal-trigger"
+                type="button"
+                class="w-full py-2.5 px-4 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 hover:text-white font-semibold text-[12.5px] border border-purple-500/40 hover:border-purple-400 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] shadow-sm"
+                title="Masuk sebagai Administrator dengan Username & Kata Sandi"
+              >
+                <span class="material-symbols-outlined text-[18px] text-amber-400">admin_panel_settings</span>
+                <span>Masuk sebagai Admin</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </button>
+            </div>
+
 
 
             <!-- Security Verification Footer -->
@@ -311,47 +325,74 @@ export class AuthView extends BaseView {
           </div>
         </main>
 
-        <!-- Admin Password Prompt Modal (Hidden by default) -->
+        <!-- Admin Login Modal (Username & Password) -->
         <div id="modal-admin-password-prompt" class="hidden fixed inset-0 z-[99999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div class="w-full max-w-sm bg-slate-900 border border-purple-500/40 rounded-2xl p-6 shadow-2xl text-white flex flex-col gap-4 animate-in zoom-in-95 duration-200">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[22px]">lock</span>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[22px]">admin_panel_settings</span>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-[15px] font-bold text-white">Login Administrator</h3>
+                  <p class="text-[11.5px] text-slate-400">Panel Manajemen Creative Office</p>
+                </div>
               </div>
-              <div class="min-w-0">
-                <h3 class="text-[15px] font-bold text-white">Verifikasi Akses Admin</h3>
-                <p class="text-[11.5px] text-slate-400">Masukkan kata sandi Administrator</p>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Kata Sandi Admin</label>
-              <input
-                id="input-admin-password"
-                type="password"
-                placeholder="Masukkan kata sandi (default: admin123)"
-                class="w-full h-10 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700 text-[13px] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
-              />
-              <p id="admin-pwd-error-msg" class="hidden text-[11.5px] text-rose-400 font-medium mt-1.5"></p>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-800">
-              <button
-                id="btn-cancel-admin-pwd"
-                type="button"
-                class="px-3.5 py-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[12px] font-semibold transition-colors cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                id="btn-submit-admin-pwd"
-                type="button"
-                class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-[12.5px] font-bold shadow-md shadow-purple-600/30 transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <span class="material-symbols-outlined text-[16px]">login</span>
-                <span>Masuk Admin</span>
+              <button id="btn-close-admin-pwd" type="button" class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">
+                <span class="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
+
+            <form id="form-admin-login" class="flex flex-col gap-3">
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">Username</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">person</span>
+                  <input
+                    id="input-admin-username"
+                    type="text"
+                    placeholder="Masukkan username"
+                    value="admin"
+                    class="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-800/90 border border-slate-700 text-[13px] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
+                    autocomplete="username"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">Kata Sandi</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">lock</span>
+                  <input
+                    id="input-admin-password"
+                    type="password"
+                    placeholder="Masukkan kata sandi"
+                    class="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-800/90 border border-slate-700 text-[13px] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
+                    autocomplete="current-password"
+                  />
+                </div>
+              </div>
+
+              <div id="admin-pwd-error-msg" class="hidden p-2.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-[11.5px] text-rose-300 font-medium"></div>
+
+              <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  id="btn-cancel-admin-pwd"
+                  type="button"
+                  class="px-3.5 py-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[12px] font-semibold transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  id="btn-submit-admin-pwd"
+                  type="submit"
+                  class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-[12.5px] font-bold shadow-md shadow-purple-600/30 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span class="material-symbols-outlined text-[16px]">login</span>
+                  <span>Masuk Admin</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -1698,108 +1739,78 @@ export class AuthView extends BaseView {
       });
     }
 
-    // 1. Direct Admin Login (diubah menjadi role admin)
-    const btnDirectLoginUser = this.element.querySelector('#btn-direct-login-user');
-    if (btnDirectLoginUser) {
-      btnDirectLoginUser.addEventListener('click', (e) => {
-        e.preventDefault();
-        stopCamera();
-
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Masuk sebagai Admin... Membuka Dashboard!</span>`;
-        }
-
-        this.authService.loginWithRole('admin');
-        window.location.hash = '#/dashboard';
-      });
-    }
-
-    // 2. Direct User Login (Secondary)
-    const btnDirectLoginAdmin = this.element.querySelector('#btn-direct-login-admin');
-    if (btnDirectLoginAdmin) {
-      btnDirectLoginAdmin.addEventListener('click', (e) => {
-        e.preventDefault();
-        stopCamera();
-
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Masuk sebagai User... Membuka Papan!</span>`;
-        }
-
-        this.authService.loginWithRole('user');
-        const curWs = localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-        const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
-        window.location.hash = `#/kanban/${curProj}`;
-      });
-    }
+    // Admin Login dengan Username & Password (usn: admin, password: sampulkreativ2026)
+    const btnAdminLoginModalTrigger = this.element.querySelector('#btn-admin-login-modal-trigger');
     const adminPwdModal = this.element.querySelector('#modal-admin-password-prompt');
+    const adminUsnInput = this.element.querySelector('#input-admin-username');
     const adminPwdInput = this.element.querySelector('#input-admin-password');
     const adminPwdError = this.element.querySelector('#admin-pwd-error-msg');
     const btnCancelAdminPwd = this.element.querySelector('#btn-cancel-admin-pwd');
-    const btnSubmitAdminPwd = this.element.querySelector('#btn-submit-admin-pwd');
+    const btnCloseAdminPwd = this.element.querySelector('#btn-close-admin-pwd');
+    const formAdminLogin = this.element.querySelector('#form-admin-login');
 
-    const openAdminPwdModal = () => {
+    const openAdminLoginModal = () => {
       if (adminPwdModal) {
         adminPwdModal.classList.remove('hidden');
         if (adminPwdError) adminPwdError.classList.add('hidden');
-        if (adminPwdInput) {
-          adminPwdInput.value = '';
-          setTimeout(() => adminPwdInput.focus(), 80);
-        }
+        if (adminPwdInput) adminPwdInput.value = '';
+        if (adminUsnInput && !adminUsnInput.value) adminUsnInput.value = 'admin';
+        setTimeout(() => {
+          if (adminUsnInput && !adminUsnInput.value) {
+            adminUsnInput.focus();
+          } else if (adminPwdInput) {
+            adminPwdInput.focus();
+          }
+        }, 80);
       }
     };
 
-    const closeAdminPwdModal = () => {
+    const closeAdminLoginModal = () => {
       if (adminPwdModal) adminPwdModal.classList.add('hidden');
     };
 
-    if (btnDirectLoginAdmin) {
-      btnDirectLoginAdmin.addEventListener('click', (e) => {
+    if (btnAdminLoginModalTrigger) {
+      btnAdminLoginModalTrigger.addEventListener('click', (e) => {
         e.preventDefault();
-        openAdminPwdModal();
+        openAdminLoginModal();
       });
     }
 
-    if (btnCancelAdminPwd) {
-      btnCancelAdminPwd.addEventListener('click', closeAdminPwdModal);
-    }
+    if (btnCancelAdminPwd) btnCancelAdminPwd.addEventListener('click', closeAdminLoginModal);
+    if (btnCloseAdminPwd) btnCloseAdminPwd.addEventListener('click', closeAdminLoginModal);
 
-    const handleAdminPwdSubmit = () => {
-      const pwd = adminPwdInput ? adminPwdInput.value : '';
-      if (!this.authService.verifyAdminPassword(pwd)) {
+    const handleAdminLoginSubmit = (e) => {
+      if (e) e.preventDefault();
+      const username = adminUsnInput ? adminUsnInput.value.trim() : '';
+      const password = adminPwdInput ? adminPwdInput.value.trim() : '';
+
+      if (!this.authService.verifyAdminCredentials(username, password)) {
         if (adminPwdError) {
-          adminPwdError.textContent = 'Kata sandi salah! Gunakan: admin123';
+          adminPwdError.textContent = 'Username atau kata sandi admin salah!';
           adminPwdError.classList.remove('hidden');
         }
         if (this.notificationService) {
-          this.notificationService.warning('Kata sandi administrator salah! Akses ditolak.');
+          this.notificationService.warning('Kredensial admin salah! Gunakan usn: admin & password: sampulkreativ2026');
         }
         return;
       }
 
-      closeAdminPwdModal();
+      closeAdminLoginModal();
       stopCamera();
 
       if (feedback) {
-        feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Kata sandi terverifikasi! Membuka Dashboard Admin...</span>`;
+        feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Login admin berhasil! Membuka Dashboard...</span>`;
       }
 
       this.authService.loginWithRole('admin');
       window.location.hash = '#/dashboard';
+      if (this.notificationService) {
+        this.notificationService.success('Selamat datang, Administrator Creative Office!');
+      }
     };
 
-    if (btnSubmitAdminPwd) {
-      btnSubmitAdminPwd.addEventListener('click', handleAdminPwdSubmit);
-    }
-
-    if (adminPwdInput) {
-      adminPwdInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleAdminPwdSubmit();
-        } else if (e.key === 'Escape') {
-          closeAdminPwdModal();
-        }
-      });
+    if (formAdminLogin) {
+      formAdminLogin.addEventListener('submit', handleAdminLoginSubmit);
     }
 
     // Automatically activate camera when QR gate loads (User requirement)

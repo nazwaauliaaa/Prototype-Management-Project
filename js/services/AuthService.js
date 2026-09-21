@@ -92,6 +92,21 @@ export class AuthService {
   }
 
   /**
+   * Verifikasi kredensial admin (username & password)
+   * Username: admin
+   * Password: sampulkreativ2026 (atau admin123)
+   * @param {string} username
+   * @param {string} password
+   * @returns {boolean}
+   */
+  verifyAdminCredentials(username, password) {
+    if (!username || !password) return false;
+    const cleanUsn = String(username).trim().toLowerCase();
+    const cleanPwd = String(password).trim();
+    return cleanUsn === 'admin' && (cleanPwd === 'sampulkreativ2026' || cleanPwd === 'admin123');
+  }
+
+  /**
    * Verifikasi kata sandi admin untuk keamanan panel admin
    * @param {string} password
    * @returns {boolean}
@@ -99,7 +114,7 @@ export class AuthService {
   verifyAdminPassword(password) {
     if (!password) return false;
     const clean = String(password).trim();
-    return clean === 'admin123' || clean === 'sampulkreativ2026' || clean === 'admin';
+    return clean === 'sampulkreativ2026' || clean === 'admin123' || clean === 'admin';
   }
 
   /**
