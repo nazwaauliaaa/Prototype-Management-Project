@@ -300,26 +300,15 @@ export class AuthView extends BaseView {
               </p>
             </div>
 
-            <!-- Direct Login Choices: User / Admin (with Password) -->
+            <!-- Direct Login: Admin (with Password) -->
             <div class="relative z-10 w-full flex flex-col gap-2 mt-2">
-              <button
-                id="btn-direct-login-user"
-                type="button"
-                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-[13px] shadow-md shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] border border-indigo-400/30"
-                title="Langsung masuk ke Papan Proyek sebagai User / Member"
-              >
-                <span class="material-symbols-outlined text-[18px]">person</span>
-                <span>Masuk sebagai User (Papan Proyek)</span>
-                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </button>
-
               <button
                 id="btn-direct-login-admin"
                 type="button"
-                class="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-purple-200 hover:text-white font-semibold text-[11.5px] border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99]"
+                class="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-purple-200 hover:text-white font-semibold text-[12.5px] border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
                 title="Masuk ke Panel Administrator (Perlu Kata Sandi)"
               >
-                <span class="material-symbols-outlined text-[15px] text-amber-400">admin_panel_settings</span>
+                <span class="material-symbols-outlined text-[16px] text-amber-400">admin_panel_settings</span>
                 <span>Masuk sebagai Admin (Perlu Password)</span>
               </button>
             </div>
@@ -1676,25 +1665,7 @@ export class AuthView extends BaseView {
       });
     }
 
-    // 1. Direct User / Member Login
-    const btnDirectLoginUser = this.element.querySelector('#btn-direct-login-user');
-    if (btnDirectLoginUser) {
-      btnDirectLoginUser.addEventListener('click', (e) => {
-        e.preventDefault();
-        stopCamera();
-
-        if (feedback) {
-          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Masuk sebagai User... Membuka Papan!</span>`;
-        }
-
-        this.authService.loginWithRole('user');
-        const curWs = localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-        const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
-        window.location.hash = `#/kanban/${curProj}`;
-      });
-    }
-
-    // 2. Admin Password Protected Login
+    // Admin Password Protected Login
     const btnDirectLoginAdmin = this.element.querySelector('#btn-direct-login-admin');
     const adminPwdModal = this.element.querySelector('#modal-admin-password-prompt');
     const adminPwdInput = this.element.querySelector('#input-admin-password');
