@@ -175,19 +175,19 @@ export class KanbanBoardView extends BaseView {
     // Default columns matching modern Trello workflow
     if (this.currentWorkspace.toLowerCase() === 'aikreativ') {
       this.columns = [
-        { id: 'backlog', title: 'To Do', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-700' },
-        { id: 'in-progress', title: 'Doing', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
-        { id: 'review-qa', title: 'Review QA', color: 'border-rose-500', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' },
-        { id: 'ready-launch', title: 'Ready to Launch', color: 'border-purple-500', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700' },
-        { id: 'done', title: 'Done', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
+        { id: 'backlog', title: 'To Do', color: 'border-white/20', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
+        { id: 'in-progress', title: 'Doing', color: 'border-blue-400/50', dot: 'bg-blue-400', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
+        { id: 'review-qa', title: 'Review QA', color: 'border-rose-400/50', dot: 'bg-rose-400', badge: 'bg-rose-500/20 text-rose-300 border border-rose-400/30' },
+        { id: 'ready-launch', title: 'Ready to Launch', color: 'border-purple-400/50', dot: 'bg-purple-400', badge: 'bg-purple-500/20 text-purple-300 border border-purple-400/30' },
+        { id: 'done', title: 'Done', color: 'border-emerald-400/50', dot: 'bg-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
       ];
     } else {
       this.columns = [
-        { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-700' },
-        { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
-        { id: 'review-qa', title: 'Review QA Lapangan', color: 'border-rose-500', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' },
-        { id: 'ready-launch', title: 'Siap Launching', color: 'border-purple-500', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700' },
-        { id: 'done', title: 'Selesai', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
+        { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-white/20', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
+        { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-400/50', dot: 'bg-blue-400', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
+        { id: 'review-qa', title: 'Review QA Lapangan', color: 'border-rose-400/50', dot: 'bg-rose-400', badge: 'bg-rose-500/20 text-rose-300 border border-rose-400/30' },
+        { id: 'ready-launch', title: 'Siap Launching', color: 'border-purple-400/50', dot: 'bg-purple-400', badge: 'bg-purple-500/20 text-purple-300 border border-purple-400/30' },
+        { id: 'done', title: 'Selesai', color: 'border-emerald-400/50', dot: 'bg-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
       ];
     }
   }
@@ -1303,8 +1303,8 @@ export class KanbanBoardView extends BaseView {
           transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
         }
         .kanban-column.drag-over {
-          background-color: rgba(255,255,255,0.96);
-          box-shadow: 0 0 0 2px #0c66e4, inset 0 0 0 2px rgba(12,102,228,0.15);
+          background-color: rgba(30, 20, 60, 0.95) !important;
+          box-shadow: 0 0 0 2px #a855f7, inset 0 0 0 2px rgba(168, 85, 247, 0.25) !important;
           transform: scale(1.015);
         }
         .column-drop-hint {
@@ -1323,13 +1323,13 @@ export class KanbanBoardView extends BaseView {
           top: -999px;
           left: -999px;
           z-index: 99999;
-          background: #0c66e4;
+          background: #7c3aed;
           color: #fff;
           font-size: 12px;
           font-weight: 700;
           padding: 6px 14px;
           border-radius: 20px;
-          box-shadow: 0 8px 24px rgba(12,102,228,0.4);
+          box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
           pointer-events: none;
           white-space: nowrap;
           display: flex;
@@ -1374,18 +1374,15 @@ export class KanbanBoardView extends BaseView {
           right: 0;
           z-index: 200;
           width: 260px;
-          background: #fff;
-          border-radius: 14px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
-          border: 1px solid rgba(0,0,0,0.09);
+          background: rgba(14, 10, 34, 0.96);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-radius: 16px;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.15);
           overflow: hidden;
           animation: popoverFadeIn 0.15s ease-out;
-        }
-        @media (prefers-color-scheme: dark) {
-          .list-actions-popover {
-            background: #1e293b;
-            border-color: rgba(255,255,255,0.1);
-          }
+          color: #fff;
         }
         @keyframes popoverFadeIn {
           from { opacity:0; transform: scale(0.95) translateY(-4px); }
@@ -1397,14 +1394,13 @@ export class KanbanBoardView extends BaseView {
           align-items: center;
           justify-content: space-between;
           padding: 10px 14px 8px;
-          border-bottom: 1px solid rgba(0,0,0,0.07);
+          border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         .lap-title {
           font-size: 13px;
           font-weight: 700;
-          color: #1e293b;
+          color: #ffffff;
         }
-        .dark .lap-title { color: #f1f5f9; }
         .lap-close {
           width: 26px;
           height: 26px;
@@ -1412,14 +1408,14 @@ export class KanbanBoardView extends BaseView {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #64748b;
+          color: rgba(255,255,255,0.6);
           cursor: pointer;
           background: transparent;
           transition: background 0.15s;
           border: none;
           flex-shrink: 0;
         }
-        .lap-close:hover { background: rgba(0,0,0,0.07); }
+        .lap-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .lap-body { padding: 6px 0; max-height: 480px; overflow-y: auto; }
         .lap-item {
           display: flex;
@@ -1428,7 +1424,7 @@ export class KanbanBoardView extends BaseView {
           width: 100%;
           padding: 7px 14px;
           font-size: 12.5px;
-          color: #334155;
+          color: rgba(255,255,255,0.85);
           background: transparent;
           border: none;
           cursor: pointer;
@@ -1436,13 +1432,17 @@ export class KanbanBoardView extends BaseView {
           transition: background 0.12s;
           border-radius: 0;
         }
-        .lap-item:hover { background: rgba(0,0,0,0.05); }
-        .lap-item .mi { font-size: 17px; color: #64748b; flex-shrink: 0; }
-        .lap-divider { height: 1px; background: rgba(0,0,0,0.07); margin: 4px 0; }
+        .lap-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .lap-item .mi { font-size: 17px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+        .lap-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
         .lap-section-title {
           font-size: 10.5px;
           font-weight: 700;
-          color: #94a3b8;
+          color: rgba(255,255,255,0.5);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 6px 14px 3px;
+        }
           text-transform: uppercase;
           letter-spacing: 0.06em;
           padding: 6px 14px 3px;
@@ -1768,23 +1768,23 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col h-full max-h-full min-h-[320px] sm:min-h-0 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/25 shadow-lg w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all"
+                    class="kanban-column flex flex-col h-full max-h-full min-h-[320px] sm:min-h-0 bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all text-white"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
                     <!-- Column Header matching Trello with count and action icons -->
-                    <div class="column-header-inner flex items-center justify-between pb-1.5 mb-2 border-b-2 ${col.color} shrink-0" style="position:relative;">
+                    <div class="column-header-inner flex items-center justify-between pb-1.5 mb-2 border-b-2 ${col.color && !col.color.includes('slate-300') ? col.color : 'border-white/15'} shrink-0" style="position:relative;">
                       <div class="flex items-center gap-1.5 min-w-0 flex-1 group/col-header">
-                        <span class="w-2.5 h-2.5 rounded-full ${col.dot} inline-block shrink-0"></span>
+                        <span class="w-2.5 h-2.5 rounded-full ${col.dot || 'bg-purple-400'} inline-block shrink-0"></span>
                         <div class="column-title-wrapper flex items-center gap-1 min-w-0 flex-1">
                           <h3 
-                            class="column-header-title font-bold text-[13.5px] text-text-primary tracking-tight truncate ${perms.canRenameList ? 'cursor-pointer hover:text-primary' : ''} transition-colors" 
+                            class="column-header-title font-bold text-[13.5px] text-white tracking-tight truncate ${perms.canRenameList ? 'cursor-pointer hover:text-purple-300' : ''} transition-colors" 
                             data-column-id="${col.id}"
                             title="${perms.canRenameList ? 'Klik untuk ubah nama daftar' : col.title}"
                           >${col.title}</h3>
                           ${perms.canRenameList ? `
                           <button
-                            class="btn-edit-column-title w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-80 sm:opacity-0 group-hover/col-header:opacity-100 cursor-pointer shrink-0"
+                            class="btn-edit-column-title w-5 h-5 rounded flex items-center justify-center text-white/50 hover:text-purple-300 hover:bg-white/10 transition-all opacity-80 sm:opacity-0 group-hover/col-header:opacity-100 cursor-pointer shrink-0"
                             data-column-id="${col.id}"
                             title="Ubah nama daftar (${col.title})"
                             type="button"
@@ -1793,20 +1793,20 @@ export class KanbanBoardView extends BaseView {
                           </button>
                           ` : ''}
                         </div>
-                        <span class="column-count-badge px-2 py-0.2 rounded-full ${col.badge} text-[10.5px] font-mono font-bold shrink-0">
+                        <span class="column-count-badge px-2 py-0.5 rounded-full ${col.badge && !col.badge.includes('slate-100') ? col.badge : 'bg-white/10 text-white/90 border border-white/15'} text-[10.5px] font-mono font-bold shrink-0">
                           ${colTasks.length}
                         </span>
                       </div>
 
                       <div class="flex items-center gap-1 shrink-0">
                         ${perms.canClearColumn ? `
-                        <button class="btn-clear-kanban-col w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" data-column-id="${col.id}" data-column-title="${col.title}" title="Bersihkan/hapus semua kartu di kolom ini" type="button">
+                        <button class="btn-clear-kanban-col w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-rose-400 hover:bg-white/10 transition-colors cursor-pointer" data-column-id="${col.id}" data-column-title="${col.title}" title="Bersihkan/hapus semua kartu di kolom ini" type="button">
                           <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
                         </button>
                         ` : ''}
                         ${perms.canCollapseList ? `
-                        <button class="HWSXYBl9AjpaH2 bqDBTa8KAMX3yi fHETqJ4siBv5Ok" type="button" data-testid="list-collapse-button" title="Ciutkan daftar">
-                          <span role="img" aria-label="Collapse list" class="text-slate-400 hover:text-slate-700 flex items-center">
+                        <button class="HWSXYBl9AjpaH2 bqDBTa8KAMX3yi fHETqJ4siBv5Ok w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" type="button" data-testid="list-collapse-button" title="Ciutkan daftar">
+                          <span role="img" aria-label="Collapse list" class="text-white/50 hover:text-white flex items-center">
                             <svg fill="none" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" fill-rule="evenodd" d="M6.25 8.75H0v-1.5h6.25zm3.5-1.5H16v1.5H9.75z" clip-rule="evenodd"></path><path fill="currentColor" fill-rule="evenodd" d="M5.19 8 2.22 5.03l1.06-1.06 3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5-1.06-1.06zm4.03-.53 3.5-3.5 1.06 1.06L10.81 8l2.97 2.97-1.06 1.06-3.5-3.5a.75.75 0 0 1 0-1.06" clip-rule="evenodd"></path></svg>
                           </span>
                         </button>
@@ -1814,7 +1814,7 @@ export class KanbanBoardView extends BaseView {
                         <!-- List Actions ··· Button -->
                         ${perms.canListActions ? `
                         <button
-                          class="btn-list-actions w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/8 transition-colors cursor-pointer"
+                          class="btn-list-actions w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                           data-column-id="${col.id}"
                           title="Tindakan daftar"
                           type="button"
@@ -1937,7 +1937,7 @@ export class KanbanBoardView extends BaseView {
 
                         return `
                         <div
-                          class="kanban-card p-3 rounded-xl bg-surface-container-lowest border border-surface-border hover:border-[#0c66e4] hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border"
+                          class="kanban-card p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40 backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border text-white"
                           data-task-id="${task.id}"
                           data-task-status="${task.status}"
                           draggable="true"
@@ -1953,7 +1953,7 @@ export class KanbanBoardView extends BaseView {
                               </span>
                               ${perms.canEditCard ? `
                               <button
-                                class="btn-edit-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-primary hover:bg-primary/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
+                                class="btn-edit-kanban-card w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-purple-300 hover:bg-white/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
                                 data-task-id="${task.id}"
                                 title="Edit tugas ini"
                                 type="button"
@@ -1963,7 +1963,7 @@ export class KanbanBoardView extends BaseView {
                               ` : ''}
                               ${perms.canDeleteCard ? `
                               <button
-                                class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
+                                class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-rose-400 hover:bg-white/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
                                 data-task-id="${task.id}"
                                 title="Hapus kartu ini"
                                 type="button"
@@ -1975,7 +1975,7 @@ export class KanbanBoardView extends BaseView {
                           </div>
 
                           <!-- Title -->
-                          <h4 class="text-[12.5px] sm:text-[13px] font-semibold text-text-primary group-hover:text-primary transition-colors leading-snug break-words">
+                          <h4 class="text-[12.5px] sm:text-[13px] font-semibold text-white/90 group-hover:text-white transition-colors leading-snug break-words">
                             ${task.title}
                           </h4>
 
@@ -1983,21 +1983,21 @@ export class KanbanBoardView extends BaseView {
                           ${this._renderCardAttachments(task)}
 
                           <!-- Footer: PIC & Column Shift Buttons -->
-                          <div class="flex items-center justify-between pt-2 border-t border-surface-border text-[11px] text-text-muted">
+                          <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] text-white/60">
                             <div class="flex items-center gap-1.5 min-w-0">
                               ${picAvatar ? `
-                                <img src="${picAvatar}" alt="${task.pic?.name || 'PIC'}" class="w-5 h-5 rounded-full object-cover shadow-2xs shrink-0 ring-1 ring-black/10" />
+                                <img src="${picAvatar}" alt="${task.pic?.name || 'PIC'}" class="w-5 h-5 rounded-full object-cover shadow-2xs shrink-0 ring-1 ring-white/20" />
                               ` : `
-                                <div class="w-5 h-5 rounded-full bg-[#0c66e4] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs shrink-0">
+                                <div class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center text-[9px] font-bold shadow-2xs shrink-0">
                                   ${task.pic?.initials || 'SR'}
                                 </div>
                               `}
-                              <span class="text-[11px] font-medium text-text-secondary truncate max-w-[80px]">
+                              <span class="text-[11px] font-medium text-white/80 truncate max-w-[80px]">
                                 ${(task.pic?.name || 'Tim').split(' ')[0]}
                               </span>
                               ${(task.attachments?.length || task.assets?.length) ? `
-                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-surface-container-low border border-surface-border text-[10px] font-bold text-text-secondary shrink-0" title="${(task.attachments || task.assets).length} file lampiran">
-                                  <span class="material-symbols-outlined text-[12px] text-primary">attach_file</span>
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-white/10 border border-white/10 text-[10px] font-bold text-purple-200 shrink-0" title="${(task.attachments || task.assets).length} file lampiran">
+                                  <span class="material-symbols-outlined text-[12px] text-purple-300">attach_file</span>
                                   <span>${(task.attachments || task.assets).length}</span>
                                 </span>
                               ` : ''}
@@ -2005,10 +2005,10 @@ export class KanbanBoardView extends BaseView {
 
                             <!-- Shift Column Buttons (Quick status shift) -->
                             <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                              <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-surface-container text-text-muted hover:text-primary transition-colors" data-task-id="${task.id}" data-dir="prev" title="Pindah ke kolom kiri">
+                              <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors" data-task-id="${task.id}" data-dir="prev" title="Pindah ke kolom kiri">
                                 <span class="material-symbols-outlined text-[14px]">arrow_back</span>
                               </button>
-                              <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-surface-container text-text-muted hover:text-primary transition-colors" data-task-id="${task.id}" data-dir="next" title="Pindah ke kolom kanan">
+                              <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors" data-task-id="${task.id}" data-dir="next" title="Pindah ke kolom kanan">
                                 <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                               </button>
                             </div>
@@ -2019,8 +2019,8 @@ export class KanbanBoardView extends BaseView {
                       }).join('')}
 
                       ${colTasks.length === 0 ? `
-                        <div class="flex-1 p-4 rounded-xl border border-dashed border-surface-border text-center text-text-muted text-[11px] flex flex-col items-center justify-center gap-1 min-h-[120px] bg-white/40">
-                          <span class="material-symbols-outlined text-[18px] text-text-muted/60">inbox</span>
+                        <div class="flex-1 p-4 rounded-xl border border-dashed border-white/15 text-center text-white/40 text-[11px] flex flex-col items-center justify-center gap-1 min-h-[120px] bg-white/5">
+                          <span class="material-symbols-outlined text-[18px] text-white/40">inbox</span>
                           <span>Kolom kosong — lepaskan kartu di sini</span>
                         </div>
                       ` : ''}
@@ -2029,7 +2029,7 @@ export class KanbanBoardView extends BaseView {
                     <!-- Quick Add Card Button in Column -->
                     ${perms.canAddCard ? `
                     <button
-                      class="btn-quick-add-col shrink-0 mt-auto pt-2 pb-1.5 px-2 rounded-xl text-[12px] font-semibold text-text-secondary hover:text-text-primary hover:bg-black/5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      class="btn-quick-add-col shrink-0 mt-auto pt-2 pb-1.5 px-2 rounded-xl text-[12px] font-semibold text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-transparent hover:border-white/10"
                       data-column-id="${col.id}"
                       type="button"
                     >
@@ -2046,26 +2046,26 @@ export class KanbanBoardView extends BaseView {
               ${perms.canAddList ? `
               <div class="w-[260px] sm:w-[280px] lg:w-[260px] shrink-0">
                 ${this.isAddingList ? `
-                  <div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-lg flex flex-col gap-2.5">
+                  <div class="bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-3 border border-white/15 shadow-2xl shadow-purple-950/70 flex flex-col gap-2.5 text-white">
                     <input
                       id="input-new-list-title"
                       type="text"
                       placeholder="Masukkan judul daftar..."
-                      class="w-full px-3 py-2 text-[13px] bg-white border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-[#0c66e4] focus:outline-none"
+                      class="w-full px-3 py-2 text-[13px] bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                       autofocus
                     />
                     <div class="flex items-center gap-2">
                       <button
                         id="btn-confirm-add-list"
                         type="button"
-                        class="px-3.5 py-1.5 bg-[#0c66e4] hover:bg-[#0055cc] text-white text-[12px] font-semibold rounded-lg shadow-sm transition-all cursor-pointer"
+                        class="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white text-[12px] font-semibold rounded-lg shadow-md transition-all cursor-pointer border border-purple-400/30"
                       >
                         Tambah daftar
                       </button>
                       <button
                         id="btn-cancel-add-list"
                         type="button"
-                        class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-800 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
+                        class="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         <span class="material-symbols-outlined text-[18px]">close</span>
                       </button>
@@ -2074,10 +2074,10 @@ export class KanbanBoardView extends BaseView {
                 ` : `
                   <button
                     id="btn-add-another-list"
-                    class="w-full flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-semibold text-[13.5px] transition-all border border-white/15 cursor-pointer shadow-md active:scale-98"
+                    class="w-full flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#0e0a22]/70 hover:bg-[#0e0a22]/90 backdrop-blur-xl text-white font-semibold text-[13.5px] transition-all border border-white/15 cursor-pointer shadow-lg active:scale-98"
                     type="button"
                   >
-                    <span class="material-symbols-outlined text-[20px]">add</span>
+                    <span class="material-symbols-outlined text-[20px] text-purple-300">add</span>
                     <span>Add another list</span>
                   </button>
                 `}
@@ -2093,30 +2093,30 @@ export class KanbanBoardView extends BaseView {
         ${!perms.isUser ? `
         <nav
           id="kanban-bottom-dock"
-          class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 transition-all"
+          class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0e0a22]/90 backdrop-blur-2xl px-3 py-1.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-1.5 sm:gap-2 transition-all text-white"
         >
           <!-- 1. Inbox Button (Kiri) -->
           <button
             id="btn-dock-inbox"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 font-bold shadow-xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer active:scale-95"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-purple-300 bg-purple-600/20 font-bold shadow-xs border border-purple-400/30' : 'text-white/60 hover:text-white hover:bg-white/10'} cursor-pointer active:scale-95"
             title="Inbox Tugas"
             type="button"
           >
             <span class="material-symbols-outlined text-[17px]">inbox</span>
             <span>Inbox</span>
-            ${this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
+            ${this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-purple-400 rounded-full"></span>' : ''}
           </button>
 
           <!-- 2. Board / Kanban Button (Tengah) -->
           <button
             id="btn-dock-board"
-            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all relative ${!this.isInboxOpen ? 'text-[#0c66e4] bg-blue-50/90 dark:bg-blue-900/30 shadow-xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'} cursor-pointer active:scale-95"
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all relative ${!this.isInboxOpen ? 'text-purple-300 bg-purple-600/20 shadow-xs border border-purple-400/30' : 'text-white/60 hover:text-white hover:bg-white/10'} cursor-pointer active:scale-95"
             title="Tampilan Papan Kanban"
             type="button"
           >
             <span class="material-symbols-outlined text-[17px]">view_week</span>
             <span>Kanban</span>
-            ${!this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-[#0c66e4] rounded-full"></span>' : ''}
+            ${!this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-purple-400 rounded-full"></span>' : ''}
           </button>
         </nav>
         ` : ''}
@@ -2993,9 +2993,10 @@ export class KanbanBoardView extends BaseView {
 
   getPriorityBadge(priority) {
     switch (priority) {
-      case 'Critical': return 'bg-rose-100 text-rose-700';
-      case 'High': return 'bg-amber-100 text-amber-700';
-      default: return 'bg-slate-100 text-slate-700';
+      case 'Critical': return 'bg-rose-500/20 text-rose-300 border border-rose-400/30 shadow-xs';
+      case 'High': return 'bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-xs';
+      case 'Medium': return 'bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-xs';
+      default: return 'bg-blue-500/20 text-blue-300 border border-blue-400/30 shadow-xs';
     }
   }
 
@@ -3074,14 +3075,14 @@ export class KanbanBoardView extends BaseView {
       html += `
         <div class="flex flex-col gap-1 my-0.5">
           ${otherAtts.slice(0, 2).map(att => `
-            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface-container-low border border-surface-border text-[11px] text-text-secondary min-w-0 shadow-2xs hover:border-primary/50 transition-colors" title="${this._escapeHtml(att.name)}">
-              <span class="material-symbols-outlined text-[15px] text-primary shrink-0">${getFileIcon(att.type, att.name)}</span>
-              <span class="truncate font-medium flex-1 text-[11.5px] text-text-primary">${this._escapeHtml(att.name)}</span>
-              ${att.formattedSize ? `<span class="text-[9.5px] text-text-muted shrink-0 font-mono">(${att.formattedSize})</span>` : ''}
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white/80 min-w-0 shadow-2xs hover:border-purple-400/40 transition-colors" title="${this._escapeHtml(att.name)}">
+              <span class="material-symbols-outlined text-[15px] text-purple-300 shrink-0">${getFileIcon(att.type, att.name)}</span>
+              <span class="truncate font-medium flex-1 text-[11.5px] text-white">${this._escapeHtml(att.name)}</span>
+              ${att.formattedSize ? `<span class="text-[9.5px] text-white/40 shrink-0 font-mono">(${att.formattedSize})</span>` : ''}
             </div>
           `).join('')}
           ${otherAtts.length > 2 ? `
-            <span class="text-[10px] text-text-muted font-semibold px-1">+${otherAtts.length - 2} file lampiran lainnya</span>
+            <span class="text-[10px] text-white/40 font-semibold px-1">+${otherAtts.length - 2} file lampiran lainnya</span>
           ` : ''}
         </div>
       `;
