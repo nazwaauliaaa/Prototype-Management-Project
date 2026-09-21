@@ -698,7 +698,7 @@ class CreativeOfficeApp {
       if (isUserRole) {
         const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
         const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
-        if (view !== 'kanban' && view !== 'auth') {
+        if (view !== 'kanban' && view !== 'auth' && view !== 'profile' && view !== 'profil') {
           this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
           return;
         }

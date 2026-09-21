@@ -230,9 +230,9 @@ export class Header {
                 </div>
 
 
-                <button id="btn-header-profile" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
-                  <span class="material-symbols-outlined text-[16px] text-primary">manage_accounts</span>
-                  <span>Pengaturan Profil</span>
+                <button id="btn-header-profile" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-primary pointer-events-none">manage_accounts</span>
+                  <span class="pointer-events-none">Pengaturan Profil</span>
                 </button>
 
                 <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer">
@@ -690,10 +690,12 @@ export class Header {
     const profileEditBtn = this.element.querySelector('#btn-header-profile');
     if (profileEditBtn) {
       profileEditBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         if (profileMenu) profileMenu.classList.add('hidden');
         const currentHash = (window.location.hash || '').replace('#/', '').split('/')[0] || 'dashboard';
         localStorage.setItem('profile_opened_from_view', currentHash);
+        window.location.hash = '#/profile';
         this.eventBus.emit('navigate', { view: 'profile' });
       });
     }
