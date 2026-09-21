@@ -66,21 +66,22 @@ export class Header {
               <!-- Burger Menu Flyout Panel -->
               <div
                 id="header-burger-menu"
-                class="hidden absolute left-0 top-full mt-2 w-72 bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-surface-border p-3 z-50 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150"
+                class="hidden absolute left-0 top-full mt-2 w-72 bg-[#0b061a]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/80 border border-white/15 p-3 z-50 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 text-white"
+                style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%), radial-gradient(ellipse 70% 60% at 50% 40%, rgba(124, 58, 237, 0.16) 0%, transparent 70%);"
               >
-                <div class="px-2 py-1.5 border-b border-surface-border flex items-center justify-between">
-                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-gray-900 dark:text-gray-200">Menu Navigasi</span>
+                <div class="px-2 py-1.5 border-b border-white/10 flex items-center justify-between">
+                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-white/70">Menu Navigasi</span>
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${activeBadge.class}">${activeBadge.label}</span>
                 </div>
 
                 <!-- Administrator Section (Khusus Manajemen Pengguna) -->
                 ${!isUserRole ? `
                 <div class="flex flex-col gap-1.5 pt-0.5">
-                  <span class="px-1 text-[10px] font-bold text-gray-900 dark:text-gray-200 uppercase tracking-wider">Administrasi Sistem</span>
+                  <span class="px-1 text-[10px] font-bold text-white/60 uppercase tracking-wider">Administrasi Sistem</span>
                   <button
                     id="btn-dashboard-user-mgmt"
                     type="button"
-                    class="w-full px-3.5 py-2.5 rounded-xl bg-[#2E1065] hover:bg-[#3B0764] border border-purple-800/60 active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-sm cursor-pointer"
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-800/90 via-indigo-800/90 to-purple-900/90 hover:from-purple-700 hover:to-indigo-700 border border-purple-400/40 active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-md shadow-purple-950/50 cursor-pointer"
                     title="Buka Halaman Manajemen Pengguna"
                   >
                     <div class="flex items-center gap-2">
@@ -94,50 +95,50 @@ export class Header {
 
                 <!-- Main Navigation Links -->
                 <div class="flex flex-col gap-1 pt-1">
-                  <span class="px-2 text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Navigasi Utama</span>
+                  <span class="px-2 text-[10px] font-bold text-white/60 uppercase tracking-wider">Navigasi Utama</span>
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-purple-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
                     data-route="dashboard"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-purple-600 dark:text-purple-400">space_dashboard</span>
-                    <span class="text-purple-600 dark:text-purple-400">Dashboard</span>
+                    <span class="material-symbols-outlined text-[18px] text-purple-400 group-hover:scale-110 transition-transform">space_dashboard</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Dashboard</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-blue-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
                     data-route="kanban"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-blue-600 dark:text-blue-400">view_kanban</span>
-                    <span class="text-blue-600 dark:text-blue-400">Papan Kanban</span>
+                    <span class="material-symbols-outlined text-[18px] text-blue-400 group-hover:scale-110 transition-transform">view_kanban</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Papan Kanban</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-amber-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
                     data-route="calendar"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-amber-600 dark:text-amber-400">calendar_today</span>
-                    <span class="text-amber-600 dark:text-amber-400">Jadwal & Kalender</span>
+                    <span class="material-symbols-outlined text-[18px] text-amber-400 group-hover:scale-110 transition-transform">calendar_today</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Jadwal & Kalender</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-emerald-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
                     data-route="workspaces"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">workspaces</span>
-                    <span class="text-emerald-600 dark:text-emerald-400">Ruang Kerja Tim</span>
+                    <span class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:scale-110 transition-transform">workspaces</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Ruang Kerja Tim</span>
                   </button>
 
                   <button
                     type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[12.5px] flex items-center gap-2.5 font-bold cursor-pointer transition-colors"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-rose-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
                     data-route="docs-sheets"
                   >
-                    <span class="material-symbols-outlined text-[18px] text-rose-600 dark:text-rose-400">description</span>
-                    <span class="text-rose-600 dark:text-rose-400">Dokumen & SOP</span>
+                    <span class="material-symbols-outlined text-[18px] text-rose-400 group-hover:scale-110 transition-transform">description</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Dokumen & SOP</span>
                   </button>
                 </div>
               </div>
@@ -319,40 +320,40 @@ export class Header {
               <!-- Role Switcher Menu Popup -->
               <div
                 id="user-profile-menu"
-                class="hidden absolute right-0 mt-2 w-72 bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-border p-2.5 z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150"
+                class="hidden absolute right-0 mt-2 w-72 bg-[#0b061a]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/80 border border-white/15 p-2.5 z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 text-white"
+                style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);"
               >
-                <div class="px-2 py-1.5 border-b border-surface-border mb-0.5 flex items-center gap-2.5">
+                <div class="px-2 py-1.5 border-b border-white/10 mb-0.5 flex items-center gap-2.5">
                   <img
                     alt="${user.name}"
-                    class="w-10 h-10 rounded-full object-cover ring-1 ring-black/10 shrink-0"
+                    class="w-10 h-10 rounded-full object-cover ring-1 ring-purple-400/40 shrink-0"
                     src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
                   />
                   <div class="min-w-0 flex-1">
-                    <span class="text-[9.5px] text-text-muted uppercase font-bold tracking-wider">Profil Anda</span>
-                    <p class="text-[13px] font-bold text-primary mt-0.5 truncate">${user.name}</p>
-                    <p class="text-[11px] text-text-secondary truncate">${user.email || 'user@sampulkreativ.id'}</p>
-                    <span class="inline-block mt-0.5 px-2 py-0.2 rounded-full ${isUserRole ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'} text-[9.5px] font-bold capitalize">
+                    <span class="text-[9.5px] text-white/50 uppercase font-bold tracking-wider">Profil Anda</span>
+                    <p class="text-[13px] font-bold text-white mt-0.5 truncate">${user.name}</p>
+                    <p class="text-[11px] text-white/70 truncate">${user.email || 'user@sampulkreativ.id'}</p>
+                    <span class="inline-block mt-0.5 px-2 py-0.2 rounded-full ${isUserRole ? 'bg-sky-500/20 text-sky-300 border border-sky-400/30' : 'bg-purple-500/20 text-purple-300 border border-purple-400/30'} text-[9.5px] font-bold capitalize">
                       ${isUserRole ? 'Member • Akses Terbatas' : 'Admin • Hak Penuh Ubah Apapun'}
                     </span>
                   </div>
                 </div>
 
-
                 ${!isUserRole ? `
-                <button id="btn-header-user-mgmt" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-teal-50 text-teal-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
-                  <span class="material-symbols-outlined text-[16px] text-[#2AB0B2] pointer-events-none">group</span>
-                  <span class="pointer-events-none font-semibold">Manajemen Pengguna</span>
+                <button id="btn-header-user-mgmt" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-teal-500/15 text-teal-300 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-teal-400 pointer-events-none">group</span>
+                  <span class="pointer-events-none font-semibold text-white/90">Manajemen Pengguna</span>
                 </button>
                 ` : ''}
 
-                <button id="btn-header-profile" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-container text-text-primary text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
-                  <span class="material-symbols-outlined text-[16px] text-primary pointer-events-none">manage_accounts</span>
+                <button id="btn-header-profile" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-white/90 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-purple-400 pointer-events-none">manage_accounts</span>
                   <span class="pointer-events-none">Pengaturan Profil</span>
                 </button>
 
-                <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-700 text-[12px] flex items-center gap-2 font-medium cursor-pointer">
-                  <span class="material-symbols-outlined text-[16px]">logout</span>
-                  <span>Keluar Sesi</span>
+                <button id="btn-header-logout" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-500/20 text-rose-300 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-rose-400">logout</span>
+                  <span class="text-rose-200">Keluar Sesi</span>
                 </button>
               </div>
             </div>
