@@ -179,39 +179,36 @@ export class DashboardView extends BaseView {
           </div>
         </section>
 
-        <!-- 1. KEY METRICS STATS SUMMARY -->
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex flex-col gap-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-[12px] font-medium text-text-secondary">Papan Aktif</span>
-              <span class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-300 flex items-center justify-center">
-                <span class="material-symbols-outlined text-[18px]">dashboard</span>
-              </span>
+        <!-- 1. KEY METRICS STATS SUMMARY (Satu Baris, Kompak & Rapi) -->
+        <section class="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+          <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <span class="text-[11px] sm:text-[12px] font-medium text-text-secondary truncate block">Papan Aktif</span>
+              <span class="text-[18px] sm:text-[22px] font-bold text-on-surface leading-tight mt-0.5 block">${totalProjects}</span>
             </div>
-            <span class="text-[24px] font-bold text-on-surface leading-tight">${totalProjects}</span>
-            <span class="text-[11px] text-text-muted">Ruang kolaborasi tim</span>
+            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-300 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">dashboard</span>
+            </span>
           </div>
 
-          <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex flex-col gap-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-[12px] font-medium text-text-secondary">Tugas Berjalan</span>
-              <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300 flex items-center justify-center">
-                <span class="material-symbols-outlined text-[18px]">pending_actions</span>
-              </span>
+          <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <span class="text-[11px] sm:text-[12px] font-medium text-text-secondary truncate block">Tugas Berjalan</span>
+              <span class="text-[18px] sm:text-[22px] font-bold text-on-surface leading-tight mt-0.5 block">${activeTasks}</span>
             </div>
-            <span class="text-[24px] font-bold text-on-surface leading-tight">${activeTasks}</span>
-            <span class="text-[11px] text-text-muted">Dalam proses pengerjaan</span>
+            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">pending_actions</span>
+            </span>
           </div>
 
-          <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex flex-col gap-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-[12px] font-medium text-text-secondary">Tugas Selesai</span>
-              <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center justify-center">
-                <span class="material-symbols-outlined text-[18px]">task_alt</span>
-              </span>
+          <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <span class="text-[11px] sm:text-[12px] font-medium text-text-secondary truncate block">Tugas Selesai</span>
+              <span class="text-[18px] sm:text-[22px] font-bold text-on-surface leading-tight mt-0.5 block">${completedTasks}</span>
             </div>
-            <span class="text-[24px] font-bold text-on-surface leading-tight">${completedTasks}</span>
-            <span class="text-[11px] text-text-muted">Telah tervalidasi</span>
+            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">task_alt</span>
+            </span>
           </div>
         </section>
 
