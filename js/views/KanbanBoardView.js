@@ -1474,6 +1474,10 @@ export class KanbanBoardView extends BaseView {
       <!-- Main Kanban Canvas with Theme Background -->
       <div class="flex flex-col w-full flex-1 h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100dvh-var(--topbar-height))] min-h-0 relative transition-all duration-300 select-none overflow-hidden" style="${bgStyle}">
         
+        <!-- Ambient Studio Glow Orbs (Subtle Depth) -->
+        <div class="creativoffice-orb bg-purple-600/20 w-[500px] h-[500px] -top-32 -left-32 pointer-events-none"></div>
+        <div class="creativoffice-orb bg-indigo-600/15 w-[450px] h-[450px] -bottom-32 -right-32 pointer-events-none"></div>
+
         <!-- Board Top Header Bar (Trello Toolbar) -->
         <div class="w-full px-3 sm:px-6 py-2 bg-black/35 backdrop-blur-md border-b border-white/15 flex items-center justify-between gap-2 sm:gap-3 text-white z-30 relative overflow-x-auto scrollbar-none shrink-0">
           
@@ -1565,10 +1569,15 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- Page Title Sub-bar (Dibawah Element Toolbar) -->
-        <div class="w-full px-4 sm:px-6 py-2.5 bg-black/20 backdrop-blur-md border-b border-white/10 flex items-center z-20 relative">
-          <h1 class="text-[18px] sm:text-[20px] font-bold text-white tracking-tight drop-shadow-sm truncate">
-            ${boardTitle}
-          </h1>
+        <div class="w-full px-4 sm:px-6 py-2 bg-black/25 backdrop-blur-md border-b border-white/10 flex items-center justify-between z-20 relative">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <h1 class="text-[18px] sm:text-[20px] font-bold text-white tracking-tight drop-shadow-sm truncate">
+              ${boardTitle}
+            </h1>
+            <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-white/80 border border-white/15">
+              <span>CreativOffice Board</span>
+            </span>
+          </div>
         </div>
 
         <!-- Main Body: Split View with Left Inbox Drawer + Board Columns -->

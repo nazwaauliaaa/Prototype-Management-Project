@@ -810,6 +810,31 @@ class CreativeOfficeApp {
   }
 
   /**
+   * Apply dynamic CreativOffice theme attributes to document and shell
+   * @param {string} role
+   * @param {string} viewName
+   */
+  applyCreativOfficeTheme(role, viewName) {
+    const rawRole = (role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
+    const cleanRole = ['admin', 'manajement-project', 'qa', 'user'].includes(rawRole) ? rawRole : 'admin';
+    const cleanPage = (viewName || 'dashboard').toLowerCase();
+
+    // Enable dark class for Tailwind tokens
+    document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-role', cleanRole);
+    document.documentElement.setAttribute('data-page', cleanPage);
+
+    document.body.setAttribute('data-role', cleanRole);
+    document.body.setAttribute('data-page', cleanPage);
+
+    const shellLayout = document.getElementById('app-shell-layout');
+    if (shellLayout) {
+      shellLayout.setAttribute('data-role', cleanRole);
+      shellLayout.setAttribute('data-page', cleanPage);
+    }
+  }
+
+  /**
    * Navigate to a view (LSP & OCP)
    * @param {string} viewName
    * @param {Object} [params]
@@ -823,7 +848,9 @@ class CreativeOfficeApp {
     const authService = this.container.resolve('AuthService');
     const currentUser = authService ? authService.getCurrentUser() : null;
 
-    const activeRole = localStorage.getItem('active_user_role');
+    const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
+    this.applyCreativOfficeTheme(activeRole, viewName);
+
     const isUserRole = activeRole === 'admin' ? false : ((currentUser && (currentUser.role === 'user' || (typeof currentUser.isUser === 'function' && currentUser.isUser()))) || activeRole === 'user');
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict user role strictly to kanban, profile, and auth

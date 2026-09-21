@@ -207,18 +207,18 @@ export class AuthView extends BaseView {
 
             <!-- Header & Brand -->
             <div class="relative z-10 flex flex-col items-center text-center mb-spacing-md">
-              <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 shadow-sm p-spacing-xs flex items-center justify-center mb-spacing-sm">
-                <img alt="Creative Office Logo" class="w-full h-full object-contain rounded-xl" src="/assets/logo.png" />
+              <div class="w-16 h-16 rounded-2xl bg-purple-500/15 border border-purple-400/30 shadow-lg shadow-purple-500/10 p-spacing-xs flex items-center justify-center mb-spacing-sm">
+                <img alt="CreativOffice Logo" class="w-full h-full object-contain rounded-xl" src="/assets/logo.png" />
               </div>
               
               <div class="flex items-center gap-2 mb-1">
-                <h1 class="font-headline-lg text-[22px] font-bold text-text-primary tracking-tight">Creative Office</h1>
-                <span class="inline-flex items-center gap-1 bg-status-success/10 text-status-success font-badge-micro text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  <span class="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse"></span>
-                  HTTPS
+                <h1 class="font-headline-lg text-[22px] font-bold text-white tracking-tight">CreativOffice</h1>
+                <span class="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-badge-micro text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  SECURE SSL
                 </span>
               </div>
-              <p class="font-caption-meta text-[11px] text-text-secondary">by Sampulkreativ Technology</p>
+              <p class="font-caption-meta text-[11.5px] text-purple-200/70">by Sampulkreativ Technology</p>
             </div>
 
             <!-- Scanner Viewfinder Component (Portrait) -->
@@ -335,7 +335,7 @@ export class AuthView extends BaseView {
                 </div>
                 <div class="min-w-0">
                   <h3 class="text-[15px] font-bold text-white">Login Administrator</h3>
-                  <p class="text-[11.5px] text-slate-400">Panel Manajemen Creative Office</p>
+                  <p class="text-[11.5px] text-slate-400">Panel Manajemen CreativOffice</p>
                 </div>
               </div>
               <button id="btn-close-admin-pwd" type="button" class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">

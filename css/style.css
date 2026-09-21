@@ -43,7 +43,185 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  transition: background-color 0.4s ease, color 0.3s ease;
 }
+
+/* =======================================================
+   CREATIVOFFICE - ROLE & PAGE ADAPTIVE BACKGROUND SYSTEM
+   Tailored for CreativOffice (Sampulkreativ Technology)
+   ======================================================= */
+
+/* Base Canvas & Dynamic Role Theming */
+body[data-role],
+#app-shell-layout[data-role] {
+  transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* ── 1. Role: ADMIN (CreativOffice Executive Command & Leadership) ── */
+body[data-role="admin"],
+#app-shell-layout[data-role="admin"] {
+  background-color: #0b061a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(124, 58, 237, 0.16) 0%, transparent 70%),
+    radial-gradient(rgba(192, 132, 252, 0.16) 1.2px, transparent 1.2px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+  background-attachment: fixed;
+  color: #f5f3ff;
+}
+
+/* ── 2. Role: MANAJEMENT-PROJECT (CreativOffice Sprint Operations & Roadmap) ── */
+body[data-role="manajement-project"],
+#app-shell-layout[data-role="manajement-project"] {
+  background-color: #040e1f;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(37, 99, 235, 0.30) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(6, 182, 212, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(29, 78, 216, 0.18) 0%, transparent 70%),
+    radial-gradient(rgba(56, 189, 248, 0.16) 1.2px, transparent 1.2px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+  background-attachment: fixed;
+  color: #f0f9ff;
+}
+
+/* ── 3. Role: QA (CreativOffice Precision Lab & Inspection Deck) ── */
+body[data-role="qa"],
+#app-shell-layout[data-role="qa"] {
+  background-color: #031411;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(16, 185, 129, 0.28) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(20, 184, 166, 0.20) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(5, 150, 105, 0.16) 0%, transparent 70%),
+    radial-gradient(rgba(52, 211, 153, 0.16) 1.2px, transparent 1.2px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+  background-attachment: fixed;
+  color: #ecfdf5;
+}
+
+/* ── 4. Role: USER (CreativOffice Creative Production & Design Studio) ── */
+body[data-role="user"],
+#app-shell-layout[data-role="user"] {
+  background-color: #08091a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(99, 102, 241, 0.30) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(236, 72, 153, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(124, 58, 237, 0.20) 0%, transparent 70%),
+    radial-gradient(rgba(167, 139, 250, 0.16) 1.2px, transparent 1.2px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+  background-attachment: fixed;
+  color: #faf5ff;
+}
+
+/* ── CreativOffice Ambient Light Orbs Animation ── */
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate(25px, -20px) scale(1.08);
+    opacity: 0.95;
+  }
+}
+
+.creativoffice-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(100px);
+  pointer-events: none;
+  animation: orbFloat 14s ease-in-out infinite;
+  z-index: 0;
+}
+
+/* ── CreativOffice Glassmorphic Card Polish ── */
+body[data-role] .bg-surface-container-lowest {
+  background-color: rgba(18, 14, 38, 0.72) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  color: #f1f5f9;
+}
+
+body[data-role="manajement-project"] .bg-surface-container-lowest {
+  background-color: rgba(8, 22, 46, 0.75) !important;
+  border-color: rgba(56, 189, 248, 0.22) !important;
+}
+
+body[data-role="qa"] .bg-surface-container-lowest {
+  background-color: rgba(6, 28, 24, 0.75) !important;
+  border-color: rgba(52, 211, 153, 0.22) !important;
+}
+
+body[data-role="user"] .bg-surface-container-lowest {
+  background-color: rgba(14, 14, 36, 0.75) !important;
+  border-color: rgba(192, 132, 252, 0.22) !important;
+}
+
+body[data-role] .bg-surface-container-low {
+  background-color: rgba(26, 20, 52, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+body[data-role] .border-surface-border {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body[data-role] .text-text-primary,
+body[data-role] .text-on-surface {
+  color: #ffffff !important;
+}
+
+body[data-role] .text-text-secondary {
+  color: #cbd5e1 !important;
+}
+
+/* ── CreativOffice Topbar Header ── */
+body[data-role] #app-header header {
+  background-color: rgba(11, 7, 26, 0.85) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff !important;
+}
+
+body[data-role="manajement-project"] #app-header header {
+  background-color: rgba(5, 14, 31, 0.88) !important;
+  border-bottom-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+body[data-role="qa"] #app-header header {
+  background-color: rgba(4, 20, 17, 0.88) !important;
+  border-bottom-color: rgba(52, 211, 153, 0.25) !important;
+}
+
+body[data-role="user"] #app-header header {
+  background-color: rgba(9, 9, 26, 0.88) !important;
+  border-bottom-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+/* ── Page-Specific Backdrop Atmospheres ── */
+/* Workspaces Page */
+body[data-page="workspaces"] .workspaces-page {
+  background: transparent !important;
+}
+
+/* Profile Page */
+body[data-page="profile"] .profile-page-container {
+  background: transparent !important;
+}
+
+/* Project Table Page */
+body[data-page="project-table"] .table-glass-wrapper {
+  background: rgba(12, 16, 32, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 
 /* Material Symbols Styling */
 .material-symbols-outlined {

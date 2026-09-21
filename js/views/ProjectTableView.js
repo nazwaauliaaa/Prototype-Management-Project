@@ -124,6 +124,11 @@ export class ProjectTableView extends BaseView {
               ${boardTitle}
             </h1>
 
+            <span class="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-white/10 text-white/80 border border-white/15">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              <span>CreativOffice Matrix</span>
+            </span>
+
             <!-- View Switcher Dropdown Button [Icon v] -->
             <button
               id="btn-board-view-switch"

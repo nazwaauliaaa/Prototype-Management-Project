@@ -138,7 +138,7 @@ export class ProjectListView extends BaseView {
               <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 w-fit">
                 <span class="w-2 h-2 rounded-full bg-status-progress animate-pulse"></span>
                 <span class="font-caption-meta text-[11px] text-purple-200 font-semibold tracking-wide uppercase">
-                  Portofolio & Rencana Inovasi
+                  CreativOffice • Portofolio &amp; Rencana Inovasi
                 </span>
               </div>
               <h1 class="text-[26px] sm:text-[32px] font-extrabold text-white tracking-tight">

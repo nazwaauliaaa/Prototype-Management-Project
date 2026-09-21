@@ -71,29 +71,35 @@ export class ProfileView extends BaseView {
     const activeWs = localStorage.getItem('active_workspace') || (user.workspaceAccess && user.workspaceAccess[0]) || 'panen-kunci';
 
     return `
-      <div class="min-h-[calc(100vh-var(--topbar-height))] bg-surface-container-lowest text-text-primary p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-start custom-scrollbar">
-        <div class="w-full max-w-4xl flex flex-col gap-6">
+      <div class="profile-page-container min-h-[calc(100vh-var(--topbar-height))] text-white p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-start custom-scrollbar relative overflow-hidden">
+        
+        <!-- Ambient Studio Glow Orbs -->
+        <div class="creativoffice-orb bg-purple-600/25 w-[450px] h-[450px] -top-20 -left-20"></div>
+        <div class="creativoffice-orb bg-indigo-600/20 w-[420px] h-[420px] top-64 -right-20"></div>
+
+        <div class="relative z-10 w-full max-w-4xl flex flex-col gap-6">
 
           <!-- Top Navigation & Breadcrumb -->
-          <div class="flex items-center justify-between gap-4 pb-3 border-b border-surface-border">
-              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer font-semibold px-2.5 py-1 rounded-lg hover:bg-surface-container" title="Kembali ke Papan Projek">
+          <div class="flex items-center justify-between gap-4 pb-3 border-b border-white/15">
+            <div class="flex items-center gap-2">
+              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1.5 text-white/80 hover:text-white transition-colors cursor-pointer font-semibold px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10" title="Kembali ke Papan Projek">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                 <span>Kembali ke Papan Projek</span>
               </button>
-              <span class="text-text-muted">/</span>
-              <span class="font-bold text-text-primary">Pengaturan Profil</span>
+              <span class="text-white/40">/</span>
+              <span class="font-bold text-white">Profil &amp; Kredensial CreativOffice</span>
             </div>
 
             <div class="flex items-center gap-2">
-              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${isUserRole ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-500/30' : 'bg-primary/10 text-primary border border-primary/20'} flex items-center gap-1">
+              <span class="px-3 py-1 rounded-full text-[11px] font-bold ${isUserRole ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/35' : 'bg-purple-500/20 text-purple-300 border border-purple-400/35'} flex items-center gap-1.5 shadow-sm">
                 <span class="material-symbols-outlined text-[14px]">${isUserRole ? 'verified' : 'admin_panel_settings'}</span>
-                <span>${isUserRole ? 'Anggota Terverifikasi (Di-ACC)' : user.role.toUpperCase()}</span>
+                <span>CreativOffice Pass • ${isUserRole ? 'Anggota Terverifikasi' : user.role.toUpperCase()}</span>
               </span>
             </div>
           </div>
 
           <!-- Profile Hero Card -->
-          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-emerald-600/10 dark:from-blue-950/40 dark:via-purple-950/40 dark:to-emerald-950/40 border border-surface-border p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm">
+          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900/30 via-indigo-900/25 to-blue-900/30 border border-white/15 backdrop-blur-xl p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-xl">
             
             <!-- Avatar Section with Upload trigger -->
             <div class="relative group shrink-0 flex flex-col items-center">

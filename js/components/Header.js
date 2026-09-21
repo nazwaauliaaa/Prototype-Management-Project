@@ -38,16 +38,33 @@ export class Header {
     const activeRole = localStorage.getItem('active_user_role');
     const isUserRole = activeRole === 'admin' ? false : ((user.role || '').toLowerCase() === 'user' || activeRole === 'user');
 
+    const roleBadges = {
+      admin: { label: 'Executive Admin', icon: 'admin_panel_settings', class: 'bg-purple-500/20 text-purple-300 border-purple-400/30' },
+      'manajement-project': { label: 'Project Manager', icon: 'assignment', class: 'bg-blue-500/20 text-blue-300 border-blue-400/30' },
+      qa: { label: 'QA Engineer', icon: 'fact_check', class: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' },
+      user: { label: 'Creative Member', icon: 'person', class: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400/30' }
+    };
+    const activeBadge = roleBadges[activeRole || (user.role || '').toLowerCase()] || roleBadges['user'];
+
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
         <div class="w-full h-topbar-height px-3 sm:px-5 flex items-center justify-between gap-3">
 
           <!-- Logo & Branding -->
-          <div class="flex items-center gap-spacing-md">
-            <div class="flex items-center gap-spacing-sm cursor-pointer" id="header-brand-logo" title="Creative Office - Beranda">
-              <img alt="Creative Office Logo" class="h-8 w-8 object-contain rounded-lg shadow-2xs" src="/assets/logo.png" />
-              <span class="font-headline-md text-[13px] font-bold text-on-surface leading-none">Creative Office</span>
+          <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 cursor-pointer" id="header-brand-logo" title="CreativOffice - Beranda">
+              <img alt="CreativOffice Logo" class="h-7.5 w-7.5 object-contain rounded-lg shadow-sm" src="/assets/logo.png" />
+              <div class="flex flex-col">
+                <span class="font-headline-md text-[13.5px] font-extrabold text-white leading-none tracking-tight">CreativOffice</span>
+                <span class="text-[9px] font-medium text-white/50 leading-tight">by Sampulkreativ</span>
+              </div>
             </div>
+
+            <!-- Role Badge in Header -->
+            <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold border shadow-xs ${activeBadge.class}">
+              <span class="material-symbols-outlined text-[13px]">${activeBadge.icon}</span>
+              <span>${activeBadge.label}</span>
+            </span>
           </div>
 
           <!-- Center: Search Bar & Create Button (or User Kanban Badge) -->
@@ -57,8 +74,8 @@ export class Header {
               <span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[17px] pointer-events-none">search</span>
               <input
                 id="global-search-input"
-                class="w-full h-8 pl-8 pr-3 bg-surface-container-low rounded-lg text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 text-[13px] border border-surface-border transition-all"
-                placeholder="Search..."
+                class="w-full h-8 pl-8 pr-3 bg-white/5 hover:bg-white/10 dark:bg-black/30 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 text-[13px] border border-white/15 transition-all"
+                placeholder="Cari tugas, deliverable, atau dokumen..."
                 type="text"
               />
             </div>
@@ -66,7 +83,7 @@ export class Header {
             <!-- Create Button in purple -->
             <button
               id="btn-header-create-board"
-              class="h-8 px-3.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-[13px] flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+              class="h-8 px-3.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-[13px] flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
               title="Buat papan / proyek baru"
               type="button"
             >

@@ -98,70 +98,93 @@ export class DashboardView extends BaseView {
       timeGreeting = 'Selamat Malam';
     }
 
-    // Role-specific greeting configurations
+    // Role-specific greeting configurations tailored for CreativOffice
     const roleConfigs = {
       admin: {
-        roleLabel: 'Admin',
+        roleLabel: 'Executive Admin',
+        studioTitle: 'CreativOffice • Executive Command Center',
         greeting: `Hallo, ${timeGreeting} Admin`,
-        desc: 'Kelola konfigurasi sistem, visibilitas ruang kerja, dan pantau seluruh operasional proyek.',
-        badge: 'Administrator',
-        badgeClass: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800',
+        desc: 'Pusat komando strategis, kendali arsitektur proyek, dan pengawasan portofolio menyeluruh.',
+        badge: 'Executive Admin',
+        badgeClass: 'bg-purple-500/20 text-purple-200 border-purple-400/35 shadow-purple-500/10',
         icon: 'admin_panel_settings',
-        iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-950/80 dark:text-purple-300'
+        iconBg: 'bg-purple-500/20 text-purple-300 border-purple-400/30',
+        accentGradient: 'from-purple-600/30 via-violet-600/20 to-amber-500/20',
+        orbColor1: 'bg-purple-600/25',
+        orbColor2: 'bg-amber-500/15'
       },
       'manajement-project': {
         roleLabel: 'Manajer Proyek',
+        studioTitle: 'CreativOffice • Sprint & Operations Deck',
         greeting: `Hallo, ${timeGreeting} Manajer Proyek`,
-        desc: 'Pantau jadwal sprint, alur kerja antar papan, dan koordinasi tim secara terpadu.',
-        badge: 'Manajer Proyek',
-        badgeClass: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
+        desc: 'Koordinasi sprint terpadu, alokasi timeline lintas tim, dan monitoring milestone rilis produk.',
+        badge: 'Project Operations',
+        badgeClass: 'bg-blue-500/20 text-blue-200 border-blue-400/35 shadow-blue-500/10',
         icon: 'assignment',
-        iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-950/80 dark:text-blue-300'
+        iconBg: 'bg-blue-500/20 text-blue-300 border-blue-400/30',
+        accentGradient: 'from-blue-600/30 via-indigo-600/20 to-cyan-500/20',
+        orbColor1: 'bg-blue-600/25',
+        orbColor2: 'bg-cyan-500/15'
       },
       qa: {
-        roleLabel: 'QA',
-        greeting: `Hallo, ${timeGreeting} QA`,
-        desc: 'Tinjau kualitas deliverable, uji kelaikan teknis, dan verifikasi kartu tugas sebelum rilis.',
+        roleLabel: 'Quality Assurance',
+        studioTitle: 'CreativOffice • Precision Lab & Inspection',
+        greeting: `Hallo, ${timeGreeting} QA Engineer`,
+        desc: 'Verifikasi kelaikan teknis, inspeksi performa deliverable, dan validasi standar mutu sebelum rilis.',
         badge: 'Quality Assurance',
-        badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+        badgeClass: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/35 shadow-emerald-500/10',
         icon: 'fact_check',
-        iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-300'
+        iconBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+        accentGradient: 'from-emerald-600/30 via-teal-600/20 to-cyan-500/20',
+        orbColor1: 'bg-emerald-600/25',
+        orbColor2: 'bg-teal-500/15'
       },
       user: {
-        roleLabel: 'User',
-        greeting: `Hallo, ${timeGreeting} User`,
-        desc: 'Selesaikan tugas prioritas Anda hari ini dan kolaborasi aktif bersama tim di papan proyek.',
-        badge: 'Anggota Tim',
-        badgeClass: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
-        icon: 'person',
-        iconBg: 'bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+        roleLabel: 'Creative Member',
+        studioTitle: 'CreativOffice • Creative Studio & Production',
+        greeting: `Hallo, ${timeGreeting} Rekan Kreatif`,
+        desc: 'Fokus pada deliverable prioritas Anda hari ini dan wujudkan inovasi berkualitas bersama tim.',
+        badge: 'Creative Member',
+        badgeClass: 'bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/35 shadow-fuchsia-500/10',
+        icon: 'palette',
+        iconBg: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400/30',
+        accentGradient: 'from-indigo-600/30 via-purple-600/20 to-fuchsia-500/20',
+        orbColor1: 'bg-indigo-600/25',
+        orbColor2: 'bg-fuchsia-500/15'
       }
     };
 
     const currentRoleConfig = roleConfigs[role] || roleConfigs['user'];
 
     return `
-      <div class="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 gap-7">
+      <div class="relative flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 gap-7 overflow-hidden">
+
+        <!-- Ambient Studio Glow Orbs -->
+        <div class="creativoffice-orb ${currentRoleConfig.orbColor1} w-[460px] h-[460px] -top-24 -left-20"></div>
+        <div class="creativoffice-orb ${currentRoleConfig.orbColor2} w-[420px] h-[420px] top-64 -right-16"></div>
 
         <!-- 0. WELCOME ROLE GREETING BANNER -->
-        <section class="w-full rounded-2xl bg-surface-container-lowest p-4 sm:px-6 sm:py-5 border border-surface-border shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-3.5 min-w-0">
-            <div class="w-11 h-11 rounded-xl ${currentRoleConfig.iconBg} border border-surface-border/60 flex items-center justify-center shrink-0 shadow-2xs">
-              <span class="material-symbols-outlined text-[24px]">
+        <section class="relative z-10 w-full rounded-2xl bg-gradient-to-r ${currentRoleConfig.accentGradient} p-5 sm:px-7 sm:py-6 border border-white/15 backdrop-blur-xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            <div class="w-12 h-12 rounded-2xl ${currentRoleConfig.iconBg} border flex items-center justify-center shrink-0 shadow-lg shadow-black/20">
+              <span class="material-symbols-outlined text-[26px]">
                 ${currentRoleConfig.icon}
               </span>
             </div>
             <div class="flex flex-col min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h1 class="text-[18px] sm:text-[20px] font-bold text-on-surface tracking-tight leading-snug">
-                  ${currentRoleConfig.greeting}
-                </h1>
-                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border ${currentRoleConfig.badgeClass}">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="text-[11px] font-mono font-bold tracking-wider uppercase text-white/70">
+                  ${currentRoleConfig.studioTitle}
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border shadow-xs ${currentRoleConfig.badgeClass}">
                   ${currentRoleConfig.badge}
                 </span>
               </div>
-              <p class="text-[12.5px] sm:text-[13px] text-text-secondary mt-0.5 leading-normal">
-                ${user ? `<span class="text-text-primary font-semibold">${user.name}</span> <span class="text-text-muted mx-1">•</span>` : ''}${currentRoleConfig.desc}
+              <h1 class="text-[19px] sm:text-[22px] font-bold text-white tracking-tight leading-snug mt-0.5 drop-shadow-sm">
+                ${currentRoleConfig.greeting}
+              </h1>
+              <p class="text-[12.5px] sm:text-[13px] text-white/80 mt-1 leading-normal">
+                ${user ? `<span class="text-white font-semibold">${user.name}</span> <span class="text-white/40 mx-1">•</span>` : ''}${currentRoleConfig.desc}
               </p>
             </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -177,49 +200,53 @@ export class DashboardView extends BaseView {
             </button>
             ` : ''}
           </div>
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/30 border border-white/10 backdrop-blur-md shrink-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[11.5px] font-medium text-white/90">CreativOffice Cloud Online</span>
+          </div>
         </section>
 
-        <!-- 1. KEY METRICS STATS SUMMARY (Satu Baris, Kompak & Rapi) -->
-        <section class="grid grid-cols-3 gap-2.5 sm:gap-3.5">
-          <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex items-center justify-between gap-2">
+        <!-- 1. KEY METRICS STATS SUMMARY (Kompak & Glassmorphic) -->
+        <section class="relative z-10 grid grid-cols-3 gap-3 sm:gap-4">
+          <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-purple-500/40 transition-all flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <span class="text-[11px] sm:text-[12px] font-medium text-text-secondary truncate block">Papan Aktif</span>
-              <span class="text-[18px] sm:text-[22px] font-bold text-on-surface leading-tight mt-0.5 block">${totalProjects}</span>
+              <span class="text-[11px] sm:text-[12px] font-medium text-white/70 truncate block">Papan Aktif</span>
+              <span class="text-[19px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${totalProjects}</span>
             </div>
-            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-300 flex items-center justify-center shrink-0">
-              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">dashboard</span>
+            <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[20px] sm:text-[22px]">dashboard</span>
             </span>
           </div>
 
-          <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex items-center justify-between gap-2">
+          <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-blue-500/40 transition-all flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <span class="text-[11px] sm:text-[12px] font-medium text-text-secondary truncate block">Tugas Berjalan</span>
-              <span class="text-[18px] sm:text-[22px] font-bold text-on-surface leading-tight mt-0.5 block">${activeTasks}</span>
+              <span class="text-[11px] sm:text-[12px] font-medium text-white/70 truncate block">Tugas Berjalan</span>
+              <span class="text-[19px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${activeTasks}</span>
             </div>
-            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300 flex items-center justify-center shrink-0">
-              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">pending_actions</span>
+            <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[20px] sm:text-[22px]">pending_actions</span>
             </span>
           </div>
 
-          <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-surface-container-lowest border border-surface-border shadow-xs flex items-center justify-between gap-2">
+          <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-emerald-500/40 transition-all flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <span class="text-[11px] sm:text-[12px] font-medium text-text-secondary truncate block">Tugas Selesai</span>
-              <span class="text-[18px] sm:text-[22px] font-bold text-on-surface leading-tight mt-0.5 block">${completedTasks}</span>
+              <span class="text-[11px] sm:text-[12px] font-medium text-white/70 truncate block">Tugas Selesai</span>
+              <span class="text-[19px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${completedTasks}</span>
             </div>
-            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center justify-center shrink-0">
-              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">task_alt</span>
+            <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[20px] sm:text-[22px]">task_alt</span>
             </span>
           </div>
         </section>
 
         <!-- 2. BOARDS GRID SECTION -->
-        <section class="flex flex-col gap-3.5">
+        <section class="relative z-10 flex flex-col gap-3.5">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-[20px] text-purple-600">view_kanban</span>
-              <h2 class="text-[17px] font-bold text-text-primary tracking-tight">Papan Proyek Utama & Tim</h2>
+              <span class="material-symbols-outlined text-[20px] text-purple-400">view_kanban</span>
+              <h2 class="text-[17px] font-bold text-white tracking-tight drop-shadow-sm">Papan Proyek Utama &amp; Tim</h2>
             </div>
-            <span class="text-[11px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800 px-2.5 py-0.5 rounded-full">
+            <span class="text-[11px] font-semibold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2.5 py-0.5 rounded-full shadow-xs">
               ${displayProjects.length} Papan Aktif
             </span>
           </div>
@@ -289,17 +316,17 @@ export class DashboardView extends BaseView {
             <!-- Create New Board Card -->
             <div
               id="btn-card-create-board"
-              class="h-28 sm:h-32 rounded-xl border-2 border-dashed border-surface-border hover:border-purple-500 hover:bg-purple-50/20 dark:hover:bg-purple-950/20 p-3.5 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center"
+              class="h-28 sm:h-32 rounded-xl border-2 border-dashed border-white/20 hover:border-purple-400 bg-white/5 hover:bg-purple-600/15 backdrop-blur-md p-3.5 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center shadow-lg"
               role="button"
               tabindex="0"
               title="Klik untuk membuat papan baru"
             >
-              <div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <span class="material-symbols-outlined text-[20px]">add</span>
               </div>
               <div>
-                <span class="text-[13px] font-bold text-on-surface group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Buat Papan Baru</span>
-                <p class="text-[10.5px] text-text-muted mt-0.5">Tambah proyek & alur kerja</p>
+                <span class="text-[13px] font-bold text-white group-hover:text-purple-300 transition-colors">Buat Papan Baru</span>
+                <p class="text-[10.5px] text-white/60 mt-0.5">Tambah proyek &amp; alur kerja CreativOffice</p>
               </div>
             </div>
           </div>

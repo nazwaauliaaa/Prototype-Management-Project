@@ -50,10 +50,15 @@ export class DocsSheetsView extends BaseView {
         <div class="flex flex-col gap-2 mb-4">
           <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             <div class="min-w-0">
-              <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-on-surface font-bold tracking-tight">
-                Pusat Dokumen &amp; Lembar Kerja
-              </h1>
-              <p class="font-caption-meta text-[11px] text-text-secondary">
+              <div class="flex items-center gap-2">
+                <h1 class="font-headline-lg text-[18px] sm:text-[20px] text-white font-bold tracking-tight">
+                  Pusat Dokumen &amp; Lembar Kerja
+                </h1>
+                <span class="px-2 py-0.5 rounded-full text-[10.5px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-400/30">
+                  CreativOffice Docs
+                </span>
+              </div>
+              <p class="font-caption-meta text-[11px] text-white/70">
                 Kanvas SOP teknis, inventaris hardware Novastar, dan lembar kalkulasi budget terpusat berdampingan dengan tugas aktual.
               </p>
             </div>

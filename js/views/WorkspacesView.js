@@ -90,14 +90,19 @@ export class WorkspacesView extends BaseView {
 
   render() {
     return `
-      <div class="workspaces-page min-h-[calc(100vh-var(--topbar-height))] bg-[#f8fafc] text-slate-800 pb-28 pt-4 sm:pt-6 px-4 sm:px-8 flex justify-center relative">
-        <div class="w-full max-w-2xl space-y-5">
+      <div class="workspaces-page min-h-[calc(100vh-var(--topbar-height))] bg-transparent text-white pb-28 pt-4 sm:pt-6 px-4 sm:px-8 flex justify-center relative overflow-hidden">
+        
+        <!-- Ambient Studio Glow Orbs -->
+        <div class="creativoffice-orb bg-purple-600/25 w-[460px] h-[460px] -top-20 -left-20"></div>
+        <div class="creativoffice-orb bg-indigo-600/20 w-[420px] h-[420px] top-64 -right-16"></div>
+
+        <div class="relative z-10 w-full max-w-2xl space-y-5">
 
           <!-- Top Navigation Header: Back Button & Add Project Action -->
           <div class="flex items-center justify-between gap-3">
             <button
               id="btn-workspaces-back"
-              class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-purple-700 hover:border-purple-300 hover:bg-purple-50/50 transition-all text-xs font-semibold cursor-pointer shadow-sm"
+              class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-all text-xs font-semibold cursor-pointer shadow-sm"
               title="Kembali ke Beranda"
             >
               <span class="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -105,31 +110,30 @@ export class WorkspacesView extends BaseView {
             </button>
 
             <div class="flex items-center gap-2">
-              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold flex items-center gap-1.5 shadow-xs">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Workspace Aktif
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-semibold flex items-center gap-1.5 shadow-xs">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                CreativOffice Workspaces
               </span>
             </div>
           </div>
 
           <!-- Main Container Card (PILIH RUANG KERJA) -->
-          <div class="rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 p-6 sm:p-8 space-y-6 relative overflow-hidden">
-            <div class="absolute -top-16 -right-16 w-44 h-44 bg-purple-100/70 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="rounded-3xl bg-white/5 dark:bg-black/40 backdrop-blur-2xl border border-white/15 shadow-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden text-white">
 
             <!-- Brand Header -->
             <div class="text-center space-y-3">
-              <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs">
+              <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-2xl bg-white/10 border border-white/15 shadow-xs">
                 <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-sm">
                   <span class="material-symbols-outlined text-white text-[15px]">workspaces</span>
                 </div>
-                <span class="font-extrabold text-slate-800 text-[15px] sm:text-[17px] tracking-wider">CREATIVEOFFICE</span>
+                <span class="font-extrabold text-white text-[15px] sm:text-[17px] tracking-wider">CREATIVEOFFICE</span>
               </div>
 
               <!-- Decorative Divider -->
               <div class="flex items-center gap-3 w-full max-w-md mx-auto pt-1">
-                <span class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-purple-300"></span>
-                <span class="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-widest px-1">PILIH RUANG KERJA</span>
-                <span class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-purple-300"></span>
+                <span class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-purple-400/60"></span>
+                <span class="text-[11px] sm:text-[12px] font-bold text-white/70 uppercase tracking-widest px-1">PILIH RUANG KERJA</span>
+                <span class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-purple-400/60"></span>
               </div>
             </div>
 
@@ -139,9 +143,9 @@ export class WorkspacesView extends BaseView {
                 type="text" 
                 id="search-ws-input" 
                 placeholder="Cari Ruang Kerja..." 
-                class="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white rounded-xl px-4 py-2.5 text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 pr-10 transition-all shadow-xs"
+                class="w-full bg-white/5 border border-white/15 focus:border-purple-400 focus:bg-white/10 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20 pr-10 transition-all shadow-xs"
               />
-              <span class="material-symbols-outlined absolute right-3.5 text-slate-400 text-[18px] pointer-events-none">search</span>
+              <span class="material-symbols-outlined absolute right-3.5 text-white/40 text-[18px] pointer-events-none">search</span>
             </div>
 
             <!-- Interactive Workspace Cards -->
@@ -154,7 +158,7 @@ export class WorkspacesView extends BaseView {
 
                 return `
                   <div
-                    class="workspace-select-card ${isActive ? 'border-purple-500 bg-purple-50/60 ring-1 ring-purple-500/30 shadow-sm' : 'border-slate-200 bg-white hover:border-purple-300 hover:bg-slate-50/70 shadow-xs'} p-4 rounded-2xl cursor-pointer flex flex-col gap-3 group transition-all border"
+                    class="workspace-select-card ${isActive ? 'border-purple-400 bg-purple-600/20 ring-1 ring-purple-400/40 shadow-lg' : 'border-white/10 bg-white/5 hover:border-purple-400/40 hover:bg-white/10 shadow-sm'} p-4 rounded-2xl cursor-pointer flex flex-col gap-3 group transition-all border"
                     data-workspace="${ws.id}"
                     data-title="${ws.title}"
                     role="button"
@@ -162,30 +166,30 @@ export class WorkspacesView extends BaseView {
                   >
                     <div class="flex items-center justify-between gap-3.5">
                       <div class="flex items-center gap-3.5 min-w-0">
-                        <div class="ws-icon-box w-11 h-11 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 border border-purple-500/20 shadow-sm flex items-center justify-center p-2.5 shrink-0 transition-transform group-hover:scale-105 text-white">
+                        <div class="ws-icon-box w-11 h-11 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 border border-purple-400/30 shadow-md flex items-center justify-center p-2.5 shrink-0 transition-transform group-hover:scale-105 text-white">
                           ${ws.iconSvg}
                         </div>
                         <div class="flex flex-col min-w-0">
                           <div class="flex items-center gap-2">
-                            <span class="ws-title font-bold text-slate-900 group-hover:text-purple-700 text-[15px] sm:text-[16px] tracking-tight transition-colors truncate">${ws.title}</span>
+                            <span class="ws-title font-bold text-white group-hover:text-purple-300 text-[15px] sm:text-[16px] tracking-tight transition-colors truncate">${ws.title}</span>
                             ${ws.isCustom ? `
-                              <span class="px-2 py-0.5 rounded-full bg-purple-100 border border-purple-200 text-purple-700 font-badge-micro text-[10px] font-bold">
+                              <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 font-badge-micro text-[10px] font-bold">
                                 Baru
                               </span>
                             ` : ''}
                             ${isActive ? `
-                              <span class="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700 font-badge-micro text-[10px] font-bold">
+                              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-badge-micro text-[10px] font-bold">
                                 Aktif
                               </span>
                             ` : ''}
                           </div>
-                          <span class="text-[11.5px] text-slate-500 font-medium truncate">${ws.tag}</span>
+                          <span class="text-[11.5px] text-white/60 font-medium truncate">${ws.tag}</span>
                         </div>
                       </div>
 
                       <div class="flex items-center gap-2 shrink-0">
                         <span class="w-2.5 h-2.5 rounded-full" style="background: ${ws.color};" title="Status Indicator"></span>
-                        <span class="material-symbols-outlined text-slate-400 group-hover:text-purple-600 text-[20px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+                        <span class="material-symbols-outlined text-white/40 group-hover:text-purple-400 text-[20px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
                       </div>
                     </div>
 
