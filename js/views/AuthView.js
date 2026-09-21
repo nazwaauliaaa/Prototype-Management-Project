@@ -301,6 +301,7 @@ export class AuthView extends BaseView {
             </div>
 
 
+
             <!-- Security Verification Footer -->
             <div class="mt-spacing-md pt-spacing-xs flex items-center justify-center gap-1.5 text-text-muted font-caption-meta text-[11px]">
               <span class="material-symbols-outlined text-[16px] text-status-success">verified_user</span>
@@ -1697,8 +1698,39 @@ export class AuthView extends BaseView {
       });
     }
 
-    // Admin Password Protected Login
+    // 1. Direct Admin Login (diubah menjadi role admin)
+    const btnDirectLoginUser = this.element.querySelector('#btn-direct-login-user');
+    if (btnDirectLoginUser) {
+      btnDirectLoginUser.addEventListener('click', (e) => {
+        e.preventDefault();
+        stopCamera();
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Masuk sebagai Admin... Membuka Dashboard!</span>`;
+        }
+
+        this.authService.loginWithRole('admin');
+        window.location.hash = '#/dashboard';
+      });
+    }
+
+    // 2. Direct User Login (Secondary)
     const btnDirectLoginAdmin = this.element.querySelector('#btn-direct-login-admin');
+    if (btnDirectLoginAdmin) {
+      btnDirectLoginAdmin.addEventListener('click', (e) => {
+        e.preventDefault();
+        stopCamera();
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Masuk sebagai User... Membuka Papan!</span>`;
+        }
+
+        this.authService.loginWithRole('user');
+        const curWs = localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
+        window.location.hash = `#/kanban/${curProj}`;
+      });
+    }
     const adminPwdModal = this.element.querySelector('#modal-admin-password-prompt');
     const adminPwdInput = this.element.querySelector('#input-admin-password');
     const adminPwdError = this.element.querySelector('#admin-pwd-error-msg');
