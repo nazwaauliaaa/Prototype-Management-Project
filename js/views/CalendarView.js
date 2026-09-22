@@ -388,17 +388,7 @@ export class CalendarView extends BaseView {
           id="kanban-bottom-dock"
           class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#1e2025]/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-2 sm:gap-3 transition-all text-white"
         >
-          <!-- 1. Inbox Button -->
-          <button
-            id="btn-dock-inbox"
-            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            title="Inbox"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[19px]">inbox</span>
-          </button>
-
-          <!-- 2. Calendar Button (Active Pill with Blue Underline) -->
+          <!-- Calendar Button (Active Pill with Blue Underline) -->
           <button
             id="btn-dock-calendar"
             class="flex items-center justify-center px-4 py-1.5 rounded-xl bg-blue-950/70 border border-blue-800/80 text-blue-400 font-bold relative transition-all shadow-xs cursor-pointer active:scale-95"

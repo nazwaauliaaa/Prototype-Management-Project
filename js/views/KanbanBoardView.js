@@ -2172,19 +2172,7 @@ export class KanbanBoardView extends BaseView {
           id="kanban-bottom-dock"
           class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0e0a22]/90 backdrop-blur-2xl px-3 py-1.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-1.5 sm:gap-2 transition-all text-white"
         >
-          <!-- 1. Inbox Button (Kiri) -->
-          <button
-            id="btn-dock-inbox"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all relative ${this.isInboxOpen ? 'text-purple-300 bg-purple-600/20 font-bold shadow-xs border border-purple-400/30' : 'text-white/60 hover:text-white hover:bg-white/10'} cursor-pointer active:scale-95"
-            title="Inbox Tugas"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[17px]">inbox</span>
-            <span>Inbox</span>
-            ${this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-purple-400 rounded-full"></span>' : ''}
-          </button>
-
-          <!-- 2. Board / Kanban Button (Tengah) -->
+          <!-- Board / Kanban Button -->
           <button
             id="btn-dock-board"
             class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all relative ${!this.isInboxOpen ? 'text-purple-300 bg-purple-600/20 shadow-xs border border-purple-400/30' : 'text-white/60 hover:text-white hover:bg-white/10'} cursor-pointer active:scale-95"

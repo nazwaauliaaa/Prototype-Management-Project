@@ -425,20 +425,6 @@ export class DashboardView extends BaseView {
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span class="text-[10.5px] font-medium text-white/90">CreativOffice Online</span>
               </div>
-
-              <!-- Quick User Management Button for Admin -->
-              ${role === 'admin' ? `
-              <button
-                id="btn-dashboard-user-mgmt"
-                type="button"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-800/90 via-indigo-800/90 to-purple-900/90 hover:from-purple-700 hover:to-indigo-700 border border-purple-400/40 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-sm"
-                title="Buka Halaman Manajemen Pengguna"
-              >
-                <span class="material-symbols-outlined text-[17px] text-purple-300">manage_accounts</span>
-                <span class="hidden sm:inline">Manajemen Pengguna</span>
-              </button>
-              ` : ''}
-
               <!-- Custom Background Theme Button (Palette Icon) -->
               <button
                 id="btn-dashboard-theme-toggle"

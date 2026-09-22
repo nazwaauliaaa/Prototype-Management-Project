@@ -286,17 +286,7 @@ export class ProjectTableView extends BaseView {
           id="kanban-bottom-dock"
           class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#1e2025]/95 backdrop-blur-xl px-3 py-1.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-2 sm:gap-3 transition-all text-white"
         >
-          <!-- 1. Inbox Button -->
-          <button
-            id="btn-dock-inbox"
-            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            title="Inbox"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[19px]">inbox</span>
-          </button>
-
-          <!-- 2. Calendar Button -->
+          <!-- Calendar Button -->
           <button
             id="btn-dock-calendar"
             class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
