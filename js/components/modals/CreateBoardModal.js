@@ -410,6 +410,8 @@ export class CreateBoardModal extends BaseModal {
     const workspaceTagSelect = container.querySelector('#select-ws-new-workspace-tag');
     const prioritySelect = container.querySelector('#select-ws-project-priority');
     const dueDateInput = container.querySelector('#input-ws-project-due');
+    const descInput = container.querySelector('#input-ws-project-desc');
+    const budgetInput = container.querySelector('#input-ws-project-budget');
 
     const previewEl = container.querySelector('#board-theme-preview');
     const previewTitle = container.querySelector('#preview-board-title');
@@ -422,6 +424,32 @@ export class CreateBoardModal extends BaseModal {
     const cancelBtn = container.querySelector('#btn-cancel-create-project');
 
     let workspaceUserEdited = false;
+
+    // Custom Priority Dropdown handlers (declared early to prevent TDZ)
+    const wrapperPrio = container.querySelector('#wrapper-custom-board-priority');
+    const prioTrigger = container.querySelector('#btn-custom-board-priority-trigger');
+    const prioMenu = container.querySelector('#custom-board-priority-menu');
+    const prioChevron = container.querySelector('#custom-board-priority-chevron');
+    const prioText = container.querySelector('#custom-board-priority-text');
+    const prioDot = container.querySelector('#custom-board-priority-dot');
+    const prioOptions = container.querySelectorAll('.btn-board-priority-option');
+
+    const togglePrioMenu = (show) => {
+      if (!prioMenu) return;
+      const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
+      if (willOpen) {
+        if (wrapperPrio) wrapperPrio.style.zIndex = '50';
+        prioMenu.classList.remove('hidden');
+        if (prioChevron) prioChevron.classList.add('rotate-180');
+        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
+        if (catMenu && !catMenu.classList.contains('hidden')) toggleCatMenu(false);
+      } else {
+        if (wrapperPrio) wrapperPrio.style.zIndex = '';
+        prioMenu.classList.add('hidden');
+        if (prioChevron) prioChevron.classList.remove('rotate-180');
+        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
+      }
+    };
 
     // Custom Category Dropdown handlers (confined within modal)
     const wrapperCat = container.querySelector('#wrapper-custom-board-category');
@@ -481,32 +509,6 @@ export class CreateBoardModal extends BaseModal {
         toggleCatMenu(false);
       });
     });
-
-    // Custom Priority Dropdown handlers
-    const wrapperPrio = container.querySelector('#wrapper-custom-board-priority');
-    const prioTrigger = container.querySelector('#btn-custom-board-priority-trigger');
-    const prioMenu = container.querySelector('#custom-board-priority-menu');
-    const prioChevron = container.querySelector('#custom-board-priority-chevron');
-    const prioText = container.querySelector('#custom-board-priority-text');
-    const prioDot = container.querySelector('#custom-board-priority-dot');
-    const prioOptions = container.querySelectorAll('.btn-board-priority-option');
-
-    const togglePrioMenu = (show) => {
-      if (!prioMenu) return;
-      const willOpen = show !== undefined ? show : prioMenu.classList.contains('hidden');
-      if (willOpen) {
-        if (wrapperPrio) wrapperPrio.style.zIndex = '50';
-        prioMenu.classList.remove('hidden');
-        if (prioChevron) prioChevron.classList.add('rotate-180');
-        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'true');
-        if (catMenu && !catMenu.classList.contains('hidden')) toggleCatMenu(false);
-      } else {
-        if (wrapperPrio) wrapperPrio.style.zIndex = '';
-        prioMenu.classList.add('hidden');
-        if (prioChevron) prioChevron.classList.remove('rotate-180');
-        if (prioTrigger) prioTrigger.setAttribute('aria-expanded', 'false');
-      }
-    };
 
     if (prioTrigger) {
       prioTrigger.addEventListener('click', (e) => {
@@ -674,6 +676,13 @@ export class CreateBoardModal extends BaseModal {
         // Set active workspace
         localStorage.setItem('active_workspace', newWorkspaceId);
 
+        const activeTheme = this.selectedTheme || this.themes[0] || {
+          id: 'minimal-desk',
+          name: 'Minimalist Desk',
+          type: 'image',
+          value: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80'
+        };
+
         // 1. Create project with full metadata & theme
         const newProject = this.projectService.addProject({
           name: name,
@@ -684,17 +693,19 @@ export class CreateBoardModal extends BaseModal {
           budget: budget,
           description: description,
           theme: {
-            id: this.selectedTheme.id,
-            name: this.selectedTheme.name,
-            type: this.selectedTheme.type,
-            value: this.selectedTheme.value,
-            thumb: this.selectedTheme.thumb
+            id: activeTheme.id,
+            name: activeTheme.name,
+            type: activeTheme.type,
+            value: activeTheme.value,
+            thumb: activeTheme.thumb || activeTheme.value
           },
           status: 'active',
           progress: 0,
           tasksCount: { total: 2, completed: 0 },
           isUserCreated: true
         });
+
+        localStorage.setItem('active_project_id', newProject.id);
 
         // 2. Initialize starter cards in TaskService
         if (this.taskService) {
@@ -735,15 +746,22 @@ export class CreateBoardModal extends BaseModal {
         // 3. Close modal
         this.modalManager.close(this.modalId);
 
+        if (this.notificationService) {
+          this.notificationService.success(`Papan proyek "${name}" berhasil dibuat!`);
+        }
+
         // 4. Emit project & workspace events
         this.eventBus.emit('workspace:created', { workspace: newWorkspace });
         this.eventBus.emit('workspace:changed', { workspaceId: newWorkspaceId });
         this.eventBus.emit('project:created', { project: newProject });
         this.eventBus.emit('project:added', { project: newProject });
 
-        // 5. Navigate to dashboard so what was newly created immediately appears on dashboard!
+        // 5. Navigate to kanban so what was newly created immediately opens!
+        window.location.hash = `#/kanban/${newProject.id}`;
         this.eventBus.emit('navigate', {
-          view: 'dashboard'
+          view: 'kanban',
+          projectId: newProject.id,
+          workspace: newWorkspaceId
         });
       });
     }
