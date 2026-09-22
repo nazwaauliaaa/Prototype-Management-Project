@@ -958,8 +958,11 @@ export class AuthView extends BaseView {
             } catch (e) {}
           }
 
-          // 1. Direct matching loop over managed users
-          const matched = managedList.find(m => {
+          // 1. Scoring loop over managed users (Memastikan kecocokan username/nama spesifik selalu menang)
+          let bestMatch = null;
+          let bestScore = 0;
+
+          for (const m of managedList) {
             const mUsername = String(m.username || '').replace(/^@/, '').toLowerCase().trim();
             const mUsernameAlpha = mUsername.replace(/[^a-z0-9]/g, '');
             const mName = String(m.fullName || m.name || '').toLowerCase().trim();
@@ -969,57 +972,62 @@ export class AuthView extends BaseView {
             const mQr = String(m.qr_data || '').replace(/^@/, '').toLowerCase().trim();
             const mWords = mName.split(/\s+/).filter(w => w.length >= 2);
 
-            // A. Username match (cross-matching with APK username, APK name, cleanCode, cleanWords, parsedJson)
+            let score = 0;
+
+            // A. USERNAME MATCH (Prioritas Utama)
             if (mUsername) {
-              if (uUsername && (mUsername === uUsername || mUsername.includes(uUsername) || uUsername.includes(mUsername))) return true;
-              if (uName && (mUsername === uName || (mUsername.length >= 3 && uName.includes(mUsername)) || (uName.length >= 3 && mUsername.includes(uName)))) return true;
-              if (cleanLower === mUsername || cleanLower === '@' + mUsername || cleanUser === mUsername) return true;
-              if (mUsername.length >= 3 && (cleanLower.includes(mUsername) || (cleanAlpha && cleanAlpha.includes(mUsernameAlpha || mUsername)))) return true;
-              if (cleanWords.includes(mUsername)) return true;
-              if (parsedJson && parsedJson.user && (mUsername === parsedJson.user || mUsername.includes(parsedJson.user) || parsedJson.user.includes(mUsername))) return true;
-              if (parsedJson && parsedJson.name && (mUsername === parsedJson.name || (mUsername.length >= 3 && parsedJson.name.includes(mUsername)))) return true;
+              if (uUsername && mUsername === uUsername) score += 100;
+              else if (cleanUser && (cleanUser === mUsername || cleanLower === '@' + mUsername)) score += 95;
+              else if (parsedJson && parsedJson.user === mUsername) score += 95;
+              else if (uName && (uName === mUsername || uName.split(/\s+/).includes(mUsername))) score += 85;
+              else if (cleanWords.includes(mUsername)) score += 80;
+              else if (mUsername.length >= 3 && (cleanLower.includes(mUsername) || (cleanAlpha && cleanAlpha.includes(mUsernameAlpha || mUsername)))) score += 75;
+              else if (uUsername && (mUsername.includes(uUsername) || uUsername.includes(mUsername))) score += 70;
             }
 
-            // B. Name match:
+            // B. NAME MATCH (Nama Lengkap)
             if (mName) {
-              if (uName && (mName === uName || mName.includes(uName) || uName.includes(mName))) return true;
-              if (uUsername && (mName === uUsername || (uUsername.length >= 3 && mName.includes(uUsername)) || (mName.length >= 3 && uUsername.includes(mName)))) return true;
-              if (cleanLower === mName || (cleanLower.length >= 3 && cleanLower.includes(mName)) || (mName.length >= 3 && cleanLower.includes(mName))) return true;
-              if (mWords.some(w => (w.length >= 3 && (uWords.includes(w) || cleanWords.includes(w) || (uName && uName.includes(w)))))) return true;
-              if (parsedJson && parsedJson.name && (mName === parsedJson.name || mName.includes(parsedJson.name) || parsedJson.name.includes(mName))) return true;
-              if (parsedJson && parsedJson.user && (mName === parsedJson.user || (parsedJson.user.length >= 3 && mName.includes(parsedJson.user)))) return true;
+              if (uName && mName === uName) score += 90;
+              else if (parsedJson && parsedJson.name === mName) score += 90;
+              else if (cleanLower === mName) score += 85;
+              else if (uUsername && (mName === uUsername || mName.split(/\s+/).includes(uUsername))) score += 80;
+              else {
+                // Word match (e.g. "Fakhrul" in "Fakhrul Miandi Rachman")
+                const sharedWords = mWords.filter(w => uWords.includes(w) || cleanWords.includes(w));
+                if (sharedWords.length > 0) {
+                  score += 55 + (sharedWords.length * 10);
+                }
+              }
             }
 
-            // C. NIP / NISN match:
-            if (mNip) {
-              if (uNip && mNip === uNip) return true;
-              if (clean && clean.includes(mNip)) return true;
-              if (parsedJson && parsedJson.nip && mNip === parsedJson.nip) return true;
+            // C. EMAIL MATCH
+            if (mEmail && uEmail && mEmail === uEmail) {
+              score += 70;
             }
 
-            // D. Email match:
-            if (mEmail) {
-              if (uEmail && mEmail === uEmail) return true;
-              if (cleanLower && cleanLower === mEmail) return true;
-              if (parsedJson && parsedJson.email && mEmail === parsedJson.email) return true;
+            // D. QR DATA / ID MATCH
+            if (mQr && (cleanLower === mQr || cleanLower.includes(mQr))) {
+              score += 65;
+            }
+            if (mId && (uId === mId || clean === mId)) {
+              score += 60;
             }
 
-            // E. ID match:
-            if (mId) {
-              if (uId && mId === uId) return true;
-              if (clean && clean === mId) return true;
-              if (parsedJson && parsedJson.id && mId === parsedJson.id) return true;
+            // E. NIP / NISN MATCH (Hanya jika NIP unik dan bukan tahun bersama seperti '2026')
+            if (mNip && mNip !== '2026' && mNip.length >= 5) {
+              if (uNip && mNip === uNip) score += 40;
+              if (clean && clean.includes(mNip)) score += 30;
             }
 
-            // F. QR Data match:
-            if (mQr && (cleanLower === mQr || cleanLower.includes(mQr) || mQr.includes(cleanLower))) return true;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = m;
+            }
+          }
 
-            return false;
-          });
-
-          if (matched) {
-            console.log('[AuthView] getManagedAssignment found match:', matched);
-            return matched;
+          if (bestMatch && bestScore >= 45) {
+            console.log('[AuthView] getManagedAssignment found best match:', bestMatch.username, 'score:', bestScore);
+            return bestMatch;
           }
 
           // 2. Fallback: only if EXACTLY 1 user exists in managedList (no ambiguity)
