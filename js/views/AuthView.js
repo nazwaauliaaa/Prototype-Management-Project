@@ -199,7 +199,7 @@ export class AuthView extends BaseView {
         <div class="absolute bottom-1/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent pointer-events-none"></div>
 
         <main class="w-full max-w-md relative z-10">
-          <div class="relative w-full bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.35),0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden p-spacing-xl flex flex-col items-center border border-purple-400/40">
+          <div class="relative w-full bg-[#120e28]/90 backdrop-blur-2xl rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.35),0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden p-spacing-xl flex flex-col items-center border border-purple-400/40">
             
             <!-- Atmospheric top accent gradients (Neon Purple & Magenta Glow) -->
             <div class="absolute -top-12 -left-12 w-48 h-48 bg-purple-500/30 rounded-full blur-2xl pointer-events-none"></div>

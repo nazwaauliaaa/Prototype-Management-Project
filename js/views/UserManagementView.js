@@ -1045,19 +1045,27 @@ export class UserManagementView extends BaseView {
         const targetTask = user.assignedTaskId;
 
         if (confirm(`Masuk langsung sebagai ${user.fullName} (${user.username}) ke Papan Kanban "${user.assignedBoardName || targetProj}"?`)) {
-          this.authService.loginWithRole(user.role === 'admin' ? 'admin' : 'user');
+          const userAvatar = this.authService ? this.authService.resolveUserAvatar(user) : (user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.fullName || user.username)}`);
+
+          const userObj = {
+            id: user.id,
+            name: user.fullName,
+            username: user.username,
+            role: user.role === 'admin' ? 'admin' : 'user',
+            title: user.position,
+            avatar: userAvatar,
+            assignedProjectId: targetProj,
+            assignedWorkspace: targetWs,
+            assignedTaskId: targetTask,
+            assignedTaskTitle: user.assignedTaskTitle || ''
+          };
+
+          if (this.authService && typeof this.authService.loginAsUser === 'function') {
+            this.authService.loginAsUser(userObj, { silent: true });
+          } else {
+            this.authService.loginWithRole(user.role === 'admin' ? 'admin' : 'user');
+          }
           try {
-            localStorage.setItem('creative_office_auth_user', JSON.stringify({
-              id: user.id,
-              name: user.fullName,
-              username: user.username,
-              role: user.role === 'admin' ? 'admin' : 'user',
-              title: user.position,
-              assignedProjectId: targetProj,
-              assignedWorkspace: targetWs,
-              assignedTaskId: targetTask,
-              assignedTaskTitle: user.assignedTaskTitle || ''
-            }));
             sessionStorage.setItem('creative_office_session_active', 'true');
             sessionStorage.setItem('auth_login_method', 'direct');
 

@@ -182,14 +182,13 @@ export class AuthService {
         this.currentUser = new User(u);
         this.isAuthenticated = true;
 
-        // Restore avatar from dedicated override if saved avatar was DiceBear or empty
-        const uEmail = (this.currentUser.email || '').toLowerCase().trim();
-        const uName = (this.currentUser.name || '').toLowerCase().trim();
-        const dedicated = localStorage.getItem('current_user_avatar_override') ||
-                          (uEmail && localStorage.getItem(`user_avatar_${uEmail}`)) ||
-                          (uName && localStorage.getItem(`user_avatar_${uName}`));
-        if (dedicated && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
-          this.currentUser.avatar = dedicated;
+        // Clean up legacy global override that leaked across accounts
+        try { localStorage.removeItem('current_user_avatar_override'); } catch (e) {}
+
+        // Restore avatar strictly for THIS specific user
+        const userAvatar = this.resolveUserAvatar(this.currentUser);
+        if (userAvatar && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
+          this.currentUser.avatar = userAvatar;
         }
 
         try {
@@ -231,6 +230,176 @@ export class AuthService {
   }
 
   /**
+   * Resolves a user's avatar strictly associated with that user's identity
+   * (checks ID, email, username, name, and role profile).
+   * Ensures no cross-account avatar leaking.
+   * @param {Object|User} userObj
+   * @returns {string}
+   */
+  resolveUserAvatar(userObj) {
+    if (!userObj) return '';
+
+    const id = userObj.id ? String(userObj.id).trim() : '';
+    const email = (userObj.email || '').toLowerCase().trim();
+    const username = (userObj.username || '').toLowerCase().trim();
+    const name = (userObj.name || userObj.fullName || '').toLowerCase().trim();
+    const role = (userObj.role || '').toLowerCase().trim();
+
+    // 1. Check user-specific localStorage keys
+    let dedicated = null;
+    if (id) {
+      dedicated = localStorage.getItem(`user_avatar_id_${id}`) ||
+                  localStorage.getItem(`user_avatar_${id}`);
+    }
+    if (!dedicated && email) {
+      dedicated = localStorage.getItem(`user_avatar_email_${email}`) ||
+                  localStorage.getItem(`user_avatar_${email}`);
+    }
+    if (!dedicated && username) {
+      dedicated = localStorage.getItem(`user_avatar_username_${username}`) ||
+                  localStorage.getItem(`user_avatar_${username}`);
+    }
+    if (!dedicated && name) {
+      dedicated = localStorage.getItem(`user_avatar_name_${name}`) ||
+                  localStorage.getItem(`user_avatar_${name}`);
+    }
+
+    if (dedicated) return dedicated;
+
+    // 2. Check if present in customUsers with a non-dicebear avatar
+    if (Array.isArray(this.customUsers)) {
+      const matchCustom = this.customUsers.find(u =>
+        (id && u.id === id) ||
+        (email && u.email && u.email.toLowerCase().trim() === email) ||
+        (username && u.username && u.username.toLowerCase().trim() === username) ||
+        (name && u.name && u.name.toLowerCase().trim() === name)
+      );
+      if (matchCustom && matchCustom.avatar && !matchCustom.avatar.includes('dicebear')) {
+        return matchCustom.avatar;
+      }
+    }
+
+    // 3. Check in approved_board_users
+    try {
+      const approved = JSON.parse(localStorage.getItem('approved_board_users') || '[]');
+      const matchApp = approved.find(u =>
+        (id && u.id === id) ||
+        (email && u.email && u.email.toLowerCase().trim() === email) ||
+        (username && u.username && u.username.toLowerCase().trim() === username) ||
+        (name && u.name && u.name.toLowerCase().trim() === name)
+      );
+      if (matchApp && matchApp.avatar && !matchApp.avatar.includes('dicebear')) {
+        return matchApp.avatar;
+      }
+    } catch (e) {}
+
+    // 4. Check in creative_office_managed_users
+    try {
+      const managed = JSON.parse(localStorage.getItem('creative_office_managed_users') || '[]');
+      const matchMan = managed.find(u =>
+        (id && u.id === id) ||
+        (email && u.email && u.email.toLowerCase().trim() === email) ||
+        (username && u.username && u.username.toLowerCase().trim() === username) ||
+        (name && (u.fullName || u.name) && (u.fullName || u.name).toLowerCase().trim() === name)
+      );
+      if (matchMan && matchMan.avatar && !matchMan.avatar.includes('dicebear')) {
+        return matchMan.avatar;
+      }
+    } catch (e) {}
+
+    // 5. Check role profile saved avatar if role is matched and identity matches role default
+    if (role && this.roleProfiles && this.roleProfiles[role]) {
+      const rp = this.roleProfiles[role];
+      if (rp && rp.avatar && (name === rp.name.toLowerCase().trim() || email === rp.email.toLowerCase().trim())) {
+        return rp.avatar;
+      }
+    }
+
+    // 6. Return existing userObj.avatar if valid and provided
+    if (userObj.avatar) {
+      return userObj.avatar;
+    }
+
+    // 7. Default fallback: deterministic DiceBear avatar based on user's name or username
+    const seed = userObj.name || userObj.fullName || userObj.username || 'User';
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
+  }
+
+  /**
+   * Saves avatar strictly to user-scoped storage keys and updates user caches
+   * @param {Object|User} user
+   * @param {string} avatarUrl
+   */
+  saveUserAvatar(user, avatarUrl) {
+    if (!user || !avatarUrl) return;
+
+    const id = user.id ? String(user.id).trim() : '';
+    const email = (user.email || '').toLowerCase().trim();
+    const username = (user.username || '').toLowerCase().trim();
+    const name = (user.name || user.fullName || '').toLowerCase().trim();
+    const role = (user.role || '').toLowerCase().trim();
+
+    try {
+      // Remove any dangerous global override key that leaks across accounts
+      localStorage.removeItem('current_user_avatar_override');
+
+      if (id) {
+        localStorage.setItem(`user_avatar_id_${id}`, avatarUrl);
+        localStorage.setItem(`user_avatar_${id}`, avatarUrl);
+      }
+      if (email) {
+        localStorage.setItem(`user_avatar_email_${email}`, avatarUrl);
+        localStorage.setItem(`user_avatar_${email}`, avatarUrl);
+      }
+      if (username) {
+        localStorage.setItem(`user_avatar_username_${username}`, avatarUrl);
+        localStorage.setItem(`user_avatar_${username}`, avatarUrl);
+      }
+      if (name) {
+        localStorage.setItem(`user_avatar_name_${name}`, avatarUrl);
+        localStorage.setItem(`user_avatar_${name}`, avatarUrl);
+      }
+      if (role && this.roleProfiles && this.roleProfiles[role]) {
+        try {
+          const rp = this.roleProfiles[role];
+          if (name === rp.name.toLowerCase().trim() || email === rp.email.toLowerCase().trim()) {
+            rp.avatar = avatarUrl;
+            localStorage.setItem(`saved_role_profile_${role}`, JSON.stringify(rp));
+          }
+        } catch (e) {}
+      }
+
+      // Update customUsers
+      const customUsers = JSON.parse(localStorage.getItem('creative_office_custom_users') || '[]');
+      let customChanged = false;
+      customUsers.forEach(u => {
+        if ((id && u.id === id) || (email && u.email && u.email.toLowerCase().trim() === email) || (username && u.username && u.username.toLowerCase().trim() === username) || (name && u.name && u.name.toLowerCase().trim() === name)) {
+          u.avatar = avatarUrl;
+          customChanged = true;
+        }
+      });
+      if (customChanged) {
+        localStorage.setItem('creative_office_custom_users', JSON.stringify(customUsers));
+      }
+
+      // Update managed users
+      const managedUsers = JSON.parse(localStorage.getItem('creative_office_managed_users') || '[]');
+      let managedChanged = false;
+      managedUsers.forEach(u => {
+        if ((id && u.id === id) || (email && u.email && u.email.toLowerCase().trim() === email) || (username && u.username && u.username.toLowerCase().trim() === username) || (name && (u.fullName || u.name) && (u.fullName || u.name).toLowerCase().trim() === name)) {
+          u.avatar = avatarUrl;
+          managedChanged = true;
+        }
+      });
+      if (managedChanged) {
+        localStorage.setItem('creative_office_managed_users', JSON.stringify(managedUsers));
+      }
+    } catch (e) {
+      console.warn('[AuthService] Gagal menyimpan avatar pengguna:', e);
+    }
+  }
+
+  /**
    * Mendaftarkan akun baru secara otomatis dari data QR
    * @param {Object} userData
    * @returns {User}
@@ -240,11 +409,27 @@ export class AuthService {
     const finalJobdesk = jobdesk || title || 'Creative Specialist';
     const finalTitle = title || finalJobdesk;
     const finalEmail = email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
-    const finalAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+
+    // Cek apakah akun dengan nama atau email ini sudah terdaftar
+    let existingIndex = this.customUsers.findIndex(u => u.id === finalId || (finalEmail && u.email === finalEmail) || (u.name && name && u.name.toLowerCase().trim() === name.toLowerCase().trim()));
+
+    // Prioritize existing saved custom avatar if current payload only has default/dicebear or empty avatar
+    let existingAvatar = '';
+    if (existingIndex !== -1 && this.customUsers[existingIndex] && this.customUsers[existingIndex].avatar && !this.customUsers[existingIndex].avatar.includes('dicebear')) {
+      existingAvatar = this.customUsers[existingIndex].avatar;
+    }
+    if (!existingAvatar) {
+      existingAvatar = this.resolveUserAvatar({ id: finalId, name, email: finalEmail, role });
+    }
+
+    const finalAvatar = (avatar && !avatar.includes('dicebear'))
+      ? avatar
+      : (existingAvatar || avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`);
+
     const finalBoundDevId = boundDeviceId || bound_device_id || null;
     const finalBoundDevName = boundDeviceName || bound_device_name || null;
 
-    let finalWsAccess = workspaceAccess || workspace_access;
+    let finalWsAccess = workspaceAccess;
     if (typeof finalWsAccess === 'string') {
       try { finalWsAccess = JSON.parse(finalWsAccess); } catch (e) { finalWsAccess = [finalWsAccess]; }
     }
@@ -252,9 +437,6 @@ export class AuthService {
       finalWsAccess = ['ruangkreasi', 'panen-kunci'];
     }
 
-    // Cek apakah akun dengan nama atau email ini sudah terdaftar
-    let existingIndex = this.customUsers.findIndex(u => u.id === finalId || (finalEmail && u.email === finalEmail) || (u.name && name && u.name.toLowerCase().trim() === name.toLowerCase().trim()));
-    
     const newUser = new User({
       id: finalId,
       name,
@@ -286,6 +468,13 @@ export class AuthService {
   loginAsUser(user, options = {}) {
     if (!user) return false;
     this.currentUser = user instanceof User ? user : new User(user);
+    
+    // Immediately resolve user's saved avatar so header and views get it instantly on login
+    const resolvedAvatar = this.resolveUserAvatar(this.currentUser);
+    if (resolvedAvatar && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
+      this.currentUser.avatar = resolvedAvatar;
+    }
+
     this.isAuthenticated = true;
     try {
       sessionStorage.setItem('creative_office_session_active', 'true');
@@ -355,23 +544,12 @@ export class AuthService {
       }
     } catch (e) {}
 
-    // Persist dedicated avatar keys for robust recovery across views
+    // Persist dedicated avatar keys strictly per-user
     if (this.currentUser.avatar) {
-      try {
-        localStorage.setItem('current_user_avatar_override', this.currentUser.avatar);
-        if (this.currentUser.email) {
-          localStorage.setItem(`user_avatar_${this.currentUser.email.toLowerCase().trim()}`, this.currentUser.avatar);
-        }
-        if (this.currentUser.name) {
-          localStorage.setItem(`user_avatar_${this.currentUser.name.toLowerCase().trim()}`, this.currentUser.avatar);
-        }
-        if (oldEmail) {
-          localStorage.setItem(`user_avatar_${oldEmail.toLowerCase().trim()}`, this.currentUser.avatar);
-        }
-        if (oldName) {
-          localStorage.setItem(`user_avatar_${oldName.toLowerCase().trim()}`, this.currentUser.avatar);
-        }
-      } catch (e) {}
+      this.saveUserAvatar(this.currentUser, this.currentUser.avatar);
+      if (oldEmail && oldEmail.toLowerCase().trim() !== this.currentUser.email.toLowerCase().trim()) {
+        this.saveUserAvatar({ email: oldEmail, name: oldName }, this.currentUser.avatar);
+      }
     }
 
     // Update in customUsers
@@ -548,6 +726,10 @@ export class AuthService {
   loginWithRole(role) {
     if (this.roleProfiles[role]) {
       this.currentUser = this.roleProfiles[role];
+      const resolvedAvatar = this.resolveUserAvatar(this.currentUser);
+      if (resolvedAvatar && (!this.currentUser.avatar || this.currentUser.avatar.includes('dicebear'))) {
+        this.currentUser.avatar = resolvedAvatar;
+      }
       this.isAuthenticated = true;
       try {
         sessionStorage.setItem('creative_office_session_active', 'true');

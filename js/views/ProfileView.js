@@ -431,9 +431,13 @@ export class ProfileView extends BaseView {
         if (updatedUser) {
           if (updatedUser.avatar) {
             try {
-              localStorage.setItem('current_user_avatar_override', updatedUser.avatar);
-              if (updatedUser.email) localStorage.setItem(`user_avatar_${updatedUser.email.toLowerCase().trim()}`, updatedUser.avatar);
-              if (updatedUser.name) localStorage.setItem(`user_avatar_${updatedUser.name.toLowerCase().trim()}`, updatedUser.avatar);
+              localStorage.removeItem('current_user_avatar_override');
+              if (this.authService && typeof this.authService.saveUserAvatar === 'function') {
+                this.authService.saveUserAvatar(updatedUser, updatedUser.avatar);
+              }
+              if (updatedUser.id) localStorage.setItem(`user_avatar_id_${updatedUser.id}`, updatedUser.avatar);
+              if (updatedUser.email) localStorage.setItem(`user_avatar_email_${updatedUser.email.toLowerCase().trim()}`, updatedUser.avatar);
+              if (updatedUser.name) localStorage.setItem(`user_avatar_name_${updatedUser.name.toLowerCase().trim()}`, updatedUser.avatar);
             } catch (e) {}
           }
           // Update display names on page

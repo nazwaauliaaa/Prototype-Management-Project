@@ -418,14 +418,18 @@ export class KanbanBoardView extends BaseView {
 
     const authService = this.container ? this.container.resolve('AuthService') : null;
     const currentUser = authService ? authService.getCurrentUser() : null;
-    const globalOverrideAvatar = localStorage.getItem('current_user_avatar_override');
 
     clean.forEach(m => {
       const mEmail = (m.email || '').toLowerCase().trim();
       const mName = (m.name || '').toLowerCase().trim();
+      const mId = m.id ? String(m.id).trim() : '';
 
-      // Check dedicated user_avatar_* fallback keys in localStorage
-      const dedicatedAvatar = (mEmail && localStorage.getItem(`user_avatar_${mEmail}`)) ||
+      // Check dedicated user_avatar_* fallback keys in localStorage (strictly per-user)
+      const dedicatedAvatar = (mId && localStorage.getItem(`user_avatar_id_${mId}`)) ||
+                              (mId && localStorage.getItem(`user_avatar_${mId}`)) ||
+                              (mEmail && localStorage.getItem(`user_avatar_email_${mEmail}`)) ||
+                              (mEmail && localStorage.getItem(`user_avatar_${mEmail}`)) ||
+                              (mName && localStorage.getItem(`user_avatar_name_${mName}`)) ||
                               (mName && localStorage.getItem(`user_avatar_${mName}`));
 
       // Sync with approved_board_users
@@ -477,7 +481,7 @@ export class KanbanBoardView extends BaseView {
         if (isCurrent) {
           const effectiveAvatar = (currentUser.avatar && !currentUser.avatar.includes('dicebear'))
             ? currentUser.avatar
-            : (globalOverrideAvatar || dedicatedAvatar || currentUser.avatar);
+            : (dedicatedAvatar || currentUser.avatar);
 
           if (effectiveAvatar) {
             m.avatar = effectiveAvatar;
@@ -540,10 +544,14 @@ export class KanbanBoardView extends BaseView {
 
       const userEmail = (currentUser.email || '').toLowerCase().trim();
       const currentUserName = (currentUser.name || '').toLowerCase().trim();
+      const currentUserId = currentUser.id ? String(currentUser.id).trim() : '';
 
-      // Check fallback dedicated avatar key
-      const dedicatedAvatar = localStorage.getItem('current_user_avatar_override') ||
+      // Check fallback dedicated avatar key strictly per-user
+      const dedicatedAvatar = (currentUserId && localStorage.getItem(`user_avatar_id_${currentUserId}`)) ||
+                              (currentUserId && localStorage.getItem(`user_avatar_${currentUserId}`)) ||
+                              (userEmail && localStorage.getItem(`user_avatar_email_${userEmail}`)) ||
                               (userEmail && localStorage.getItem(`user_avatar_${userEmail}`)) ||
+                              (currentUserName && localStorage.getItem(`user_avatar_name_${currentUserName}`)) ||
                               (currentUserName && localStorage.getItem(`user_avatar_${currentUserName}`));
       if (dedicatedAvatar && (!currentUser.avatar || currentUser.avatar.includes('dicebear'))) {
         currentUser.avatar = dedicatedAvatar;
