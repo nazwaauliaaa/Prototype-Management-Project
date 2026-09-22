@@ -275,6 +275,26 @@ export class UserManagementView extends BaseView {
     }
   }
 
+  /**
+   * Mengambil daftar seluruh tugas dari satu atau banyak papan proyek
+   */
+  getTasksForBoards(boardIds) {
+    if (!this.taskService) return [];
+    const list = Array.isArray(boardIds) ? boardIds : [boardIds];
+    const map = new Map();
+    list.forEach(bId => {
+      const tasks = this.getTasksForBoard(bId);
+      if (Array.isArray(tasks)) {
+        tasks.forEach(t => {
+          if (t && t.id && !map.has(t.id)) {
+            map.set(t.id, t);
+          }
+        });
+      }
+    });
+    return Array.from(map.values());
+  }
+
   render() {
     const allUsers = this.getUsers();
     const query = (this.searchQuery || '').trim().toLowerCase();
@@ -456,7 +476,20 @@ export class UserManagementView extends BaseView {
          </span>`
       : `<span class="font-semibold px-2 py-1 bg-white/5 text-white/40 border border-white/5 rounded-lg text-xs">Belum Terikat</span>`;
 
-    const boardName = u.assignedBoardName || (u.assignedProjectId === 'panen-kunci' ? 'Panen Kunci' : u.assignedProjectId) || 'Panen Kunci';
+    let boardList = [];
+    if (Array.isArray(u.assignedBoardNames) && u.assignedBoardNames.length > 0) {
+      boardList = u.assignedBoardNames;
+    } else if (u.assignedBoardName) {
+      boardList = u.assignedBoardName.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (Array.isArray(u.assignedProjects) && u.assignedProjects.length > 0) {
+      boardList = u.assignedProjects;
+    } else if (u.assignedProjectId) {
+      boardList = [u.assignedProjectId === 'panen-kunci' ? 'Panen Kunci' : u.assignedProjectId];
+    }
+
+    const primaryBoard = boardList[0] || (u.assignedProjectId === 'panen-kunci' ? 'Panen Kunci' : u.assignedProjectId) || 'Panen Kunci';
+    const extraBoardsCount = boardList.length - 1;
+    const allBoardsTooltip = boardList.join(', ');
     const hasTask = Boolean(u.assignedTaskTitle || u.assignedTaskId);
 
     return `
@@ -476,11 +509,18 @@ export class UserManagementView extends BaseView {
           <span class="px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${roleBadgeClass}">${u.role}</span>
         </td>
         <td class="px-5 py-4">
-          ${u.assignedProjectId ? `
-            <div class="flex flex-col gap-1 max-w-[240px]">
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 w-fit">
-                <span class="material-symbols-outlined text-[14px] text-indigo-300">view_kanban</span>
-                <span class="truncate">${boardName}</span>
+          ${u.assignedProjectId || boardList.length > 0 ? `
+            <div class="flex flex-col gap-1 max-w-[260px]">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 w-fit" title="${allBoardsTooltip}">
+                  <span class="material-symbols-outlined text-[14px] text-indigo-300">view_kanban</span>
+                  <span class="truncate max-w-[140px]">${primaryBoard}</span>
+                </div>
+                ${extraBoardsCount > 0 ? `
+                  <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs cursor-default" title="${allBoardsTooltip}">
+                    +${extraBoardsCount} papan
+                  </span>
+                ` : ''}
               </div>
               <div class="text-[11.5px] text-purple-200/90 font-medium flex items-center gap-1.5 truncate" title="${u.assignedTaskTitle || 'Akses Seluruh Tugas Papan'}">
                 <span class="material-symbols-outlined text-[14px] text-amber-400 shrink-0">task_alt</span>
@@ -617,13 +657,79 @@ export class UserManagementView extends BaseView {
               </div>
 
               <div>
-                <label class="block text-[11px] font-semibold text-white/80 mb-1">Tujuan Papan Kanban Proyek</label>
-                <select id="select-new-project" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-[11px] font-semibold text-white/80">Tujuan Papan Kanban Proyek (Bisa Pilih &gt; 1)</label>
+                  <span id="count-selected-new-projects" class="text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.2 rounded-full shadow-xs">1 Papan Terpilih</span>
+                </div>
+
+                <!-- Custom Multi-Select Dropdown Trigger -->
+                <div
+                  id="trigger-new-projects"
+                  class="w-full min-h-[38px] px-3 py-1.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs cursor-pointer flex items-center justify-between hover:border-purple-400 transition-colors shadow-inner"
+                  role="button"
+                  tabindex="0"
+                  title="Klik untuk memilih satu atau beberapa papan proyek"
+                >
+                  <div id="tags-selected-new-projects" class="flex items-center gap-1.5 flex-wrap flex-1 py-0.5">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs">
+                      <span class="truncate max-w-[150px]">CreativOffice (Creative Office)</span>
+                      <span class="btn-remove-new-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="creativoffice">close</span>
+                    </span>
+                  </div>
+                  <span id="icon-chevron-new-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform">expand_more</span>
+                </div>
+
+                <!-- Dropdown Checklist Panel -->
+                <div id="panel-new-projects-dropdown" class="hidden mt-1.5 p-2.5 rounded-xl border border-white/15 bg-[#110c29] flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
+                  <!-- Search Bar & Quick Actions -->
+                  <div class="flex items-center gap-2 pb-2 border-b border-white/10">
+                    <div class="relative flex-1">
+                      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[14px] text-white/40">search</span>
+                      <input
+                        id="input-search-new-boards"
+                        type="text"
+                        placeholder="Cari papan..."
+                        class="w-full pl-7 pr-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                    <button type="button" id="btn-select-all-new-projects" class="text-[10px] text-purple-300 hover:text-purple-200 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Pilih Semua
+                    </button>
+                    <button type="button" id="btn-clear-all-new-projects" class="text-[10px] text-white/40 hover:text-white/70 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Bersihkan
+                    </button>
+                  </div>
+
+                  <!-- Board Checklist -->
+                  <div class="flex flex-col gap-1">
+                    ${availableBoards.map(b => `
+                      <label class="item-new-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none ${b.id === 'creativoffice' ? 'bg-purple-600/20 border border-purple-500/30' : 'border border-transparent'}">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <input
+                            type="checkbox"
+                            class="cb-new-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
+                            value="${b.id}"
+                            data-name="${b.name}"
+                            ${b.id === 'creativoffice' ? 'checked' : ''}
+                          />
+                          <span class="truncate font-medium text-white/90 text-[11.5px]">${b.name}</span>
+                        </div>
+                        <span class="text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.2 rounded uppercase ml-2 shrink-0">
+                          ${b.workspace || b.id}
+                        </span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Hidden Synced Native Select -->
+                <select id="select-new-project" multiple class="hidden">
                   ${availableBoards.map(b => `
                     <option value="${b.id}" data-name="${b.name}" ${b.id === 'creativoffice' ? 'selected' : ''}>${b.name}</option>
                   `).join('')}
                 </select>
-                <p class="text-[10px] text-white/50 mt-1">Saat scan QR SampulKreativ, pengguna langsung masuk ke papan ini.</p>
+
+                <p class="text-[10px] text-white/50 mt-1">Saat scan QR SampulKreativ, pengguna memiliki hak akses ke seluruh papan yang dipilih.</p>
               </div>
 
               <div>
@@ -713,12 +819,73 @@ export class UserManagementView extends BaseView {
               </div>
 
               <div>
-                <label class="block text-[11px] font-semibold text-white/80 mb-1">Tujuan Papan Kanban Proyek</label>
-                <select id="select-edit-project" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-[11px] font-semibold text-white/80">Tujuan Papan Kanban Proyek (Bisa Pilih &gt; 1)</label>
+                  <span id="count-selected-edit-projects" class="text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.2 rounded-full shadow-xs">1 Papan Terpilih</span>
+                </div>
+
+                <!-- Custom Multi-Select Dropdown Trigger -->
+                <div
+                  id="trigger-edit-projects"
+                  class="w-full min-h-[38px] px-3 py-1.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs cursor-pointer flex items-center justify-between hover:border-purple-400 transition-colors shadow-inner"
+                  role="button"
+                  tabindex="0"
+                  title="Klik untuk memilih satu atau beberapa papan proyek"
+                >
+                  <div id="tags-selected-edit-projects" class="flex items-center gap-1.5 flex-wrap flex-1 py-0.5"></div>
+                  <span id="icon-chevron-edit-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform">expand_more</span>
+                </div>
+
+                <!-- Dropdown Checklist Panel -->
+                <div id="panel-edit-projects-dropdown" class="hidden mt-1.5 p-2.5 rounded-xl border border-white/15 bg-[#110c29] flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
+                  <!-- Search Bar & Quick Actions -->
+                  <div class="flex items-center gap-2 pb-2 border-b border-white/10">
+                    <div class="relative flex-1">
+                      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[14px] text-white/40">search</span>
+                      <input
+                        id="input-search-edit-boards"
+                        type="text"
+                        placeholder="Cari papan..."
+                        class="w-full pl-7 pr-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                    <button type="button" id="btn-select-all-edit-projects" class="text-[10px] text-purple-300 hover:text-purple-200 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Pilih Semua
+                    </button>
+                    <button type="button" id="btn-clear-all-edit-projects" class="text-[10px] text-white/40 hover:text-white/70 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Bersihkan
+                    </button>
+                  </div>
+
+                  <!-- Board Checklist -->
+                  <div class="flex flex-col gap-1">
+                    ${availableBoards.map(b => `
+                      <label class="item-edit-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none border border-transparent">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <input
+                            type="checkbox"
+                            class="cb-edit-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
+                            value="${b.id}"
+                            data-name="${b.name}"
+                          />
+                          <span class="truncate font-medium text-white/90 text-[11.5px]">${b.name}</span>
+                        </div>
+                        <span class="text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.2 rounded uppercase ml-2 shrink-0">
+                          ${b.workspace || b.id}
+                        </span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Hidden Synced Native Select -->
+                <select id="select-edit-project" multiple class="hidden">
                   ${availableBoards.map(b => `
                     <option value="${b.id}" data-name="${b.name}">${b.name}</option>
                   `).join('')}
                 </select>
+
+                <p class="text-[10px] text-white/50 mt-1">Pengguna dapat mengakses dan mengerjakan tugas pada seluruh papan yang dicentang.</p>
               </div>
 
               <div>
@@ -774,37 +941,210 @@ export class UserManagementView extends BaseView {
     const btnCloseCreate = this.element.querySelector('#btn-close-create-user');
     const btnCancelCreate = this.element.querySelector('#btn-cancel-create-user');
     const formCreate = this.element.querySelector('#form-create-user');
-    const selectNewProject = this.element.querySelector('#select-new-project');
     const selectNewTask = this.element.querySelector('#select-new-task');
     const wrapNewCustomTask = this.element.querySelector('#wrap-new-custom-task');
     const inputNewCustomTask = this.element.querySelector('#input-new-custom-task');
 
-    const updateCreateTaskOptions = () => {
-      if (!selectNewTask) return;
-      const boardId = selectNewProject ? selectNewProject.value : 'creativoffice';
-      const tasks = this.getTasksForBoard(boardId);
+    // Multi-Board Selector Helper for Create & Edit modals
+    const setupMultiBoardSelector = (type) => {
+      const isCreate = type === 'new';
+      const prefix = isCreate ? 'new' : 'edit';
+      const trigger = this.element.querySelector(`#trigger-${prefix}-projects`);
+      const panel = this.element.querySelector(`#panel-${prefix}-projects-dropdown`);
+      const tagsContainer = this.element.querySelector(`#tags-selected-${prefix}-projects`);
+      const countBadge = this.element.querySelector(`#count-selected-${prefix}-projects`);
+      const chevron = this.element.querySelector(`#icon-chevron-${prefix}-projects`);
+      const searchInput = this.element.querySelector(`#input-search-${prefix}-boards`);
+      const btnSelectAll = this.element.querySelector(`#btn-select-all-${prefix}-projects`);
+      const btnClearAll = this.element.querySelector(`#btn-clear-all-${prefix}-projects`);
+      const selectElement = this.element.querySelector(`#select-${prefix}-project`);
+      const taskSelect = this.element.querySelector(`#select-${prefix}-task`);
+      const wrapCustomTask = this.element.querySelector(`#wrap-${prefix}-custom-task`);
 
-      let optionsHtml = `
-        <option value="all">⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
-      `;
+      const getCheckboxes = () => Array.from(this.element.querySelectorAll(`.cb-${prefix}-project`));
+      const getCheckedBoxes = () => Array.from(this.element.querySelectorAll(`.cb-${prefix}-project:checked`));
 
-      if (tasks && tasks.length > 0) {
-        optionsHtml += tasks.map(t => `
-          <option value="${t.id}" data-title="${t.title}">[${t.code || 'TSK'}] ${t.title}</option>
-        `).join('');
+      const updateTaskOptions = (preferredTaskId = null) => {
+        if (!taskSelect) return;
+        const checked = getCheckedBoxes();
+        const boardIds = checked.length > 0 ? checked.map(c => c.value) : ['creativoffice'];
+        const tasks = this.getTasksForBoards(boardIds);
+
+        const boardCountLabel = boardIds.length > 1 ? `${boardIds.length} Papan Terpilih` : 'Papan Ini';
+        let optionsHtml = `
+          <option value="all">⭐ Seluruh Papan (Semua Tugas di ${boardCountLabel})</option>
+        `;
+
+        if (tasks && tasks.length > 0) {
+          optionsHtml += tasks.map(t => {
+            const isSelected = preferredTaskId === t.id ? 'selected' : '';
+            return `<option value="${t.id}" data-title="${t.title}" ${isSelected}>[${t.workspace || t.board || 'TSK'}] ${t.title}</option>`;
+          }).join('');
+        }
+
+        optionsHtml += `
+          <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
+        `;
+
+        taskSelect.innerHTML = optionsHtml;
+        if (wrapCustomTask) wrapCustomTask.classList.add('hidden');
+      };
+
+      const syncUI = (preferredTaskId = null) => {
+        const checked = getCheckedBoxes();
+        const count = checked.length;
+
+        if (countBadge) {
+          countBadge.textContent = count > 0 ? `${count} Papan Terpilih` : '0 Papan Terpilih';
+        }
+
+        // Sync with hidden select element
+        if (selectElement) {
+          const selectedVals = checked.map(c => c.value);
+          Array.from(selectElement.options).forEach(opt => {
+            opt.selected = selectedVals.includes(opt.value);
+          });
+        }
+
+        // Highlight checkboxes labels
+        getCheckboxes().forEach(cb => {
+          const itemLabel = cb.closest(`.item-${prefix}-project-option`);
+          if (itemLabel) {
+            if (cb.checked) {
+              itemLabel.classList.add('bg-purple-600/20', 'border-purple-500/30');
+              itemLabel.classList.remove('border-transparent');
+            } else {
+              itemLabel.classList.remove('bg-purple-600/20', 'border-purple-500/30');
+              itemLabel.classList.add('border-transparent');
+            }
+          }
+        });
+
+        // Render tags
+        if (tagsContainer) {
+          if (count === 0) {
+            tagsContainer.innerHTML = `<span class="text-white/40 italic">Klik untuk memilih minimal 1 papan...</span>`;
+          } else {
+            tagsContainer.innerHTML = checked.map(cb => {
+              const bName = cb.getAttribute('data-name') || cb.value;
+              return `
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs">
+                  <span class="truncate max-w-[140px]">${bName}</span>
+                  <span class="btn-remove-${prefix}-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="${cb.value}">close</span>
+                </span>
+              `;
+            }).join('');
+
+            // Bind tag remove buttons
+            tagsContainer.querySelectorAll(`.btn-remove-${prefix}-tag`).forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const val = btn.getAttribute('data-val');
+                const targetCb = getCheckboxes().find(c => c.value === val);
+                if (targetCb) {
+                  targetCb.checked = false;
+                  syncUI();
+                }
+              });
+            });
+          }
+        }
+
+        updateTaskOptions(preferredTaskId);
+      };
+
+      // Toggle dropdown panel
+      if (trigger) {
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isClosed = panel?.classList.contains('hidden');
+          // Close other panels
+          document.querySelectorAll('#panel-new-projects-dropdown, #panel-edit-projects-dropdown').forEach(p => p.classList.add('hidden'));
+          document.querySelectorAll('#icon-chevron-new-projects, #icon-chevron-edit-projects').forEach(i => i.classList.remove('rotate-180'));
+
+          if (isClosed && panel) {
+            panel.classList.remove('hidden');
+            if (chevron) chevron.classList.add('rotate-180');
+            if (searchInput) {
+              searchInput.value = '';
+              searchInput.focus();
+              filterBoardItems('');
+            }
+          }
+        });
       }
 
-      optionsHtml += `
-        <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
-      `;
+      // Checkbox changes
+      getCheckboxes().forEach(cb => {
+        cb.addEventListener('change', () => {
+          syncUI();
+        });
+      });
 
-      selectNewTask.innerHTML = optionsHtml;
-      if (wrapNewCustomTask) wrapNewCustomTask.classList.add('hidden');
+      // Filter board items
+      const filterBoardItems = (query) => {
+        const q = query.trim().toLowerCase();
+        getCheckboxes().forEach(cb => {
+          const itemLabel = cb.closest(`.item-${prefix}-project-option`);
+          const name = (cb.getAttribute('data-name') || '').toLowerCase();
+          const val = cb.value.toLowerCase();
+          if (itemLabel) {
+            if (!q || name.includes(q) || val.includes(q)) {
+              itemLabel.classList.remove('hidden');
+            } else {
+              itemLabel.classList.add('hidden');
+            }
+          }
+        });
+      };
+
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          filterBoardItems(e.target.value);
+        });
+      }
+
+      if (btnSelectAll) {
+        btnSelectAll.addEventListener('click', (e) => {
+          e.stopPropagation();
+          getCheckboxes().forEach(cb => { cb.checked = true; });
+          syncUI();
+        });
+      }
+
+      if (btnClearAll) {
+        btnClearAll.addEventListener('click', (e) => {
+          e.stopPropagation();
+          getCheckboxes().forEach(cb => { cb.checked = false; });
+          syncUI();
+        });
+      }
+
+      if (panel) {
+        panel.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+      }
+
+      return { syncUI, updateTaskOptions };
     };
 
-    if (selectNewProject) {
-      selectNewProject.addEventListener('change', updateCreateTaskOptions);
-    }
+    // Initialize selectors
+    const newBoardSelector = setupMultiBoardSelector('new');
+    const editBoardSelector = setupMultiBoardSelector('edit');
+
+    // Global click listener to close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      const panelNew = this.element?.querySelector('#panel-new-projects-dropdown');
+      const panelEdit = this.element?.querySelector('#panel-edit-projects-dropdown');
+      const chevronNew = this.element?.querySelector('#icon-chevron-new-projects');
+      const chevronEdit = this.element?.querySelector('#icon-chevron-edit-projects');
+
+      if (panelNew) panelNew.classList.add('hidden');
+      if (panelEdit) panelEdit.classList.add('hidden');
+      if (chevronNew) chevronNew.classList.remove('rotate-180');
+      if (chevronEdit) chevronEdit.classList.remove('rotate-180');
+    });
 
     if (selectNewTask) {
       selectNewTask.addEventListener('change', () => {
@@ -820,7 +1160,11 @@ export class UserManagementView extends BaseView {
     const openCreateModal = () => {
       if (modalCreate) {
         modalCreate.classList.remove('hidden');
-        updateCreateTaskOptions();
+        // Reset to default: 'creativoffice' checked
+        this.element.querySelectorAll('.cb-new-project').forEach(cb => {
+          cb.checked = cb.value === 'creativoffice';
+        });
+        newBoardSelector.syncUI();
         const firstInput = modalCreate.querySelector('input');
         if (firstInput) setTimeout(() => firstInput.focus(), 60);
       }
@@ -889,10 +1233,19 @@ export class UserManagementView extends BaseView {
         const position = (this.element.querySelector('#input-new-position')?.value || '').trim();
         const school = (this.element.querySelector('#input-new-school')?.value || '').trim();
 
-        const boardSelect = this.element.querySelector('#select-new-project');
-        const assignedProjectId = boardSelect ? boardSelect.value : 'creativoffice';
-        const selectedBoardOption = boardSelect ? boardSelect.options[boardSelect.selectedIndex] : null;
-        const assignedBoardName = selectedBoardOption ? (selectedBoardOption.getAttribute('data-name') || selectedBoardOption.text) : 'CreativOffice';
+        // Multi-board selection handling
+        const checkedBoxes = Array.from(this.element.querySelectorAll('.cb-new-project:checked'));
+        let assignedProjects = checkedBoxes.map(cb => cb.value);
+        let assignedBoardNames = checkedBoxes.map(cb => cb.getAttribute('data-name') || cb.value);
+
+        if (assignedProjects.length === 0) {
+          assignedProjects = ['creativoffice'];
+          assignedBoardNames = ['CreativOffice'];
+        }
+
+        const assignedProjectId = assignedProjects[0];
+        const assignedWorkspace = assignedProjectId;
+        const assignedBoardName = assignedBoardNames.join(', ');
 
         const taskSelect = this.element.querySelector('#select-new-task');
         let assignedTaskId = taskSelect ? taskSelect.value : 'all';
@@ -918,7 +1271,7 @@ export class UserManagementView extends BaseView {
             assignedTaskTitle = 'Seluruh Papan (Semua Tugas)';
           }
         } else if (assignedTaskId === 'all') {
-          assignedTaskTitle = 'Seluruh Papan (Semua Tugas)';
+          assignedTaskTitle = `Seluruh Papan (${assignedProjects.length > 1 ? `${assignedProjects.length} Papan Terpilih` : 'Semua Tugas'})`;
         } else {
           const selectedTaskOpt = taskSelect ? taskSelect.options[taskSelect.selectedIndex] : null;
           assignedTaskTitle = selectedTaskOpt ? (selectedTaskOpt.getAttribute('data-title') || selectedTaskOpt.text) : '';
@@ -944,8 +1297,11 @@ export class UserManagementView extends BaseView {
           position,
           school,
           assignedProjectId,
-          assignedWorkspace: assignedProjectId,
+          assignedWorkspace,
+          assignedProjects,
+          assignedBoardNames,
           assignedBoardName,
+          workspaceAccess: assignedProjects,
           assignedTaskId,
           assignedTaskTitle,
           device: 'Belum Terikat',
@@ -960,7 +1316,7 @@ export class UserManagementView extends BaseView {
         this.saveUsers(users);
         closeCreateModal();
         if (this.notificationService) {
-          this.notificationService.success(`Akun ${username} berhasil dibuat & ditugaskan ke "${assignedBoardName}"!`);
+          this.notificationService.success(`Akun ${username} berhasil dibuat & ditugaskan ke ${assignedProjects.length > 1 ? `${assignedProjects.length} Papan Proyek` : `"${assignedBoardName}"`}!`);
         }
         this.mount(this.element);
       });
@@ -971,37 +1327,9 @@ export class UserManagementView extends BaseView {
     const btnCloseEdit = this.element.querySelector('#btn-close-edit-user');
     const btnCancelEdit = this.element.querySelector('#btn-cancel-edit-user');
     const formEdit = this.element.querySelector('#form-edit-user');
-    const selectEditProject = this.element.querySelector('#select-edit-project');
     const selectEditTask = this.element.querySelector('#select-edit-task');
     const wrapEditCustomTask = this.element.querySelector('#wrap-edit-custom-task');
     const inputEditCustomTask = this.element.querySelector('#input-edit-custom-task');
-
-    const updateEditTaskOptions = (preferredTaskId = null) => {
-      if (!selectEditTask) return;
-      const boardId = selectEditProject ? selectEditProject.value : 'creativoffice';
-      const tasks = this.getTasksForBoard(boardId);
-
-      let optionsHtml = `
-        <option value="all">⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
-      `;
-
-      if (tasks && tasks.length > 0) {
-        optionsHtml += tasks.map(t => `
-          <option value="${t.id}" data-title="${t.title}" ${preferredTaskId === t.id ? 'selected' : ''}>[${t.code || 'TSK'}] ${t.title}</option>
-        `).join('');
-      }
-
-      optionsHtml += `
-        <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
-      `;
-
-      selectEditTask.innerHTML = optionsHtml;
-      if (wrapEditCustomTask) wrapEditCustomTask.classList.add('hidden');
-    };
-
-    if (selectEditProject) {
-      selectEditProject.addEventListener('change', () => updateEditTaskOptions());
-    }
 
     if (selectEditTask) {
       selectEditTask.addEventListener('change', () => {
@@ -1033,10 +1361,19 @@ export class UserManagementView extends BaseView {
         const telegramChat = (this.element.querySelector('#input-edit-telegram-chat')?.value || '').trim();
         const telegramId = (this.element.querySelector('#input-edit-telegram-id')?.value || '').trim();
 
-        const boardSelect = this.element.querySelector('#select-edit-project');
-        const assignedProjectId = boardSelect ? boardSelect.value : 'creativoffice';
-        const selectedBoardOption = boardSelect ? boardSelect.options[boardSelect.selectedIndex] : null;
-        const assignedBoardName = selectedBoardOption ? (selectedBoardOption.getAttribute('data-name') || selectedBoardOption.text) : 'CreativOffice';
+        // Multi-board selection handling for edit
+        const checkedEditBoxes = Array.from(this.element.querySelectorAll('.cb-edit-project:checked'));
+        let assignedProjects = checkedEditBoxes.map(cb => cb.value);
+        let assignedBoardNames = checkedEditBoxes.map(cb => cb.getAttribute('data-name') || cb.value);
+
+        if (assignedProjects.length === 0) {
+          assignedProjects = ['creativoffice'];
+          assignedBoardNames = ['CreativOffice'];
+        }
+
+        const assignedProjectId = assignedProjects[0];
+        const assignedWorkspace = assignedProjectId;
+        const assignedBoardName = assignedBoardNames.join(', ');
 
         const taskSelect = this.element.querySelector('#select-edit-task');
         let assignedTaskId = taskSelect ? taskSelect.value : 'all';
@@ -1062,7 +1399,7 @@ export class UserManagementView extends BaseView {
             assignedTaskTitle = 'Seluruh Papan (Semua Tugas)';
           }
         } else if (assignedTaskId === 'all') {
-          assignedTaskTitle = 'Seluruh Papan (Semua Tugas)';
+          assignedTaskTitle = `Seluruh Papan (${assignedProjects.length > 1 ? `${assignedProjects.length} Papan Terpilih` : 'Semua Tugas'})`;
         } else {
           const selectedTaskOpt = taskSelect ? taskSelect.options[taskSelect.selectedIndex] : null;
           assignedTaskTitle = selectedTaskOpt ? (selectedTaskOpt.getAttribute('data-title') || selectedTaskOpt.text) : '';
@@ -1084,8 +1421,11 @@ export class UserManagementView extends BaseView {
           users[idx].nip = nip;
           users[idx].position = position;
           users[idx].assignedProjectId = assignedProjectId;
-          users[idx].assignedWorkspace = assignedProjectId;
+          users[idx].assignedWorkspace = assignedWorkspace;
+          users[idx].assignedProjects = assignedProjects;
+          users[idx].assignedBoardNames = assignedBoardNames;
           users[idx].assignedBoardName = assignedBoardName;
+          users[idx].workspaceAccess = assignedProjects;
           users[idx].assignedTaskId = assignedTaskId;
           users[idx].assignedTaskTitle = assignedTaskTitle;
           users[idx].telegramChat = telegramChat;
@@ -1094,12 +1434,14 @@ export class UserManagementView extends BaseView {
           this.saveUsers(users);
           closeEditModal();
           if (this.notificationService) {
-            this.notificationService.success(`Perubahan akun ${users[idx].username} & penugasan berhasil disimpan!`);
+            this.notificationService.success(`Perubahan akun ${users[idx].username} & penugasan papan berhasil disimpan!`);
           }
           this.mount(this.element);
         }
       });
     }
+
+    this._editBoardSelector = editBoardSelector;
 
 
 
@@ -1124,6 +1466,12 @@ export class UserManagementView extends BaseView {
         if (confirm(`Masuk langsung sebagai ${user.fullName} (${user.username}) ke Papan Kanban "${user.assignedBoardName || targetProj}"?`)) {
           const userAvatar = this.authService ? this.authService.resolveUserAvatar(user) : (user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.fullName || user.username)}`);
 
+          const targetProjects = (user.assignedProjects && Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0)
+            ? user.assignedProjects
+            : ((user.workspaceAccess && Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0)
+              ? user.workspaceAccess
+              : [targetWs, targetProj]);
+
           const userObj = {
             id: user.id,
             name: user.fullName,
@@ -1133,6 +1481,8 @@ export class UserManagementView extends BaseView {
             avatar: userAvatar,
             assignedProjectId: targetProj,
             assignedWorkspace: targetWs,
+            assignedProjects: targetProjects,
+            workspaceAccess: targetProjects,
             assignedTaskId: targetTask,
             assignedTaskTitle: user.assignedTaskTitle || ''
           };
@@ -1196,32 +1546,20 @@ export class UserManagementView extends BaseView {
         this.element.querySelector('#input-edit-telegram-chat').value = user.telegramChat || '';
         this.element.querySelector('#input-edit-telegram-id').value = user.telegramId || '';
 
-        const projSelect = this.element.querySelector('#select-edit-project');
-        if (projSelect) {
-          projSelect.value = user.assignedProjectId || 'creativoffice';
-        }
+        // Determine user's boards for edit checkboxes
+        const userBoardIds = (user.assignedProjects && Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0)
+          ? user.assignedProjects
+          : ((user.workspaceAccess && Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0)
+            ? user.workspaceAccess
+            : (user.assignedProjectId ? [user.assignedProjectId] : ['creativoffice']));
 
-        // Update task options for the user's project
-        const taskSelect = this.element.querySelector('#select-edit-task');
-        if (taskSelect) {
-          const boardId = user.assignedProjectId || 'creativoffice';
-          const tasks = this.getTasksForBoard(boardId);
+        const editCbs = this.element.querySelectorAll('.cb-edit-project');
+        editCbs.forEach(cb => {
+          cb.checked = userBoardIds.includes(cb.value);
+        });
 
-          let optionsHtml = `
-            <option value="all" ${user.assignedTaskId === 'all' || !user.assignedTaskId ? 'selected' : ''}>⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
-          `;
-
-          if (tasks && tasks.length > 0) {
-            optionsHtml += tasks.map(t => `
-              <option value="${t.id}" data-title="${t.title}" ${user.assignedTaskId === t.id ? 'selected' : ''}>[${t.code || 'TSK'}] ${t.title}</option>
-            `).join('');
-          }
-
-          optionsHtml += `
-            <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
-          `;
-
-          taskSelect.innerHTML = optionsHtml;
+        if (this._editBoardSelector) {
+          this._editBoardSelector.syncUI(user.assignedTaskId);
         }
 
         modalEdit.classList.remove('hidden');

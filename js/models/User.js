@@ -17,6 +17,12 @@ export class User {
     this.boundDeviceName = data.boundDeviceName || data.bound_device_name || null;
     this.assignedProjectId = data.assignedProjectId || data.assigned_project_id || null;
     this.assignedWorkspace = data.assignedWorkspace || data.assigned_workspace || null;
+    this.assignedProjects = Array.isArray(data.assignedProjects) ? data.assignedProjects : (this.assignedProjectId ? [this.assignedProjectId] : []);
+    this.assignedBoardNames = Array.isArray(data.assignedBoardNames) ? data.assignedBoardNames : (data.assignedBoardName ? [data.assignedBoardName] : []);
+    this.assignedBoardName = data.assignedBoardName || (this.assignedBoardNames.length > 0 ? this.assignedBoardNames.join(', ') : null);
+    if (this.workspaceAccess.length === 0 && this.assignedProjects.length > 0) {
+      this.workspaceAccess = [...this.assignedProjects];
+    }
     this.assignedTaskId = data.assignedTaskId || data.assigned_task_id || null;
     this.assignedTaskTitle = data.assignedTaskTitle || data.assigned_task_title || null;
     this.loginMethod = data.loginMethod || 'qr';

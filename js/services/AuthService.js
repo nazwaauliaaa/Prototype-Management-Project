@@ -430,7 +430,7 @@ export class AuthService {
     const finalBoundDevId = boundDeviceId || bound_device_id || null;
     const finalBoundDevName = boundDeviceName || bound_device_name || null;
 
-    let finalWsAccess = workspaceAccess;
+    let finalWsAccess = workspaceAccess || userData.workspaceAccess || userData.assignedProjects;
     if (typeof finalWsAccess === 'string') {
       try { finalWsAccess = JSON.parse(finalWsAccess); } catch (e) { finalWsAccess = [finalWsAccess]; }
     }
@@ -454,6 +454,9 @@ export class AuthService {
       boundDeviceName: finalBoundDevName,
       assignedProjectId: assignedProjectId || userData.assignedProjectId || null,
       assignedWorkspace: assignedWorkspace || userData.assignedWorkspace || null,
+      assignedProjects: userData.assignedProjects || (assignedProjectId ? [assignedProjectId] : []),
+      assignedBoardNames: userData.assignedBoardNames || (userData.assignedBoardName ? [userData.assignedBoardName] : []),
+      assignedBoardName: userData.assignedBoardName || null,
       assignedTaskId: assignedTaskId || userData.assignedTaskId || null,
       assignedTaskTitle: assignedTaskTitle || userData.assignedTaskTitle || null
     });
