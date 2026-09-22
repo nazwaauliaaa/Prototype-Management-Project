@@ -184,7 +184,7 @@ export class ApiService {
 
   async updateProject(id, updates) {
     try {
-      const result = await this.safeFetch(`/projects/${encodeURIComponent(id)}`, {
+      const result = await this.safeFetch(`/projects?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -199,7 +199,7 @@ export class ApiService {
 
   async deleteProject(id) {
     try {
-      const result = await this.safeFetch(`/projects/${encodeURIComponent(id)}`, {
+      const result = await this.safeFetch(`/projects?id=${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
       if (!result.ok) throw new Error(`HTTP ${result.status}`);
