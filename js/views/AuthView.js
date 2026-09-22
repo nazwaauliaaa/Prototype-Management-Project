@@ -199,7 +199,7 @@ export class AuthView extends BaseView {
         <div class="absolute bottom-1/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent pointer-events-none"></div>
 
         <main class="w-full max-w-md relative z-10">
-          <div class="relative w-full bg-[#120e28]/90 backdrop-blur-2xl rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.35),0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden p-spacing-xl flex flex-col items-center border border-purple-400/40">
+          <div class="relative w-full bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.35),0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden p-spacing-xl flex flex-col items-center border border-purple-400/40">
             
             <!-- Atmospheric top accent gradients (Neon Purple & Magenta Glow) -->
             <div class="absolute -top-12 -left-12 w-48 h-48 bg-purple-500/30 rounded-full blur-2xl pointer-events-none"></div>
@@ -212,13 +212,13 @@ export class AuthView extends BaseView {
               </div>
               
               <div class="flex items-center gap-2 mb-1">
-                <h1 class="font-headline-lg text-[22px] font-bold text-white tracking-tight">CreativOffice</h1>
-                <span class="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-badge-micro text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <h1 class="font-headline-lg text-[22px] font-bold text-slate-900 tracking-tight">CreativOffice</h1>
+                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-badge-micro text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   SECURE SSL
                 </span>
               </div>
-              <p class="font-caption-meta text-[11.5px] text-purple-200/70">by Sampulkreativ Technology</p>
+              <p class="font-caption-meta text-[11.5px] text-purple-900 font-medium">by Sampulkreativ Technology</p>
             </div>
 
             <!-- Scanner Viewfinder Component (Portrait) -->
