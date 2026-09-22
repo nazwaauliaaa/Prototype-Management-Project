@@ -57,7 +57,7 @@ export class KanbanBoardView extends BaseView {
     // Drag state
     this._draggedTaskId = null;
     this._draggedFromCol = null;
-    this.highlightTaskId = null;
+    this.highlightTaskId = localStorage.getItem('active_assigned_task_id') || null;
 
     // Auto-scroll state during card drag
     this._autoScrollRaf = null;
@@ -1753,6 +1753,30 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
+            <!-- Banner Indikator Tugas Ditugaskan Khusus untuk Pengguna -->
+            ${localStorage.getItem('active_assigned_task_id') ? `
+              <div id="banner-user-assigned-task" class="mx-3 sm:mx-6 mb-2.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-900/70 via-indigo-900/50 to-purple-950/70 border border-purple-400/40 backdrop-blur-md text-white flex items-center justify-between gap-3 shadow-xl shadow-purple-950/60 animate-in fade-in duration-300">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-8 h-8 rounded-xl bg-purple-500/30 border border-purple-400/40 flex items-center justify-center shrink-0 text-purple-300">
+                    <span class="material-symbols-outlined text-[20px]">task_alt</span>
+                  </div>
+                  <div class="min-w-0 text-[12px]">
+                    <span class="font-bold text-white">Tugas Ditugaskan:</span>
+                    <span class="text-amber-300 font-bold ml-1.5">${localStorage.getItem('active_assigned_task_title') || 'Tugas Spesifik Anda'}</span>
+                    <span class="text-purple-200/70 ml-1.5 hidden sm:inline">— Kartu tugas telah disorot khusus untuk Anda.</span>
+                  </div>
+                </div>
+                <button
+                  id="btn-scroll-to-assigned-task"
+                  class="px-3 py-1 rounded-xl bg-purple-600/50 hover:bg-purple-600/80 active:scale-95 text-white text-[11px] font-bold tracking-wider shrink-0 transition-all flex items-center gap-1 cursor-pointer border border-purple-400/35 shadow-sm"
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-[13px]">my_location</span>
+                  <span>Lihat Kartu</span>
+                </button>
+              </div>
+            ` : ''}
+
             <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-3 sm:pb-4 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
               ${this.columns.map((col, colIdx) => {
@@ -1934,19 +1958,29 @@ export class KanbanBoardView extends BaseView {
                         const picName = task.pic?.name || '';
                         const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
                         const picAvatar = task.pic?.avatar || picMember?.avatar || (perms.user && picName && perms.user.name && picName.toLowerCase() === perms.user.name.toLowerCase() ? perms.user.avatar : null);
+                        const isAssigned = (this.highlightTaskId && String(task.id) === String(this.highlightTaskId)) ||
+                                           (localStorage.getItem('active_assigned_task_id') && String(localStorage.getItem('active_assigned_task_id')) === String(task.id));
 
                         return `
                         <div
-                          class="kanban-card p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40 backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border text-white"
+                          class="kanban-card p-3 rounded-xl ${isAssigned ? 'bg-purple-950/70 border-2 border-purple-400 shadow-2xl shadow-purple-600/40 ring-2 ring-purple-400/50' : 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40'} backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border text-white relative"
                           data-task-id="${task.id}"
                           data-task-status="${task.status}"
                           draggable="true"
                         >
                           <!-- Card Code & Priority & Delete Button -->
                           <div class="flex items-center justify-between gap-1.5">
-                            <span class="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10.5px] font-bold text-white">
-                              ${task.code || '#TASK'}
-                            </span>
+                            <div class="flex items-center gap-1.5">
+                              <span class="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10.5px] font-bold text-white">
+                                ${task.code || '#TASK'}
+                              </span>
+                              ${isAssigned ? `
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md shadow-purple-500/30 uppercase tracking-wider animate-pulse">
+                                <span class="material-symbols-outlined text-[12px]">verified</span>
+                                <span>Tugas Anda</span>
+                              </span>
+                              ` : ''}
+                            </div>
                             <div class="flex items-center gap-1">
                               <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
                                 ${task.priority}
@@ -3861,6 +3895,33 @@ export class KanbanBoardView extends BaseView {
         window.location.hash = '#/dashboard';
         this.eventBus.emit('navigate', { view: 'dashboard' });
       });
+    }
+
+    // Scroll directly to assigned task button
+    const btnScrollAssigned = this.element.querySelector('#btn-scroll-to-assigned-task');
+    if (btnScrollAssigned) {
+      btnScrollAssigned.addEventListener('click', () => {
+        const assignedId = localStorage.getItem('active_assigned_task_id') || this.highlightTaskId;
+        if (!assignedId) return;
+        const targetCard = this.element.querySelector(`[data-task-id="${assignedId}"]`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          targetCard.classList.add('scale-105', 'ring-4', 'ring-purple-400');
+          setTimeout(() => {
+            targetCard.classList.remove('scale-105', 'ring-4', 'ring-purple-400');
+          }, 1600);
+        }
+      });
+    }
+
+    // Auto-scroll to assigned task card on initial load
+    if (this.highlightTaskId) {
+      setTimeout(() => {
+        const targetCard = this.element?.querySelector(`[data-task-id="${this.highlightTaskId}"]`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
+      }, 450);
     }
 
     // 1.1 Header Project Switcher Button Toggle

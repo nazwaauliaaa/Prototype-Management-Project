@@ -925,6 +925,72 @@ export class AuthView extends BaseView {
 
       sessionStorage.setItem('auth_login_method', 'qr');
 
+      // Helper untuk mencari data penugasan dari Manajemen Pengguna (creative_office_managed_users)
+      const getManagedAssignment = (userObj, codeStr) => {
+        try {
+          const managedList = JSON.parse(localStorage.getItem('creative_office_managed_users') || '[]');
+          if (!Array.isArray(managedList) || managedList.length === 0) return null;
+          const clean = String(codeStr || '').trim();
+          const cleanLower = clean.toLowerCase();
+          const uName = (userObj?.name || userObj?.fullName || '').toLowerCase().trim();
+          const uUsername = (userObj?.username || '').toLowerCase().trim();
+          const uNip = String(userObj?.nip || '').trim();
+          const uEmail = (userObj?.email || '').toLowerCase().trim();
+
+          return managedList.find(m => {
+            const mUsername = (m.username || '').toLowerCase().trim();
+            const mName = (m.fullName || m.name || '').toLowerCase().trim();
+            const mNip = String(m.nip || '').trim();
+            const mEmail = (m.email || '').toLowerCase().trim();
+            const mId = (m.id || '').trim();
+
+            if (clean && (mUsername === cleanLower || '@' + mUsername === cleanLower || mUsername === '@' + cleanLower)) return true;
+            if (clean && mNip && mNip === clean) return true;
+            if (clean && mId && mId === clean) return true;
+            if (clean && mName && mName === cleanLower) return true;
+
+            if (uUsername && (mUsername === uUsername || '@' + mUsername === uUsername)) return true;
+            if (uName && mName && (mName === uName || mName.includes(uName) || uName.includes(mName))) return true;
+            if (uNip && mNip && mNip === uNip) return true;
+            if (uEmail && mEmail && mEmail === uEmail) return true;
+
+            if (clean.startsWith('{') && clean.endsWith('}')) {
+              try {
+                const parsed = JSON.parse(clean);
+                if (parsed.username && (mUsername === parsed.username.toLowerCase() || '@' + mUsername === parsed.username.toLowerCase())) return true;
+                if (parsed.id && mId === parsed.id) return true;
+                if (parsed.nip && mNip === String(parsed.nip).trim()) return true;
+                if (parsed.name && mName === parsed.name.toLowerCase()) return true;
+              } catch(e) {}
+            }
+            return false;
+          });
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const applyUserAssignment = (userObj, codeStr) => {
+        const managed = getManagedAssignment(userObj, codeStr);
+        const targetProj = (managed && managed.assignedProjectId) || 'panen-kunci';
+        const targetWs = (managed && (managed.assignedWorkspace || managed.assignedProjectId)) || targetProj;
+
+        localStorage.setItem('active_workspace', targetWs);
+        localStorage.setItem('active_project_id', targetProj);
+        localStorage.setItem('user_invited_workspace', targetWs);
+        localStorage.setItem('user_invited_project', targetProj);
+
+        if (managed && managed.assignedTaskId && managed.assignedTaskId !== 'all') {
+          localStorage.setItem('active_assigned_task_id', managed.assignedTaskId);
+          localStorage.setItem('active_assigned_task_title', managed.assignedTaskTitle || '');
+        } else {
+          localStorage.removeItem('active_assigned_task_id');
+          localStorage.removeItem('active_assigned_task_title');
+        }
+
+        return { targetProj, targetWs, managed };
+      };
+
       // 0. Deteksi jika kode QR adalah tautan undangan proyek (misal scan QR dari AddMemberModal)
       if (cleanCode.includes('accept_invite') || (cleanCode.includes('#/kanban/') && cleanCode.includes('?'))) {
         stopCamera();
@@ -1042,24 +1108,18 @@ export class AuthView extends BaseView {
             stopCamera();
             this.authService.loginAsUser(userInstance, { silent: true });
 
-            const allowedWs = 'panen-kunci';
-            const allowedProj = allowedWs;
-
-            localStorage.setItem('active_workspace', allowedWs);
-            localStorage.setItem('active_project_id', allowedProj);
-            localStorage.setItem('user_invited_workspace', allowedWs);
-            localStorage.setItem('user_invited_project', allowedProj);
+            const { targetProj, targetWs } = applyUserAssignment(verifiedUser, cleanCode);
 
             const isUser = (userInstance.role || '').toLowerCase() === 'user';
             const targetView = isUser ? 'kanban' : 'dashboard';
-            const targetHash = isUser ? `#/kanban/${allowedProj}` : '#/dashboard';
+            const targetHash = isUser ? `#/kanban/${targetProj}` : '#/dashboard';
 
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
               eb.emit('navigate', {
                 view: targetView,
-                projectId: allowedProj,
-                workspace: allowedWs
+                projectId: targetProj,
+                workspace: targetWs
               });
             }
             window.location.hash = targetHash;
@@ -1189,6 +1249,26 @@ export class AuthView extends BaseView {
       const autoRegisterAndEnter = async (codeToReg, userToReg) => {
         // Fallback cerdas: Jika userToReg belum memiliki identitas nama terstruktur
         if (!userToReg || !userToReg.name) {
+          const matchedManaged = getManagedAssignment(null, codeToReg);
+          if (matchedManaged) {
+            userToReg = {
+              id: matchedManaged.id,
+              name: matchedManaged.fullName,
+              username: matchedManaged.username,
+              role: matchedManaged.role === 'admin' ? 'admin' : 'user',
+              jobdesk: matchedManaged.position,
+              title: matchedManaged.position,
+              assignedProjectId: matchedManaged.assignedProjectId,
+              assignedWorkspace: matchedManaged.assignedWorkspace || matchedManaged.assignedProjectId,
+              assignedTaskId: matchedManaged.assignedTaskId,
+              assignedTaskTitle: matchedManaged.assignedTaskTitle,
+              email: `${matchedManaged.fullName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
+              qr_data: codeToReg
+            };
+          }
+        }
+
+        if (!userToReg || !userToReg.name) {
           const rawCodeStr = String(codeToReg || '').trim();
           let candidateName = rawCodeStr.replace(/^https?:\/\/[^\/]+\/?/i, '').replace(/[^a-zA-Z0-9_\-\s]/g, ' ').trim();
           if (candidateName && candidateName.length >= 2 && !candidateName.startsWith('{')) {
@@ -1312,25 +1392,19 @@ export class AuthView extends BaseView {
             stopCamera();
             this.authService.loginAsUser(userInstance, { silent: true });
 
-            const allowedWs = 'panen-kunci';
-            const allowedProj = allowedWs;
-
-            localStorage.setItem('active_workspace', allowedWs);
-            localStorage.setItem('active_project_id', allowedProj);
-            localStorage.setItem('user_invited_workspace', allowedWs);
-            localStorage.setItem('user_invited_project', allowedProj);
+            const { targetProj, targetWs } = applyUserAssignment(userInstance || registeredData, codeToReg);
 
             const isUser = (userInstance.role || '').toLowerCase() === 'user';
             const targetView = isUser ? 'kanban' : 'dashboard';
-            const targetHash = isUser ? `#/kanban/${allowedProj}` : '#/dashboard';
+            const targetHash = isUser ? `#/kanban/${targetProj}` : '#/dashboard';
 
             // Arahkan sesuai role
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
               eb.emit('navigate', {
                 view: targetView,
-                projectId: allowedProj,
-                workspace: allowedWs
+                projectId: targetProj,
+                workspace: targetWs
               });
             }
             window.location.hash = targetHash;
@@ -1373,8 +1447,9 @@ export class AuthView extends BaseView {
           }
 
           this.authService.loginAsUser(userInstance, { silent: true });
+          const { targetProj: fallbackProj } = applyUserAssignment(userInstance, codeToReg);
           const isUser = (userInstance.role || '').toLowerCase() === 'user';
-          window.location.hash = isUser ? '#/kanban/panen-kunci' : '#/dashboard';
+          window.location.hash = isUser ? `#/kanban/${fallbackProj}` : '#/dashboard';
         }
       };
 
@@ -1426,26 +1501,25 @@ export class AuthView extends BaseView {
             stopCamera();
             this.authService.loginAsUser(userInstance, { silent: true });
 
-            const allowedWs = 'panen-kunci';
-            const allowedProj = allowedWs;
+            const { targetProj, targetWs } = applyUserAssignment(userInstance || userFromDb, cleanCode);
             
             // Simpan active workspace & project
-            localStorage.setItem('active_workspace', allowedWs);
-            localStorage.setItem('active_project_id', allowedProj);
-            localStorage.setItem('user_invited_workspace', allowedWs);
-            localStorage.setItem('user_invited_project', allowedProj);
+            localStorage.setItem('active_workspace', targetWs);
+            localStorage.setItem('active_project_id', targetProj);
+            localStorage.setItem('user_invited_workspace', targetWs);
+            localStorage.setItem('user_invited_project', targetProj);
 
             // Arahkan ke Kanban jika role user, ke Beranda jika role lain
             const isUser = (userInstance.role || '').toLowerCase() === 'user';
             const targetView = isUser ? 'kanban' : 'dashboard';
-            const targetHash = isUser ? `#/kanban/${allowedProj}` : '#/dashboard';
+            const targetHash = isUser ? `#/kanban/${targetProj}` : '#/dashboard';
 
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
               eb.emit('navigate', {
                 view: targetView,
-                projectId: allowedProj,
-                workspace: allowedWs
+                projectId: targetProj,
+                workspace: targetWs
               });
             }
             window.location.hash = targetHash;
