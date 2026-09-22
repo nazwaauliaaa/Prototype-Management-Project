@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 // Pastikan direktori data ada
 if (!fs.existsSync(DATA_DIR)) {
@@ -271,6 +272,114 @@ export const fileStore = {
     if (index !== -1) {
       const removed = projects.splice(index, 1)[0];
       writeJsonFile(PROJECTS_FILE, projects);
+      return removed;
+    }
+    return null;
+  },
+
+  // ================= MANAGED USERS (Manajemen Pengguna) =================
+  getManagedUsers() {
+    const defaultManagedUsers = [
+      {
+        id: 'usr-1790046404637',
+        username: '@nazwaaulial',
+        fullName: 'Nazwa Aulia Latifah',
+        role: 'student',
+        nip: '2026',
+        position: 'Siswa PKL',
+        school: '',
+        assignedProjectId: 'creativoffice',
+        assignedWorkspace: 'creativoffice',
+        assignedBoardName: 'CreativOffice',
+        assignedTaskId: 'all',
+        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+        device: 'Belum Terikat',
+        isDeviceBound: false,
+        qr_data: '@nazwaaulial',
+        updatedAt: Date.now()
+      },
+      {
+        id: 'usr-1790046919250',
+        username: '@jax_ck',
+        fullName: 'Fakhrul Miandi Rachman',
+        role: 'student',
+        nip: '2026',
+        position: 'Siswa PKL',
+        school: '',
+        assignedProjectId: 'panen-kunci',
+        assignedWorkspace: 'panen-kunci',
+        assignedBoardName: 'Panen Kunci (Utama)',
+        assignedTaskId: 'all',
+        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+        device: 'Belum Terikat',
+        isDeviceBound: false,
+        qr_data: '@jax_ck',
+        updatedAt: Date.now()
+      },
+      {
+        id: 'usr-1790049070981',
+        username: '@fazlies',
+        fullName: 'Muhamad Fazli Esfandiar',
+        role: 'student',
+        nip: '2026',
+        position: 'Siswa PKL',
+        school: '',
+        assignedProjectId: 'creativoffice',
+        assignedWorkspace: 'creativoffice',
+        assignedBoardName: 'CreativOffice (Creative Office)',
+        assignedTaskId: 'all',
+        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+        device: 'Belum Terikat',
+        isDeviceBound: false,
+        qr_data: '@fazlies',
+        updatedAt: Date.now()
+      }
+    ];
+
+    let users = readJsonFile(USERS_FILE, defaultManagedUsers);
+    if (!Array.isArray(users) || users.length === 0) {
+      users = defaultManagedUsers;
+      writeJsonFile(USERS_FILE, users);
+    }
+    return users;
+  },
+
+  saveManagedUsers(usersList) {
+    if (!Array.isArray(usersList)) return [];
+    writeJsonFile(USERS_FILE, usersList);
+    console.log(`[fileStore] 👥 Saved ${usersList.length} managed users`);
+    return usersList;
+  },
+
+  saveManagedUser(userData) {
+    const users = this.getManagedUsers();
+    const id = userData.id || 'usr-' + Date.now();
+    const index = users.findIndex(u => String(u.id) === String(id) || (u.username && userData.username && u.username.toLowerCase() === userData.username.toLowerCase()));
+
+    const userObj = {
+      ...userData,
+      id,
+      updatedAt: Date.now()
+    };
+
+    if (index !== -1) {
+      users[index] = { ...users[index], ...userObj };
+    } else {
+      users.unshift(userObj);
+    }
+
+    writeJsonFile(USERS_FILE, users);
+    console.log(`[fileStore] 👤 Saved managed user "${userObj.fullName || userObj.username}" (${id})`);
+    return users[index !== -1 ? index : 0];
+  },
+
+  deleteManagedUser(id) {
+    const users = this.getManagedUsers();
+    const index = users.findIndex(u => String(u.id) === String(id));
+    if (index !== -1) {
+      const removed = users.splice(index, 1)[0];
+      writeJsonFile(USERS_FILE, users);
+      console.log(`[fileStore] 🗑️ Deleted managed user (${id})`);
       return removed;
     }
     return null;

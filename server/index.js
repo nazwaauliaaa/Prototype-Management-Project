@@ -7,6 +7,7 @@ import { testConnection } from './db.js';
 import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
 import qrRoutes from './routes/qr.js';
+import userRoutes from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +46,7 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/users', userRoutes);
 
 // 404 Handler
 app.use((req, res) => {

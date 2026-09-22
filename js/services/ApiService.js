@@ -210,6 +210,74 @@ export class ApiService {
     }
   }
 
+  // ==================== MANAGED USERS (Manajemen Pengguna & Penugasan) ====================
+  async getManagedUsers() {
+    try {
+      let res = await this.safeFetch('/users/managed');
+      if (!res.ok) {
+        // Fallback untuk Vercel function tanpa sub-path
+        res = await this.safeFetch('/users');
+      }
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Array.isArray(json.data) && json.data.length > 0) {
+          return json.data;
+        }
+      }
+      return null;
+    } catch (err) {
+      console.warn('[ApiService] Gagal mengambil managed users dari backend:', err.message);
+      return null;
+    }
+  }
+
+  async saveManagedUsers(usersList) {
+    if (!Array.isArray(usersList)) return null;
+    try {
+      let res = await this.safeFetch('/users/managed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(usersList)
+      });
+      if (!res.ok) {
+        res = await this.safeFetch('/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(usersList)
+        });
+      }
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || usersList;
+      }
+      return null;
+    } catch (err) {
+      console.warn('[ApiService] Gagal menyimpan managed users ke backend:', err.message);
+      return null;
+    }
+  }
+
+  async saveManagedUser(userData) {
+    return this.saveManagedUsers([userData]);
+  }
+
+  async deleteManagedUser(id) {
+    try {
+      let res = await this.safeFetch(`/users/managed/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        res = await this.safeFetch(`/users?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE'
+        });
+      }
+      return res.ok;
+    } catch (err) {
+      console.warn('[ApiService] Gagal menghapus managed user:', err.message);
+      return false;
+    }
+  }
+
   // ==================== CLOUD SYNC HELPERS (Untuk Vercel / Remote Cross-Device) ====================
   getCloudSyncUrl() {
     return 'https://api.restful-api.dev/objects/ff808181a09d98f701a0ae918ca32524';

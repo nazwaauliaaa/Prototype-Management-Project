@@ -1,4 +1,5 @@
 import { BaseView } from '../core/BaseView.js';
+import { apiService } from '../services/ApiService.js';
 
 /**
  * UserManagementView - Halaman Manajemen Pengguna untuk Administrator
@@ -81,7 +82,93 @@ export class UserManagementView extends BaseView {
       }
     ];
 
+    this.broadcastChannel = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        this.broadcastChannel = new BroadcastChannel('creative_office_user_sync');
+        this.broadcastChannel.onmessage = (e) => {
+          if (e.data && e.data.type === 'USERS_MODIFIED') {
+            this.syncFromBackend(true);
+          }
+        };
+      } catch (e) {}
+    }
+
+    // Polling background setiap 15 detik agar perubahan dari admin lain otomatis sinkron
+    this.syncInterval = setInterval(() => {
+      this.syncFromBackend(true);
+    }, 15000);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.syncFromBackend(true);
+        }
+      });
+    }
+
     this._initUsers();
+    // Sinkronkan data terbaru dari server saat view dibuat
+    this.syncFromBackend(true);
+  }
+
+  async syncFromBackend(silent = false) {
+    try {
+      const remoteUsers = await apiService.getManagedUsers();
+      if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+        const stored = localStorage.getItem('creative_office_managed_users');
+        let localUsers = [];
+        try { localUsers = JSON.parse(stored) || []; } catch (e) {}
+
+        const userMap = new Map();
+        // 1. Masukkan default users
+        this.defaultUsers.forEach(u => userMap.set(u.id || u.username.toLowerCase(), u));
+        // 2. Timpa dengan local users jika ada
+        localUsers.forEach(u => userMap.set(u.id || (u.username && u.username.toLowerCase()), u));
+        // 3. Timpa dengan remote users dari database/server
+        remoteUsers.forEach(u => userMap.set(u.id || (u.username && u.username.toLowerCase()), u));
+
+        const merged = Array.from(userMap.values());
+        const mergedStr = JSON.stringify(merged);
+
+        if (stored !== mergedStr) {
+          localStorage.setItem('creative_office_managed_users', mergedStr);
+          this._updateTableBody();
+          if (!silent && this.notificationService) {
+            this.notificationService.info('Daftar pengguna disinkronkan dari database server.');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[UserManagementView] Sync backend warning:', err.message);
+    }
+  }
+
+  _updateTableBody() {
+    if (!this.element) return;
+    const tbody = this.element.querySelector('tbody');
+    if (!tbody) return;
+    const allUsers = this.getUsers();
+    const query = (this.searchQuery || '').trim().toLowerCase();
+    const filtered = query
+      ? allUsers.filter(u =>
+          (u.username || '').toLowerCase().includes(query) ||
+          (u.fullName || '').toLowerCase().includes(query) ||
+          (u.position || '').toLowerCase().includes(query) ||
+          (u.role || '').toLowerCase().includes(query) ||
+          (u.nip || '').toLowerCase().includes(query) ||
+          (u.assignedBoardName || '').toLowerCase().includes(query) ||
+          (u.assignedTaskTitle || '').toLowerCase().includes(query)
+        )
+      : allUsers;
+
+    tbody.innerHTML = filtered.length > 0
+      ? filtered.map(u => this._renderUserRow(u)).join('')
+      : (allUsers.length === 0 ? this._renderEmptyState() : this._renderSearchEmptyState());
+
+    if (typeof this._bindRowEvents === 'function') {
+      this._bindRowEvents();
+    }
   }
 
   _initUsers() {
@@ -125,6 +212,16 @@ export class UserManagementView extends BaseView {
   saveUsers(users) {
     try {
       localStorage.setItem('creative_office_managed_users', JSON.stringify(users));
+      // 🚀 Langsung kirim dan sinkronkan ke Database PostgreSQL / Supabase & Vercel Serverless
+      apiService.saveManagedUsers(users).catch(err => {
+        console.warn('[UserManagementView] Gagal sync ke server backend:', err.message);
+      });
+      // Broadcast ke tab/jendela lain
+      if (this.broadcastChannel) {
+        try {
+          this.broadcastChannel.postMessage({ type: 'USERS_MODIFIED', timestamp: Date.now() });
+        } catch (e) {}
+      }
     } catch (e) {}
   }
 
@@ -1173,6 +1270,7 @@ export class UserManagementView extends BaseView {
         if (confirm(`Apakah Anda yakin ingin menghapus akun ${user.fullName} (${user.username}) secara permanen?`)) {
           const updated = users.filter(u => u.id !== userId);
           this.saveUsers(updated);
+          apiService.deleteManagedUser(userId).catch(() => {});
           if (this.notificationService) {
             this.notificationService.success(`Akun ${user.username} telah dihapus.`);
           }

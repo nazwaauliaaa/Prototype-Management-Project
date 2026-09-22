@@ -15,6 +15,13 @@ export class AuthView extends BaseView {
     super(container);
     this.authService = container.resolve('AuthService');
     this.notificationService = container.resolve('NotificationService');
+
+    // Pre-fetch data penugasan pengguna dari server/database saat scanner dibuka
+    apiService.getManagedUsers().then(fresh => {
+      if (Array.isArray(fresh) && fresh.length > 0) {
+        try { localStorage.setItem('creative_office_managed_users', JSON.stringify(fresh)); } catch (e) {}
+      }
+    }).catch(() => {});
   }
 
   getApprovedUsers() {
@@ -924,6 +931,14 @@ export class AuthView extends BaseView {
       console.log('[AuthView] Kode QR terdeteksi:', cleanCode, forceSwitch ? '(forceSwitch)' : '');
 
       sessionStorage.setItem('auth_login_method', 'qr');
+
+      // Ambil data penugasan terbaru dari server/database secara real-time
+      try {
+        const freshManaged = await apiService.getManagedUsers();
+        if (Array.isArray(freshManaged) && freshManaged.length > 0) {
+          try { localStorage.setItem('creative_office_managed_users', JSON.stringify(freshManaged)); } catch (e) {}
+        }
+      } catch (e) {}
 
       // Helper untuk mencari data penugasan dari Manajemen Pengguna (creative_office_managed_users)
       const getManagedAssignment = (userObj, codeStr) => {
