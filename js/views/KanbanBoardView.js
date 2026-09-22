@@ -1286,26 +1286,21 @@ export class KanbanBoardView extends BaseView {
           background: rgba(255, 255, 255, 0.6);
         }
 
-        .custom-scrollbar::-webkit-scrollbar,
-        [data-cards-area]::-webkit-scrollbar {
+        .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
           height: 6px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track,
-        [data-cards-area]::-webkit-scrollbar-track {
+        .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb,
-        [data-cards-area]::-webkit-scrollbar-thumb {
+        .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(148, 163, 184, 0.45);
           border-radius: 999px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover,
-        [data-cards-area]::-webkit-scrollbar-thumb:hover {
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(100, 116, 139, 0.75);
         }
-        .custom-scrollbar,
-        [data-cards-area] {
+        .custom-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
           -webkit-overflow-scrolling: touch;
@@ -1522,7 +1517,7 @@ export class KanbanBoardView extends BaseView {
       </style>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full flex-1 min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
+      <div class="flex flex-col w-full flex-1 h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100dvh-var(--topbar-height))] min-h-0 relative transition-all duration-300 select-none overflow-hidden" style="${bgStyle}">
         
         <!-- Ambient Studio Glow Orbs (Subtle Depth) -->
         <div class="creativoffice-orb bg-purple-600/20 w-[500px] h-[500px] -top-32 -left-32 pointer-events-none"></div>
@@ -1627,7 +1622,7 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- Main Body: Split View with Left Inbox Drawer + Board Columns -->
-        <div class="flex-1 flex w-full relative min-h-0">
+        <div class="flex-1 flex w-full relative min-h-0 overflow-hidden">
 
           <!-- Left: Inbox Drawer (Opened when isInboxOpen is true) -->
           ${this.isInboxOpen ? `
@@ -1758,7 +1753,7 @@ export class KanbanBoardView extends BaseView {
           ` : ''}
 
           <!-- Kanban Columns Stream (Responsive Scrollable) -->
-          <div class="flex-1 w-full max-w-full flex flex-col min-h-0" id="kanban-scroll-area">
+          <div class="flex-1 w-full max-w-full flex flex-col min-h-0 h-full overflow-hidden" id="kanban-scroll-area">
 
             <!-- Banner Indikator Filter Berdasarkan -->
             ${this.activeFilter !== 'all' ? `
@@ -1813,7 +1808,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-28 sm:pb-36 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
+            <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-28 sm:pb-36 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
               ${this.columns.map((col, colIdx) => {
       const validColIds = this.columns.map(c => c.id);
@@ -1989,7 +1984,7 @@ export class KanbanBoardView extends BaseView {
                     </div>
 
                     <!-- Cards List Container -->
-                    <div class="flex-1 min-h-0 overflow-y-auto px-1 py-1 flex flex-col gap-2.5 custom-scrollbar" data-cards-area="${col.id}">
+                    <div class="flex-1 px-1 py-1 flex flex-col gap-2.5" data-cards-area="${col.id}">
                       ${colTasks.map(task => {
                         const picName = task.pic?.name || '';
                         const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
