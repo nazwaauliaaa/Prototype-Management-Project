@@ -79,6 +79,23 @@ export class Header {
                   <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-white/70">Menu Navigasi</span>
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${activeBadge.class}">${activeBadge.label}</span>
                 </div>
+
+                <!-- Fitur Manajemen Pengguna (Khusus di Menu Burger) -->
+                <div class="flex flex-col gap-1.5 pt-0.5">
+                  <span class="px-1 text-[10px] font-bold text-white/60 uppercase tracking-wider">Administrasi Sistem</span>
+                  <button
+                    id="btn-burger-user-mgmt"
+                    type="button"
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-800/90 via-indigo-800/90 to-purple-900/90 hover:from-purple-700 hover:to-indigo-700 border border-purple-400/40 active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-md shadow-purple-950/50 cursor-pointer"
+                    title="Buka Halaman Manajemen Pengguna"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px] text-purple-300">manage_accounts</span>
+                      <span>Manajemen Pengguna</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[16px] text-white/80">arrow_forward</span>
+                  </button>
+                </div>
               </div>
             </div>
             ` : ''}
