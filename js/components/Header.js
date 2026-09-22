@@ -799,6 +799,10 @@ export class Header {
       });
     }
 
+    // Burger Menu Toggle & Items
+    const burgerBtn = this.element.querySelector('#btn-header-burger');
+    const burgerMenu = this.element.querySelector('#header-burger-menu');
+
     document.addEventListener('click', (e) => {
       if (profileMenu && !e.target.closest('#btn-user-profile') && !e.target.closest('#user-profile-menu')) {
         profileMenu.classList.add('hidden');
@@ -809,11 +813,21 @@ export class Header {
       if (burgerMenu && !e.target.closest('#btn-header-burger') && !e.target.closest('#header-burger-menu')) {
         burgerMenu.classList.add('hidden');
       }
-    });
 
-    // Burger Menu Toggle & Items
-    const burgerBtn = this.element.querySelector('#btn-header-burger');
-    const burgerMenu = this.element.querySelector('#header-burger-menu');
+      // Delegated click handler to guarantee user management button responds reliably from anywhere
+      const userMgmtTarget = e.target.closest('#btn-dashboard-user-mgmt, #btn-burger-user-mgmt, #btn-header-user-mgmt, .btn-dashboard-user-mgmt');
+      if (userMgmtTarget) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (burgerMenu) burgerMenu.classList.add('hidden');
+        if (profileMenu) profileMenu.classList.add('hidden');
+        localStorage.setItem('active_user_role', 'admin');
+        window.location.hash = '#/users';
+        if (this.eventBus) {
+          this.eventBus.emit('navigate', { view: 'users' });
+        }
+      }
+    });
 
     if (burgerBtn && burgerMenu) {
       burgerBtn.addEventListener('click', (e) => {
@@ -830,6 +844,7 @@ export class Header {
         e.preventDefault();
         e.stopPropagation();
         if (burgerMenu) burgerMenu.classList.add('hidden');
+        localStorage.setItem('active_user_role', 'admin');
         window.location.hash = '#/users';
         this.eventBus.emit('navigate', { view: 'users' });
       });
@@ -855,6 +870,7 @@ export class Header {
         e.preventDefault();
         e.stopPropagation();
         if (profileMenu) profileMenu.classList.add('hidden');
+        localStorage.setItem('active_user_role', 'admin');
         window.location.hash = '#/users';
         this.eventBus.emit('navigate', { view: 'users' });
       });

@@ -250,6 +250,19 @@ export class DashboardView extends BaseView {
                 <span class="text-[10.5px] font-medium text-white/90">CreativOffice Online</span>
               </div>
 
+              <!-- Quick User Management Button for Admin -->
+              ${role === 'admin' ? `
+              <button
+                id="btn-dashboard-user-mgmt"
+                type="button"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-800/90 via-indigo-800/90 to-purple-900/90 hover:from-purple-700 hover:to-indigo-700 border border-purple-400/40 text-white text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-sm"
+                title="Buka Halaman Manajemen Pengguna"
+              >
+                <span class="material-symbols-outlined text-[17px] text-purple-300">manage_accounts</span>
+                <span class="hidden sm:inline">Manajemen Pengguna</span>
+              </button>
+              ` : ''}
+
               <!-- Custom Background Theme Button (Palette Icon) -->
               <button
                 id="btn-dashboard-theme-toggle"
@@ -574,6 +587,17 @@ export class DashboardView extends BaseView {
         if (this.modalManager) {
           this.modalManager.open('create-board');
         }
+      });
+    }
+
+    // Tombol Manajemen Pengguna di Dashboard banner
+    const userMgmtBtn = this.element ? this.element.querySelector('#btn-dashboard-user-mgmt') : null;
+    if (userMgmtBtn) {
+      userMgmtBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.setItem('active_user_role', 'admin');
+        window.location.hash = '#/users';
+        this.eventBus.emit('navigate', { view: 'users' });
       });
     }
 

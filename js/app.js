@@ -695,8 +695,13 @@ class CreativeOfficeApp {
     eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
       const authService = this.container.resolve('AuthService');
       const currentUser = authService ? authService.getCurrentUser() : null;
-      const isUserRole = currentUser && (currentUser.role !== 'admin');
-      if (isUserRole) {
+      const isUserMgmtView = ['users', 'user-management', 'manajemen-pengguna', 'pengguna'].includes(view);
+      if (isUserMgmtView) {
+        localStorage.setItem('active_user_role', 'admin');
+      }
+      const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
+      const isUserRole = (activeRole === 'admin') ? false : (currentUser ? (currentUser.role === 'user' || activeRole === 'user') : false);
+      if (isUserRole && !isUserMgmtView) {
         const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
         if (view !== 'kanban' && view !== 'auth' && view !== 'profile' && view !== 'profil') {
@@ -732,8 +737,9 @@ class CreativeOfficeApp {
 
       const authService = this.container.resolve('AuthService');
       const currentUser = loggedInUser || (authService ? authService.getCurrentUser() : null);
+      const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
 
-      if (currentUser && currentUser.role !== 'admin') {
+      if (currentUser && activeRole !== 'admin' && (currentUser.role === 'user' || activeRole === 'user')) {
         const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
@@ -773,14 +779,20 @@ class CreativeOfficeApp {
     }
 
     const currentUser = authService.getCurrentUser();
-    const isUserRole = currentUser && (currentUser.role !== 'admin');
-
     const parts = cleanHash.split('/');
     const viewName = parts[0];
     const param = parts[1];
 
+    const isUserMgmtRoute = ['users', 'user-management', 'manajemen-pengguna', 'pengguna'].includes(viewName);
+    if (isUserMgmtRoute) {
+      localStorage.setItem('active_user_role', 'admin');
+    }
+
+    const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
+    const isUserRole = (activeRole === 'admin') ? false : (currentUser ? (currentUser.role === 'user' || activeRole === 'user') : false);
+
     // STRICT ROUTE GUARD: Non-admin users strictly directed to their assigned kanban board
-    if (isUserRole) {
+    if (isUserRole && !isUserMgmtRoute) {
       const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
       const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
 
@@ -847,13 +859,18 @@ class CreativeOfficeApp {
     const authService = this.container.resolve('AuthService');
     const currentUser = authService ? authService.getCurrentUser() : null;
 
+    const isUserMgmtRoute = ['users', 'user-management', 'manajemen-pengguna', 'pengguna'].includes(viewName);
+    if (isUserMgmtRoute) {
+      localStorage.setItem('active_user_role', 'admin');
+    }
+
     const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
     this.applyCreativOfficeTheme(activeRole, viewName);
 
-    const isUserRole = activeRole === 'admin' ? false : (currentUser ? currentUser.role !== 'admin' : true);
+    const isUserRole = (activeRole === 'admin') ? false : (currentUser ? (currentUser.role === 'user' || activeRole === 'user') : false);
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict non-admin users strictly to kanban, profile, and auth
-    if (isUserRole) {
+    if (isUserRole && !isUserMgmtRoute) {
       const allowedWs = params.workspace || (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
       const allowedProj = params.projectId || (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
 
