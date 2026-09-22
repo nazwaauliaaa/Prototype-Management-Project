@@ -204,6 +204,11 @@ body[data-role="user"] #app-header header {
   border-bottom-color: rgba(168, 85, 247, 0.25) !important;
 }
 
+body[data-role="user"] #btn-header-burger,
+body[data-role="user"] #header-burger-menu {
+  display: none !important;
+}
+
 /* ── Header Brand Logo Constraints ── */
 #header-brand-logo img,
 .header-logo-img {

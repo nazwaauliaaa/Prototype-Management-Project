@@ -36,7 +36,7 @@ export class Header {
       role: 'kreatif'
     };
     const activeRole = localStorage.getItem('active_user_role');
-    const isUserRole = activeRole === 'admin' ? false : ((user.role || '').toLowerCase() === 'user' || activeRole === 'user');
+    const isUserRole = activeRole === 'admin' ? false : ((user.role || '').toLowerCase() === 'user' || (user.role || '').toLowerCase() === 'student' || activeRole === 'user');
 
     const resolvedAvatar = this.authService ? this.authService.resolveUserAvatar(user) : '';
     const userAvatar = (user.avatar && !user.avatar.includes('dicebear'))
@@ -57,6 +57,7 @@ export class Header {
 
           <!-- Left: Burger Menu & Branding -->
           <div class="flex items-center gap-2 sm:gap-3">
+            ${!isUserRole ? `
             <div class="relative">
               <button
                 id="btn-header-burger"
@@ -80,6 +81,7 @@ export class Header {
                 </div>
               </div>
             </div>
+            ` : ''}
 
             <div class="flex items-center gap-2 cursor-pointer shrink-0" id="header-brand-logo" title="CreativOffice - Beranda">
               <img alt="CreativOffice Logo" class="header-logo-img w-8 h-8 object-contain rounded-lg shadow-sm shrink-0" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px;" src="/assets/logo.png" />
