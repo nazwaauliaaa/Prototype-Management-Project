@@ -404,11 +404,12 @@ export class AuthService {
    * @param {Object} userData
    * @returns {User}
    */
-  registerNewUser({ id, name, role = 'user', title, jobdesk, email, avatar, workspaceAccess, boundDeviceId, boundDeviceName, bound_device_id, bound_device_name }) {
+  registerNewUser(userData = {}) {
+    const { id, name, role = 'user', title, jobdesk, email, avatar, workspaceAccess, boundDeviceId, boundDeviceName, bound_device_id, bound_device_name, assignedProjectId, assignedWorkspace, assignedTaskId, assignedTaskTitle, username, nip } = userData;
     const finalId = id || `usr-${Date.now().toString().slice(-6)}`;
     const finalJobdesk = jobdesk || title || 'Creative Specialist';
     const finalTitle = title || finalJobdesk;
-    const finalEmail = email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
+    const finalEmail = email || `${(name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`;
 
     // Cek apakah akun dengan nama atau email ini sudah terdaftar
     let existingIndex = this.customUsers.findIndex(u => u.id === finalId || (finalEmail && u.email === finalEmail) || (u.name && name && u.name.toLowerCase().trim() === name.toLowerCase().trim()));
@@ -424,7 +425,7 @@ export class AuthService {
 
     const finalAvatar = (avatar && !avatar.includes('dicebear'))
       ? avatar
-      : (existingAvatar || avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`);
+      : (existingAvatar || avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'User')}`);
 
     const finalBoundDevId = boundDeviceId || bound_device_id || null;
     const finalBoundDevName = boundDeviceName || bound_device_name || null;
@@ -438,8 +439,11 @@ export class AuthService {
     }
 
     const newUser = new User({
+      ...userData,
       id: finalId,
       name,
+      username: username || userData.username || '',
+      nip: nip || userData.nip || '',
       role: (role || 'user').toLowerCase(),
       title: finalTitle,
       jobdesk: finalJobdesk,
@@ -447,7 +451,11 @@ export class AuthService {
       email: finalEmail,
       workspaceAccess: finalWsAccess,
       boundDeviceId: finalBoundDevId,
-      boundDeviceName: finalBoundDevName
+      boundDeviceName: finalBoundDevName,
+      assignedProjectId: assignedProjectId || userData.assignedProjectId || null,
+      assignedWorkspace: assignedWorkspace || userData.assignedWorkspace || null,
+      assignedTaskId: assignedTaskId || userData.assignedTaskId || null,
+      assignedTaskTitle: assignedTaskTitle || userData.assignedTaskTitle || null
     });
 
     if (existingIndex !== -1) {
@@ -468,6 +476,18 @@ export class AuthService {
   loginAsUser(user, options = {}) {
     if (!user) return false;
     this.currentUser = user instanceof User ? user : new User(user);
+    if (user.assignedProjectId && !this.currentUser.assignedProjectId) {
+      this.currentUser.assignedProjectId = user.assignedProjectId;
+    }
+    if (user.assignedWorkspace && !this.currentUser.assignedWorkspace) {
+      this.currentUser.assignedWorkspace = user.assignedWorkspace;
+    }
+    if (user.assignedTaskId && !this.currentUser.assignedTaskId) {
+      this.currentUser.assignedTaskId = user.assignedTaskId;
+    }
+    if (user.assignedTaskTitle && !this.currentUser.assignedTaskTitle) {
+      this.currentUser.assignedTaskTitle = user.assignedTaskTitle;
+    }
     
     // Immediately resolve user's saved avatar so header and views get it instantly on login
     const resolvedAvatar = this.resolveUserAvatar(this.currentUser);

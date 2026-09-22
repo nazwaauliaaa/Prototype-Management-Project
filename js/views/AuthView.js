@@ -928,8 +928,77 @@ export class AuthView extends BaseView {
       // Helper untuk mencari data penugasan dari Manajemen Pengguna (creative_office_managed_users)
       const getManagedAssignment = (userObj, codeStr) => {
         try {
-          const managedList = JSON.parse(localStorage.getItem('creative_office_managed_users') || '[]');
-          if (!Array.isArray(managedList) || managedList.length === 0) return null;
+          const defaultManagedSeed = [
+            {
+              id: 'usr-1790046404637',
+              username: '@nazwaaulial',
+              fullName: 'Nazwa Aulia Latifah',
+              role: 'student',
+              nip: '2026',
+              position: 'Siswa PKL',
+              school: '',
+              assignedProjectId: 'creativoffice',
+              assignedWorkspace: 'creativoffice',
+              assignedBoardName: 'CreativOffice',
+              assignedTaskId: 'all',
+              assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+              qr_data: '@nazwaaulial'
+            },
+            {
+              id: 'usr-1790046919250',
+              username: '@jax_ck',
+              fullName: 'Fakhrul Miandi Rachman',
+              role: 'student',
+              nip: '2026',
+              position: 'Siswa PKL',
+              school: '',
+              assignedProjectId: 'panen-kunci',
+              assignedWorkspace: 'panen-kunci',
+              assignedBoardName: 'Panen Kunci (Utama)',
+              assignedTaskId: 'all',
+              assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+              qr_data: '@jax_ck'
+            },
+            {
+              id: 'usr-1790049070981',
+              username: '@fazlies',
+              fullName: 'Muhamad Fazli Esfandiar',
+              role: 'student',
+              nip: '2026',
+              position: 'Siswa PKL',
+              school: '',
+              assignedProjectId: 'creativoffice',
+              assignedWorkspace: 'creativoffice',
+              assignedBoardName: 'CreativOffice (Creative Office)',
+              assignedTaskId: 'all',
+              assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+              qr_data: '@fazlies'
+            }
+          ];
+
+          let managedList = [];
+          try {
+            const rawStored = localStorage.getItem('creative_office_managed_users');
+            managedList = rawStored ? JSON.parse(rawStored) : [];
+          } catch (e) {}
+
+          if (!Array.isArray(managedList) || managedList.length === 0) {
+            managedList = defaultManagedSeed;
+            try { localStorage.setItem('creative_office_managed_users', JSON.stringify(defaultManagedSeed)); } catch (e) {}
+          } else {
+            // Pastikan akun utama (@jax_ck, @nazwaaulial, @fazlies) selalu terdaftar jika belum ada
+            let updated = false;
+            defaultManagedSeed.forEach(seed => {
+              const seedUsn = seed.username.replace(/^@/, '').toLowerCase();
+              if (!managedList.some(m => (m.username && m.username.replace(/^@/, '').toLowerCase() === seedUsn) || (m.fullName && m.fullName.toLowerCase() === seed.fullName.toLowerCase()))) {
+                managedList.push(seed);
+                updated = true;
+              }
+            });
+            if (updated) {
+              try { localStorage.setItem('creative_office_managed_users', JSON.stringify(managedList)); } catch (e) {}
+            }
+          }
 
           const clean = String(codeStr || '').trim();
           const cleanLower = clean.toLowerCase();
@@ -958,7 +1027,7 @@ export class AuthView extends BaseView {
             } catch (e) {}
           }
 
-          // 1. Scoring loop over managed users (Memastikan kecocokan username/nama spesifik selalu menang)
+          // 1. Scoring loop over managed users
           let bestMatch = null;
           let bestScore = 0;
 
@@ -974,7 +1043,37 @@ export class AuthView extends BaseView {
 
             let score = 0;
 
-            // A. USERNAME MATCH (Prioritas Utama)
+            // Khusus Akun @jax_ck (Fakhrul Miandi Rachman) -> Deteksi nama atau username di segala format input
+            const isJaxManaged = mUsername.includes('jax') || mName.includes('fakhrul');
+            if (isJaxManaged) {
+              const matchesJax = uUsername.includes('jax') || uName.includes('fakhrul') || uName.includes('miandi') || uName.includes('rachman') ||
+                                 cleanLower.includes('jax') || cleanLower.includes('fakhrul') || cleanWords.includes('jax') || cleanWords.includes('fakhrul');
+              if (matchesJax) {
+                score += 150;
+              }
+            }
+
+            // Khusus Akun @nazwaaulial (Nazwa Aulia Latifah)
+            const isNazwaManaged = mUsername.includes('nazwa') || mName.includes('nazwa');
+            if (isNazwaManaged) {
+              const matchesNazwa = uUsername.includes('nazwa') || uName.includes('nazwa') || uName.includes('latifah') ||
+                                   cleanLower.includes('nazwa') || cleanWords.includes('nazwa');
+              if (matchesNazwa) {
+                score += 150;
+              }
+            }
+
+            // Khusus Akun @fazlies (Muhamad Fazli Esfandiar)
+            const isFazliManaged = mUsername.includes('fazli') || mName.includes('fazli');
+            if (isFazliManaged) {
+              const matchesFazli = uUsername.includes('fazli') || uName.includes('fazli') || uName.includes('esfandiar') ||
+                                   cleanLower.includes('fazli') || cleanWords.includes('fazli');
+              if (matchesFazli) {
+                score += 150;
+              }
+            }
+
+            // A. USERNAME MATCH
             if (mUsername) {
               if (uUsername && mUsername === uUsername) score += 100;
               else if (cleanUser && (cleanUser === mUsername || cleanLower === '@' + mUsername)) score += 95;
@@ -985,17 +1084,16 @@ export class AuthView extends BaseView {
               else if (uUsername && (mUsername.includes(uUsername) || uUsername.includes(mUsername))) score += 70;
             }
 
-            // B. NAME MATCH (Nama Lengkap)
+            // B. NAME MATCH
             if (mName) {
               if (uName && mName === uName) score += 90;
               else if (parsedJson && parsedJson.name === mName) score += 90;
               else if (cleanLower === mName) score += 85;
               else if (uUsername && (mName === uUsername || mName.split(/\s+/).includes(uUsername))) score += 80;
               else {
-                // Word match (e.g. "Fakhrul" in "Fakhrul Miandi Rachman")
                 const sharedWords = mWords.filter(w => uWords.includes(w) || cleanWords.includes(w));
                 if (sharedWords.length > 0) {
-                  score += 55 + (sharedWords.length * 10);
+                  score += 55 + (sharedWords.length * 15);
                 }
               }
             }
@@ -1013,7 +1111,7 @@ export class AuthView extends BaseView {
               score += 60;
             }
 
-            // E. NIP / NISN MATCH (Hanya jika NIP unik dan bukan tahun bersama seperti '2026')
+            // E. NIP MATCH (hanya jika NIP unik dan bukan tahun bersama seperti '2026')
             if (mNip && mNip !== '2026' && mNip.length >= 5) {
               if (uNip && mNip === uNip) score += 40;
               if (clean && clean.includes(mNip)) score += 30;
@@ -1199,53 +1297,45 @@ export class AuthView extends BaseView {
             console.warn('[AuthView] Sync Supabase notice:', syncErr);
           }
 
+          stopCamera();
+          const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(verifiedUser, cleanCode);
+
+          const finalRole = (managed && managed.role) ? (managed.role === 'admin' ? 'admin' : 'user') : (verifiedUser.role || 'user');
+          const finalName = (managed && managed.fullName) ? managed.fullName : verifiedUser.name;
+          const finalJob = (managed && managed.position) ? managed.position : (verifiedUser.jobdesk || verifiedUser.title || 'Anggota Tim');
+
           const userInstance = this.authService.registerNewUser({
             ...verifiedUser,
-            workspaceAccess: verifiedUser.workspace_access || verifiedUser.workspaceAccess || ['ruangkreasi', 'panen-kunci'],
+            name: finalName,
+            role: finalRole,
+            title: finalJob,
+            jobdesk: finalJob,
+            assignedProjectId: targetProj,
+            assignedWorkspace: targetWs,
+            assignedTaskId: taskId && taskId !== 'all' ? taskId : null,
+            assignedTaskTitle: taskTitle || null,
+            workspaceAccess: [targetWs, targetProj],
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName(),
             loginMethod: 'qr',
             qr_data: cleanCode
           });
 
-          setTimeout(() => {
-            stopCamera();
-            const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(verifiedUser, cleanCode);
+          this.authService.loginAsUser(userInstance, { silent: true });
 
-            userInstance.assignedProjectId = targetProj;
-            userInstance.assignedWorkspace = targetWs;
-            userInstance.workspaceAccess = [targetWs, targetProj];
-            if (taskId && taskId !== 'all') {
-              userInstance.assignedTaskId = taskId;
-              userInstance.assignedTaskTitle = taskTitle;
-            }
-            if (managed && managed.role) {
-              userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
-            }
-            if (managed && managed.fullName) {
-              userInstance.name = managed.fullName;
-            }
-            if (managed && managed.position) {
-              userInstance.title = managed.position;
-              userInstance.jobdesk = managed.position;
-            }
+          const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
+          const targetView = isAdmin ? 'dashboard' : 'kanban';
+          const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
 
-            this.authService.loginAsUser(userInstance, { silent: true });
-
-            const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
-            const targetView = isAdmin ? 'dashboard' : 'kanban';
-            const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
-
-            const eb = this.container ? this.container.resolve('EventBus') : null;
-            if (eb) {
-              eb.emit('navigate', {
-                view: targetView,
-                projectId: targetProj,
-                workspace: targetWs
-              });
-            }
-            window.location.hash = targetHash;
-          }, 350);
+          const eb = this.container ? this.container.resolve('EventBus') : null;
+          if (eb) {
+            eb.emit('navigate', {
+              view: targetView,
+              projectId: targetProj,
+              workspace: targetWs
+            });
+          }
+          window.location.hash = targetHash;
           return;
         }
       } catch (sampulErr) {
@@ -1501,54 +1591,46 @@ export class AuthView extends BaseView {
             }
           }
 
+          stopCamera();
+          const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(registeredData, codeToReg);
+
+          const finalRole = (managed && managed.role) ? (managed.role === 'admin' ? 'admin' : 'user') : (registeredData.role || 'user');
+          const finalName = (managed && managed.fullName) ? managed.fullName : registeredData.name;
+          const finalJob = (managed && managed.position) ? managed.position : (registeredData.jobdesk || registeredData.title || 'Anggota Tim');
+
           const userInstance = this.authService.registerNewUser({
             ...registeredData,
-            workspaceAccess: registeredData.workspace_access || registeredData.workspaceAccess || ['ruangkreasi', 'panen-kunci'],
+            name: finalName,
+            role: finalRole,
+            title: finalJob,
+            jobdesk: finalJob,
+            assignedProjectId: targetProj,
+            assignedWorkspace: targetWs,
+            assignedTaskId: taskId && taskId !== 'all' ? taskId : null,
+            assignedTaskTitle: taskTitle || null,
+            workspaceAccess: [targetWs, targetProj],
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName(),
             loginMethod: 'qr',
             qr_data: codeToReg
           });
 
-          setTimeout(() => {
-            stopCamera();
-            const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(userInstance || registeredData, codeToReg);
+          this.authService.loginAsUser(userInstance, { silent: true });
 
-            userInstance.assignedProjectId = targetProj;
-            userInstance.assignedWorkspace = targetWs;
-            userInstance.workspaceAccess = [targetWs, targetProj];
-            if (taskId && taskId !== 'all') {
-              userInstance.assignedTaskId = taskId;
-              userInstance.assignedTaskTitle = taskTitle;
-            }
-            if (managed && managed.role) {
-              userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
-            }
-            if (managed && managed.fullName) {
-              userInstance.name = managed.fullName;
-            }
-            if (managed && managed.position) {
-              userInstance.title = managed.position;
-              userInstance.jobdesk = managed.position;
-            }
+          const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
+          const targetView = isAdmin ? 'dashboard' : 'kanban';
+          const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
 
-            this.authService.loginAsUser(userInstance, { silent: true });
-
-            const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
-            const targetView = isAdmin ? 'dashboard' : 'kanban';
-            const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
-
-            // Arahkan sesuai role
-            const eb = this.container ? this.container.resolve('EventBus') : null;
-            if (eb) {
-              eb.emit('navigate', {
-                view: targetView,
-                projectId: targetProj,
-                workspace: targetWs
-              });
-            }
-            window.location.hash = targetHash;
-          }, 350);
+          // Arahkan sesuai role
+          const eb = this.container ? this.container.resolve('EventBus') : null;
+          if (eb) {
+            eb.emit('navigate', {
+              view: targetView,
+              projectId: targetProj,
+              workspace: targetWs
+            });
+          }
+          window.location.hash = targetHash;
         } catch (regErr) {
           console.warn('[AuthView] Error registrasi otomatis:', regErr);
           // Fallback lokal jika backend tidak terjangkau

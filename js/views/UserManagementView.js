@@ -18,17 +18,93 @@ export class UserManagementView extends BaseView {
     this.isCreateModalOpen = false;
     this.isEditModalOpen = false;
 
-    this.defaultUsers = [];
+    this.defaultUsers = [
+      {
+        id: 'usr-1790046404637',
+        username: '@nazwaaulial',
+        fullName: 'Nazwa Aulia Latifah',
+        role: 'student',
+        nip: '2026',
+        position: 'Siswa PKL',
+        school: '',
+        assignedProjectId: 'creativoffice',
+        assignedWorkspace: 'creativoffice',
+        assignedBoardName: 'CreativOffice',
+        assignedTaskId: 'all',
+        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+        device: 'Belum Terikat',
+        isDeviceBound: false,
+        telegramChat: '',
+        telegramId: '',
+        apiDeposit: '',
+        qr_data: '@nazwaaulial'
+      },
+      {
+        id: 'usr-1790046919250',
+        username: '@jax_ck',
+        fullName: 'Fakhrul Miandi Rachman',
+        role: 'student',
+        nip: '2026',
+        position: 'Siswa PKL',
+        school: '',
+        assignedProjectId: 'panen-kunci',
+        assignedWorkspace: 'panen-kunci',
+        assignedBoardName: 'Panen Kunci (Utama)',
+        assignedTaskId: 'all',
+        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+        device: 'Belum Terikat',
+        isDeviceBound: false,
+        telegramChat: '',
+        telegramId: '',
+        apiDeposit: '',
+        qr_data: '@jax_ck'
+      },
+      {
+        id: 'usr-1790049070981',
+        username: '@fazlies',
+        fullName: 'Muhamad Fazli Esfandiar',
+        role: 'student',
+        nip: '2026',
+        position: 'Siswa PKL',
+        school: '',
+        assignedProjectId: 'creativoffice',
+        assignedWorkspace: 'creativoffice',
+        assignedBoardName: 'CreativOffice (Creative Office)',
+        assignedTaskId: 'all',
+        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
+        device: 'Belum Terikat',
+        isDeviceBound: false,
+        telegramChat: '',
+        telegramId: '',
+        apiDeposit: '',
+        qr_data: '@fazlies'
+      }
+    ];
 
     this._initUsers();
   }
 
   _initUsers() {
     try {
-      const resetKey = 'creative_office_managed_users_reset_empty_v2';
-      if (!localStorage.getItem(resetKey)) {
-        localStorage.setItem(resetKey, 'true');
-        localStorage.setItem('creative_office_managed_users', JSON.stringify([]));
+      const stored = localStorage.getItem('creative_office_managed_users');
+      let currentUsers = [];
+      if (stored) {
+        try { currentUsers = JSON.parse(stored); } catch (e) {}
+      }
+      if (!Array.isArray(currentUsers) || currentUsers.length === 0) {
+        localStorage.setItem('creative_office_managed_users', JSON.stringify(this.defaultUsers));
+      } else {
+        let changed = false;
+        this.defaultUsers.forEach(d => {
+          const dUsn = d.username.replace(/^@/, '').toLowerCase();
+          if (!currentUsers.some(u => (u.username && u.username.replace(/^@/, '').toLowerCase() === dUsn) || (u.fullName && u.fullName.toLowerCase() === d.fullName.toLowerCase()))) {
+            currentUsers.push(d);
+            changed = true;
+          }
+        });
+        if (changed) {
+          localStorage.setItem('creative_office_managed_users', JSON.stringify(currentUsers));
+        }
       }
     } catch (e) {}
   }
@@ -37,10 +113,13 @@ export class UserManagementView extends BaseView {
     try {
       const stored = localStorage.getItem('creative_office_managed_users');
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch (e) {}
-    return [];
+    return [...this.defaultUsers];
   }
 
   saveUsers(users) {

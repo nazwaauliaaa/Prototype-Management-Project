@@ -697,7 +697,7 @@ class CreativeOfficeApp {
       const currentUser = authService ? authService.getCurrentUser() : null;
       const isUserRole = currentUser && (currentUser.role !== 'admin');
       if (isUserRole) {
-        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || currentUser?.assignedWorkspace || localStorage.getItem('active_workspace') || 'creativoffice';
+        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
         if (view !== 'kanban' && view !== 'auth' && view !== 'profile' && view !== 'profil') {
           this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
@@ -734,7 +734,7 @@ class CreativeOfficeApp {
       const currentUser = loggedInUser || (authService ? authService.getCurrentUser() : null);
 
       if (currentUser && currentUser.role !== 'admin') {
-        const allowedWs = (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || currentUser?.assignedWorkspace || localStorage.getItem('active_workspace') || 'creativoffice';
+        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
         return;
@@ -949,11 +949,12 @@ class CreativeOfficeApp {
         break;
       case 'kanban':
         this.currentView = new KanbanBoardView(this.container);
-        if (params.projectId) {
-          this.currentView.setProject(params.projectId, params.workspace);
-        } else {
-          const wsKanban = params.workspace || this.activeWorkspace;
-          if (wsKanban) this.currentView.setWorkspace(wsKanban);
+        const targetProjId = params.projectId || (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id');
+        const targetWsId = params.workspace || (currentUser && currentUser.assignedWorkspace) || localStorage.getItem('active_workspace');
+        if (targetProjId) {
+          this.currentView.setProject(targetProjId, targetWsId);
+        } else if (targetWsId) {
+          this.currentView.setWorkspace(targetWsId);
         }
         if (params.newTaskId) {
           this.currentView.highlightTaskId = params.newTaskId;

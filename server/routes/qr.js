@@ -51,7 +51,7 @@ async function verifyWithSampulkreativApi(qrData) {
  */
 function normalizeSampulkreativUser(payload, rawQr) {
   if (!payload || typeof payload !== 'object') return null;
-  const d = payload.data || payload.user || payload;
+  const d = (payload.data && payload.data.user) || payload.user || payload.data || payload;
 
   const getProp = (keys) => {
     for (const k of keys) {
@@ -334,7 +334,12 @@ router.post('/verify-sampulkreativ', async (req, res) => {
           source: 'sampulkreativ-api',
           message: `Berhasil diverifikasi via API Sampulkreativ dan disinkronkan ke Supabase!`,
           isNew: syncResult.isNew,
-          data: syncResult.data
+          data: {
+            ...normalized,
+            ...syncResult.data,
+            username: normalized.username,
+            nip: normalized.nip
+          }
         });
       }
     }

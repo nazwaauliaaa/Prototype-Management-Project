@@ -383,82 +383,6 @@ export class ApiService {
 
   // ==================== QR LOOKUP & INVENTORY ====================
 
-  /**
-   * Verifikasi QR Code ke API Eksternal Sampulkreativ (POST https://app.sampulkreativ.id/api/external/verify-qr)
-   * dan otomatis hubungkan data pengguna ke database Supabase
-   * @param {string} qrData
-   * @param {Object} options
-   */
-  async verifySampulkreativQr(qrData, options = {}) {
-    const payload = {
-      qr_data: qrData,
-      deviceId: this.getDeviceId(),
-      deviceName: this.getDeviceName(),
-      forceSwitch: Boolean(options.forceSwitch)
-    };
-
-    // 1. Coba lewat endpoint backend lokal /api/qr/verify-sampulkreativ (sinkron langsung ke Supabase)
-    try {
-      const result = await this.safeFetch('/qr/verify-sampulkreativ', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (result.data) {
-        return {
-          ok: result.ok,
-          status: result.status,
-          success: Boolean(result.data.success),
-          locked: Boolean(result.data.locked),
-          error: result.data.error,
-          boundDeviceName: result.data.boundDeviceName,
-          boundAt: result.data.boundAt,
-          source: result.data.source || 'sampulkreativ',
-          data: result.data.data || result.data.user
-        };
-      }
-    } catch (err) {
-      console.warn('[ApiService] Backend lokal belum terjangkau, mencoba akses langsung ke API Sampulkreativ...');
-    }
-
-    // 2. Direct fallback ke https://app.sampulkreativ.id/api/external/verify-qr jika backend offline
-    try {
-      const directRes = await fetch('https://app.sampulkreativ.id/api/external/verify-qr', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'sampulkreativ-pm-secret-2026'
-        },
-        body: JSON.stringify({ qr_data: qrData })
-      });
-
-      const directData = await directRes.json();
-      if (directRes.ok && directData && directData.success !== false) {
-        const rawUser = directData.data || directData.user || directData;
-        return {
-          ok: true,
-          status: directRes.status,
-          success: true,
-          source: 'sampulkreativ-direct',
-          data: rawUser
-        };
-      } else {
-        return {
-          ok: false,
-          status: directRes.status,
-          success: false,
-          error: directData?.error || 'QR Code tidak terdaftar di Sampulkreativ'
-        };
-      }
-    } catch (directErr) {
-      return {
-        ok: false,
-        success: false,
-        error: directErr.message
-      };
-    }
-  }
 
   /**
    * Cari entitas database berdasarkan kode QR yang dipindai dengan validasi Device Binding
@@ -636,10 +560,24 @@ export class ApiService {
 
       const directJson = await directRes.json();
       if (directRes.ok && directJson && directJson.success !== false && (directJson.data || directJson.user)) {
-        const rawUser = directJson.data || directJson.user || directJson;
+        const rawUser = (directJson.data && directJson.data.user) || directJson.data || directJson.user || directJson;
 
-        const rawName = rawUser.name || rawUser.username || rawUser.nama || 'Pengguna Sampulkreativ';
-        const rawRole = (rawUser.role || rawUser.peran || 'user').toLowerCase();
+        const getField = (keys) => {
+          for (const k of keys) {
+            for (const key of Object.keys(rawUser)) {
+              if (key.toLowerCase() === k.toLowerCase() && rawUser[key]) {
+                return String(rawUser[key]).trim();
+              }
+            }
+          }
+          return '';
+        };
+
+        const rawUsername = getField(['username', 'user_name', 'nama_pengguna', 'login', 'uname', 'account']);
+        const rawName = getField(['name', 'nama', 'full_name', 'fullname', 'nama_lengkap', 'display_name']) || rawUsername || 'Pengguna Sampulkreativ';
+        const rawRole = (getField(['role', 'peran', 'user_role']) || 'user').toLowerCase();
+        const rawNip = getField(['nip', 'nisn', 'nomor_induk', 'id_card', 'nik']);
+
         let normalizedRole = 'user';
         if (rawRole.includes('admin') || rawRole === 'direktur' || rawRole === 'executive') {
           normalizedRole = 'admin';
@@ -649,21 +587,25 @@ export class ApiService {
           normalizedRole = 'qa';
         }
 
-        const rawJobdesk = rawUser.jobdesk || rawUser.title || rawUser.posisi || rawUser.jabatan ||
+        const rawJobdesk = getField(['jobdesk', 'job', 'posisi', 'jabatan', 'title', 'position']) ||
           (normalizedRole === 'admin' ? 'Admin & Managing Director' :
            normalizedRole === 'manajement-project' ? 'Project Manager' :
            normalizedRole === 'qa' ? 'QA Lead' : 'Anggota Tim & Kontributor');
 
-        const rawEmail = rawUser.email || (rawName ? `${rawName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id` : null);
+        const rawEmail = getField(['email']) || (rawName ? `${rawName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id` : null);
+        const rawAvatar = getField(['avatar', 'avatar_url', 'photo', 'image']) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(rawName)}`;
 
         const normalized = {
+          ...rawUser,
           id: rawUser.id || rawUser.userId || `usr-${Date.now().toString().slice(-6)}`,
           name: rawName,
+          username: rawUsername || (rawName ? rawName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''),
+          nip: rawNip,
           role: normalizedRole,
           jobdesk: rawJobdesk,
           title: rawJobdesk,
           email: rawEmail,
-          avatar: rawUser.avatar || rawUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(rawName)}`,
+          avatar: rawAvatar,
           qr_data: cleanQr,
           workspace_access: ['ruangkreasi', 'panen-kunci']
         };

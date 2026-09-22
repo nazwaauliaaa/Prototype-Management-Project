@@ -2,17 +2,25 @@
  * User Model - Enkapsulasi identitas dan peran pengguna
  */
 export class User {
-  constructor({ id, name, role, title, jobdesk, avatar, email, workspaceAccess, boundDeviceId, boundDeviceName }) {
-    this.id = id;
-    this.name = name;
-    this.role = role; // 'admin' | 'manajement-project' | 'qa' | 'user' (alias: 'eksekutif' | 'kreatif' | 'teknis')
-    this.jobdesk = jobdesk || title;
-    this.title = title || this.jobdesk;
-    this.avatar = avatar;
-    this.email = email;
-    this.workspaceAccess = workspaceAccess || [];
-    this.boundDeviceId = boundDeviceId;
-    this.boundDeviceName = boundDeviceName;
+  constructor(data = {}) {
+    this.id = data.id;
+    this.name = data.name;
+    this.username = data.username || '';
+    this.nip = data.nip || '';
+    this.role = data.role || 'user'; // 'admin' | 'manajement-project' | 'qa' | 'user' (alias: 'eksekutif' | 'kreatif' | 'teknis')
+    this.jobdesk = data.jobdesk || data.title;
+    this.title = data.title || this.jobdesk;
+    this.avatar = data.avatar;
+    this.email = data.email;
+    this.workspaceAccess = Array.isArray(data.workspaceAccess) ? data.workspaceAccess : (Array.isArray(data.workspace_access) ? data.workspace_access : []);
+    this.boundDeviceId = data.boundDeviceId || data.bound_device_id || null;
+    this.boundDeviceName = data.boundDeviceName || data.bound_device_name || null;
+    this.assignedProjectId = data.assignedProjectId || data.assigned_project_id || null;
+    this.assignedWorkspace = data.assignedWorkspace || data.assigned_workspace || null;
+    this.assignedTaskId = data.assignedTaskId || data.assigned_task_id || null;
+    this.assignedTaskTitle = data.assignedTaskTitle || data.assigned_task_title || null;
+    this.loginMethod = data.loginMethod || 'qr';
+    this.qr_data = data.qr_data || null;
   }
 
   isAdmin() {
