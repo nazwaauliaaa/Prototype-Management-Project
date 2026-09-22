@@ -693,27 +693,13 @@ class CreativeOfficeApp {
 
     // Listen to global navigation events
     eventBus.on('navigate', ({ view, workspace, board, projectId, newTaskId }) => {
-      const authService = this.container.resolve('AuthService');
-      const currentUser = authService ? authService.getCurrentUser() : null;
-      const isUserMgmtView = ['users', 'user-management', 'manajemen-pengguna', 'pengguna'].includes(view);
-      if (isUserMgmtView) {
-        localStorage.setItem('active_user_role', 'admin');
-      }
-      const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
-      const isUserRole = (activeRole === 'admin') ? false : (currentUser ? (currentUser.role === 'user' || activeRole === 'user') : false);
-      if (isUserRole && !isUserMgmtView) {
-        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
-        const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
-        if (view !== 'kanban' && view !== 'auth' && view !== 'profile' && view !== 'profil') {
-          this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
-          return;
-        }
-      }
-
       if (workspace) {
         this.activeWorkspace = workspace;
         localStorage.setItem('active_workspace', workspace);
         eventBus.emit('workspace:selected', { workspace });
+      }
+      if (projectId) {
+        localStorage.setItem('active_project_id', projectId);
       }
       this.navigateTo(view, { workspace, board, projectId, newTaskId });
     });
@@ -737,9 +723,9 @@ class CreativeOfficeApp {
 
       const authService = this.container.resolve('AuthService');
       const currentUser = loggedInUser || (authService ? authService.getCurrentUser() : null);
-      const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
 
-      if (currentUser && activeRole !== 'admin' && (currentUser.role === 'user' || activeRole === 'user')) {
+      // Only on initial QR scan login, jump to assigned kanban board
+      if (currentUser && currentUser.loginMethod === 'qr' && !window.location.hash.replace('#/', '')) {
         const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
@@ -778,30 +764,9 @@ class CreativeOfficeApp {
       return;
     }
 
-    const currentUser = authService.getCurrentUser();
     const parts = cleanHash.split('/');
     const viewName = parts[0];
     const param = parts[1];
-
-    const isUserMgmtRoute = ['users', 'user-management', 'manajemen-pengguna', 'pengguna'].includes(viewName);
-    if (isUserMgmtRoute) {
-      localStorage.setItem('active_user_role', 'admin');
-    }
-
-    const activeRole = localStorage.getItem('active_user_role') || (currentUser ? currentUser.role : 'admin');
-    const isUserRole = (activeRole === 'admin') ? false : (currentUser ? (currentUser.role === 'user' || activeRole === 'user') : false);
-
-    // STRICT ROUTE GUARD: Non-admin users strictly directed to their assigned kanban board
-    if (isUserRole && !isUserMgmtRoute) {
-      const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
-      const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
-
-      if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'login' && viewName !== 'profile' && viewName !== 'profil') {
-        window.location.hash = `#/kanban/${allowedProj}`;
-        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
-        return;
-      }
-    }
 
     if (viewName === 'workspace') {
       this.navigateTo('project-table', { workspace: param });

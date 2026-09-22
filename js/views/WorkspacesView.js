@@ -539,6 +539,7 @@ export class WorkspacesView extends BaseView {
     const backBtn = this.element.querySelector('#btn-workspaces-back');
     if (backBtn) {
       backBtn.addEventListener('click', () => {
+        window.location.hash = '#/dashboard';
         this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }

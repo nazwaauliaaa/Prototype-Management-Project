@@ -965,6 +965,9 @@ export class UserManagementView extends BaseView {
     if (btnBack) {
       btnBack.addEventListener('click', () => {
         window.location.hash = '#/dashboard';
+        if (this.eventBus) {
+          this.eventBus.emit('navigate', { view: 'dashboard' });
+        }
       });
     }
 

@@ -80,7 +80,6 @@ export class Header {
                 </div>
 
                 <!-- Administrator Section (Khusus Manajemen Pengguna) -->
-                ${!isUserRole ? `
                 <div class="flex flex-col gap-1.5 pt-0.5">
                   <span class="px-1 text-[10px] font-bold text-white/60 uppercase tracking-wider">Administrasi Sistem</span>
                   <button
@@ -96,7 +95,55 @@ export class Header {
                     <span class="material-symbols-outlined text-[16px] text-white/80">arrow_forward</span>
                   </button>
                 </div>
-                ` : ''}
+
+                <!-- Main Navigation Links -->
+                <div class="flex flex-col gap-1 pt-1">
+                  <span class="px-2 text-[10px] font-bold text-white/60 uppercase tracking-wider">Navigasi Utama</span>
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-purple-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
+                    data-route="dashboard"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-purple-400 group-hover:scale-110 transition-transform">space_dashboard</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-blue-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
+                    data-route="kanban"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-blue-400 group-hover:scale-110 transition-transform">view_kanban</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Papan Kanban</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-amber-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
+                    data-route="calendar"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-amber-400 group-hover:scale-110 transition-transform">calendar_today</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Jadwal & Kalender</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-emerald-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
+                    data-route="workspaces"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:scale-110 transition-transform">workspaces</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Ruang Kerja Tim</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-rose-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
+                    data-route="docs-sheets"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-rose-400 group-hover:scale-110 transition-transform">description</span>
+                    <span class="font-semibold text-white/95 group-hover:text-white">Dokumen & SOP</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -295,12 +342,10 @@ export class Header {
                   </div>
                 </div>
 
-                ${!isUserRole ? `
                 <button id="btn-header-user-mgmt" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-teal-500/15 text-teal-300 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
                   <span class="material-symbols-outlined text-[16px] text-teal-400 pointer-events-none">group</span>
                   <span class="pointer-events-none font-semibold text-white/90">Manajemen Pengguna</span>
                 </button>
-                ` : ''}
 
                 <button id="btn-header-profile" type="button" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-white/90 text-[12px] flex items-center gap-2 font-medium cursor-pointer transition-colors">
                   <span class="material-symbols-outlined text-[16px] text-purple-400 pointer-events-none">manage_accounts</span>
@@ -631,15 +676,8 @@ export class Header {
     const brand = this.element.querySelector('#header-brand-logo');
     if (brand) {
       brand.addEventListener('click', () => {
-        const user = this.authService ? this.authService.getCurrentUser() : null;
-        const isUserRole = (user?.role || '').toLowerCase() === 'user';
-        if (isUserRole) {
-          const curWs = (user?.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-          const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
-          this.eventBus.emit('navigate', { view: 'kanban', projectId: curProj, workspace: curWs });
-        } else {
-          this.eventBus.emit('navigate', { view: 'dashboard' });
-        }
+        window.location.hash = '#/dashboard';
+        this.eventBus.emit('navigate', { view: 'dashboard' });
       });
     }
 
