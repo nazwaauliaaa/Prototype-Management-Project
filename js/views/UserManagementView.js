@@ -226,7 +226,21 @@ export class UserManagementView extends BaseView {
   }
 
   /**
-   * Mengambil daftar seluruh papan / project yang aktif di sistem
+   * Helper untuk mendeteksi kunci kanonik papan proyek agar tidak terjadi opsi duplikat
+   */
+  _getCanonicalBoardKey(id, name, workspace) {
+    const raw = `${id || ''} ${name || ''} ${workspace || ''}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (raw.includes('creativ') || raw.includes('office')) return 'creativoffice';
+    if (raw.includes('panen') || raw.includes('panan') || raw.includes('kunci')) return 'panen-kunci';
+    if (raw.includes('ruang') || raw.includes('kreasi')) return 'ruangkreasi';
+    if (raw.includes('aikreativ') || raw.includes('studioai') || raw.includes('aistudio')) return 'aikreativ';
+    if (raw.includes('sharing') || raw.includes('sharinginaja')) return 'sharinginaja';
+    if (raw.includes('layar') || raw.includes('baca')) return 'layarbaca';
+    return String(name || id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  /**
+   * Mengambil daftar seluruh papan / project yang aktif di sistem tanpa duplikasi
    */
   getAvailableBoards() {
     const defaultBoards = [
@@ -239,18 +253,25 @@ export class UserManagementView extends BaseView {
     ];
 
     const map = new Map();
-    defaultBoards.forEach(b => map.set(b.id, b));
+    defaultBoards.forEach(b => {
+      const key = this._getCanonicalBoardKey(b.id, b.name, b.workspace);
+      map.set(key, b);
+    });
 
     if (this.projectService) {
       try {
         const customProjects = this.projectService.getAllProjects();
         customProjects.forEach(p => {
-          if (p && p.id) {
-            map.set(p.id, {
-              id: p.id,
-              name: p.name || p.title || p.id,
-              workspace: p.workspace || p.id
-            });
+          if (p && (p.id || p.name)) {
+            const key = this._getCanonicalBoardKey(p.id, p.name || p.title, p.workspace);
+            // Hanya tambahkan jika bukan duplikat dari papan standar yang sudah ada
+            if (!map.has(key)) {
+              map.set(key, {
+                id: p.id,
+                name: p.name || p.title || p.id,
+                workspace: p.workspace || p.id
+              });
+            }
           }
         });
       } catch (e) {}
@@ -276,18 +297,24 @@ export class UserManagementView extends BaseView {
   }
 
   /**
-   * Mengambil daftar seluruh tugas dari satu atau banyak papan proyek
+   * Mengambil daftar seluruh tugas dari satu atau banyak papan proyek secara bersih tanpa duplikasi tugas
    */
   getTasksForBoards(boardIds) {
     if (!this.taskService) return [];
     const list = Array.isArray(boardIds) ? boardIds : [boardIds];
     const map = new Map();
+    const seenTitles = new Set();
+
     list.forEach(bId => {
       const tasks = this.getTasksForBoard(bId);
       if (Array.isArray(tasks)) {
         tasks.forEach(t => {
-          if (t && t.id && !map.has(t.id)) {
-            map.set(t.id, t);
+          if (!t || !t.id) return;
+          const cleanTitle = String(t.title || '').trim().toLowerCase();
+          const cleanId = String(t.id).trim();
+          if (!map.has(cleanId) && !seenTitles.has(cleanTitle)) {
+            map.set(cleanId, t);
+            if (cleanTitle) seenTitles.add(cleanTitle);
           }
         });
       }
@@ -605,30 +632,30 @@ export class UserManagementView extends BaseView {
     const availableBoards = this.getAvailableBoards();
 
     return `
-      <div id="modal-create-user" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-white max-h-[90vh] overflow-y-auto custom-scrollbar" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
-          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+      <div id="modal-create-user" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-white max-h-[92vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar my-auto" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-purple-400 text-[22px]">person_add</span>
-              <h3 class="text-lg font-bold text-white">Buat Akun & Penugasan Baru</h3>
+              <span class="material-symbols-outlined text-purple-400 text-[20px] sm:text-[22px]">person_add</span>
+              <h3 class="text-base sm:text-lg font-bold text-white">Buat Akun & Penugasan Baru</h3>
             </div>
-            <button id="btn-close-create-user" class="text-white/50 hover:text-white cursor-pointer" type="button">
-              <span class="material-symbols-outlined text-[20px]">close</span>
+            <button id="btn-close-create-user" class="text-white/50 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-colors" type="button">
+              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">close</span>
             </button>
           </div>
 
-          <form id="form-create-user" class="flex flex-col gap-3.5">
+          <form id="form-create-user" class="flex flex-col gap-3 sm:gap-3.5">
             <div>
               <label class="block text-xs font-semibold text-white/80 mb-1">Username (dengan @)</label>
-              <input id="input-new-username" type="text" placeholder="@contohuser" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+              <input id="input-new-username" type="text" placeholder="@contohuser" required class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-white/80 mb-1">Nama Lengkap</label>
-              <input id="input-new-fullname" type="text" placeholder="Nama Lengkap Karyawan/Siswa" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+              <input id="input-new-fullname" type="text" placeholder="Nama Lengkap Karyawan/Siswa" required class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               <div>
                 <label class="block text-xs font-semibold text-white/80 mb-1">Role</label>
                 <select id="select-new-role" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
@@ -640,63 +667,63 @@ export class UserManagementView extends BaseView {
 
               <div>
                 <label class="block text-xs font-semibold text-white/80 mb-1">Nomor Induk (NIP/NISN)</label>
-                <input id="input-new-nip" type="text" placeholder="2026..." class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+                <input id="input-new-nip" type="text" placeholder="2026..." class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
               </div>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-white/80 mb-1">Posisi / Jabatan</label>
-              <input id="input-new-position" type="text" placeholder="Contoh: Frontend Developer / UI Designer / Siswa PKL" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+              <input id="input-new-position" type="text" placeholder="Contoh: Frontend Developer / UI Designer / Siswa PKL" required class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <!-- Penugasan Papan Kanban & Tugas -->
-            <div class="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex flex-col gap-3">
+            <div class="p-3 sm:p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex flex-col gap-2.5 sm:gap-3">
               <div class="flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-purple-300 text-[18px]">assignment</span>
                 <span class="text-xs font-bold text-purple-200">Penugasan Papan Kanban & Tugas</span>
               </div>
 
               <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <label class="block text-[11px] font-semibold text-white/80">Tujuan Papan Kanban Proyek (Bisa Pilih &gt; 1)</label>
-                  <span id="count-selected-new-projects" class="text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.2 rounded-full shadow-xs">1 Papan Terpilih</span>
+                <div class="flex items-center justify-between mb-1.5 gap-2">
+                  <label class="block text-[11px] font-semibold text-white/80 truncate">Tujuan Papan Kanban (Bisa &gt; 1)</label>
+                  <span id="count-selected-new-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">1 Papan Terpilih</span>
                 </div>
 
                 <!-- Custom Multi-Select Dropdown Trigger -->
                 <div
                   id="trigger-new-projects"
-                  class="w-full min-h-[38px] px-3 py-1.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs cursor-pointer flex items-center justify-between hover:border-purple-400 transition-colors shadow-inner"
+                  class="w-full min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs cursor-pointer flex items-center justify-between hover:border-purple-400 transition-colors shadow-inner select-none"
                   role="button"
                   tabindex="0"
                   title="Klik untuk memilih satu atau beberapa papan proyek"
                 >
-                  <div id="tags-selected-new-projects" class="flex items-center gap-1.5 flex-wrap flex-1 py-0.5">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs">
-                      <span class="truncate max-w-[150px]">CreativOffice (Creative Office)</span>
+                  <div id="tags-selected-new-projects" class="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-1 py-0.5 min-w-0">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs max-w-full">
+                      <span class="truncate max-w-[130px] sm:max-w-[170px]">CreativOffice (Creative Office)</span>
                       <span class="btn-remove-new-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="creativoffice">close</span>
                     </span>
                   </div>
-                  <span id="icon-chevron-new-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform">expand_more</span>
+                  <span id="icon-chevron-new-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform duration-200">expand_more</span>
                 </div>
 
                 <!-- Dropdown Checklist Panel -->
-                <div id="panel-new-projects-dropdown" class="hidden mt-1.5 p-2.5 rounded-xl border border-white/15 bg-[#110c29] flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
+                <div id="panel-new-projects-dropdown" class="hidden mt-1.5 p-2 sm:p-2.5 rounded-xl border border-white/15 bg-[#110c29] flex flex-col gap-2 max-h-52 sm:max-h-56 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
                   <!-- Search Bar & Quick Actions -->
-                  <div class="flex items-center gap-2 pb-2 border-b border-white/10">
-                    <div class="relative flex-1">
-                      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[14px] text-white/40">search</span>
+                  <div class="flex items-center gap-1.5 pb-2 border-b border-white/10">
+                    <div class="relative flex-1 min-w-0">
+                      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[13px] sm:text-[14px] text-white/40">search</span>
                       <input
                         id="input-search-new-boards"
                         type="text"
                         placeholder="Cari papan..."
-                        class="w-full pl-7 pr-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400"
+                        class="w-full pl-6 sm:pl-7 pr-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10.5px] sm:text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400"
                       />
                     </div>
-                    <button type="button" id="btn-select-all-new-projects" class="text-[10px] text-purple-300 hover:text-purple-200 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
-                      Pilih Semua
+                    <button type="button" id="btn-select-all-new-projects" class="text-[9.5px] sm:text-[10px] text-purple-300 hover:text-purple-200 font-semibold px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Semua
                     </button>
-                    <button type="button" id="btn-clear-all-new-projects" class="text-[10px] text-white/40 hover:text-white/70 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
-                      Bersihkan
+                    <button type="button" id="btn-clear-all-new-projects" class="text-[9.5px] sm:text-[10px] text-white/40 hover:text-white/70 font-semibold px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Reset
                     </button>
                   </div>
 
@@ -704,7 +731,7 @@ export class UserManagementView extends BaseView {
                   <div class="flex flex-col gap-1">
                     ${availableBoards.map(b => `
                       <label class="item-new-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none ${b.id === 'creativoffice' ? 'bg-purple-600/20 border border-purple-500/30' : 'border border-transparent'}">
-                        <div class="flex items-center gap-2 min-w-0">
+                        <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
                           <input
                             type="checkbox"
                             class="cb-new-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
@@ -712,9 +739,9 @@ export class UserManagementView extends BaseView {
                             data-name="${b.name}"
                             ${b.id === 'creativoffice' ? 'checked' : ''}
                           />
-                          <span class="truncate font-medium text-white/90 text-[11.5px]">${b.name}</span>
+                          <span class="truncate font-medium text-white/90 text-[11px] sm:text-[11.5px]">${b.name}</span>
                         </div>
-                        <span class="text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.2 rounded uppercase ml-2 shrink-0">
+                        <span class="text-[9px] sm:text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 rounded uppercase shrink-0">
                           ${b.workspace || b.id}
                         </span>
                       </label>
@@ -729,15 +756,18 @@ export class UserManagementView extends BaseView {
                   `).join('')}
                 </select>
 
-                <p class="text-[10px] text-white/50 mt-1">Saat scan QR SampulKreativ, pengguna memiliki hak akses ke seluruh papan yang dipilih.</p>
+                <p class="text-[9.5px] sm:text-[10px] text-white/50 mt-1">Saat scan QR SampulKreativ, pengguna memiliki hak akses ke seluruh papan yang dipilih.</p>
               </div>
 
               <div>
                 <label class="block text-[11px] font-semibold text-white/80 mb-1">Tugas Khusus untuk Pengguna Ini</label>
-                <select id="select-new-task" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
-                  <option value="all">⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
-                  <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
-                </select>
+                <div class="relative">
+                  <select id="select-new-task" class="w-full px-3 py-2.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 appearance-none pr-8 cursor-pointer transition-colors truncate">
+                    <option value="all">⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
+                    <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-white/50 text-[18px] pointer-events-none">expand_more</span>
+                </div>
               </div>
 
               <div id="wrap-new-custom-task" class="hidden">
@@ -748,12 +778,12 @@ export class UserManagementView extends BaseView {
 
             <div>
               <label class="block text-xs font-semibold text-white/80 mb-1">Asal Sekolah / Kampus (Opsional)</label>
-              <input id="input-new-school" list="school-datalist" type="text" placeholder="Pilih atau ketik asal sekolah..." class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+              <input id="input-new-school" list="school-datalist" type="text" placeholder="Pilih atau ketik asal sekolah..." class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/10 mt-2">
-              <button id="btn-cancel-create-user" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white cursor-pointer transition-colors">Batal</button>
-              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md border border-purple-400/35 cursor-pointer transition-all">Simpan Akun & Penugasan</button>
+              <button id="btn-cancel-create-user" type="button" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white cursor-pointer transition-colors">Batal</button>
+              <button type="submit" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md border border-purple-400/35 cursor-pointer transition-all">Simpan Akun & Penugasan</button>
             </div>
           </form>
         </div>
@@ -765,19 +795,19 @@ export class UserManagementView extends BaseView {
     const availableBoards = this.getAvailableBoards();
 
     return `
-      <div id="modal-edit-user" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-white max-h-[90vh] overflow-y-auto custom-scrollbar" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
-          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+      <div id="modal-edit-user" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-white max-h-[92vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar my-auto" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-purple-400 text-[22px]">edit_note</span>
-              <h3 class="text-lg font-bold text-white">Edit Data Pengguna & Tugas</h3>
+              <span class="material-symbols-outlined text-purple-400 text-[20px] sm:text-[22px]">edit_note</span>
+              <h3 class="text-base sm:text-lg font-bold text-white">Edit Data Pengguna & Tugas</h3>
             </div>
-            <button id="btn-close-edit-user" class="text-white/50 hover:text-white cursor-pointer" type="button">
-              <span class="material-symbols-outlined text-[20px]">close</span>
+            <button id="btn-close-edit-user" class="text-white/50 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-colors" type="button">
+              <span class="material-symbols-outlined text-[18px] sm:text-[20px]">close</span>
             </button>
           </div>
 
-          <form id="form-edit-user" class="flex flex-col gap-3.5">
+          <form id="form-edit-user" class="flex flex-col gap-3 sm:gap-3.5">
             <input type="hidden" id="input-edit-user-id" />
 
             <div>
@@ -787,73 +817,73 @@ export class UserManagementView extends BaseView {
 
             <div>
               <label class="block text-xs font-semibold text-white/80 mb-1">Nama Lengkap</label>
-              <input id="input-edit-fullname" type="text" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+              <input id="input-edit-fullname" type="text" required class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               <div>
                 <label class="block text-xs font-semibold text-white/80 mb-1">Role</label>
                 <select id="select-edit-role" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
-                  <option value="student">student</option>
-                  <option value="employee">employee</option>
-                  <option value="admin">admin</option>
+                  <option value="student">student (Siswa PKL)</option>
+                  <option value="employee">employee (Karyawan)</option>
+                  <option value="admin">admin (Administrator)</option>
                 </select>
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-white/80 mb-1">Nomor Induk (NIP/NISN)</label>
-                <input id="input-edit-nip" type="text" class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+                <input id="input-edit-nip" type="text" class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
               </div>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-white/80 mb-1">Posisi / Jabatan</label>
-              <input id="input-edit-position" type="text" required class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
+              <input id="input-edit-position" type="text" required class="w-full px-3 sm:px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
             </div>
 
             <!-- Penugasan Papan Kanban & Tugas -->
-            <div class="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex flex-col gap-3">
+            <div class="p-3 sm:p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex flex-col gap-2.5 sm:gap-3">
               <div class="flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-purple-300 text-[18px]">assignment</span>
                 <span class="text-xs font-bold text-purple-200">Penugasan Papan Kanban & Tugas</span>
               </div>
 
               <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <label class="block text-[11px] font-semibold text-white/80">Tujuan Papan Kanban Proyek (Bisa Pilih &gt; 1)</label>
-                  <span id="count-selected-edit-projects" class="text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.2 rounded-full shadow-xs">1 Papan Terpilih</span>
+                <div class="flex items-center justify-between mb-1.5 gap-2">
+                  <label class="block text-[11px] font-semibold text-white/80 truncate">Tujuan Papan Kanban (Bisa &gt; 1)</label>
+                  <span id="count-selected-edit-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">1 Papan Terpilih</span>
                 </div>
 
                 <!-- Custom Multi-Select Dropdown Trigger -->
                 <div
                   id="trigger-edit-projects"
-                  class="w-full min-h-[38px] px-3 py-1.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs cursor-pointer flex items-center justify-between hover:border-purple-400 transition-colors shadow-inner"
+                  class="w-full min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs cursor-pointer flex items-center justify-between hover:border-purple-400 transition-colors shadow-inner select-none"
                   role="button"
                   tabindex="0"
                   title="Klik untuk memilih satu atau beberapa papan proyek"
                 >
-                  <div id="tags-selected-edit-projects" class="flex items-center gap-1.5 flex-wrap flex-1 py-0.5"></div>
-                  <span id="icon-chevron-edit-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform">expand_more</span>
+                  <div id="tags-selected-edit-projects" class="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-1 py-0.5 min-w-0"></div>
+                  <span id="icon-chevron-edit-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform duration-200">expand_more</span>
                 </div>
 
                 <!-- Dropdown Checklist Panel -->
-                <div id="panel-edit-projects-dropdown" class="hidden mt-1.5 p-2.5 rounded-xl border border-white/15 bg-[#110c29] flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
+                <div id="panel-edit-projects-dropdown" class="hidden mt-1.5 p-2 sm:p-2.5 rounded-xl border border-white/15 bg-[#110c29] flex flex-col gap-2 max-h-52 sm:max-h-56 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
                   <!-- Search Bar & Quick Actions -->
-                  <div class="flex items-center gap-2 pb-2 border-b border-white/10">
-                    <div class="relative flex-1">
-                      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[14px] text-white/40">search</span>
+                  <div class="flex items-center gap-1.5 pb-2 border-b border-white/10">
+                    <div class="relative flex-1 min-w-0">
+                      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[13px] sm:text-[14px] text-white/40">search</span>
                       <input
                         id="input-search-edit-boards"
                         type="text"
                         placeholder="Cari papan..."
-                        class="w-full pl-7 pr-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400"
+                        class="w-full pl-6 sm:pl-7 pr-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10.5px] sm:text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400"
                       />
                     </div>
-                    <button type="button" id="btn-select-all-edit-projects" class="text-[10px] text-purple-300 hover:text-purple-200 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
-                      Pilih Semua
+                    <button type="button" id="btn-select-all-edit-projects" class="text-[9.5px] sm:text-[10px] text-purple-300 hover:text-purple-200 font-semibold px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Semua
                     </button>
-                    <button type="button" id="btn-clear-all-edit-projects" class="text-[10px] text-white/40 hover:text-white/70 font-semibold px-1.5 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
-                      Bersihkan
+                    <button type="button" id="btn-clear-all-edit-projects" class="text-[9.5px] sm:text-[10px] text-white/40 hover:text-white/70 font-semibold px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer shrink-0">
+                      Reset
                     </button>
                   </div>
 
@@ -861,16 +891,16 @@ export class UserManagementView extends BaseView {
                   <div class="flex flex-col gap-1">
                     ${availableBoards.map(b => `
                       <label class="item-edit-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none border border-transparent">
-                        <div class="flex items-center gap-2 min-w-0">
+                        <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
                           <input
                             type="checkbox"
                             class="cb-edit-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
                             value="${b.id}"
                             data-name="${b.name}"
                           />
-                          <span class="truncate font-medium text-white/90 text-[11.5px]">${b.name}</span>
+                          <span class="truncate font-medium text-white/90 text-[11px] sm:text-[11.5px]">${b.name}</span>
                         </div>
-                        <span class="text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.2 rounded uppercase ml-2 shrink-0">
+                        <span class="text-[9px] sm:text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 rounded uppercase shrink-0">
                           ${b.workspace || b.id}
                         </span>
                       </label>
@@ -885,15 +915,18 @@ export class UserManagementView extends BaseView {
                   `).join('')}
                 </select>
 
-                <p class="text-[10px] text-white/50 mt-1">Pengguna dapat mengakses dan mengerjakan tugas pada seluruh papan yang dicentang.</p>
+                <p class="text-[9.5px] sm:text-[10px] text-white/50 mt-1">Pengguna dapat mengakses dan mengerjakan tugas pada seluruh papan yang dicentang.</p>
               </div>
 
               <div>
                 <label class="block text-[11px] font-semibold text-white/80 mb-1">Tugas Khusus untuk Pengguna Ini</label>
-                <select id="select-edit-task" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
-                  <option value="all">⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
-                  <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
-                </select>
+                <div class="relative">
+                  <select id="select-edit-task" class="w-full px-3 py-2.5 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 appearance-none pr-8 cursor-pointer transition-colors truncate">
+                    <option value="all">⭐ Seluruh Papan (Semua Tugas di Papan Ini)</option>
+                    <option value="create_new">➕ Buat Tugas Baru Langsung untuk Pengguna...</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-white/50 text-[18px] pointer-events-none">expand_more</span>
+                </div>
               </div>
 
               <div id="wrap-edit-custom-task" class="hidden">
@@ -902,7 +935,7 @@ export class UserManagementView extends BaseView {
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               <div>
                 <label class="block text-xs font-semibold text-white/80 mb-1">Telegram Chat</label>
                 <input id="input-edit-telegram-chat" type="text" placeholder="KIE Nama" class="w-full px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400" />
@@ -915,8 +948,8 @@ export class UserManagementView extends BaseView {
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/10 mt-2">
-              <button id="btn-cancel-edit-user" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white cursor-pointer transition-colors">Batal</button>
-              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md border border-purple-400/35 cursor-pointer transition-all">Simpan Perubahan</button>
+              <button id="btn-cancel-edit-user" type="button" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white cursor-pointer transition-colors">Batal</button>
+              <button type="submit" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md border border-purple-400/35 cursor-pointer transition-all">Simpan Perubahan</button>
             </div>
           </form>
         </div>
@@ -960,6 +993,7 @@ export class UserManagementView extends BaseView {
       const selectElement = this.element.querySelector(`#select-${prefix}-project`);
       const taskSelect = this.element.querySelector(`#select-${prefix}-task`);
       const wrapCustomTask = this.element.querySelector(`#wrap-${prefix}-custom-task`);
+      const inputCustomTask = this.element.querySelector(`#input-${prefix}-custom-task`);
 
       const getCheckboxes = () => Array.from(this.element.querySelectorAll(`.cb-${prefix}-project`));
       const getCheckedBoxes = () => Array.from(this.element.querySelectorAll(`.cb-${prefix}-project:checked`));
@@ -976,10 +1010,34 @@ export class UserManagementView extends BaseView {
         `;
 
         if (tasks && tasks.length > 0) {
-          optionsHtml += tasks.map(t => {
-            const isSelected = preferredTaskId === t.id ? 'selected' : '';
-            return `<option value="${t.id}" data-title="${t.title}" ${isSelected}>[${t.workspace || t.board || 'TSK'}] ${t.title}</option>`;
-          }).join('');
+          if (boardIds.length > 1) {
+            // Kelompokkan per papan agar rapi dan tidak campur aduk di tampilan mobile & desktop
+            const grouped = new Map();
+            tasks.forEach(t => {
+              const ws = t.workspace || t.board || 'Umum';
+              if (!grouped.has(ws)) grouped.set(ws, []);
+              grouped.get(ws).push(t);
+            });
+
+            const allAvailable = this.getAvailableBoards();
+            grouped.forEach((wsTasks, wsKey) => {
+              const bObj = allAvailable.find(b => b.id === wsKey || b.workspace === wsKey);
+              const bTitle = bObj ? bObj.name : wsKey.toUpperCase();
+              optionsHtml += `<optgroup label="📂 ${bTitle}">`;
+              wsTasks.forEach(t => {
+                const isSelected = (preferredTaskId && String(preferredTaskId) === String(t.id)) ? 'selected' : '';
+                const codeBadge = t.code ? `[${t.code}] ` : '';
+                optionsHtml += `<option value="${t.id}" data-title="${t.title}" ${isSelected}>${codeBadge}${t.title}</option>`;
+              });
+              optionsHtml += `</optgroup>`;
+            });
+          } else {
+            optionsHtml += tasks.map(t => {
+              const isSelected = (preferredTaskId && String(preferredTaskId) === String(t.id)) ? 'selected' : '';
+              const codeBadge = t.code ? `[${t.code}] ` : '';
+              return `<option value="${t.id}" data-title="${t.title}" ${isSelected}>${codeBadge}${t.title}</option>`;
+            }).join('');
+          }
         }
 
         optionsHtml += `
@@ -987,8 +1045,22 @@ export class UserManagementView extends BaseView {
         `;
 
         taskSelect.innerHTML = optionsHtml;
+        if (preferredTaskId) {
+          taskSelect.value = preferredTaskId;
+        }
         if (wrapCustomTask) wrapCustomTask.classList.add('hidden');
       };
+
+      if (taskSelect) {
+        taskSelect.addEventListener('change', () => {
+          if (taskSelect.value === 'create_new') {
+            if (wrapCustomTask) wrapCustomTask.classList.remove('hidden');
+            if (inputCustomTask) inputCustomTask.focus();
+          } else {
+            if (wrapCustomTask) wrapCustomTask.classList.add('hidden');
+          }
+        });
+      }
 
       const syncUI = (preferredTaskId = null) => {
         const checked = getCheckedBoxes();
@@ -1023,14 +1095,14 @@ export class UserManagementView extends BaseView {
         // Render tags
         if (tagsContainer) {
           if (count === 0) {
-            tagsContainer.innerHTML = `<span class="text-white/40 italic">Klik untuk memilih minimal 1 papan...</span>`;
+            tagsContainer.innerHTML = `<span class="text-white/40 text-[10.5px] italic">Klik untuk memilih minimal 1 papan...</span>`;
           } else {
             tagsContainer.innerHTML = checked.map(cb => {
               const bName = cb.getAttribute('data-name') || cb.value;
               return `
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs">
-                  <span class="truncate max-w-[140px]">${bName}</span>
-                  <span class="btn-remove-${prefix}-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="${cb.value}">close</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs max-w-full">
+                  <span class="truncate max-w-[120px] sm:max-w-[170px]">${bName}</span>
+                  <span class="btn-remove-${prefix}-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5 active:scale-90" data-val="${cb.value}">close</span>
                 </span>
               `;
             }).join('');
@@ -1132,6 +1204,9 @@ export class UserManagementView extends BaseView {
     // Initialize selectors
     const newBoardSelector = setupMultiBoardSelector('new');
     const editBoardSelector = setupMultiBoardSelector('edit');
+    this._newBoardSelector = newBoardSelector;
+    this._editBoardSelector = editBoardSelector;
+    newBoardSelector.syncUI();
 
     // Global click listener to close dropdowns when clicking outside
     document.addEventListener('click', () => {
@@ -1146,16 +1221,7 @@ export class UserManagementView extends BaseView {
       if (chevronEdit) chevronEdit.classList.remove('rotate-180');
     });
 
-    if (selectNewTask) {
-      selectNewTask.addEventListener('change', () => {
-        if (selectNewTask.value === 'create_new') {
-          if (wrapNewCustomTask) wrapNewCustomTask.classList.remove('hidden');
-          if (inputNewCustomTask) inputNewCustomTask.focus();
-        } else {
-          if (wrapNewCustomTask) wrapNewCustomTask.classList.add('hidden');
-        }
-      });
-    }
+
 
     const openCreateModal = () => {
       if (modalCreate) {

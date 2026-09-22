@@ -35,6 +35,7 @@ export class ProjectService {
         if (remoteProjects.length > 0) {
           // Sinkron data dari PostgreSQL ke memori & localStorage
           this.projects = remoteProjects.map(p => new Project(p));
+          this.deduplicateProjects();
           this.saveToStorage();
           if (this.eventBus) {
             this.eventBus.emit('projects:updated', this.projects);
@@ -60,6 +61,7 @@ export class ProjectService {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           this.projects = parsed.map(p => new Project(p));
+          this.deduplicateProjects();
           return;
         }
       }
@@ -68,6 +70,42 @@ export class ProjectService {
     }
     this.initDefaultProjects();
     this.saveToStorage();
+  }
+
+  /**
+   * Hapus proyek duplikat yang memiliki nama/ID yang sama dengan papan kanban standar
+   */
+  deduplicateProjects() {
+    if (!Array.isArray(this.projects)) return;
+    const defaultKeys = new Set(['creativoffice', 'panenkunci', 'ruangkreasi', 'aikreativ', 'sharinginaja', 'layarbaca']);
+    const seen = new Set();
+    const cleanList = [];
+
+    for (const p of this.projects) {
+      if (!p || (!p.id && !p.name)) continue;
+      const raw = `${p.id || ''} ${p.name || ''} ${p.title || ''}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+      let canonical = raw;
+      if (raw.includes('creativ') || raw.includes('office')) canonical = 'creativoffice';
+      else if (raw.includes('panen') || raw.includes('panan') || raw.includes('kunci')) canonical = 'panenkunci';
+      else if (raw.includes('ruang') || raw.includes('kreasi')) canonical = 'ruangkreasi';
+      else if (raw.includes('aikreativ') || raw.includes('studioai')) canonical = 'aikreativ';
+      else if (raw.includes('sharing')) canonical = 'sharinginaja';
+      else if (raw.includes('layar') || raw.includes('baca')) canonical = 'layarbaca';
+
+      if (defaultKeys.has(canonical) && String(p.id).startsWith('proj-')) {
+        continue;
+      }
+
+      if (!seen.has(canonical)) {
+        seen.add(canonical);
+        cleanList.push(p);
+      }
+    }
+
+    if (cleanList.length !== this.projects.length) {
+      this.projects = cleanList;
+      this.saveToStorage();
+    }
   }
 
   saveToStorage() {
