@@ -79,23 +79,20 @@ export class ProfileView extends BaseView {
 
         <div class="relative z-10 w-full max-w-4xl flex flex-col gap-6">
 
-          <!-- Top Navigation & Breadcrumb -->
-          <div class="flex items-center justify-between gap-4 pb-3 border-b border-white/15">
-            <div class="flex items-center gap-2">
-              <button id="btn-profile-back" type="button" class="inline-flex items-center gap-1.5 text-white/80 hover:text-white transition-colors cursor-pointer font-semibold px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10" title="Kembali ke Papan Projek">
-                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                <span>Kembali ke Papan Projek</span>
+          <!-- Top Navigation & Breadcrumb (Compact) -->
+          <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+            <div class="flex items-center gap-1.5">
+              <button id="btn-profile-back" type="button" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white/70 hover:text-white transition-all cursor-pointer active:scale-95 shrink-0" title="Kembali">
+                <span class="material-symbols-outlined text-[17px]">arrow_back</span>
               </button>
-              <span class="text-white/40">/</span>
-              <span class="font-bold text-white">Profil &amp; Kredensial CreativOffice</span>
+              <span class="text-white/30 text-xs">/</span>
+              <span class="text-[12px] font-semibold text-white/80">Profil & Kredensial</span>
             </div>
 
-            <div class="flex items-center gap-2">
-              <span class="px-3 py-1 rounded-full text-[11px] font-bold ${isUserRole ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/35' : 'bg-purple-500/20 text-purple-300 border border-purple-400/35'} flex items-center gap-1.5 shadow-sm">
-                <span class="material-symbols-outlined text-[14px]">${isUserRole ? 'verified' : 'admin_panel_settings'}</span>
-                <span>CreativOffice Pass • ${isUserRole ? 'Anggota Terverifikasi' : user.role.toUpperCase()}</span>
-              </span>
-            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isUserRole ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-purple-500/20 text-purple-300 border border-purple-400/30'} flex items-center gap-1 shrink-0">
+              <span class="material-symbols-outlined text-[12px]">${isUserRole ? 'verified' : 'admin_panel_settings'}</span>
+              <span>${isUserRole ? 'Member' : user.role.toUpperCase()}</span>
+            </span>
           </div>
 
           <!-- Profile Hero Card -->
