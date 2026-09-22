@@ -1,11 +1,9 @@
 import { BaseView } from '../core/BaseView.js';
-import { QRCodeGenerator } from '../services/QRCodeGenerator.js';
 
 /**
  * UserManagementView - Halaman Manajemen Pengguna untuk Administrator
  * Memungkinkan Admin melihat daftar karyawan/siswa PKL, mengelola perangkat, membuat akun baru,
- * mengedit akun, mengatur penugasan papan kanban & tugas, mencetak kartu karyawan ber-QR,
- * mereset perangkat HP, dan login langsung ke akun.
+ * mengedit akun, mengatur penugasan papan kanban & tugas, mereset perangkat HP, dan login langsung ke akun.
  */
 export class UserManagementView extends BaseView {
   constructor(container) {
@@ -17,10 +15,8 @@ export class UserManagementView extends BaseView {
 
     this.searchQuery = '';
     this.editingUser = null;
-    this.printingUser = null;
     this.isCreateModalOpen = false;
     this.isEditModalOpen = false;
-    this.isPrintModalOpen = false;
 
     this.defaultUsers = [];
 
@@ -58,6 +54,7 @@ export class UserManagementView extends BaseView {
    */
   getAvailableBoards() {
     const defaultBoards = [
+      { id: 'creativoffice', name: 'CreativOffice (Creative Office)', workspace: 'creativoffice' },
       { id: 'panen-kunci', name: 'Panen Kunci (Utama)', workspace: 'panen-kunci' },
       { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi' },
       { id: 'aikreativ', name: 'AIKreativ Studio', workspace: 'aikreativ' },
@@ -214,7 +211,6 @@ export class UserManagementView extends BaseView {
           <!-- Modals -->
           ${this._renderCreateModal()}
           ${this._renderEditModal()}
-          ${this._renderPrintModal()}
         </div>
       </div>
     `;
@@ -368,17 +364,6 @@ export class UserManagementView extends BaseView {
               </button>
             ` : ''}
 
-            <button
-              class="btn-user-print-card text-white/50 hover:text-purple-300 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-              data-id="${u.id}"
-              title="Cetak Kartu & QR Scan SampulKreativ"
-              type="button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card" aria-hidden="true">
-                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                <line x1="2" x2="22" y1="10" y2="10"></line>
-              </svg>
-            </button>
 
             <button
               class="btn-user-delete text-white/50 hover:text-rose-400 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
@@ -459,7 +444,7 @@ export class UserManagementView extends BaseView {
                 <label class="block text-[11px] font-semibold text-white/80 mb-1">Tujuan Papan Kanban Proyek</label>
                 <select id="select-new-project" class="w-full px-3 py-2 rounded-xl border border-white/15 bg-[#171135] text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400">
                   ${availableBoards.map(b => `
-                    <option value="${b.id}" data-name="${b.name}" ${b.id === 'panen-kunci' ? 'selected' : ''}>${b.name}</option>
+                    <option value="${b.id}" data-name="${b.name}" ${b.id === 'creativoffice' ? 'selected' : ''}>${b.name}</option>
                   `).join('')}
                 </select>
                 <p class="text-[10px] text-white/50 mt-1">Saat scan QR SampulKreativ, pengguna langsung masuk ke papan ini.</p>
@@ -596,74 +581,6 @@ export class UserManagementView extends BaseView {
     `;
   }
 
-  _renderPrintModal() {
-    return `
-      <div id="modal-print-user-card" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#0e0a22]/95 backdrop-blur-2xl rounded-2xl max-w-sm w-full p-6 shadow-2xl shadow-purple-950/80 border border-white/15 text-center flex flex-col items-center text-white" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);">
-          <div class="w-full flex items-center justify-between pb-2 border-b border-white/10 mb-4">
-            <h3 class="text-sm font-bold text-white">Kartu Identitas & QR SampulKreativ</h3>
-            <button id="btn-close-print-modal" class="text-white/50 hover:text-white cursor-pointer" type="button">
-              <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-          </div>
-
-          <!-- Card Mockup with Scannable QR -->
-          <div id="print-card-badge" class="w-full aspect-[1.58/1] rounded-2xl p-4 bg-gradient-to-br from-[#1b123a] via-[#2a1758] to-[#401f80] border border-purple-400/35 text-white shadow-xl flex flex-col justify-between text-left relative overflow-hidden mb-4">
-            <div class="flex items-center justify-between relative z-10">
-              <div class="flex items-center gap-2">
-                <img src="/assets/logo.png" class="w-6 h-6 rounded-md object-contain bg-white/10 p-0.5" alt="Logo" />
-                <span class="text-[11px] font-bold tracking-wider uppercase">Sampulkreativ Technology</span>
-              </div>
-              <span id="print-card-role" class="text-[9.5px] px-2 py-0.5 rounded-full bg-purple-500/30 border border-purple-400/40 text-purple-200 font-semibold uppercase">EMPLOYEE</span>
-            </div>
-
-            <div class="relative z-10 my-2 flex items-center justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <h4 id="print-card-name" class="text-[15px] font-bold tracking-tight text-white truncate">Nama Pengguna</h4>
-                <p id="print-card-pos" class="text-[11px] text-purple-200 truncate">Jabatan Pegawai</p>
-                <p id="print-card-nip" class="text-[10px] font-mono text-amber-300 mt-0.5">2026...</p>
-                
-                <!-- Assigned Board & Task on Card -->
-                <div class="mt-1 flex flex-col gap-0.5">
-                  <div class="inline-flex items-center gap-1 text-[9.5px] text-teal-300 font-bold">
-                    <span class="material-symbols-outlined text-[12px]">view_kanban</span>
-                    <span id="print-card-board" class="truncate">Panen Kunci</span>
-                  </div>
-                  <div id="print-card-task" class="text-[9px] text-purple-200/90 truncate max-w-[140px]">
-                    Semua Tugas Papan
-                  </div>
-                </div>
-              </div>
-
-              <!-- Scannable QR Code Container -->
-              <div class="shrink-0 flex flex-col items-center">
-                <div id="print-card-qr-container" class="w-18 h-18 bg-white p-1 rounded-xl shadow-md flex items-center justify-center overflow-hidden">
-                  <!-- SVG QR inserted dynamically -->
-                </div>
-                <span class="text-[7.5px] font-mono text-white/60 tracking-wider mt-1 uppercase">Scan SampulKreativ</span>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between relative z-10 text-[9.5px] text-white/80 border-t border-white/15 pt-1.5 font-mono">
-              <span id="print-card-username" class="text-purple-300">@username</span>
-              <span class="text-white/50">CREATIVE OFFICE ID</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2 w-full">
-            <button id="btn-do-print" type="button" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-xs shadow-md border border-purple-400/35 cursor-pointer flex items-center justify-center gap-1.5 transition-all">
-              <span class="material-symbols-outlined text-[16px]">print</span>
-              <span>Cetak Kartu</span>
-            </button>
-            <button id="btn-cancel-print" type="button" class="px-4 py-2.5 rounded-xl border border-white/15 hover:bg-white/10 text-white/80 font-semibold text-xs cursor-pointer transition-colors">
-              Tutup
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   bindEvents() {
     if (!this.element) return;
 
@@ -688,7 +605,7 @@ export class UserManagementView extends BaseView {
 
     const updateCreateTaskOptions = () => {
       if (!selectNewTask) return;
-      const boardId = selectNewProject ? selectNewProject.value : 'panen-kunci';
+      const boardId = selectNewProject ? selectNewProject.value : 'creativoffice';
       const tasks = this.getTasksForBoard(boardId);
 
       let optionsHtml = `
@@ -797,9 +714,9 @@ export class UserManagementView extends BaseView {
         const school = (this.element.querySelector('#input-new-school')?.value || '').trim();
 
         const boardSelect = this.element.querySelector('#select-new-project');
-        const assignedProjectId = boardSelect ? boardSelect.value : 'panen-kunci';
+        const assignedProjectId = boardSelect ? boardSelect.value : 'creativoffice';
         const selectedBoardOption = boardSelect ? boardSelect.options[boardSelect.selectedIndex] : null;
-        const assignedBoardName = selectedBoardOption ? (selectedBoardOption.getAttribute('data-name') || selectedBoardOption.text) : 'Panen Kunci';
+        const assignedBoardName = selectedBoardOption ? (selectedBoardOption.getAttribute('data-name') || selectedBoardOption.text) : 'CreativOffice';
 
         const taskSelect = this.element.querySelector('#select-new-task');
         let assignedTaskId = taskSelect ? taskSelect.value : 'all';
@@ -885,7 +802,7 @@ export class UserManagementView extends BaseView {
 
     const updateEditTaskOptions = (preferredTaskId = null) => {
       if (!selectEditTask) return;
-      const boardId = selectEditProject ? selectEditProject.value : 'panen-kunci';
+      const boardId = selectEditProject ? selectEditProject.value : 'creativoffice';
       const tasks = this.getTasksForBoard(boardId);
 
       let optionsHtml = `
@@ -941,9 +858,9 @@ export class UserManagementView extends BaseView {
         const telegramId = (this.element.querySelector('#input-edit-telegram-id')?.value || '').trim();
 
         const boardSelect = this.element.querySelector('#select-edit-project');
-        const assignedProjectId = boardSelect ? boardSelect.value : 'panen-kunci';
+        const assignedProjectId = boardSelect ? boardSelect.value : 'creativoffice';
         const selectedBoardOption = boardSelect ? boardSelect.options[boardSelect.selectedIndex] : null;
-        const assignedBoardName = selectedBoardOption ? (selectedBoardOption.getAttribute('data-name') || selectedBoardOption.text) : 'Panen Kunci';
+        const assignedBoardName = selectedBoardOption ? (selectedBoardOption.getAttribute('data-name') || selectedBoardOption.text) : 'CreativOffice';
 
         const taskSelect = this.element.querySelector('#select-edit-task');
         let assignedTaskId = taskSelect ? taskSelect.value : 'all';
@@ -1008,23 +925,7 @@ export class UserManagementView extends BaseView {
       });
     }
 
-    // Modal Print Card
-    const modalPrint = this.element.querySelector('#modal-print-user-card');
-    const btnClosePrint = this.element.querySelector('#btn-close-print-modal');
-    const btnCancelPrint = this.element.querySelector('#btn-cancel-print');
-    const btnDoPrint = this.element.querySelector('#btn-do-print');
 
-    const closePrintModal = () => {
-      if (modalPrint) modalPrint.classList.add('hidden');
-    };
-
-    if (btnClosePrint) btnClosePrint.addEventListener('click', closePrintModal);
-    if (btnCancelPrint) btnCancelPrint.addEventListener('click', closePrintModal);
-    if (btnDoPrint) {
-      btnDoPrint.addEventListener('click', () => {
-        window.print();
-      });
-    }
 
     this._bindRowEvents();
   }
@@ -1040,7 +941,7 @@ export class UserManagementView extends BaseView {
         const user = this.getUsers().find(u => u.id === userId);
         if (!user) return;
 
-        const targetProj = user.assignedProjectId || 'panen-kunci';
+        const targetProj = user.assignedProjectId || 'creativoffice';
         const targetWs = user.assignedWorkspace || targetProj;
         const targetTask = user.assignedTaskId;
 
@@ -1113,13 +1014,13 @@ export class UserManagementView extends BaseView {
 
         const projSelect = this.element.querySelector('#select-edit-project');
         if (projSelect) {
-          projSelect.value = user.assignedProjectId || 'panen-kunci';
+          projSelect.value = user.assignedProjectId || 'creativoffice';
         }
 
         // Update task options for the user's project
         const taskSelect = this.element.querySelector('#select-edit-task');
         if (taskSelect) {
-          const boardId = user.assignedProjectId || 'panen-kunci';
+          const boardId = user.assignedProjectId || 'creativoffice';
           const tasks = this.getTasksForBoard(boardId);
 
           let optionsHtml = `
@@ -1164,57 +1065,7 @@ export class UserManagementView extends BaseView {
       });
     });
 
-    // Print Card Button with Real Scannable QR Code
-    const printBtns = this.element.querySelectorAll('.btn-user-print-card');
-    const modalPrint = this.element.querySelector('#modal-print-user-card');
-    printBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const userId = btn.getAttribute('data-id');
-        const user = this.getUsers().find(u => u.id === userId);
-        if (!user || !modalPrint) return;
 
-        const nameEl = this.element.querySelector('#print-card-name');
-        const posEl = this.element.querySelector('#print-card-pos');
-        const nipEl = this.element.querySelector('#print-card-nip');
-        const usnEl = this.element.querySelector('#print-card-username');
-        const roleEl = this.element.querySelector('#print-card-role');
-        const boardEl = this.element.querySelector('#print-card-board');
-        const taskEl = this.element.querySelector('#print-card-task');
-        const qrContainer = this.element.querySelector('#print-card-qr-container');
-
-        if (nameEl) nameEl.textContent = user.fullName;
-        if (posEl) posEl.textContent = user.position;
-        if (nipEl) nipEl.textContent = `NIP: ${user.nip || '-'}`;
-        if (usnEl) usnEl.textContent = user.username;
-        if (roleEl) roleEl.textContent = user.role.toUpperCase();
-        if (boardEl) boardEl.textContent = user.assignedBoardName || (user.assignedProjectId === 'panen-kunci' ? 'Panen Kunci' : user.assignedProjectId) || 'Panen Kunci';
-        if (taskEl) taskEl.textContent = user.assignedTaskTitle || 'Seluruh Tugas Papan';
-
-        // Generate clean QR code string that can be scanned by SampulKreativ app / webcam
-        if (qrContainer) {
-          const qrPayload = JSON.stringify({
-            id: user.id,
-            username: user.username,
-            name: user.fullName,
-            role: user.role,
-            nip: user.nip || '',
-            project: user.assignedProjectId || 'panen-kunci',
-            task: user.assignedTaskId || 'all'
-          });
-
-          // Standard SVG QR for crisp printing
-          const svgMarkup = QRCodeGenerator.generate(qrPayload, {
-            size: 72,
-            darkColor: '#0b061a',
-            lightColor: '#ffffff',
-            margin: 1
-          });
-          qrContainer.innerHTML = svgMarkup || `<span class="text-[9px] text-slate-800 font-mono font-bold">${user.username}</span>`;
-        }
-
-        modalPrint.classList.remove('hidden');
-      });
-    });
 
     // Delete User Button
     const deleteBtns = this.element.querySelectorAll('.btn-user-delete');

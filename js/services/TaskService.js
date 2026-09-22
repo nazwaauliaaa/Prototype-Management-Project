@@ -199,6 +199,50 @@ export class TaskService {
    */
   initDefaultTasks() {
     this.tasks = [
+      // CreativOffice default tasks
+      new Task({
+        id: 'task-co-01',
+        code: '#CO-101',
+        title: 'Pengembangan Prototype CreativOffice Mobile & Web',
+        description: 'Implementasi antarmuka eksekutif, integrasi QR barcode scanner, dan kanban task board.',
+        workspace: 'creativoffice',
+        board: 'creativoffice',
+        status: 'in-progress',
+        priority: 'High',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '18 - 25 Sep',
+        hours: 20,
+        qaProgress: { passed: 3, total: 4 }
+      }),
+      new Task({
+        id: 'task-co-02',
+        code: '#CO-102',
+        title: 'Integrasi Single Device Lock & Supabase Sync',
+        description: 'Validasi QR Sampulkreativ, penugasan otomatis tugas, dan enkripsi token.',
+        workspace: 'creativoffice',
+        board: 'creativoffice',
+        status: 'review-qa',
+        priority: 'Critical',
+        pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+        timeline: '20 - 27 Sep',
+        hours: 16,
+        qaProgress: { passed: 2, total: 3 }
+      }),
+      new Task({
+        id: 'task-co-03',
+        code: '#CO-103',
+        title: 'Penyusunan Manajemen Pengguna & Delegasi Tugas',
+        description: 'Pengaturan penugasan peran pegawai/siswa ke kanban board masing-masing.',
+        workspace: 'creativoffice',
+        board: 'creativoffice',
+        status: 'ready-launch',
+        priority: 'Medium',
+        pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Operations Lead' },
+        timeline: '22 - 28 Sep',
+        hours: 14,
+        qaProgress: { passed: 3, total: 3 }
+      }),
+
       new Task({
         id: 'task-pk-01',
         code: '#PK-401',
@@ -439,6 +483,7 @@ export class TaskService {
         const tProj = (t.projectId || '').toLowerCase();
         if (tWs === wsLower || tProj === wsLower) return true;
         if ((wsLower.includes('panen') || wsLower.includes('panan')) && (tWs.includes('panen') || tWs.includes('panan'))) return true;
+        if ((wsLower.includes('creativ') || wsLower.includes('office')) && (tWs.includes('creativ') || tWs.includes('office'))) return true;
         return false;
       });
     }
@@ -486,8 +531,9 @@ export class TaskService {
       const cleanTaskWs = taskWs.replace(/[-_\s]+/g, '');
 
       const isPanenMatch = (currentWs.includes('panen') || currentWs.includes('panan')) && (taskWs.includes('panen') || taskWs.includes('panan'));
+      const isCreativMatch = (currentWs.includes('creativ') || currentWs.includes('office')) && (taskWs.includes('creativ') || taskWs.includes('office'));
       const isNameMatch = Boolean(cleanProjName && cleanTaskWs && cleanProjName === cleanTaskWs);
-      const isDirectMatch = taskWs === currentWs || isPanenMatch || isNameMatch;
+      const isDirectMatch = taskWs === currentWs || isPanenMatch || isCreativMatch || isNameMatch;
 
       if (projIdStr) {
         return !t.projectId && isDirectMatch;

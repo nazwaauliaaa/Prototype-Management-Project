@@ -21,7 +21,17 @@ export class KanbanBoardView extends BaseView {
 
     this.projectId = storedProjId || null;
     this.project = null;
-    this.currentWorkspace = storedWs || 'panen-kunci';
+    this.currentWorkspace = storedWs || (storedProjId || 'creativoffice');
+
+    // Standard workspace map for instant zero-friction resolution
+    const stdMap = {
+      'creativoffice': { id: 'creativoffice', name: 'CreativOffice', workspace: 'creativoffice' },
+      'panen-kunci': { id: 'panen-kunci', name: 'Panen Kunci', workspace: 'panen-kunci' },
+      'layarbaca': { id: 'layarbaca', name: 'LayarBaca', workspace: 'layarbaca' },
+      'aikreativ': { id: 'aikreativ', name: 'AIKreativ', workspace: 'aikreativ' },
+      'sharinginaja': { id: 'sharinginaja', name: 'Sharinginaja', workspace: 'sharinginaja' },
+      'ruangkreasi': { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi' }
+    };
 
     if (this.projectService) {
       const projects = this.projectService.getAllProjects();
@@ -29,7 +39,11 @@ export class KanbanBoardView extends BaseView {
         this.project = projects.find(p => p.id === storedProjId || p.workspace === storedProjId);
         this.projectId = this.project.id;
         this.currentWorkspace = this.project.workspace || this.project.id;
-      } else if (storedWs) {
+      } else if (storedProjId && stdMap[storedProjId]) {
+        this.project = stdMap[storedProjId];
+        this.projectId = stdMap[storedProjId].id;
+        this.currentWorkspace = stdMap[storedProjId].workspace;
+      } else if (storedWs && projects.some(p => p.workspace === storedWs || p.id === storedWs || (p.title && p.title.toLowerCase().replace(/[-_\s]+/g, '') === storedWs.toLowerCase().replace(/[-_\s]+/g, '')))) {
         const p = projects.find(p => p.workspace === storedWs || p.id === storedWs || (p.title && p.title.toLowerCase().replace(/[-_\s]+/g, '') === storedWs.toLowerCase().replace(/[-_\s]+/g, '')));
         if (p) {
           this.project = p;
@@ -38,6 +52,10 @@ export class KanbanBoardView extends BaseView {
         } else {
           this.currentWorkspace = storedWs;
         }
+      } else if (storedWs && stdMap[storedWs]) {
+        this.project = stdMap[storedWs];
+        this.projectId = stdMap[storedWs].id;
+        this.currentWorkspace = stdMap[storedWs].workspace;
       } else if (projects.length > 0) {
         const latest = projects[0];
         this.project = latest;
@@ -47,7 +65,7 @@ export class KanbanBoardView extends BaseView {
     }
 
     if (!this.currentWorkspace) {
-      this.currentWorkspace = 'panen-kunci';
+      this.currentWorkspace = 'creativoffice';
     }
     localStorage.setItem('active_workspace', this.currentWorkspace);
     if (this.projectId) {
@@ -250,6 +268,13 @@ export class KanbanBoardView extends BaseView {
   }
 
   setProject(projectId, workspace = null) {
+    if (projectId && (projectId.toLowerCase().includes('creativ') || projectId.toLowerCase().includes('creative'))) {
+      projectId = 'creativoffice';
+    }
+    if (workspace && (workspace.toLowerCase().includes('creativ') || workspace.toLowerCase().includes('creative'))) {
+      workspace = 'creativoffice';
+    }
+
     this.projectId = projectId;
     localStorage.setItem('active_project_id', projectId || '');
     if (workspace) {
@@ -259,21 +284,33 @@ export class KanbanBoardView extends BaseView {
     if (this.projectService) {
       this.project = this.projectService.getProject(projectId);
       if (!this.project) {
-        try {
-          const raw = localStorage.getItem('creative_office_projects');
-          if (raw) {
-            const arr = JSON.parse(raw);
-            const search = String(projectId).toLowerCase().replace(/[^a-z0-9]/g, '');
-            const found = arr.find(p => {
-              const pId = String(p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const pName = String(p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const pWs = String(p.workspace || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const isPanen = (search.includes('panen') || search.includes('panan')) && (pName.includes('panen') || pName.includes('panan') || pWs.includes('panen') || pWs.includes('panan'));
-              return pId === search || pName === search || pWs.includes(search) || search.includes(pName) || isPanen;
-            });
-            if (found) this.project = found;
-          }
-        } catch (e) {}
+        const stdMap = {
+          'creativoffice': { id: 'creativoffice', name: 'CreativOffice', workspace: 'creativoffice' },
+          'panen-kunci': { id: 'panen-kunci', name: 'Panen Kunci', workspace: 'panen-kunci' },
+          'layarbaca': { id: 'layarbaca', name: 'LayarBaca', workspace: 'layarbaca' },
+          'aikreativ': { id: 'aikreativ', name: 'AIKreativ', workspace: 'aikreativ' },
+          'sharinginaja': { id: 'sharinginaja', name: 'Sharinginaja', workspace: 'sharinginaja' },
+          'ruangkreasi': { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi' }
+        };
+        if (projectId && stdMap[projectId]) {
+          this.project = stdMap[projectId];
+        } else {
+          try {
+            const raw = localStorage.getItem('creative_office_projects');
+            if (raw) {
+              const arr = JSON.parse(raw);
+              const search = String(projectId).toLowerCase().replace(/[^a-z0-9]/g, '');
+              const found = arr.find(p => {
+                const pId = String(p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const pName = String(p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const pWs = String(p.workspace || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const isPanen = (search.includes('panen') || search.includes('panan')) && (pName.includes('panen') || pName.includes('panan') || pWs.includes('panen') || pWs.includes('panan'));
+                return pId === search || pName === search || pWs.includes(search) || search.includes(pName) || isPanen;
+              });
+              if (found) this.project = found;
+            }
+          } catch (e) {}
+        }
       }
       if (this.project) {
         this.currentWorkspace = this.project.workspace || this.project.id;
@@ -281,7 +318,7 @@ export class KanbanBoardView extends BaseView {
       }
     }
     if (!this.currentWorkspace) {
-      this.currentWorkspace = workspace || projectId || 'panen-kunci';
+      this.currentWorkspace = workspace || projectId || 'creativoffice';
     }
     this.setWorkspace(this.currentWorkspace);
   }
@@ -291,7 +328,7 @@ export class KanbanBoardView extends BaseView {
     const s = String(name).trim();
     const sLower = s.toLowerCase();
     if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
-    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'Creative Office';
+    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office') || sLower.includes('creativoffice')) return 'CreativOffice';
     if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci') || sLower.includes('panenkunci')) return 'Panen Kunci';
     if (sLower.includes('ruangkreasi') || sLower.includes('ruang kreasi')) return 'Ruang Kreasi';
     if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
@@ -1003,14 +1040,14 @@ export class KanbanBoardView extends BaseView {
       };
     }
 
-    // 4. JIKA ROLE USER / MEMBER (Masuk lewat tautan / QR / peran user)
-    // Hak akses terbatas: Hanya bisa melihat & memindahkan kartu
+    // 4. JIKA ROLE USER / MEMBER / PEGAWAI / SISWA (Bukan admin)
+    // Hak akses: Melihat & mengelola tugas di papan yang ditugaskan
     const activeName = localStorage.getItem('active_user_name');
     return {
       ...(u || {}),
-      name: (u && u.role === 'user' && u.name) ? u.name : (activeName || 'Anggota Tim'),
+      name: u?.name || u?.fullName || (activeName || 'Anggota Tim'),
       role: 'user',
-      title: 'Member Papan Proyek',
+      title: u?.title || u?.position || 'Member Papan Proyek',
       isAdmin: () => false,
       isProjectManager: () => false,
       isQA: () => false,

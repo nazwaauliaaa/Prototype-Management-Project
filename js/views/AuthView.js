@@ -932,39 +932,66 @@ export class AuthView extends BaseView {
           if (!Array.isArray(managedList) || managedList.length === 0) return null;
           const clean = String(codeStr || '').trim();
           const cleanLower = clean.toLowerCase();
+          const rawCleanUser = cleanLower.replace(/^https?:\/\/[^\/]+\/?/i, '').replace(/^@/, '').replace(/[^a-z0-9_\-\s]/g, ' ').trim();
+          const cleanWords = cleanLower.split(/[\s_\-\/]+/).filter(w => w.length >= 2);
+
           const uName = (userObj?.name || userObj?.fullName || '').toLowerCase().trim();
-          const uUsername = (userObj?.username || '').toLowerCase().trim();
+          const uUsername = (userObj?.username || '').toLowerCase().replace(/^@/, '').trim();
           const uNip = String(userObj?.nip || '').trim();
           const uEmail = (userObj?.email || '').toLowerCase().trim();
 
-          return managedList.find(m => {
-            const mUsername = (m.username || '').toLowerCase().trim();
+          // 1. Direct matching loop
+          const matched = managedList.find(m => {
+            const mUsername = (m.username || '').toLowerCase().replace(/^@/, '').trim();
             const mName = (m.fullName || m.name || '').toLowerCase().trim();
             const mNip = String(m.nip || '').trim();
             const mEmail = (m.email || '').toLowerCase().trim();
-            const mId = (m.id || '').trim();
+            const mId = String(m.id || '').trim();
+            const mQr = String(m.qr_data || '').toLowerCase().trim();
+            const mWords = mName.split(/\s+/).filter(w => w.length >= 2);
 
-            if (clean && (mUsername === cleanLower || '@' + mUsername === cleanLower || mUsername === '@' + cleanLower)) return true;
-            if (clean && mNip && mNip === clean) return true;
-            if (clean && mId && mId === clean) return true;
-            if (clean && mName && mName === cleanLower) return true;
+            // Match by codeStr against username
+            if (mUsername && (cleanLower === mUsername || cleanLower === '@' + mUsername || rawCleanUser === mUsername || cleanLower.includes(mUsername) || (rawCleanUser.length >= 3 && mUsername.includes(rawCleanUser)))) return true;
+            // Match by codeStr against name
+            if (mName && (cleanLower === mName || cleanLower.includes(mName) || mName.includes(cleanLower) || mWords.some(w => cleanLower.includes(w) || cleanWords.includes(w)))) return true;
+            // Match by NIP or ID
+            if (clean && mNip && (mNip === clean || cleanLower.includes(mNip))) return true;
+            if (clean && mId && (mId === clean || cleanLower.includes(mId))) return true;
+            // Match by QR data or Email
+            if (mQr && (cleanLower === mQr || cleanLower.includes(mQr) || mQr.includes(cleanLower))) return true;
+            if (mEmail && (cleanLower === mEmail || cleanLower.includes(mEmail))) return true;
 
-            if (uUsername && (mUsername === uUsername || '@' + mUsername === uUsername)) return true;
+            // Match against userObj (e.g. from Sampulkreativ API / Supabase)
+            if (uUsername && mUsername && (mUsername === uUsername || mUsername.includes(uUsername) || uUsername.includes(mUsername))) return true;
             if (uName && mName && (mName === uName || mName.includes(uName) || uName.includes(mName))) return true;
             if (uNip && mNip && mNip === uNip) return true;
             if (uEmail && mEmail && mEmail === uEmail) return true;
+            if (userObj?.id && mId && userObj.id === mId) return true;
 
+            // Match parsed JSON
             if (clean.startsWith('{') && clean.endsWith('}')) {
               try {
                 const parsed = JSON.parse(clean);
-                if (parsed.username && (mUsername === parsed.username.toLowerCase() || '@' + mUsername === parsed.username.toLowerCase())) return true;
-                if (parsed.id && mId === parsed.id) return true;
+                const pUser = (parsed.username || '').toLowerCase().replace(/^@/, '').trim();
+                const pName = (parsed.name || parsed.fullName || '').toLowerCase().trim();
+                if (pUser && mUsername && (mUsername === pUser || mUsername.includes(pUser))) return true;
+                if (parsed.id && mId === String(parsed.id).trim()) return true;
                 if (parsed.nip && mNip === String(parsed.nip).trim()) return true;
-                if (parsed.name && mName === parsed.name.toLowerCase()) return true;
+                if (pName && mName && (mName === pName || mName.includes(pName) || pName.includes(mName))) return true;
               } catch(e) {}
             }
             return false;
           });
+
+          if (matched) return matched;
+
+          // 2. Fallback: If only 1 non-admin managed user exists in the system, auto-match them!
+          const nonAdminManaged = managedList.filter(m => (m.role || '').toLowerCase() !== 'admin');
+          if (nonAdminManaged.length === 1) {
+            return nonAdminManaged[0];
+          }
+
+          return null;
         } catch (e) {
           return null;
         }
@@ -972,17 +999,37 @@ export class AuthView extends BaseView {
 
       const applyUserAssignment = (userObj, codeStr) => {
         const managed = getManagedAssignment(userObj, codeStr);
-        const targetProj = (managed && managed.assignedProjectId) || 'panen-kunci';
-        const targetWs = (managed && (managed.assignedWorkspace || managed.assignedProjectId)) || targetProj;
+        let targetProj = (managed && managed.assignedProjectId) || (userObj && userObj.assignedProjectId);
+        if (!targetProj || targetProj === 'panen-kunci') {
+          if (managed && managed.assignedBoardName && managed.assignedBoardName.toLowerCase().includes('creativ')) {
+            targetProj = 'creativoffice';
+          } else if (userObj && userObj.assignedBoardName && userObj.assignedBoardName.toLowerCase().includes('creativ')) {
+            targetProj = 'creativoffice';
+          }
+        }
+        if (!targetProj) targetProj = 'creativoffice';
+
+        // Normalize creativoffice spelling
+        if (targetProj.toLowerCase().includes('creativ')) {
+          targetProj = 'creativoffice';
+        }
+
+        let targetWs = (managed && (managed.assignedWorkspace || managed.assignedProjectId)) || (userObj && (userObj.assignedWorkspace || userObj.assignedProjectId)) || targetProj;
+        if (targetWs.toLowerCase().includes('creativ')) {
+          targetWs = 'creativoffice';
+        }
 
         localStorage.setItem('active_workspace', targetWs);
         localStorage.setItem('active_project_id', targetProj);
         localStorage.setItem('user_invited_workspace', targetWs);
         localStorage.setItem('user_invited_project', targetProj);
 
-        if (managed && managed.assignedTaskId && managed.assignedTaskId !== 'all') {
-          localStorage.setItem('active_assigned_task_id', managed.assignedTaskId);
-          localStorage.setItem('active_assigned_task_title', managed.assignedTaskTitle || '');
+        const taskId = (managed && managed.assignedTaskId) || (userObj && userObj.assignedTaskId);
+        const taskTitle = (managed && managed.assignedTaskTitle) || (userObj && userObj.assignedTaskTitle) || '';
+
+        if (taskId && taskId !== 'all') {
+          localStorage.setItem('active_assigned_task_id', taskId);
+          localStorage.setItem('active_assigned_task_title', taskTitle);
         } else {
           localStorage.removeItem('active_assigned_task_id');
           localStorage.removeItem('active_assigned_task_title');
@@ -1106,13 +1153,19 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
+            const { targetProj, targetWs, managed } = applyUserAssignment(verifiedUser, cleanCode);
+
+            userInstance.assignedProjectId = targetProj;
+            userInstance.assignedWorkspace = targetWs;
+            if (managed && managed.role) {
+              userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
+            }
+
             this.authService.loginAsUser(userInstance, { silent: true });
 
-            const { targetProj, targetWs } = applyUserAssignment(verifiedUser, cleanCode);
-
-            const isUser = (userInstance.role || '').toLowerCase() === 'user';
-            const targetView = isUser ? 'kanban' : 'dashboard';
-            const targetHash = isUser ? `#/kanban/${targetProj}` : '#/dashboard';
+            const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
+            const targetView = isAdmin ? 'dashboard' : 'kanban';
+            const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
 
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
@@ -1123,7 +1176,7 @@ export class AuthView extends BaseView {
               });
             }
             window.location.hash = targetHash;
-          }, 400);
+          }, 350);
           return;
         }
       } catch (sampulErr) {
@@ -1390,13 +1443,19 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
+            const { targetProj, targetWs, managed } = applyUserAssignment(userInstance || registeredData, codeToReg);
+
+            userInstance.assignedProjectId = targetProj;
+            userInstance.assignedWorkspace = targetWs;
+            if (managed && managed.role) {
+              userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
+            }
+
             this.authService.loginAsUser(userInstance, { silent: true });
 
-            const { targetProj, targetWs } = applyUserAssignment(userInstance || registeredData, codeToReg);
-
-            const isUser = (userInstance.role || '').toLowerCase() === 'user';
-            const targetView = isUser ? 'kanban' : 'dashboard';
-            const targetHash = isUser ? `#/kanban/${targetProj}` : '#/dashboard';
+            const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
+            const targetView = isAdmin ? 'dashboard' : 'kanban';
+            const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
 
             // Arahkan sesuai role
             const eb = this.container ? this.container.resolve('EventBus') : null;
@@ -1408,7 +1467,7 @@ export class AuthView extends BaseView {
               });
             }
             window.location.hash = targetHash;
-          }, 450);
+          }, 350);
         } catch (regErr) {
           console.warn('[AuthView] Error registrasi otomatis:', regErr);
           // Fallback lokal jika backend tidak terjangkau
@@ -1446,10 +1505,15 @@ export class AuthView extends BaseView {
             }
           }
 
+          const { targetProj: fallbackProj, targetWs: fallbackWs, managed: fallbackManaged } = applyUserAssignment(userInstance, codeToReg);
+          userInstance.assignedProjectId = fallbackProj;
+          userInstance.assignedWorkspace = fallbackWs;
+          if (fallbackManaged && fallbackManaged.role) {
+            userInstance.role = fallbackManaged.role === 'admin' ? 'admin' : 'user';
+          }
           this.authService.loginAsUser(userInstance, { silent: true });
-          const { targetProj: fallbackProj } = applyUserAssignment(userInstance, codeToReg);
-          const isUser = (userInstance.role || '').toLowerCase() === 'user';
-          window.location.hash = isUser ? `#/kanban/${fallbackProj}` : '#/dashboard';
+          const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
+          window.location.hash = isAdmin ? '#/dashboard' : `#/kanban/${fallbackProj}`;
         }
       };
 
@@ -1499,20 +1563,20 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
+            const { targetProj, targetWs, managed } = applyUserAssignment(userInstance || userFromDb, cleanCode);
+
+            userInstance.assignedProjectId = targetProj;
+            userInstance.assignedWorkspace = targetWs;
+            if (managed && managed.role) {
+              userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
+            }
+
             this.authService.loginAsUser(userInstance, { silent: true });
 
-            const { targetProj, targetWs } = applyUserAssignment(userInstance || userFromDb, cleanCode);
-            
-            // Simpan active workspace & project
-            localStorage.setItem('active_workspace', targetWs);
-            localStorage.setItem('active_project_id', targetProj);
-            localStorage.setItem('user_invited_workspace', targetWs);
-            localStorage.setItem('user_invited_project', targetProj);
-
-            // Arahkan ke Kanban jika role user, ke Beranda jika role lain
-            const isUser = (userInstance.role || '').toLowerCase() === 'user';
-            const targetView = isUser ? 'kanban' : 'dashboard';
-            const targetHash = isUser ? `#/kanban/${targetProj}` : '#/dashboard';
+            // Arahkan ke Kanban jika bukan admin
+            const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
+            const targetView = isAdmin ? 'dashboard' : 'kanban';
+            const targetHash = isAdmin ? '#/dashboard' : `#/kanban/${targetProj}`;
 
             const eb = this.container ? this.container.resolve('EventBus') : null;
             if (eb) {
@@ -1523,7 +1587,7 @@ export class AuthView extends BaseView {
               });
             }
             window.location.hash = targetHash;
-          }, 400);
+          }, 350);
           return;
         }
 
