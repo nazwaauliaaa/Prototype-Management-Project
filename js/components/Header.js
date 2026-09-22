@@ -38,6 +38,11 @@ export class Header {
     const activeRole = localStorage.getItem('active_user_role');
     const isUserRole = activeRole === 'admin' ? false : ((user.role || '').toLowerCase() === 'user' || activeRole === 'user');
 
+    const resolvedAvatar = this.authService ? this.authService.resolveUserAvatar(user) : '';
+    const userAvatar = (user.avatar && !user.avatar.includes('dicebear'))
+      ? user.avatar
+      : (resolvedAvatar || user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v');
+
     const roleBadges = {
       admin: { label: 'Executive Admin', icon: 'admin_panel_settings', class: 'bg-purple-500/20 text-purple-300 border-purple-400/30' },
       'manajement-project': { label: 'Project Manager', icon: 'assignment', class: 'bg-blue-500/20 text-blue-300 border-blue-400/30' },
@@ -308,7 +313,7 @@ export class Header {
                 <img
                   alt="Profile"
                   class="w-7 h-7 rounded-full object-cover ring-1 ring-purple-400/40"
-                  src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
+                  src="${userAvatar}"
                 />
                 <div class="hidden sm:flex flex-col">
                   <span class="text-[12.5px] text-white font-semibold leading-tight">${user.name}</span>
@@ -327,7 +332,7 @@ export class Header {
                   <img
                     alt="${user.name}"
                     class="w-10 h-10 rounded-full object-cover ring-1 ring-purple-400/40 shrink-0"
-                    src="${user.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCs4GAAnGL_NHUUPqYj0DsaZfgUJ0aJqIfPALjUmgjIwshL2vKcWW1QxiECnTWYmy_gKEsorDZKRlitEXHTELFWCF2lnRdTxXPmDeQYKdyGkqR3nsE6I_aDuKoI2cPL5cVEsklM_qSX2Wnfjgs6327TJeHJMGlnraOZoJtjaJSbz488P9Kd_SGyHmmUieIr_VKl6Ym0ogBpgVhEF2RItwHr0k9GSset-BVhn3nAeGu7qpmWBRe51w-v'}"
+                    src="${userAvatar}"
                   />
                   <div class="min-w-0 flex-1">
                     <span class="text-[9.5px] text-white/50 uppercase font-bold tracking-wider">Profil Anda</span>
