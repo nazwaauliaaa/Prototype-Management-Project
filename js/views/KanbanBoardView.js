@@ -1265,13 +1265,18 @@ export class KanbanBoardView extends BaseView {
     return `
       <style>
         /* ── Drag-and-Drop & Board Layout Styles ── */
+        #kanban-board {
+          touch-action: pan-x pan-y;
+          -webkit-overflow-scrolling: touch;
+        }
         #kanban-board::-webkit-scrollbar {
+          width: 7px;
           height: 7px;
         }
         #kanban-board::-webkit-scrollbar-track {
           background: rgba(0, 0, 0, 0.18);
           border-radius: 999px;
-          margin: 0 28px;
+          margin: 0 14px;
         }
         #kanban-board::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.35);
@@ -1517,7 +1522,7 @@ export class KanbanBoardView extends BaseView {
       </style>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full flex-1 h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100dvh-var(--topbar-height))] min-h-0 relative transition-all duration-300 select-none overflow-hidden" style="${bgStyle}">
+      <div class="flex flex-col w-full flex-1 min-h-[calc(100dvh-var(--topbar-height))] relative transition-all duration-300 select-none" style="${bgStyle}">
         
         <!-- Ambient Studio Glow Orbs (Subtle Depth) -->
         <div class="creativoffice-orb bg-purple-600/20 w-[500px] h-[500px] -top-32 -left-32 pointer-events-none"></div>
@@ -1610,7 +1615,7 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- Page Title Sub-bar (Dibawah Element Toolbar) -->
-        <div class="w-full px-4 sm:px-6 py-2 bg-black/25 backdrop-blur-md border-b border-white/10 flex items-center justify-between z-20 relative">
+        <div class="w-full px-4 sm:px-6 py-2 bg-black/25 backdrop-blur-md border-b border-white/10 flex items-center justify-between z-20 relative shrink-0">
           <div class="flex items-center gap-2.5 min-w-0">
             <h1 class="text-[18px] sm:text-[20px] font-bold text-white tracking-tight drop-shadow-sm truncate">
               ${boardTitle}
@@ -1622,7 +1627,7 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- Main Body: Split View with Left Inbox Drawer + Board Columns -->
-        <div class="flex-1 flex overflow-hidden w-full relative">
+        <div class="flex-1 flex w-full relative min-h-0">
 
           <!-- Left: Inbox Drawer (Opened when isInboxOpen is true) -->
           ${this.isInboxOpen ? `
@@ -1752,8 +1757,8 @@ export class KanbanBoardView extends BaseView {
             </aside>
           ` : ''}
 
-          <!-- Kanban Columns Stream (Responsive Full 1-Screen Fit) -->
-          <div class="flex-1 w-full max-w-full overflow-hidden flex flex-col min-h-0 h-full" id="kanban-scroll-area">
+          <!-- Kanban Columns Stream (Responsive Scrollable) -->
+          <div class="flex-1 w-full max-w-full flex flex-col min-h-0" id="kanban-scroll-area">
 
             <!-- Banner Indikator Filter Berdasarkan -->
             ${this.activeFilter !== 'all' ? `
@@ -1808,7 +1813,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-3 sm:pb-4 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
+            <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-28 sm:pb-36 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
               
               ${this.columns.map((col, colIdx) => {
       const validColIds = this.columns.map(c => c.id);
@@ -1823,7 +1828,7 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col h-full max-h-full min-h-[320px] sm:min-h-0 bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all text-white"
+                    class="kanban-column flex flex-col min-h-[160px] bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all text-white"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
                   >
