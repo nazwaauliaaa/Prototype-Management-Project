@@ -652,14 +652,16 @@ export class Header {
     const createBoardBtn = this.element.querySelector('#btn-header-create-board');
     if (createBoardBtn) {
       createBoardBtn.addEventListener('click', () => {
-        this.modalManager.open('create-board');
+        const isDash = window.location.hash.includes('dashboard') || !window.location.hash || window.location.hash === '#/';
+        this.modalManager.open('create-board', { sourceView: isDash ? 'dashboard' : 'kanban' });
       });
     }
 
     const mobileCreateBoardBtn = this.element.querySelector('#btn-mobile-create-board');
     if (mobileCreateBoardBtn) {
       mobileCreateBoardBtn.addEventListener('click', () => {
-        this.modalManager.open('create-board');
+        const isDash = window.location.hash.includes('dashboard') || !window.location.hash || window.location.hash === '#/';
+        this.modalManager.open('create-board', { sourceView: isDash ? 'dashboard' : 'kanban' });
       });
     }
 

@@ -171,6 +171,7 @@ export class CreateBoardModal extends BaseModal {
   }
 
   render(data = {}) {
+    this.sourceView = data?.sourceView || (window.location.hash.includes('dashboard') || !window.location.hash || window.location.hash === '#/' ? 'dashboard' : 'kanban');
     const defaultTheme = this.themes.find(t => t.id === 'creative-indigo') || this.themes[0];
     this.selectedTheme = defaultTheme;
     const prefillTitle = data?.prefillTitle || '';
@@ -648,12 +649,26 @@ export class CreateBoardModal extends BaseModal {
         const palette = ['#8b5cf6', '#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6', '#f43f5e'];
         const chosenColor = palette[Math.floor(Math.random() * palette.length)];
 
+        const activeTheme = this.selectedTheme || this.themes[0] || {
+          id: 'minimal-desk',
+          name: 'Minimalist Desk',
+          type: 'image',
+          value: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80'
+        };
+
         const newWorkspace = {
           id: newWorkspaceId,
           title: wsTitle,
           tag: wsTag,
           description: description,
           color: chosenColor,
+          theme: {
+            id: activeTheme.id,
+            name: activeTheme.name,
+            type: activeTheme.type,
+            value: activeTheme.value,
+            thumb: activeTheme.thumb || activeTheme.value
+          },
           isCustom: true,
           iconSvg: `
             <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -667,7 +682,12 @@ export class CreateBoardModal extends BaseModal {
         // Persist to custom workspaces in localStorage
         try {
           const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
-          custom.unshift(newWorkspace);
+          const existingIdx = custom.findIndex(w => w.id === newWorkspaceId || w.title === wsTitle);
+          if (existingIdx !== -1) {
+            custom[existingIdx] = newWorkspace;
+          } else {
+            custom.unshift(newWorkspace);
+          }
           localStorage.setItem('custom_workspaces', JSON.stringify(custom));
         } catch (err) {
           console.error('Error saving custom workspace:', err);
@@ -675,13 +695,6 @@ export class CreateBoardModal extends BaseModal {
 
         // Set active workspace
         localStorage.setItem('active_workspace', newWorkspaceId);
-
-        const activeTheme = this.selectedTheme || this.themes[0] || {
-          id: 'minimal-desk',
-          name: 'Minimalist Desk',
-          type: 'image',
-          value: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80'
-        };
 
         // 1. Create project with full metadata & theme
         const newProject = this.projectService.addProject({
@@ -747,22 +760,35 @@ export class CreateBoardModal extends BaseModal {
         this.modalManager.close(this.modalId);
 
         if (this.notificationService) {
-          this.notificationService.success(`Papan proyek "${name}" berhasil dibuat!`);
+          this.notificationService.success(`Ruang kerja dan papan "${name}" berhasil ditambahkan ke Beranda!`);
         }
 
         // 4. Emit project & workspace events
         this.eventBus.emit('workspace:created', { workspace: newWorkspace });
         this.eventBus.emit('workspace:changed', { workspaceId: newWorkspaceId });
+        this.eventBus.emit('workspaces:updated', { workspace: newWorkspace });
         this.eventBus.emit('project:created', { project: newProject });
         this.eventBus.emit('project:added', { project: newProject });
+        this.eventBus.emit('projects:updated', this.projectService.getAllProjects());
 
-        // 5. Navigate to kanban so what was newly created immediately opens!
-        window.location.hash = `#/kanban/${newProject.id}`;
-        this.eventBus.emit('navigate', {
-          view: 'kanban',
-          projectId: newProject.id,
-          workspace: newWorkspaceId
-        });
+        // 5. Navigate: if created from Dashboard (Beranda), stay on Beranda so the user sees the new board!
+        const currentHash = window.location.hash || '';
+        const isFromDashboard = this.sourceView === 'dashboard' ||
+                                currentHash === '' ||
+                                currentHash === '#/' ||
+                                currentHash.startsWith('#/dashboard');
+
+        if (isFromDashboard) {
+          window.location.hash = '#/dashboard';
+          this.eventBus.emit('navigate', { view: 'dashboard' });
+        } else {
+          window.location.hash = `#/kanban/${newProject.id}`;
+          this.eventBus.emit('navigate', {
+            view: 'kanban',
+            projectId: newProject.id,
+            workspace: newWorkspaceId
+          });
+        }
       });
     }
   }

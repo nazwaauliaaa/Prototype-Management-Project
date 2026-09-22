@@ -968,8 +968,13 @@ export class WorkspacesView extends BaseView {
         this.activeWorkspaceId = newWorkspaceId;
         localStorage.setItem('active_workspace', newWorkspaceId);
 
-        // Emit global workspace selection
+        // Emit global workspace selection & updates
         this.eventBus.emit('workspace:selected', { workspace: newWorkspaceId });
+        this.eventBus.emit('workspace:created', { workspace: newWorkspace });
+        this.eventBus.emit('workspaces:updated', { workspace: newWorkspace });
+        if (this.projectService) {
+          this.eventBus.emit('projects:updated', this.projectService.getAllProjects());
+        }
 
         // Notification
         this.notificationService.success(`Ruang Kerja baru "${wsTitle}" dan Proyek "${name}" berhasil dibuat!`);

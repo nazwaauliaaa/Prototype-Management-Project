@@ -31,20 +31,131 @@ export class DashboardView extends BaseView {
     this.eventBus.on('project:created', this._rerender);
     this.eventBus.on('projects:updated', this._rerender);
     this.eventBus.on('tasks:updated', this._rerender);
+    this.eventBus.on('workspace:created', this._rerender);
+    this.eventBus.on('workspace:changed', this._rerender);
+    this.eventBus.on('workspaces:updated', this._rerender);
+    this.eventBus.on('workspace:selected', this._rerender);
+    this.eventBus.on('workspace:deleted', this._rerender);
   }
 
   formatProjectTitle(name) {
     if (!name) return 'Panen Kunci';
     const s = String(name).trim();
+    if (/\bhub\b/i.test(s)) {
+      return s;
+    }
     const sLower = s.toLowerCase();
-    if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
-    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office')) return 'Creative Office';
-    if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci') || sLower.includes('panenkunci')) return 'Panen Kunci';
-    if (sLower.includes('ruangkreasi') || sLower.includes('ruang kreasi')) return 'Ruang Kreasi';
-    if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
-    if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
+    if (sLower === 'layarbaca' || sLower === 'layar-baca' || sLower === 'layar baca') return 'LayarBaca';
+    if (sLower === 'creativoffive' || sLower === 'creativoffice' || sLower === 'creative office') return 'Creative Office';
+    if (sLower === 'panankunci' || sLower === 'panenkunci' || sLower === 'panen-kunci' || sLower === 'panen kunci') return 'Panen Kunci';
+    if (sLower === 'ruangkreasi' || sLower === 'ruang-kreasi' || sLower === 'ruang kreasi') return 'Ruang Kreasi';
+    if (sLower === 'aikreativ' || sLower === 'ai-kreativ' || sLower === 'ai kreativ') return 'AIKreativ';
+    if (sLower === 'sharinginaja' || sLower === 'sharing-inaja' || sLower === 'sharing in aja') return 'Sharinginaja';
     const cleaned = s.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d{3,}$/gi, '').trim();
     return cleaned || s;
+  }
+
+  getDisplayBoards() {
+    let deletedWs = [];
+    try {
+      deletedWs = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
+    } catch (e) {}
+    const isDeleted = (id) => id && Array.isArray(deletedWs) && deletedWs.includes(id);
+
+    const defaultBoards = [
+      {
+        id: 'creativoffice',
+        name: 'Creative Office',
+        workspace: 'creativoffice',
+        category: 'Creative Hub',
+        theme: { type: 'gradient', value: 'linear-gradient(135deg, #0b061a 0%, #3b1d75 100%)', name: 'Obsidian Violet' }
+      },
+      {
+        id: 'panen-kunci',
+        name: 'Panen Kunci',
+        workspace: 'panen-kunci',
+        category: 'SaaS & Infrastruktur',
+        theme: { type: 'gradient', value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)', name: 'Creative Indigo' }
+      },
+      {
+        id: 'layarbaca',
+        name: 'LayarBaca',
+        workspace: 'layarbaca',
+        category: 'Media & Publikasi',
+        theme: { type: 'gradient', value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)', name: 'Berry Fuchsia' }
+      },
+      {
+        id: 'aikreativ',
+        name: 'AIKreativ',
+        workspace: 'aikreativ',
+        category: 'AI & Otomasi',
+        theme: { type: 'gradient', value: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%)', name: 'Cosmic Indigo' }
+      },
+      {
+        id: 'sharinginaja',
+        name: 'Sharinginaja',
+        workspace: 'sharinginaja',
+        category: 'Cloud Asset Hub',
+        theme: { type: 'gradient', value: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)', name: 'Emerald Forest' }
+      }
+    ];
+
+    const result = [];
+    const seenWorkspaces = new Set();
+    const seenIds = new Set();
+
+    // 1. Custom workspaces from localStorage ('custom_workspaces') - put newly created ones at the very front
+    try {
+      const customWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      customWs.forEach(w => {
+        const wsKey = String(w.id || '').toLowerCase();
+        const wsTitle = w.title || w.name;
+        if (wsKey && !seenWorkspaces.has(wsKey) && !isDeleted(w.id)) {
+          seenWorkspaces.add(wsKey);
+          seenIds.add(w.id);
+          const color = w.color || '#8b5cf6';
+          result.push({
+            id: w.id,
+            name: wsTitle,
+            workspace: w.id,
+            category: w.tag || 'Ruang Kerja',
+            theme: w.theme || {
+              type: 'gradient',
+              value: `linear-gradient(135deg, ${color} 0%, #1e1b4b 100%)`,
+              name: wsTitle
+            },
+            isCustom: true,
+            isUserCreated: true
+          });
+        }
+      });
+    } catch (e) {}
+
+    // 2. User created or stored projects from ProjectService
+    const allProjects = this.projectService ? this.projectService.getAllProjects() : [];
+    allProjects.forEach(p => {
+      const pId = String(p.id || '');
+      const wsKey = String(p.workspace || p.id || '').toLowerCase();
+      if (!seenIds.has(pId) && !seenWorkspaces.has(wsKey) && !isDeleted(p.id) && !isDeleted(p.workspace)) {
+        seenIds.add(pId);
+        seenWorkspaces.add(wsKey);
+        result.push(p);
+      }
+    });
+
+    // 3. Default portfolio boards to ensure standard boards are always available
+    defaultBoards.forEach(db => {
+      const wsKey = db.workspace.toLowerCase();
+      const match = result.some(item => 
+        (item.workspace && String(item.workspace).toLowerCase() === wsKey) ||
+        (item.id && String(item.id).toLowerCase() === String(db.id).toLowerCase())
+      );
+      if (!match && !isDeleted(db.id) && !isDeleted(db.workspace)) {
+        result.push(db);
+      }
+    });
+
+    return result;
   }
 
   render() {
@@ -77,36 +188,7 @@ export class DashboardView extends BaseView {
       dashBgStyle = `background-color: ${dashTheme.value}; min-height: 100%;`;
     }
 
-    // Default portfolio boards to ensure the dashboard is never an empty white blank
-    const defaultBoards = [
-      {
-        id: 'panen-kunci',
-        name: 'Panen Kunci',
-        workspace: 'panen-kunci',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)', name: 'Creative Indigo' }
-      },
-      {
-        id: 'layarbaca',
-        name: 'LayarBaca',
-        workspace: 'layarbaca',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)', name: 'Berry Fuchsia' }
-      },
-      {
-        id: 'aikreativ',
-        name: 'AIKreativ',
-        workspace: 'aikreativ',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%)', name: 'Cosmic Indigo' }
-      },
-      {
-        id: 'sharinginaja',
-        name: 'Sharinginaja',
-        workspace: 'sharinginaja',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)', name: 'Emerald Forest' }
-      }
-    ];
-
-    const allProjects = this.projectService ? this.projectService.getAllProjects() : [];
-    const displayProjects = allProjects.length > 0 ? allProjects : defaultBoards;
+    const displayProjects = this.getDisplayBoards();
 
     // Calculate metrics
     const totalProjects = displayProjects.length;
@@ -547,6 +629,11 @@ export class DashboardView extends BaseView {
       this.eventBus.off('project:created', this._rerender);
       this.eventBus.off('projects:updated', this._rerender);
       this.eventBus.off('tasks:updated', this._rerender);
+      this.eventBus.off('workspace:created', this._rerender);
+      this.eventBus.off('workspace:changed', this._rerender);
+      this.eventBus.off('workspaces:updated', this._rerender);
+      this.eventBus.off('workspace:selected', this._rerender);
+      this.eventBus.off('workspace:deleted', this._rerender);
     }
     super.unmount();
   }
@@ -564,6 +651,7 @@ export class DashboardView extends BaseView {
         if (workspace) {
           localStorage.setItem('active_workspace', workspace);
         }
+        window.location.hash = `#/kanban/${projectId || workspace}`;
         this.eventBus.emit('navigate', {
           view: 'kanban',
           projectId: projectId,
@@ -585,7 +673,7 @@ export class DashboardView extends BaseView {
     if (cardCreateBtn) {
       cardCreateBtn.addEventListener('click', () => {
         if (this.modalManager) {
-          this.modalManager.open('create-board');
+          this.modalManager.open('create-board', { sourceView: 'dashboard' });
         }
       });
     }
