@@ -930,92 +930,144 @@ export class AuthView extends BaseView {
         try {
           const managedList = JSON.parse(localStorage.getItem('creative_office_managed_users') || '[]');
           if (!Array.isArray(managedList) || managedList.length === 0) return null;
+
           const clean = String(codeStr || '').trim();
           const cleanLower = clean.toLowerCase();
-          const rawCleanUser = cleanLower.replace(/^https?:\/\/[^\/]+\/?/i, '').replace(/^@/, '').replace(/[^a-z0-9_\-\s]/g, ' ').trim();
-          const cleanWords = cleanLower.split(/[\s_\-\/]+/).filter(w => w.length >= 2);
+          const cleanUser = cleanLower.replace(/^@/, '').replace(/^https?:\/\/[^\/]+\/?/i, '').trim();
+          const cleanAlpha = cleanLower.replace(/[^a-z0-9]/g, '');
+          const cleanWords = cleanLower.split(/[\s_\-\/\?&=:]+/).filter(w => w.length >= 2);
 
-          const uName = (userObj?.name || userObj?.fullName || '').toLowerCase().trim();
-          const uUsername = (userObj?.username || '').toLowerCase().replace(/^@/, '').trim();
-          const uNip = String(userObj?.nip || '').trim();
-          const uEmail = (userObj?.email || '').toLowerCase().trim();
+          const uUsername = String(userObj?.username || userObj?.user_name || userObj?.nama_pengguna || userObj?.login || userObj?.uname || '').replace(/^@/, '').toLowerCase().trim();
+          const uName = String(userObj?.name || userObj?.nama || userObj?.fullName || userObj?.full_name || userObj?.fullname || userObj?.nama_lengkap || '').toLowerCase().trim();
+          const uNip = String(userObj?.nip || userObj?.nisn || userObj?.nomor_induk || userObj?.nik || '').trim();
+          const uEmail = String(userObj?.email || userObj?.surel || '').toLowerCase().trim();
+          const uId = String(userObj?.id || userObj?.userId || userObj?.user_id || '').trim();
+          const uWords = uName.split(/\s+/).filter(w => w.length >= 2);
 
-          // 1. Direct matching loop
+          let parsedJson = null;
+          if (clean.startsWith('{') && clean.endsWith('}')) {
+            try {
+              const p = JSON.parse(clean);
+              parsedJson = {
+                user: String(p.username || p.user_name || p.nama_pengguna || '').replace(/^@/, '').toLowerCase().trim(),
+                name: String(p.name || p.nama || p.fullName || p.full_name || '').toLowerCase().trim(),
+                email: String(p.email || '').toLowerCase().trim(),
+                nip: String(p.nip || p.nisn || '').trim(),
+                id: String(p.id || '').trim()
+              };
+            } catch (e) {}
+          }
+
+          // 1. Direct matching loop over managed users
           const matched = managedList.find(m => {
-            const mUsername = (m.username || '').toLowerCase().replace(/^@/, '').trim();
-            const mName = (m.fullName || m.name || '').toLowerCase().trim();
+            const mUsername = String(m.username || '').replace(/^@/, '').toLowerCase().trim();
+            const mUsernameAlpha = mUsername.replace(/[^a-z0-9]/g, '');
+            const mName = String(m.fullName || m.name || '').toLowerCase().trim();
             const mNip = String(m.nip || '').trim();
-            const mEmail = (m.email || '').toLowerCase().trim();
+            const mEmail = String(m.email || '').toLowerCase().trim();
             const mId = String(m.id || '').trim();
-            const mQr = String(m.qr_data || '').toLowerCase().trim();
+            const mQr = String(m.qr_data || '').replace(/^@/, '').toLowerCase().trim();
             const mWords = mName.split(/\s+/).filter(w => w.length >= 2);
 
-            // Match by codeStr against username
-            if (mUsername && (cleanLower === mUsername || cleanLower === '@' + mUsername || rawCleanUser === mUsername || cleanLower.includes(mUsername) || (rawCleanUser.length >= 3 && mUsername.includes(rawCleanUser)))) return true;
-            // Match by codeStr against name
-            if (mName && (cleanLower === mName || cleanLower.includes(mName) || mName.includes(cleanLower) || mWords.some(w => cleanLower.includes(w) || cleanWords.includes(w)))) return true;
-            // Match by NIP or ID
-            if (clean && mNip && (mNip === clean || cleanLower.includes(mNip))) return true;
-            if (clean && mId && (mId === clean || cleanLower.includes(mId))) return true;
-            // Match by QR data or Email
-            if (mQr && (cleanLower === mQr || cleanLower.includes(mQr) || mQr.includes(cleanLower))) return true;
-            if (mEmail && (cleanLower === mEmail || cleanLower.includes(mEmail))) return true;
-
-            // Match against userObj (e.g. from Sampulkreativ API / Supabase)
-            if (uUsername && mUsername && (mUsername === uUsername || mUsername.includes(uUsername) || uUsername.includes(mUsername))) return true;
-            if (uName && mName && (mName === uName || mName.includes(uName) || uName.includes(mName))) return true;
-            if (uNip && mNip && mNip === uNip) return true;
-            if (uEmail && mEmail && mEmail === uEmail) return true;
-            if (userObj?.id && mId && userObj.id === mId) return true;
-
-            // Match parsed JSON
-            if (clean.startsWith('{') && clean.endsWith('}')) {
-              try {
-                const parsed = JSON.parse(clean);
-                const pUser = (parsed.username || '').toLowerCase().replace(/^@/, '').trim();
-                const pName = (parsed.name || parsed.fullName || '').toLowerCase().trim();
-                if (pUser && mUsername && (mUsername === pUser || mUsername.includes(pUser))) return true;
-                if (parsed.id && mId === String(parsed.id).trim()) return true;
-                if (parsed.nip && mNip === String(parsed.nip).trim()) return true;
-                if (pName && mName && (mName === pName || mName.includes(pName) || pName.includes(mName))) return true;
-              } catch(e) {}
+            // A. Username match (cross-matching with APK username, APK name, cleanCode, cleanWords, parsedJson)
+            if (mUsername) {
+              if (uUsername && (mUsername === uUsername || mUsername.includes(uUsername) || uUsername.includes(mUsername))) return true;
+              if (uName && (mUsername === uName || (mUsername.length >= 3 && uName.includes(mUsername)) || (uName.length >= 3 && mUsername.includes(uName)))) return true;
+              if (cleanLower === mUsername || cleanLower === '@' + mUsername || cleanUser === mUsername) return true;
+              if (mUsername.length >= 3 && (cleanLower.includes(mUsername) || (cleanAlpha && cleanAlpha.includes(mUsernameAlpha || mUsername)))) return true;
+              if (cleanWords.includes(mUsername)) return true;
+              if (parsedJson && parsedJson.user && (mUsername === parsedJson.user || mUsername.includes(parsedJson.user) || parsedJson.user.includes(mUsername))) return true;
+              if (parsedJson && parsedJson.name && (mUsername === parsedJson.name || (mUsername.length >= 3 && parsedJson.name.includes(mUsername)))) return true;
             }
+
+            // B. Name match:
+            if (mName) {
+              if (uName && (mName === uName || mName.includes(uName) || uName.includes(mName))) return true;
+              if (uUsername && (mName === uUsername || (uUsername.length >= 3 && mName.includes(uUsername)) || (mName.length >= 3 && uUsername.includes(mName)))) return true;
+              if (cleanLower === mName || (cleanLower.length >= 3 && cleanLower.includes(mName)) || (mName.length >= 3 && cleanLower.includes(mName))) return true;
+              if (mWords.some(w => (w.length >= 3 && (uWords.includes(w) || cleanWords.includes(w) || (uName && uName.includes(w)))))) return true;
+              if (parsedJson && parsedJson.name && (mName === parsedJson.name || mName.includes(parsedJson.name) || parsedJson.name.includes(mName))) return true;
+              if (parsedJson && parsedJson.user && (mName === parsedJson.user || (parsedJson.user.length >= 3 && mName.includes(parsedJson.user)))) return true;
+            }
+
+            // C. NIP / NISN match:
+            if (mNip) {
+              if (uNip && mNip === uNip) return true;
+              if (clean && clean.includes(mNip)) return true;
+              if (parsedJson && parsedJson.nip && mNip === parsedJson.nip) return true;
+            }
+
+            // D. Email match:
+            if (mEmail) {
+              if (uEmail && mEmail === uEmail) return true;
+              if (cleanLower && cleanLower === mEmail) return true;
+              if (parsedJson && parsedJson.email && mEmail === parsedJson.email) return true;
+            }
+
+            // E. ID match:
+            if (mId) {
+              if (uId && mId === uId) return true;
+              if (clean && clean === mId) return true;
+              if (parsedJson && parsedJson.id && mId === parsedJson.id) return true;
+            }
+
+            // F. QR Data match:
+            if (mQr && (cleanLower === mQr || cleanLower.includes(mQr) || mQr.includes(cleanLower))) return true;
+
             return false;
           });
 
-          if (matched) return matched;
+          if (matched) {
+            console.log('[AuthView] getManagedAssignment found match:', matched);
+            return matched;
+          }
 
-          // 2. Fallback: If only 1 non-admin managed user exists in the system, auto-match them!
-          const nonAdminManaged = managedList.filter(m => (m.role || '').toLowerCase() !== 'admin');
-          if (nonAdminManaged.length === 1) {
-            return nonAdminManaged[0];
+          // 2. Fallback: only if EXACTLY 1 user exists in managedList (no ambiguity)
+          if (managedList.length === 1) {
+            return managedList[0];
           }
 
           return null;
         } catch (e) {
+          console.warn('[AuthView] Error in getManagedAssignment:', e);
           return null;
         }
       };
 
       const applyUserAssignment = (userObj, codeStr) => {
         const managed = getManagedAssignment(userObj, codeStr);
-        let targetProj = (managed && managed.assignedProjectId) || (userObj && userObj.assignedProjectId);
-        if (!targetProj || targetProj === 'panen-kunci') {
-          if (managed && managed.assignedBoardName && managed.assignedBoardName.toLowerCase().includes('creativ')) {
-            targetProj = 'creativoffice';
-          } else if (userObj && userObj.assignedBoardName && userObj.assignedBoardName.toLowerCase().includes('creativ')) {
-            targetProj = 'creativoffice';
-          }
-        }
-        if (!targetProj) targetProj = 'creativoffice';
+        console.log('[AuthView] applyUserAssignment matched managed:', managed);
 
-        // Normalize creativoffice spelling
-        if (targetProj.toLowerCase().includes('creativ')) {
+        let targetProj = '';
+        let targetWs = '';
+        let taskId = '';
+        let taskTitle = '';
+
+        if (managed) {
+          targetProj = managed.assignedProjectId || managed.assignedWorkspace;
+          targetWs = managed.assignedWorkspace || managed.assignedProjectId || targetProj;
+          taskId = managed.assignedTaskId;
+          taskTitle = managed.assignedTaskTitle;
+        } else if (userObj) {
+          targetProj = userObj.assignedProjectId || userObj.assignedWorkspace;
+          targetWs = userObj.assignedWorkspace || userObj.assignedProjectId || targetProj;
+          taskId = userObj.assignedTaskId;
+          taskTitle = userObj.assignedTaskTitle;
+        }
+
+        // Fallback default only if completely unassigned
+        if (!targetProj) {
           targetProj = 'creativoffice';
         }
+        if (!targetWs) {
+          targetWs = targetProj;
+        }
 
-        let targetWs = (managed && (managed.assignedWorkspace || managed.assignedProjectId)) || (userObj && (userObj.assignedWorkspace || userObj.assignedProjectId)) || targetProj;
-        if (targetWs.toLowerCase().includes('creativ')) {
+        // Normalize creativoffice spelling if target is specifically creativoffice
+        if (targetProj.toLowerCase().includes('creativ') || targetProj.toLowerCase().includes('creative')) {
+          targetProj = 'creativoffice';
+        }
+        if (targetWs.toLowerCase().includes('creativ') || targetWs.toLowerCase().includes('creative')) {
           targetWs = 'creativoffice';
         }
 
@@ -1024,18 +1076,15 @@ export class AuthView extends BaseView {
         localStorage.setItem('user_invited_workspace', targetWs);
         localStorage.setItem('user_invited_project', targetProj);
 
-        const taskId = (managed && managed.assignedTaskId) || (userObj && userObj.assignedTaskId);
-        const taskTitle = (managed && managed.assignedTaskTitle) || (userObj && userObj.assignedTaskTitle) || '';
-
         if (taskId && taskId !== 'all') {
           localStorage.setItem('active_assigned_task_id', taskId);
-          localStorage.setItem('active_assigned_task_title', taskTitle);
+          localStorage.setItem('active_assigned_task_title', taskTitle || '');
         } else {
           localStorage.removeItem('active_assigned_task_id');
           localStorage.removeItem('active_assigned_task_title');
         }
 
-        return { targetProj, targetWs, managed };
+        return { targetProj, targetWs, managed, taskId, taskTitle };
       };
 
       // 0. Deteksi jika kode QR adalah tautan undangan proyek (misal scan QR dari AddMemberModal)
@@ -1153,12 +1202,24 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
-            const { targetProj, targetWs, managed } = applyUserAssignment(verifiedUser, cleanCode);
+            const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(verifiedUser, cleanCode);
 
             userInstance.assignedProjectId = targetProj;
             userInstance.assignedWorkspace = targetWs;
+            userInstance.workspaceAccess = [targetWs, targetProj];
+            if (taskId && taskId !== 'all') {
+              userInstance.assignedTaskId = taskId;
+              userInstance.assignedTaskTitle = taskTitle;
+            }
             if (managed && managed.role) {
               userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
+            }
+            if (managed && managed.fullName) {
+              userInstance.name = managed.fullName;
+            }
+            if (managed && managed.position) {
+              userInstance.title = managed.position;
+              userInstance.jobdesk = managed.position;
             }
 
             this.authService.loginAsUser(userInstance, { silent: true });
@@ -1443,12 +1504,24 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
-            const { targetProj, targetWs, managed } = applyUserAssignment(userInstance || registeredData, codeToReg);
+            const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(userInstance || registeredData, codeToReg);
 
             userInstance.assignedProjectId = targetProj;
             userInstance.assignedWorkspace = targetWs;
+            userInstance.workspaceAccess = [targetWs, targetProj];
+            if (taskId && taskId !== 'all') {
+              userInstance.assignedTaskId = taskId;
+              userInstance.assignedTaskTitle = taskTitle;
+            }
             if (managed && managed.role) {
               userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
+            }
+            if (managed && managed.fullName) {
+              userInstance.name = managed.fullName;
+            }
+            if (managed && managed.position) {
+              userInstance.title = managed.position;
+              userInstance.jobdesk = managed.position;
             }
 
             this.authService.loginAsUser(userInstance, { silent: true });
@@ -1505,11 +1578,23 @@ export class AuthView extends BaseView {
             }
           }
 
-          const { targetProj: fallbackProj, targetWs: fallbackWs, managed: fallbackManaged } = applyUserAssignment(userInstance, codeToReg);
+          const { targetProj: fallbackProj, targetWs: fallbackWs, managed: fallbackManaged, taskId: fbTaskId, taskTitle: fbTaskTitle } = applyUserAssignment(userInstance, codeToReg);
           userInstance.assignedProjectId = fallbackProj;
           userInstance.assignedWorkspace = fallbackWs;
+          userInstance.workspaceAccess = [fallbackWs, fallbackProj];
+          if (fbTaskId && fbTaskId !== 'all') {
+            userInstance.assignedTaskId = fbTaskId;
+            userInstance.assignedTaskTitle = fbTaskTitle;
+          }
           if (fallbackManaged && fallbackManaged.role) {
             userInstance.role = fallbackManaged.role === 'admin' ? 'admin' : 'user';
+          }
+          if (fallbackManaged && fallbackManaged.fullName) {
+            userInstance.name = fallbackManaged.fullName;
+          }
+          if (fallbackManaged && fallbackManaged.position) {
+            userInstance.title = fallbackManaged.position;
+            userInstance.jobdesk = fallbackManaged.position;
           }
           this.authService.loginAsUser(userInstance, { silent: true });
           const isAdmin = (userInstance.role || '').toLowerCase() === 'admin';
@@ -1563,12 +1648,24 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
-            const { targetProj, targetWs, managed } = applyUserAssignment(userInstance || userFromDb, cleanCode);
+            const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(userInstance || userFromDb, cleanCode);
 
             userInstance.assignedProjectId = targetProj;
             userInstance.assignedWorkspace = targetWs;
+            userInstance.workspaceAccess = [targetWs, targetProj];
+            if (taskId && taskId !== 'all') {
+              userInstance.assignedTaskId = taskId;
+              userInstance.assignedTaskTitle = taskTitle;
+            }
             if (managed && managed.role) {
               userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
+            }
+            if (managed && managed.fullName) {
+              userInstance.name = managed.fullName;
+            }
+            if (managed && managed.position) {
+              userInstance.title = managed.position;
+              userInstance.jobdesk = managed.position;
             }
 
             this.authService.loginAsUser(userInstance, { silent: true });

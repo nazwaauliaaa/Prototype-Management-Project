@@ -781,7 +781,7 @@ class CreativeOfficeApp {
 
     // STRICT ROUTE GUARD: Non-admin users strictly directed to their assigned kanban board
     if (isUserRole) {
-      const allowedWs = (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || currentUser?.assignedWorkspace || localStorage.getItem('active_workspace') || 'creativoffice';
+      const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
       const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
 
       if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'login' && viewName !== 'profile' && viewName !== 'profil') {
@@ -854,7 +854,7 @@ class CreativeOfficeApp {
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict non-admin users strictly to kanban, profile, and auth
     if (isUserRole) {
-      const allowedWs = params.workspace || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || currentUser?.assignedWorkspace || localStorage.getItem('active_workspace') || 'creativoffice';
+      const allowedWs = params.workspace || (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
       const allowedProj = params.projectId || (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
 
       if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'profile' && viewName !== 'profil') {

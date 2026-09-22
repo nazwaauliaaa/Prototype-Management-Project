@@ -64,8 +64,10 @@ function normalizeSampulkreativUser(payload, rawQr) {
     return null;
   };
 
-  const rawName = getProp(['name', 'username', 'nama', 'user_name', 'full_name', 'fullname']) || 'Pengguna Sampulkreativ';
+  const rawUsername = getProp(['username', 'user_name', 'nama_pengguna', 'login', 'uname', 'account']) || '';
+  const rawName = getProp(['name', 'nama', 'full_name', 'fullname', 'nama_lengkap', 'display_name']) || rawUsername || 'Pengguna Sampulkreativ';
   const rawRole = (getProp(['role', 'peran', 'user_role', 'role_name']) || 'user').toLowerCase();
+  const rawNip = getProp(['nip', 'nisn', 'nomor_induk', 'id_card', 'nik']) || '';
 
   // Normalisasi role ke 4 role valid Creative Office: admin | manajement-project | qa | user
   let normalizedRole = 'user';
@@ -90,11 +92,13 @@ function normalizeSampulkreativUser(payload, rawQr) {
   return {
     id: rawId,
     name: rawName,
+    username: rawUsername || (rawName ? rawName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''),
     role: normalizedRole,
     title: rawJobdesk,
     jobdesk: rawJobdesk,
     email: rawEmail,
     avatar: rawAvatar,
+    nip: rawNip,
     qr_data: rawQr
   };
 }
