@@ -438,14 +438,16 @@ export class ApiService {
   }
 
   async deleteTask(id) {
+    if (!id) return false;
+    const cleanId = String(id).trim();
     try {
-      await this.safeFetch(`/tasks/${encodeURIComponent(id)}`, {
+      await this.safeFetch(`/tasks?id=${encodeURIComponent(cleanId)}`, {
         method: 'DELETE'
       });
     } catch (err) {}
 
     // Selalu perbarui Cloud Store
-    this.removeCloudTask(id).catch(() => {});
+    this.removeCloudTask(cleanId).catch(() => {});
     return true;
   }
 

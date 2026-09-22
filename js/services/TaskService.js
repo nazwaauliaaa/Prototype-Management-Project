@@ -84,34 +84,80 @@ export class TaskService {
     return false;
   }
 
+  getDeletedTaskIds() {
+    try {
+      const stored = localStorage.getItem('deleted_tasks');
+      if (!stored) return new Set();
+      const arr = JSON.parse(stored);
+      return new Set(Array.isArray(arr) ? arr.map(String) : []);
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  addDeletedTaskId(id) {
+    if (!id) return;
+    const cleanId = String(id).trim();
+    const deleted = this.getDeletedTaskIds();
+    deleted.add(cleanId);
+    try {
+      localStorage.setItem('deleted_tasks', JSON.stringify(Array.from(deleted)));
+    } catch (e) {}
+  }
+
+  removeDeletedTaskId(id) {
+    if (!id) return;
+    const cleanId = String(id).trim();
+    const deleted = this.getDeletedTaskIds();
+    deleted.delete(cleanId);
+    try {
+      localStorage.setItem('deleted_tasks', JSON.stringify(Array.from(deleted)));
+    } catch (e) {}
+  }
+
   /**
    * Sinkronisasi data tugas dengan Backend (Port 5000 / LAN / Supabase / Cloud Sync)
    */
   async syncFromBackend(isSilent = false) {
     if (this.isSyncing) return;
     this.isSyncing = true;
+    const deletedIds = this.getDeletedTaskIds();
 
     try {
       const remoteTasks = await apiService.getTasks();
       if (Array.isArray(remoteTasks) && remoteTasks.length > 0) {
         const remoteMap = new Map();
         remoteTasks.forEach(t => {
-          if (t && t.id) remoteMap.set(String(t.id), new Task(t));
+          if (!t || !t.id) return;
+          const strId = String(t.id);
+          const strCode = t.code ? String(t.code) : '';
+          // Jangan pernah masukkan tugas yang sudah ada di daftar deleted_tasks
+          if (deletedIds.has(strId) || (strCode && deletedIds.has(strCode))) {
+            apiService.deleteTask(strId).catch(() => {});
+            return;
+          }
+          remoteMap.set(strId, new Task(t));
         });
 
         // Cari task lokal yang belum ada di remote dan jadwalkan upload, atau jika lokal lebih baru pertahankan lokal
         const localTasksToUpload = [];
         for (const localTask of this.tasks) {
           if (!localTask || !localTask.id) continue;
-          const remoteTask = remoteMap.get(String(localTask.id));
+          const strId = String(localTask.id);
+          const strCode = localTask.code ? String(localTask.code) : '';
+          if (deletedIds.has(strId) || (strCode && deletedIds.has(strCode))) {
+            continue;
+          }
+
+          const remoteTask = remoteMap.get(strId);
           if (!remoteTask) {
             localTasksToUpload.push(localTask);
-            remoteMap.set(String(localTask.id), localTask);
+            remoteMap.set(strId, localTask);
           } else {
             const localTime = new Date(localTask.updatedAt || localTask.createdAt || 0).getTime();
             const remoteTime = new Date(remoteTask.updatedAt || remoteTask.createdAt || 0).getTime();
             if (localTime >= remoteTime) {
-              remoteMap.set(String(localTask.id), localTask);
+              remoteMap.set(strId, localTask);
               if (localTask.status !== remoteTask.status) {
                 apiService.updateTask(localTask.id, { status: localTask.status, updatedAt: localTime }).catch(() => {});
               }
@@ -119,7 +165,8 @@ export class TaskService {
           }
         }
 
-        const mergedTasks = Array.from(remoteMap.values());
+        const mergedTasks = Array.from(remoteMap.values())
+          .filter(t => !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
         const changed = this._hasTasksChanged(mergedTasks);
 
         if (changed) {
@@ -153,6 +200,7 @@ export class TaskService {
   }
 
   loadFromStorage() {
+    const deletedIds = this.getDeletedTaskIds();
     try {
       // Purge old mock tasks on first load with new version
       if (localStorage.getItem('mock_tasks_purged_v4') !== 'true') {
@@ -163,7 +211,7 @@ export class TaskService {
       const stored = localStorage.getItem('creative_office_tasks');
       if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           const oldMockIds = new Set([
             'task-1', 'task-2', 'task-3', 'task-4', 'task-5',
             'task-6', 'task-7', 'task-8', 'task-9', 'task-10',
@@ -171,19 +219,22 @@ export class TaskService {
           ]);
 
           this.tasks = parsed
-            .filter(t => !oldMockIds.has(t.id))
+            .filter(t => t && !oldMockIds.has(String(t.id)) && !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))))
             .map(t => new Task(t));
-          if (this.tasks.length > 0) {
-            this.saveToStorage();
-            return;
-          }
+          this.saveToStorage();
+          return;
         }
       }
     } catch (e) {
       console.warn('Failed to load tasks from storage:', e);
     }
-    this.initDefaultTasks();
-    this.saveToStorage();
+    
+    // Hanya inisialisasi default jika belum pernah disimpan sama sekali di browser
+    if (localStorage.getItem('creative_office_tasks') === null) {
+      this.initDefaultTasks();
+      this.tasks = this.tasks.filter(t => !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
+      this.saveToStorage();
+    }
   }
 
   saveToStorage() {
@@ -473,8 +524,9 @@ export class TaskService {
       'task-6', 'task-7', 'task-8', 'task-9', 'task-10',
       'task-11', 'task-12', 'task-13', 'task-14', 'task-15'
     ]);
+    const deletedIds = this.getDeletedTaskIds();
 
-    let result = this.tasks.filter(t => !oldMockIds.has(t.id));
+    let result = this.tasks.filter(t => t && !oldMockIds.has(String(t.id)) && !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
 
     if (workspace && workspace !== 'all') {
       const wsLower = workspace.toLowerCase();
@@ -541,8 +593,12 @@ export class TaskService {
       return isDirectMatch;
     });
 
-    // Jika board belum memiliki tugas sama sekali, buatkan starter tasks otomatis agar papan langsung hidup
-    if (matched.length === 0 && currentWs !== 'workspace-utama') {
+    // Jika board belum memiliki tugas dan belum pernah diinisialisasi, buatkan starter tasks
+    const initKey = `board_initialized_${currentWs}_${projIdStr || ''}`;
+    const wasInitialized = localStorage.getItem(initKey) === 'true';
+
+    if (matched.length === 0 && !wasInitialized && currentWs !== 'workspace-utama') {
+      localStorage.setItem(initKey, 'true');
       const boardLabel = projectName || targetWs || 'Proyek';
       const cleanPrefix = (boardLabel.split(/[\s-_]+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'TSK');
       const starterTasks = [
@@ -589,9 +645,13 @@ export class TaskService {
           qaProgress: { passed: 3, total: 3 }
         })
       ];
-      starterTasks.forEach(t => this.tasks.unshift(t));
+      const deletedIds = this.getDeletedTaskIds();
+      const validStarters = starterTasks.filter(t => !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
+      validStarters.forEach(t => this.tasks.unshift(t));
       this.saveToStorage();
-      matched = starterTasks;
+      matched = validStarters;
+    } else {
+      localStorage.setItem(initKey, 'true');
     }
 
     return matched;
@@ -647,14 +707,24 @@ export class TaskService {
    * @returns {{ task: Task, index: number }|null}
    */
   deleteTask(taskId, silent = false) {
-    const index = this.tasks.findIndex(t => t.id === taskId);
+    if (!taskId) return null;
+    const cleanId = String(taskId).trim();
+    this.addDeletedTaskId(cleanId);
+
+    const index = this.tasks.findIndex(t => String(t.id) === cleanId || String(t.code) === cleanId);
     if (index !== -1) {
       const removed = this.tasks.splice(index, 1)[0];
+      if (removed.id) this.addDeletedTaskId(removed.id);
+      if (removed.code) this.addDeletedTaskId(removed.code);
+
+      const bKey = `board_initialized_${String(removed.workspace || '').toLowerCase()}_${String(removed.projectId || '').toLowerCase()}`;
+      try { localStorage.setItem(bKey, 'true'); } catch (e) {}
+
       this.saveToStorage();
 
-      // Hapus dari PostgreSQL
-      apiService.deleteTask(taskId).catch(err => {
-        console.warn('[TaskService] Gagal hapus task di PostgreSQL:', err.message);
+      // Hapus dari Backend / Supabase
+      apiService.deleteTask(cleanId).catch(err => {
+        console.warn('[TaskService] Gagal hapus task di backend:', err.message);
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
@@ -663,6 +733,8 @@ export class TaskService {
         this.notifications.success(`Tugas "${removed.title}" berhasil dihapus.`);
       }
       return { task: removed, index };
+    } else {
+      apiService.deleteTask(cleanId).catch(() => {});
     }
     return null;
   }
@@ -675,6 +747,9 @@ export class TaskService {
    */
   restoreTask(task, index = 0) {
     if (!task) return false;
+    if (task.id) this.removeDeletedTaskId(task.id);
+    if (task.code) this.removeDeletedTaskId(task.code);
+
     const insertIndex = Math.min(Math.max(0, index), this.tasks.length);
     this.tasks.splice(insertIndex, 0, task);
     this.saveToStorage();
@@ -694,6 +769,8 @@ export class TaskService {
     if (!Array.isArray(items) || items.length === 0) return;
     const sorted = [...items].sort((a, b) => a.index - b.index);
     sorted.forEach(({ task, index }) => {
+      if (task.id) this.removeDeletedTaskId(task.id);
+      if (task.code) this.removeDeletedTaskId(task.code);
       const insertIndex = Math.min(Math.max(0, index), this.tasks.length);
       this.tasks.splice(insertIndex, 0, task);
       apiService.createTask(task).catch(() => {});

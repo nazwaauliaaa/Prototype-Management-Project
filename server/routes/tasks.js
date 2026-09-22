@@ -270,4 +270,18 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/tasks?id=... - Hapus tugas dengan query parameter
+router.delete('/', async (req, res) => {
+  const id = req.query?.id || req.body?.id;
+  if (!id) return res.status(400).json({ success: false, error: 'Task ID diperlukan' });
+  fileStore.deleteTask(id);
+
+  try {
+    const result = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
+    return res.json({ success: true, message: 'Tugas berhasil dihapus', id });
+  } catch (err) {
+    return res.json({ success: true, message: 'Tugas berhasil dihapus', id, storage: 'fileStore' });
+  }
+});
+
 export default router;
