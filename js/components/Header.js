@@ -97,55 +97,6 @@ export class Header {
                   </button>
                 </div>
                 ` : ''}
-
-                <!-- Main Navigation Links -->
-                <div class="flex flex-col gap-1 pt-1">
-                  <span class="px-2 text-[10px] font-bold text-white/60 uppercase tracking-wider">Navigasi Utama</span>
-                  <button
-                    type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-purple-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
-                    data-route="dashboard"
-                  >
-                    <span class="material-symbols-outlined text-[18px] text-purple-400 group-hover:scale-110 transition-transform">space_dashboard</span>
-                    <span class="font-semibold text-white/95 group-hover:text-white">Dashboard</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-blue-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
-                    data-route="kanban"
-                  >
-                    <span class="material-symbols-outlined text-[18px] text-blue-400 group-hover:scale-110 transition-transform">view_kanban</span>
-                    <span class="font-semibold text-white/95 group-hover:text-white">Papan Kanban</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-amber-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
-                    data-route="calendar"
-                  >
-                    <span class="material-symbols-outlined text-[18px] text-amber-400 group-hover:scale-110 transition-transform">calendar_today</span>
-                    <span class="font-semibold text-white/95 group-hover:text-white">Jadwal & Kalender</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-emerald-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
-                    data-route="workspaces"
-                  >
-                    <span class="material-symbols-outlined text-[18px] text-emerald-400 group-hover:scale-110 transition-transform">workspaces</span>
-                    <span class="font-semibold text-white/95 group-hover:text-white">Ruang Kerja Tim</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn-burger-nav w-full text-left px-3 py-2 rounded-xl hover:bg-rose-500/20 text-white text-[12.5px] flex items-center gap-2.5 font-medium cursor-pointer transition-colors group"
-                    data-route="docs-sheets"
-                  >
-                    <span class="material-symbols-outlined text-[18px] text-rose-400 group-hover:scale-110 transition-transform">description</span>
-                    <span class="font-semibold text-white/95 group-hover:text-white">Dokumen & SOP</span>
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -850,19 +801,6 @@ export class Header {
       });
     }
 
-    const burgerNavBtns = this.element.querySelectorAll('.btn-burger-nav');
-    burgerNavBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (burgerMenu) burgerMenu.classList.add('hidden');
-        const route = btn.getAttribute('data-route');
-        if (route) {
-          window.location.hash = `#/${route}`;
-          this.eventBus.emit('navigate', { view: route });
-        }
-      });
-    });
 
     const headerUserMgmtBtn = this.element.querySelector('#btn-header-user-mgmt');
     if (headerUserMgmtBtn) {
