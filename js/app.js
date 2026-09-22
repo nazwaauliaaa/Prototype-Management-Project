@@ -732,7 +732,7 @@ class CreativeOfficeApp {
         return;
       }
 
-      const currentHash = window.location.hash.replace('#/', '');
+      const currentHash = window.location.hash.replace(/^#\/?/, '');
       if (currentHash && currentHash !== 'auth' && currentHash !== 'login') {
         this.handleHashChange();
       } else {
@@ -747,7 +747,7 @@ class CreativeOfficeApp {
   }
 
   handleHashChange() {
-    const rawHash = window.location.hash.replace('#/', '') || 'dashboard';
+    const rawHash = window.location.hash.replace(/^#\/?/, '') || 'dashboard';
     const cleanHash = rawHash.split('?')[0];
     const authService = this.container.resolve('AuthService');
 

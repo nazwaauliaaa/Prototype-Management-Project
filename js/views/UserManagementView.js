@@ -570,7 +570,7 @@ export class UserManagementView extends BaseView {
               <button
                 class="btn-user-login-direct text-teal-300 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/30 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
                 data-id="${u.id}"
-                title="Masuk langsung ke Kanban ${boardName} akun ${u.username} tanpa scan"
+                title="Masuk langsung ke Kanban ${primaryBoard} akun ${u.username} tanpa scan"
                 type="button"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in" aria-hidden="true">
