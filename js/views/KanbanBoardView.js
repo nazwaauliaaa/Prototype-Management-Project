@@ -1557,18 +1557,6 @@ export class KanbanBoardView extends BaseView {
             </button>
             ` : ''}
 
-            <!-- Icon Pindah Projek / Ruang Kerja (Compact Icon Button) -->
-            ${perms.canSwitchProject ? `
-            <button
-              id="btn-header-switch-project"
-              class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/10 shrink-0"
-              title="Pindah ke projek lain"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[18px]">folder_open</span>
-            </button>
-            ` : ''}
-
             <!-- Role Badge Indicator -->
             <div class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl ${perms.badgeBg} ${perms.badgeBorder} backdrop-blur-md shadow-xs transition-all shrink-0" title="Peran Aktif: ${perms.user.name || 'User'} (${perms.roleTitle})">
               <span class="material-symbols-outlined text-[14px] sm:text-[15px] ${perms.badgeIconColor}">${perms.badgeIcon}</span>
