@@ -34,8 +34,96 @@ export class DashboardView extends BaseView {
     this.eventBus.on('workspace:created', this._rerender);
     this.eventBus.on('workspace:changed', this._rerender);
     this.eventBus.on('workspaces:updated', this._rerender);
-    this.eventBus.on('workspace:selected', this._rerender);
     this.eventBus.on('workspace:deleted', this._rerender);
+    this.pendingDeleteBoard = null;
+  }
+
+  openDeleteBoardModal(projectId, workspace, boardName) {
+    this.pendingDeleteBoard = { projectId, workspace, boardName };
+    const modal = this.element ? this.element.querySelector('#modal-confirm-delete-board') : null;
+    const msg = this.element ? this.element.querySelector('#delete-board-modal-msg') : null;
+    if (msg) {
+      msg.innerHTML = `Apakah Anda yakin ingin menghapus papan <strong>"${boardName}"</strong>? Papan ini akan disembunyikan dari daftar Papan Proyek Utama &amp; Tim.`;
+    }
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  closeDeleteBoardModal() {
+    this.pendingDeleteBoard = null;
+    const modal = this.element ? this.element.querySelector('#modal-confirm-delete-board') : null;
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  confirmDeleteBoard() {
+    if (!this.pendingDeleteBoard) return;
+    const { projectId, workspace, boardName } = this.pendingDeleteBoard;
+
+    // 1. Simpan ke deleted_workspaces di localStorage
+    try {
+      const deleted = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
+      if (projectId && !deleted.includes(projectId)) deleted.push(projectId);
+      if (workspace && !deleted.includes(workspace)) deleted.push(workspace);
+      localStorage.setItem('deleted_workspaces', JSON.stringify(deleted));
+    } catch (e) {
+      console.error('Error updating deleted_workspaces:', e);
+    }
+
+    // 2. Hapus dari custom_workspaces di localStorage jika custom
+    try {
+      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+      const updatedCustom = custom.filter(w => w.id !== projectId && w.id !== workspace);
+      localStorage.setItem('custom_workspaces', JSON.stringify(updatedCustom));
+    } catch (e) {
+      console.error('Error updating custom_workspaces:', e);
+    }
+
+    // 3. Hapus dari ProjectService jika ada
+    if (this.projectService && typeof this.projectService.deleteProject === 'function') {
+      try {
+        this.projectService.deleteProject(projectId);
+      } catch (e) {}
+    }
+
+    // 4. Tutup modal
+    this.closeDeleteBoardModal();
+
+    // 5. Beri notifikasi & kirim event
+    if (this.notificationService) {
+      this.notificationService.success(`Papan proyek "${boardName}" berhasil dihapus.`);
+    }
+
+    if (this.eventBus) {
+      this.eventBus.emit('workspace:deleted', { workspaceId: projectId });
+      this.eventBus.emit('projects:updated');
+    }
+
+    // 6. Refresh UI
+    if (this.element) {
+      this.mount(this.element);
+    }
+  }
+
+  restoreDefaultBoards() {
+    try {
+      localStorage.removeItem('deleted_workspaces');
+    } catch (e) {}
+
+    if (this.notificationService) {
+      this.notificationService.success('Semua papan proyek bawaan berhasil dipulihkan.');
+    }
+
+    if (this.eventBus) {
+      this.eventBus.emit('workspaces:updated');
+      this.eventBus.emit('projects:updated');
+    }
+
+    if (this.element) {
+      this.mount(this.element);
+    }
   }
 
   formatProjectTitle(name) {
@@ -189,6 +277,12 @@ export class DashboardView extends BaseView {
     }
 
     const displayProjects = this.getDisplayBoards();
+
+    let deletedWs = [];
+    try {
+      deletedWs = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
+    } catch (e) {}
+    const hasDeletedBoards = Array.isArray(deletedWs) && deletedWs.length > 0;
 
     // Calculate metrics
     const totalProjects = displayProjects.length;
@@ -399,6 +493,17 @@ export class DashboardView extends BaseView {
                 <h2 class="text-[17px] font-bold text-white tracking-tight drop-shadow-sm">Papan Proyek Utama &amp; Tim</h2>
               </div>
               <div class="flex items-center gap-2">
+                ${hasDeletedBoards ? `
+                <button
+                  id="btn-restore-dash-boards"
+                  type="button"
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[11px] font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+                  title="Kembalikan semua papan proyek bawaan yang terhapus"
+                >
+                  <span class="material-symbols-outlined text-[15px]">settings_backup_restore</span>
+                  <span>Pulihkan Papan</span>
+                </button>
+                ` : ''}
                 <span class="text-[11px] font-semibold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2.5 py-0.5 rounded-full shadow-xs">
                   ${displayProjects.length} Papan Aktif
                 </span>
@@ -444,14 +549,27 @@ export class DashboardView extends BaseView {
                     tabindex="0"
                     title="Buka papan ${formattedName}"
                   >
-                    <!-- Board Title -->
-                    <div class="relative z-10 flex flex-col">
-                      <h3 class="font-bold text-white text-[15px] sm:text-[16px] leading-tight drop-shadow-md truncate group-hover:text-white">
-                        ${formattedName}
-                      </h3>
-                      <span class="text-white/80 text-[11px] font-medium drop-shadow-sm mt-0.5 truncate">
-                        ${project.workspace ? project.workspace.toUpperCase() : 'PANEN-KUNCI'}
-                      </span>
+                    <!-- Board Title & Remove Action -->
+                    <div class="relative z-10 flex items-start justify-between gap-1.5">
+                      <div class="flex flex-col min-w-0 pr-1">
+                        <h3 class="font-bold text-white text-[15px] sm:text-[16px] leading-tight drop-shadow-md truncate group-hover:text-white">
+                          ${formattedName}
+                        </h3>
+                        <span class="text-white/80 text-[11px] font-medium drop-shadow-sm mt-0.5 truncate">
+                          ${project.workspace ? project.workspace.toUpperCase() : 'PANEN-KUNCI'}
+                        </span>
+                      </div>
+                      <!-- Remove / Delete Board Button -->
+                      <button
+                        type="button"
+                        class="btn-remove-board opacity-0 group-hover:opacity-100 sm:opacity-75 hover:!opacity-100 w-6 h-6 rounded-md bg-black/40 hover:bg-rose-600 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 shrink-0 shadow-xs active:scale-90"
+                        data-project-id="${project.id}"
+                        data-workspace="${project.workspace || project.id}"
+                        data-board-name="${formattedName}"
+                        title="Hapus papan ${formattedName}"
+                      >
+                        <span class="material-symbols-outlined text-[14px]">delete</span>
+                      </button>
                     </div>
 
                     <!-- Bottom Footer inside card -->
@@ -618,6 +736,33 @@ export class DashboardView extends BaseView {
           </div>
         </div>
 
+        <!-- Modal Konfirmasi Hapus Papan Proyek Utama & Tim -->
+        <div id="modal-confirm-delete-board" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div class="bg-[#181135] border border-rose-500/30 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-start gap-3.5">
+              <div class="w-11 h-11 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[24px]">delete_forever</span>
+              </div>
+              <div class="flex flex-col gap-1 min-w-0 flex-1">
+                <h3 class="text-white text-[16px] font-bold">Hapus Papan Proyek?</h3>
+                <p id="delete-board-modal-msg" class="text-white/70 text-[12.5px] leading-relaxed">
+                  Apakah Anda yakin ingin menghapus papan ini? Papan akan disembunyikan dari Papan Proyek Utama &amp; Tim.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+              <button id="btn-cancel-delete-board" type="button" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-colors cursor-pointer">
+                Batal
+              </button>
+              <button id="btn-confirm-delete-board" type="button" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-900/40 flex items-center gap-1.5 cursor-pointer active:scale-95">
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+                <span>Ya, Hapus Papan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     `;
   }
@@ -667,6 +812,55 @@ export class DashboardView extends BaseView {
         }
       });
     });
+
+    // Tombol Hapus Papan di setiap kartu
+    const removeBtns = this.element ? this.element.querySelectorAll('.btn-remove-board') : [];
+    removeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const projectId = btn.getAttribute('data-project-id');
+        const workspace = btn.getAttribute('data-workspace') || projectId;
+        const boardName = btn.getAttribute('data-board-name') || 'Papan Proyek';
+        this.openDeleteBoardModal(projectId, workspace, boardName);
+      });
+    });
+
+    // Modal Konfirmasi Hapus Papan
+    const modalDelete = this.element ? this.element.querySelector('#modal-confirm-delete-board') : null;
+    const btnCancelDelete = this.element ? this.element.querySelector('#btn-cancel-delete-board') : null;
+    const btnConfirmDelete = this.element ? this.element.querySelector('#btn-confirm-delete-board') : null;
+
+    if (btnCancelDelete) {
+      btnCancelDelete.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeDeleteBoardModal();
+      });
+    }
+
+    if (btnConfirmDelete) {
+      btnConfirmDelete.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.confirmDeleteBoard();
+      });
+    }
+
+    if (modalDelete) {
+      modalDelete.addEventListener('click', (e) => {
+        if (e.target === modalDelete) {
+          this.closeDeleteBoardModal();
+        }
+      });
+    }
+
+    // Tombol Pulihkan Papan
+    const btnRestoreBoards = this.element ? this.element.querySelector('#btn-restore-dash-boards') : null;
+    if (btnRestoreBoards) {
+      btnRestoreBoards.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.restoreDefaultBoards();
+      });
+    }
 
     // Tombol Buat Papan Baru di kartu grid
     const cardCreateBtn = this.element ? this.element.querySelector('#btn-card-create-board') : null;

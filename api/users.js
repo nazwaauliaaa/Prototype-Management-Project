@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       if (pool) {
         try {
-          const dbRes = await pool.query('SELECT * FROM users ORDER BY created_at ASC');
+          const dbRes = await pool.query('SELECT * FROM public.users ORDER BY created_at ASC');
           if (dbRes.rows && dbRes.rows.length > 0) {
             const mapped = dbRes.rows.map(r => ({
               id: r.id,
@@ -111,6 +111,9 @@ export default async function handler(req, res) {
               assignedTaskTitle: r.assigned_task_title || 'Seluruh Papan (Semua Tugas)',
               device: r.bound_device_name || r.device || (r.bound_device_id ? 'Terikat' : 'Belum Terikat'),
               isDeviceBound: Boolean(r.bound_device_id || r.is_device_bound),
+              telegramChat: r.telegram_chat || '',
+              telegramId: r.telegram_id || '',
+              apiDeposit: r.api_deposit || '',
               qr_data: r.qr_data || r.username || r.name,
               updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : Date.now()
             }));
@@ -146,7 +149,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Sync ke database PostgreSQL jika aktif
+      // Sync ke database PostgreSQL / Supabase jika aktif
       if (pool) {
         try {
           for (const u of usersToSave) {
@@ -160,20 +163,27 @@ export default async function handler(req, res) {
             const boardName = u.assignedBoardName || 'CreativOffice';
             const taskId = u.assignedTaskId || 'all';
             const taskTitle = u.assignedTaskTitle || 'Seluruh Papan (Semua Tugas)';
+            const device = u.device || 'Belum Terikat';
+            const isDeviceBound = Boolean(u.isDeviceBound);
+            const telegramChat = u.telegramChat || '';
+            const telegramId = u.telegramId || '';
+            const apiDeposit = u.apiDeposit || '';
             const qrData = u.qr_data || username;
             const nip = u.nip || '';
             const position = u.position || 'Siswa PKL';
             const school = u.school || '';
 
             const query = `
-              INSERT INTO users (
+              INSERT INTO public.users (
                 id, name, full_name, username, role, title, jobdesk, email,
                 nip, position, school, assigned_project_id, assigned_workspace, assigned_board_name,
-                assigned_task_id, assigned_task_title, qr_data, workspace_access, updated_at
+                assigned_task_id, assigned_task_title, device, is_device_bound, telegram_chat, telegram_id, api_deposit,
+                qr_data, workspace_access, updated_at
               ) VALUES (
                 $1, $2, $2, $3, $4, $5, $5, $6,
                 $7, $8, $9, $10, $11, $12,
-                $13, $14, $15, $16::jsonb, NOW()
+                $13, $14, $15, $16, $17, $18, $19,
+                $20, $21::jsonb, NOW()
               )
               ON CONFLICT (id) DO UPDATE SET
                 name = EXCLUDED.name,
@@ -191,6 +201,11 @@ export default async function handler(req, res) {
                 assigned_board_name = EXCLUDED.assigned_board_name,
                 assigned_task_id = EXCLUDED.assigned_task_id,
                 assigned_task_title = EXCLUDED.assigned_task_title,
+                device = EXCLUDED.device,
+                is_device_bound = EXCLUDED.is_device_bound,
+                telegram_chat = EXCLUDED.telegram_chat,
+                telegram_id = EXCLUDED.telegram_id,
+                api_deposit = EXCLUDED.api_deposit,
                 qr_data = EXCLUDED.qr_data,
                 workspace_access = EXCLUDED.workspace_access,
                 updated_at = NOW()
@@ -199,8 +214,11 @@ export default async function handler(req, res) {
             await pool.query(query, [
               id, fullName, username, role, position, email,
               nip, position, school, projId, workspace, boardName,
-              taskId, taskTitle, qrData, JSON.stringify([workspace])
-            ]).catch(() => {});
+              taskId, taskTitle, device, isDeviceBound, telegramChat, telegramId, apiDeposit,
+              qrData, JSON.stringify([workspace])
+            ]).catch(err => {
+              console.warn(`[api/users] Gagal simpan ${username} ke Supabase:`, err.message);
+            });
           }
         } catch (dbErr) {
           console.warn('[api/users] Error inserting to database:', dbErr.message);
@@ -217,7 +235,7 @@ export default async function handler(req, res) {
         inMemoryUsers = inMemoryUsers.filter(u => String(u.id) !== String(id));
         if (pool) {
           try {
-            await pool.query('DELETE FROM users WHERE id = $1', [id]);
+            await pool.query('DELETE FROM public.users WHERE id = $1', [id]);
           } catch (e) {}
         }
         return res.status(200).json({ success: true, message: 'User berhasil dihapus', id });

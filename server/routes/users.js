@@ -11,21 +11,22 @@ async function ensureUserColumns() {
   if (isMigrationChecked) return;
   try {
     const alterQueries = [
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(150)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS nip VARCHAR(50)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(150)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS school VARCHAR(150)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_project_id VARCHAR(100)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username VARCHAR(100)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS full_name VARCHAR(150)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS nip VARCHAR(50)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS position VARCHAR(150)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS school VARCHAR(150)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS assigned_project_id VARCHAR(100)',
       'ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_workspace VARCHAR(100)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_board_name VARCHAR(150)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_task_id VARCHAR(100)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_task_title VARCHAR(255)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS device VARCHAR(255)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_device_bound BOOLEAN DEFAULT false',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_chat VARCHAR(100)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(100)',
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS api_deposit VARCHAR(100)'
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS assigned_workspace VARCHAR(100)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS assigned_board_name VARCHAR(150)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS assigned_task_id VARCHAR(100)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS assigned_task_title VARCHAR(255)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS device VARCHAR(255)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_device_bound BOOLEAN DEFAULT false',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS telegram_chat VARCHAR(100)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(100)',
+      'ALTER TABLE public.users ADD COLUMN IF NOT EXISTS api_deposit VARCHAR(100)'
     ];
 
     for (const q of alterQueries) {
@@ -67,7 +68,7 @@ function formatUserRow(row) {
 router.get('/managed', async (req, res) => {
   try {
     await ensureUserColumns();
-    const result = await pool.query('SELECT * FROM users ORDER BY created_at ASC');
+    const result = await pool.query('SELECT * FROM public.users ORDER BY created_at ASC');
     if (result.rows && result.rows.length > 0) {
       const users = result.rows.map(formatUserRow);
       return res.json({ success: true, count: users.length, data: users, source: 'postgres' });
@@ -80,7 +81,7 @@ router.get('/managed', async (req, res) => {
   return res.json({ success: true, count: fileUsers.length, data: fileUsers, source: 'fileStore' });
 });
 
-// POST /api/users/managed - Simpan atau perbarui daftar anggota (batch atau single)
+// POST /api/users/managed - Simpan atau perbarui daftar anggota (batch atau single) ke Supabase & fileStore
 router.post('/managed', async (req, res) => {
   const body = req.body;
   const usersToSave = Array.isArray(body) ? body : (body?.users || (body?.id || body?.username ? [body] : null));
@@ -92,7 +93,7 @@ router.post('/managed', async (req, res) => {
   // 1. Simpan selalu ke fileStore lokal
   fileStore.saveManagedUsers(usersToSave);
 
-  // 2. Jika PostgreSQL aktif, sinkronkan ke tabel users
+  // 2. Jika PostgreSQL / Supabase aktif, sinkronkan ke tabel public.users
   try {
     await ensureUserColumns();
     for (const u of usersToSave) {
@@ -106,20 +107,27 @@ router.post('/managed', async (req, res) => {
       const boardName = u.assignedBoardName || 'CreativOffice';
       const taskId = u.assignedTaskId || 'all';
       const taskTitle = u.assignedTaskTitle || 'Seluruh Papan (Semua Tugas)';
+      const device = u.device || 'Belum Terikat';
+      const isDeviceBound = Boolean(u.isDeviceBound);
+      const telegramChat = u.telegramChat || '';
+      const telegramId = u.telegramId || '';
+      const apiDeposit = u.apiDeposit || '';
       const qrData = u.qr_data || username;
       const nip = u.nip || '';
       const position = u.position || 'Siswa PKL';
       const school = u.school || '';
 
       const query = `
-        INSERT INTO users (
+        INSERT INTO public.users (
           id, name, full_name, username, role, title, jobdesk, email,
           nip, position, school, assigned_project_id, assigned_workspace, assigned_board_name,
-          assigned_task_id, assigned_task_title, qr_data, workspace_access, updated_at
+          assigned_task_id, assigned_task_title, device, is_device_bound, telegram_chat, telegram_id, api_deposit,
+          qr_data, workspace_access, updated_at
         ) VALUES (
           $1, $2, $2, $3, $4, $5, $5, $6,
           $7, $8, $9, $10, $11, $12,
-          $13, $14, $15, $16::jsonb, NOW()
+          $13, $14, $15, $16, $17, $18, $19,
+          $20, $21::jsonb, NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
@@ -137,6 +145,11 @@ router.post('/managed', async (req, res) => {
           assigned_board_name = EXCLUDED.assigned_board_name,
           assigned_task_id = EXCLUDED.assigned_task_id,
           assigned_task_title = EXCLUDED.assigned_task_title,
+          device = EXCLUDED.device,
+          is_device_bound = EXCLUDED.is_device_bound,
+          telegram_chat = EXCLUDED.telegram_chat,
+          telegram_id = EXCLUDED.telegram_id,
+          api_deposit = EXCLUDED.api_deposit,
           qr_data = EXCLUDED.qr_data,
           workspace_access = EXCLUDED.workspace_access,
           updated_at = NOW()
@@ -145,8 +158,12 @@ router.post('/managed', async (req, res) => {
       await pool.query(query, [
         id, fullName, username, role, position, email,
         nip, position, school, projId, workspace, boardName,
-        taskId, taskTitle, qrData, JSON.stringify([workspace])
-      ]).catch(() => {});
+        taskId, taskTitle, device, isDeviceBound, telegramChat, telegramId, apiDeposit,
+        qrData, JSON.stringify([workspace])
+      ]).catch(err => {
+        console.warn(`[server/users] Gagal simpan ${username} ke Supabase:`, err.message);
+      });
+      console.log(`[server/users] ✅ Berhasil menyimpan user ke Supabase: ${fullName} (${username})`);
     }
   } catch (err) {
     console.warn('[server/routes/users] Sync Postgres warning:', err.message);
@@ -155,17 +172,42 @@ router.post('/managed', async (req, res) => {
   return res.json({ success: true, count: usersToSave.length, data: usersToSave });
 });
 
-// DELETE /api/users/managed/:id - Hapus anggota dari sistem
+// DELETE /api/users/managed/:id - Hapus anggota dari sistem dan Supabase
 router.delete('/managed/:id', async (req, res) => {
   const { id } = req.params;
   
   // Hapus dari fileStore
   fileStore.deleteManagedUser(id);
 
-  // Hapus dari PostgreSQL jika aktif
+  // Hapus dari PostgreSQL / Supabase jika aktif
   try {
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
-  } catch (err) {}
+    await pool.query('DELETE FROM public.users WHERE id = $1', [id]);
+    console.log(`[server/users] ✅ Berhasil menghapus user dari Supabase: ${id}`);
+  } catch (err) {
+    console.warn('[server/users] Gagal hapus user dari Supabase:', err.message);
+  }
+
+  return res.json({ success: true, message: 'Pengguna berhasil dihapus', id });
+});
+
+// POST /api/users - Alias untuk simpan managed users
+router.post('/', async (req, res, next) => {
+  req.url = '/managed';
+  router.handle(req, res, next);
+});
+
+// DELETE /api/users - Alias untuk hapus managed user dengan query param ?id=...
+router.delete('/', async (req, res) => {
+  const id = req.query.id || req.body?.id;
+  if (!id) return res.status(400).json({ success: false, error: 'User ID diperlukan' });
+  
+  fileStore.deleteManagedUser(id);
+  try {
+    await pool.query('DELETE FROM public.users WHERE id = $1', [id]);
+    console.log(`[server/users] ✅ Berhasil menghapus user dari Supabase: ${id}`);
+  } catch (err) {
+    console.warn('[server/users] Gagal hapus user dari Supabase:', err.message);
+  }
 
   return res.json({ success: true, message: 'Pengguna berhasil dihapus', id });
 });

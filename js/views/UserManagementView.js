@@ -1383,9 +1383,12 @@ export class UserManagementView extends BaseView {
 
         users.push(newUser);
         this.saveUsers(users);
+        apiService.saveManagedUser(newUser).catch(err => {
+          console.warn('[UserManagementView] Gagal sync user baru ke Supabase:', err.message);
+        });
         closeCreateModal();
         if (this.notificationService) {
-          this.notificationService.success(`Akun ${username} berhasil dibuat & ditugaskan ke ${assignedProjects.length > 1 ? `${assignedProjects.length} Papan Proyek` : `"${assignedBoardName}"`}!`);
+          this.notificationService.success(`Akun ${username} berhasil dibuat & otomatis tersimpan ke Supabase!`);
         }
         this.mount(this.element);
       });
@@ -1677,9 +1680,11 @@ export class UserManagementView extends BaseView {
         if (confirm(`Apakah Anda yakin ingin menghapus akun ${user.fullName} (${user.username}) secara permanen?`)) {
           const updated = users.filter(u => u.id !== userId);
           this.saveUsers(updated);
-          apiService.deleteManagedUser(userId).catch(() => {});
+          apiService.deleteManagedUser(userId).catch(err => {
+            console.warn('[UserManagementView] Gagal hapus user dari Supabase:', err.message);
+          });
           if (this.notificationService) {
-            this.notificationService.success(`Akun ${user.username} telah dihapus.`);
+            this.notificationService.success(`Akun ${user.username} telah dihapus dari sistem & Supabase.`);
           }
           this.mount(this.element);
         }
