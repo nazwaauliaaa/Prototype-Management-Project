@@ -548,7 +548,7 @@ export class DashboardView extends BaseView {
                       <!-- Remove / Delete Board Button -->
                       <button
                         type="button"
-                        class="btn-remove-board opacity-95 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 w-7 h-7 sm:w-6 sm:h-6 rounded-lg sm:rounded-md bg-black/55 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer border border-white/25 sm:border-white/10 shrink-0 shadow-xs active:scale-90"
+                        class="btn-remove-board opacity-90 hover:opacity-100 w-7 h-7 sm:w-6.5 sm:h-6.5 rounded-lg bg-black/45 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:border-rose-400/50 shrink-0 shadow-xs active:scale-90"
                         data-project-id="${project.id}"
                         data-workspace="${project.workspace || project.id}"
                         data-board-name="${formattedName}"
