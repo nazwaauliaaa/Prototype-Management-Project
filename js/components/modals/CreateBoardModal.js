@@ -625,11 +625,10 @@ export class CreateBoardModal extends BaseModal {
 
     // Form submission
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const name = projectNameInput ? projectNameInput.value.trim() : '';
-        const wsTitle = `${name} Hub`;
         const wsTag = workspaceTagSelect ? workspaceTagSelect.value : 'Dev / Creative Hub';
         const priority = prioritySelect ? prioritySelect.value : 'High';
         const dueDate = dueDateInput ? dueDateInput.value : 'Des 2026';
@@ -641,153 +640,155 @@ export class CreateBoardModal extends BaseModal {
           return;
         }
 
-        // Generate unique workspace ID
-        const slugBase = wsTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ws-baru';
-        const newWorkspaceId = `${slugBase}-${Date.now().toString().slice(-4)}`;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+            <span>Menyimpan ke Supabase...</span>
+          `;
+        }
 
-        // Color palette for workspace
-        const palette = ['#8b5cf6', '#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6', '#f43f5e'];
-        const chosenColor = palette[Math.floor(Math.random() * palette.length)];
-
-        const activeTheme = this.selectedTheme || this.themes[0] || {
-          id: 'minimal-desk',
-          name: 'Minimalist Desk',
-          type: 'image',
-          value: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80'
-        };
-
-        const newWorkspace = {
-          id: newWorkspaceId,
-          title: wsTitle,
-          tag: wsTag,
-          description: description,
-          color: chosenColor,
-          theme: {
-            id: activeTheme.id,
-            name: activeTheme.name,
-            type: activeTheme.type,
-            value: activeTheme.value,
-            thumb: activeTheme.thumb || activeTheme.value
-          },
-          isCustom: true,
-          iconSvg: `
-            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              <line x1="12" y1="11" x2="12" y2="17"></line>
-              <line x1="9" y1="14" x2="15" y2="14"></line>
-            </svg>
-          `
-        };
-
-        // Persist to custom workspaces in localStorage
         try {
-          const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
-          const existingIdx = custom.findIndex(w => w.id === newWorkspaceId || w.title === wsTitle);
-          if (existingIdx !== -1) {
-            custom[existingIdx] = newWorkspace;
-          } else {
-            custom.unshift(newWorkspace);
-          }
-          localStorage.setItem('custom_workspaces', JSON.stringify(custom));
-        } catch (err) {
-          console.error('Error saving custom workspace:', err);
-        }
+          // Generate unique workspace ID
+          const slugBase = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ws-baru';
+          const newWorkspaceId = `${slugBase}-${Date.now().toString().slice(-4)}`;
 
-        // Set active workspace
-        localStorage.setItem('active_workspace', newWorkspaceId);
+          const palette = ['#8b5cf6', '#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6', '#f43f5e'];
+          const chosenColor = palette[Math.floor(Math.random() * palette.length)];
 
-        // 1. Create project with full metadata & theme
-        const newProject = this.projectService.addProject({
-          name: name,
-          workspace: newWorkspaceId,
-          tag: wsTag,
-          priority: priority,
-          dueDate: dueDate,
-          budget: budget,
-          description: description,
-          theme: {
-            id: activeTheme.id,
-            name: activeTheme.name,
-            type: activeTheme.type,
-            value: activeTheme.value,
-            thumb: activeTheme.thumb || activeTheme.value
-          },
-          status: 'active',
-          progress: 0,
-          tasksCount: { total: 2, completed: 0 },
-          isUserCreated: true
-        });
+          const activeTheme = this.selectedTheme || this.themes[0] || {
+            id: 'minimal-desk',
+            name: 'Minimalist Desk',
+            type: 'image',
+            value: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80'
+          };
 
-        localStorage.setItem('active_project_id', newProject.id);
-
-        // 2. Initialize starter cards in TaskService
-        if (this.taskService) {
-          const prefix = wsTitle.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'PRJ';
-          this.taskService.addTask({
-            code: `#${prefix}-101`,
-            title: `Kickoff & Ruang Lingkup: ${name}`,
+          const newWorkspace = {
+            id: newWorkspaceId,
+            title: name,
+            tag: wsTag,
             description: description,
+            color: chosenColor,
+            theme: {
+              id: activeTheme.id,
+              name: activeTheme.name,
+              type: activeTheme.type,
+              value: activeTheme.value,
+              thumb: activeTheme.thumb || activeTheme.value
+            },
+            isCustom: true
+          };
+
+          // Set active workspace
+          localStorage.setItem('active_workspace', newWorkspaceId);
+
+          // 1. Create project directly to Supabase via ProjectService (waiting for server confirmation)
+          const newProject = await this.projectService.addProject({
+            name: name,
             workspace: newWorkspaceId,
-            board: 'sprint-1',
-            projectId: newProject.id,
-            status: 'in-progress',
+            tag: wsTag,
             priority: priority,
-            pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
-            timeline: `${dueDate} (Fase Inisiasi)`,
-            hours: 16,
-            qaProgress: { passed: 1, total: 3 },
-            tags: ['Inisiasi', 'Baru']
+            dueDate: dueDate,
+            budget: budget,
+            description: description,
+            theme: {
+              id: activeTheme.id,
+              name: activeTheme.name,
+              type: activeTheme.type,
+              value: activeTheme.value,
+              thumb: activeTheme.thumb || activeTheme.value
+            },
+            status: 'active',
+            progress: 0,
+            tasksCount: { total: 2, completed: 0 },
+            isUserCreated: true
           });
 
-          this.taskService.addTask({
-            code: `#${prefix}-102`,
-            title: `Penyusunan Rencana Kerja & Kebutuhan Ruang Kerja ${wsTitle}`,
-            description: 'Setup kebutuhan kolaborasi, pembagian tugas anggota, dan milestone utama.',
-            workspace: newWorkspaceId,
-            board: 'sprint-1',
-            projectId: newProject.id,
-            status: 'backlog',
-            priority: 'Medium',
-            pic: { name: 'Bagas Wicaksono', initials: 'BW', role: 'Design Specialist' },
-            timeline: dueDate,
-            hours: 12,
-            qaProgress: { passed: 0, total: 2 },
-            tags: ['Perencanaan']
-          });
-        }
+          localStorage.setItem('active_project_id', newProject.id);
 
-        // 3. Close modal
-        this.modalManager.close(this.modalId);
+          // 2. Initialize starter cards in TaskService
+          if (this.taskService) {
+            const prefix = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'PRJ';
+            this.taskService.addTask({
+              code: `#${prefix}-101`,
+              title: `Kickoff & Ruang Lingkup: ${name}`,
+              description: description,
+              workspace: newWorkspaceId,
+              board: 'sprint-1',
+              projectId: newProject.id,
+              status: 'in-progress',
+              priority: priority,
+              pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+              timeline: `${dueDate} (Fase Inisiasi)`,
+              hours: 16,
+              qaProgress: { passed: 1, total: 3 },
+              tags: ['Inisiasi', 'Baru']
+            });
 
-        if (this.notificationService) {
-          this.notificationService.success(`Ruang kerja dan papan "${name}" berhasil ditambahkan ke Beranda!`);
-        }
+            this.taskService.addTask({
+              code: `#${prefix}-102`,
+              title: `Penyusunan Rencana Kerja & Kebutuhan Ruang Kerja ${name}`,
+              description: 'Setup kebutuhan kolaborasi, pembagian tugas anggota, dan milestone utama.',
+              workspace: newWorkspaceId,
+              board: 'sprint-1',
+              projectId: newProject.id,
+              status: 'backlog',
+              priority: 'Medium',
+              pic: { name: 'Bagas Wicaksono', initials: 'BW', role: 'Design Specialist' },
+              timeline: dueDate,
+              hours: 12,
+              qaProgress: { passed: 0, total: 2 },
+              tags: ['Perencanaan']
+            });
+          }
 
-        // 4. Emit project & workspace events
-        this.eventBus.emit('workspace:created', { workspace: newWorkspace });
-        this.eventBus.emit('workspace:changed', { workspaceId: newWorkspaceId });
-        this.eventBus.emit('workspaces:updated', { workspace: newWorkspace });
-        this.eventBus.emit('project:created', { project: newProject });
-        this.eventBus.emit('project:added', { project: newProject });
-        this.eventBus.emit('projects:updated', this.projectService.getAllProjects());
+          // 3. Close modal
+          this.modalManager.close(this.modalId);
 
-        // 5. Navigate: if created from Dashboard (Beranda), stay on Beranda so the user sees the new board!
-        const currentHash = window.location.hash || '';
-        const isFromDashboard = this.sourceView === 'dashboard' ||
-                                currentHash === '' ||
-                                currentHash === '#/' ||
-                                currentHash.startsWith('#/dashboard');
+          if (this.notificationService) {
+            this.notificationService.success(`Papan proyek "${name}" berhasil tersimpan ke Supabase!`);
+          }
 
-        if (isFromDashboard) {
-          window.location.hash = '#/dashboard';
-          this.eventBus.emit('navigate', { view: 'dashboard' });
-        } else {
-          window.location.hash = `#/kanban/${newProject.id}`;
-          this.eventBus.emit('navigate', {
-            view: 'kanban',
-            projectId: newProject.id,
-            workspace: newWorkspaceId
-          });
+          // 4. Emit project & workspace events
+          this.eventBus.emit('workspace:created', { workspace: newWorkspace });
+          this.eventBus.emit('workspace:changed', { workspaceId: newWorkspaceId });
+          this.eventBus.emit('workspaces:updated', { workspace: newWorkspace });
+          this.eventBus.emit('project:created', { project: newProject });
+          this.eventBus.emit('project:added', { project: newProject });
+          this.eventBus.emit('projects:updated', this.projectService.getAllProjects());
+
+          // 5. Navigate: if created from Dashboard (Beranda), stay on Beranda so the user sees the new board!
+          const currentHash = window.location.hash || '';
+          const isFromDashboard = this.sourceView === 'dashboard' ||
+                                  currentHash === '' ||
+                                  currentHash === '#/' ||
+                                  currentHash.startsWith('#/dashboard');
+
+          if (isFromDashboard) {
+            window.location.hash = '#/dashboard';
+            this.eventBus.emit('navigate', { view: 'dashboard' });
+          } else {
+            window.location.hash = `#/kanban/${newProject.id}`;
+            this.eventBus.emit('navigate', {
+              view: 'kanban',
+              projectId: newProject.id,
+              workspace: newWorkspaceId
+            });
+          }
+        } catch (err) {
+          console.error('[CreateBoardModal] Gagal menyimpan ke Supabase:', err);
+          if (this.notificationService) {
+            this.notificationService.error(`Gagal menyimpan ke Supabase: ${err.message}`);
+          } else {
+            alert(`Gagal menyimpan ke Supabase: ${err.message}`);
+          }
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origBtnHtml;
+          }
         }
       });
     }

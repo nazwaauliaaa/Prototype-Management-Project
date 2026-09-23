@@ -1133,3 +1133,24 @@ body[data-page="kanban"] #app-content,
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ── Admin Dashboard: Remove Board Action Button & Touch Safety ── */
+.btn-remove-board {
+  position: relative !important;
+  z-index: 35 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.btn-remove-board * {
+  pointer-events: none !important;
+}
+
+.board-card {
+  position: relative !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+}
+

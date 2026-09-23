@@ -1,9 +1,11 @@
 import { Project } from '../models/Project.js';
 import { apiService } from './ApiService.js';
+import { supabaseService } from './SupabaseService.js';
 
 /**
  * ProjectService - Single Responsibility Principle (SRP) & Dependency Inversion Principle (DIP)
- * Manages project portfolio data with PostgreSQL backend integration and localStorage fallback.
+ * Manages project portfolio data with Supabase as the Single Source of Truth,
+ * supported by Backend Express API and resilient local caching.
  */
 export class ProjectService {
   /**
@@ -14,44 +16,111 @@ export class ProjectService {
     this.eventBus = eventBus;
     this.notifications = notificationService;
     this.projects = [];
+    this._isSyncing = false;
 
-    // Ensure clean state if needed
-    if (localStorage.getItem('projects_initialized_clean') !== 'true') {
-      localStorage.setItem('creative_office_projects', JSON.stringify([]));
-      localStorage.setItem('projects_initialized_clean', 'true');
-    }
-
+    // Load initial cache for instant UI availability
     this.loadFromStorage();
-    this.syncFromBackend();
+
+    // Fetch primary data directly from Supabase / Backend
+    this.fetchProjects();
+
+    // Setup Supabase Realtime live sync across devices
+    this.setupRealtimeSync();
   }
 
   /**
-   * Sinkronisasi data proyek dengan PostgreSQL melalui Backend API
+   * Berlangganan event real-time dari Supabase PostgreSQL
    */
-  async syncFromBackend() {
+  setupRealtimeSync() {
+    if (typeof window === 'undefined') return;
+
     try {
-      const remoteProjects = await apiService.getProjects();
-      if (Array.isArray(remoteProjects)) {
-        if (remoteProjects.length > 0) {
-          // Sinkron data dari PostgreSQL ke memori & localStorage
-          this.projects = remoteProjects.map(p => new Project(p));
-          this.deduplicateProjects();
-          this.saveToStorage();
-          if (this.eventBus) {
-            this.eventBus.emit('projects:updated', this.projects);
+      supabaseService.subscribeToProjects((payload) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        console.log(`[ProjectService] Realtime Event: ${eventType}`, payload);
+
+        if (eventType === 'INSERT' && newRecord) {
+          const exists = this.projects.some(p => p.id === newRecord.id);
+          if (!exists) {
+            this.projects.unshift(new Project(newRecord));
+            this.deduplicateProjects();
+            this.saveToStorage();
+            if (this.eventBus) {
+              this.eventBus.emit('projects:updated', this.projects);
+            }
           }
-          console.log(`[ProjectService] ✅ Berhasil menyinkronkan ${remoteProjects.length} proyek dari PostgreSQL.`);
-        } else if (this.projects.length > 0) {
-          // Jika di database masih kosong tetapi lokal ada proyek, migrasikan ke database
-          console.log('[ProjectService] 🔄 Mengunggah proyek lokal ke database PostgreSQL...');
-          for (const p of this.projects) {
-            await apiService.createProject(p);
+        } else if (eventType === 'UPDATE' && newRecord) {
+          const idx = this.projects.findIndex(p => p.id === newRecord.id);
+          if (idx !== -1) {
+            this.projects[idx] = new Project(newRecord);
+            this.saveToStorage();
+            if (this.eventBus) {
+              this.eventBus.emit('projects:updated', this.projects);
+            }
+          }
+        } else if (eventType === 'DELETE' && oldRecord) {
+          const targetId = oldRecord.id;
+          const idx = this.projects.findIndex(p => p.id === targetId || p.workspace === targetId);
+          if (idx !== -1) {
+            this.projects.splice(idx, 1);
+            this.saveToStorage();
+            if (this.eventBus) {
+              this.eventBus.emit('projects:updated', this.projects);
+            }
           }
         }
+      });
+    } catch (err) {
+      console.warn('[ProjectService] Setup realtime notice:', err.message);
+    }
+  }
+
+  /**
+   * Mengambil data proyek dari Supabase sebagai Single Source of Truth
+   * @returns {Promise<Project[]>}
+   */
+  async fetchProjects() {
+    if (this._isSyncing) return this.projects;
+    this._isSyncing = true;
+
+    try {
+      let remoteProjects = null;
+
+      // 1. Coba ambil langsung dari Supabase Client jika aktif
+      if (supabaseService.isConfigured()) {
+        remoteProjects = await supabaseService.getProjects();
+      }
+
+      // 2. Jika Supabase client belum ada, ambil via backend API (yang tersambung ke Supabase / PostgreSQL)
+      if (!Array.isArray(remoteProjects)) {
+        remoteProjects = await apiService.getProjects();
+      }
+
+      // 3. Jika berhasil mendapatkan data dari server/Supabase
+      if (Array.isArray(remoteProjects)) {
+        this.projects = remoteProjects.map(p => new Project(p));
+        this.deduplicateProjects();
+        this.saveToStorage();
+
+        if (this.eventBus) {
+          this.eventBus.emit('projects:updated', this.projects);
+        }
+        console.log(`[ProjectService] ✅ Supabase Single Source of Truth: ${this.projects.length} papan aktif.`);
       }
     } catch (err) {
-      console.warn('[ProjectService] Backend PostgreSQL belum dapat dihubungi, menggunakan cache lokal.');
+      console.warn('[ProjectService] Gagal fetch dari Supabase/Backend:', err.message);
+    } finally {
+      this._isSyncing = false;
     }
+
+    return this.projects;
+  }
+
+  /**
+   * Alias untuk sinkronisasi backend
+   */
+  async syncFromBackend() {
+    return this.fetchProjects();
   }
 
   loadFromStorage() {
@@ -59,7 +128,7 @@ export class ProjectService {
       const stored = localStorage.getItem('creative_office_projects');
       if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           this.projects = parsed.map(p => new Project(p));
           this.deduplicateProjects();
           return;
@@ -68,13 +137,9 @@ export class ProjectService {
     } catch (e) {
       console.warn('Failed to load projects from storage:', e);
     }
-    this.initDefaultProjects();
-    this.saveToStorage();
+    this.projects = [];
   }
 
-  /**
-   * Hapus proyek duplikat yang memiliki nama/ID yang sama dengan papan kanban standar
-   */
   deduplicateProjects() {
     if (!Array.isArray(this.projects)) return;
     const seenIds = new Set();
@@ -103,63 +168,23 @@ export class ProjectService {
     }
   }
 
-  /**
-   * Initialize default projects. Set to empty array so no projects pre-exist.
-   */
-  initDefaultProjects() {
-    this.projects = [];
-  }
-
-  /**
-   * Clear all projects from application, storage, and backend.
-   */
-  clearAllProjects() {
-    this.projects = [];
-    this.saveToStorage();
-    if (this.eventBus) {
-      this.eventBus.emit('projects:updated', this.projects);
-    }
-    // Hapus di backend jika online
-    fetch('http://localhost:5000/api/projects', { method: 'DELETE' }).catch(() => {});
-  }
-
-  /**
-   * Mengambil semua proyek
-   * @returns {Project[]}
-   */
   getAllProjects() {
     return [...this.projects];
   }
 
-  /**
-   * Mengambil proyek berdasarkan workspace
-   * @param {string} [workspace]
-   * @returns {Project[]}
-   */
   getProjectsByWorkspace(workspace = null) {
     if (!workspace || workspace === 'all') return [...this.projects];
     return this.projects.filter(p => (p.workspace || '').toLowerCase() === workspace.toLowerCase());
   }
 
-  /**
-   * Mengambil proyek yang sudah ada (Existing)
-   * @returns {Project[]}
-   */
   getExistingProjects() {
     return this.projects.filter(p => p.type === 'existing');
   }
 
-  /**
-   * Mengambil proyek yang akan ditambahkan (Upcoming / Planning)
-   * @returns {Project[]}
-   */
   getUpcomingProjects() {
     return this.projects.filter(p => p.type === 'upcoming');
   }
 
-  /**
-   * Menghitung metrik ringkasan portofolio proyek
-   */
   getMetrics() {
     const total = this.projects.length;
     const existing = this.getExistingProjects().length;
@@ -170,11 +195,6 @@ export class ProjectService {
     return { total, existing, upcoming, completed, active };
   }
 
-  /**
-   * Mengambil satu proyek berdasarkan ID atau kode atau nama
-   * @param {string} idOrCode
-   * @returns {Project|undefined}
-   */
   getProject(idOrCode) {
     if (!idOrCode) return undefined;
     const rawSearch = String(idOrCode).toLowerCase().trim();
@@ -215,31 +235,20 @@ export class ProjectService {
   }
 
   /**
-   * Menambahkan proyek baru
+   * Menambahkan proyek baru dan mengirimkan INSERT ke Supabase
+   * Menunggu konfirmasi Supabase sebelum memasukkan ke state aplikasi
    * @param {Object} data
-   * @returns {Project}
+   * @returns {Promise<Project>}
    */
-  addProject(data = {}) {
-    return this.addDummyProject({
-      ...data,
-      isUserCreated: true
-    });
-  }
-
-  /**
-   * Menambahkan proyek baru
-   * @param {Object} data
-   * @returns {Project}
-   */
-  addDummyProject(data = {}) {
+  async addProject(data = {}) {
     const newProject = new Project({
       name: data.name || 'Proyek Baru #' + Math.floor(100 + Math.random() * 900),
       code: data.code || `PRJ-N${Math.floor(10 + Math.random() * 90)}`,
-      description: data.description || 'Deskripsi otomatis untuk proyek baru yang berhasil ditambahkan ke dalam sistem.',
+      description: data.description || 'Deskripsi proyek baru di CreativeOffice.',
       workspace: data.workspace || 'ruangkreasi',
       status: data.status || (data.type === 'upcoming' ? 'planning' : 'active'),
-      type: data.type || 'upcoming',
-      progress: data.progress !== undefined ? Number(data.progress) : (data.type === 'upcoming' ? 0 : 15),
+      type: data.type || 'existing',
+      progress: data.progress !== undefined ? Number(data.progress) : 0,
       priority: data.priority || 'Medium',
       startDate: data.startDate || 'Segera',
       dueDate: data.dueDate || 'Q4 2026',
@@ -249,13 +258,44 @@ export class ProjectService {
       isUserCreated: data.isUserCreated !== undefined ? data.isUserCreated : true
     });
 
-    this.projects.unshift(newProject);
-    this.saveToStorage();
+    let saved = false;
+    let lastError = null;
 
-    // Simpan ke PostgreSQL di backend secara asynchronous
-    apiService.createProject(newProject).catch(err => {
-      console.warn('[ProjectService] Gagal sync ke PostgreSQL backend:', err.message);
-    });
+    // 1. Simpan via Supabase Client langsung jika aktif
+    if (supabaseService.isConfigured()) {
+      try {
+        await supabaseService.createProject(newProject);
+        saved = true;
+      } catch (sbErr) {
+        lastError = sbErr;
+        console.warn('[ProjectService] Gagal simpan ke Supabase client langsung:', sbErr.message);
+      }
+    }
+
+    // 2. Simpan via backend API jika client belum simpan
+    if (!saved) {
+      try {
+        await apiService.createProject(newProject);
+        saved = true;
+      } catch (apiErr) {
+        lastError = apiErr;
+        console.warn('[ProjectService] Gagal simpan ke Backend API:', apiErr.message);
+      }
+    }
+
+    // Jika kedua jalur gagal menyimpan
+    if (!saved) {
+      const errMsg = lastError?.message || 'Gagal menyimpan ke Supabase maupun server backend.';
+      if (this.notifications) {
+        this.notifications.error(`Gagal membuat papan di Supabase: ${errMsg}`);
+      }
+      throw new Error(errMsg);
+    }
+
+    // INSERT Berhasil: Tambahkan ke memori & update UI
+    this.projects.unshift(newProject);
+    this.deduplicateProjects();
+    this.saveToStorage();
 
     if (this.eventBus) {
       this.eventBus.emit('project:added', { project: newProject });
@@ -264,62 +304,117 @@ export class ProjectService {
     }
 
     if (this.notifications) {
-      this.notifications.success(`Papan proyek "${newProject.name}" berhasil dibuat!`);
+      this.notifications.success(`Papan proyek "${newProject.name}" berhasil tersimpan ke Supabase!`);
     }
 
     return newProject;
   }
 
   /**
-   * Memperbarui data proyek berdasarkan ID dan sinkronkan ke storage + backend
-   * @param {string} projectId
-   * @param {Object} updates
-   * @returns {Project|null}
+   * Menghapus proyek dari Supabase berdasarkan ID atau Workspace
+   * Menunggu konfirmasi Supabase sebelum memutakhirkan state aplikasi
+   * @param {string} projectIdOrWorkspace
+   * @returns {Promise<boolean>}
    */
-  updateProject(projectId, updates = {}) {
+  async deleteProject(projectIdOrWorkspace) {
+    if (!projectIdOrWorkspace) {
+      throw new Error('ID proyek tidak valid.');
+    }
+
+    const cleanTarget = String(projectIdOrWorkspace).trim();
+
+    // Cari proyek yang sesuai di memori
+    const targetIdx = this.projects.findIndex(p => 
+      String(p.id || '').toLowerCase() === cleanTarget.toLowerCase() ||
+      String(p.workspace || '').toLowerCase() === cleanTarget.toLowerCase()
+    );
+
+    const targetProject = targetIdx !== -1 ? this.projects[targetIdx] : null;
+    const deleteId = targetProject ? targetProject.id : cleanTarget;
+    const deleteWs = targetProject ? targetProject.workspace : cleanTarget;
+
+    let deleted = false;
+    let lastError = null;
+
+    // 1. Coba hapus via Supabase Client langsung jika aktif
+    if (supabaseService.isConfigured()) {
+      try {
+        await supabaseService.deleteProject(deleteId);
+        deleted = true;
+      } catch (sbErr) {
+        lastError = sbErr;
+        console.warn('[ProjectService] Gagal hapus via Supabase client:', sbErr.message);
+      }
+    }
+
+    // 2. Coba hapus via Backend API
+    if (!deleted) {
+      try {
+        await apiService.deleteProject(deleteId);
+        deleted = true;
+      } catch (apiErr) {
+        // Coba lagi dengan workspace id jika berbeda
+        if (deleteWs && deleteWs !== deleteId) {
+          try {
+            await apiService.deleteProject(deleteWs);
+            deleted = true;
+          } catch (apiErr2) {
+            lastError = apiErr2;
+          }
+        } else {
+          lastError = apiErr;
+        }
+      }
+    }
+
+    if (!deleted) {
+      const errMsg = lastError?.message || 'Gagal menghapus papan proyek dari Supabase.';
+      if (this.notifications) {
+        this.notifications.error(`Gagal menghapus: ${errMsg}`);
+      }
+      throw new Error(errMsg);
+    }
+
+    // DELETE Berhasil: Hapus dari memori & cache lokal
+    if (targetIdx !== -1) {
+      this.projects.splice(targetIdx, 1);
+    } else {
+      this.projects = this.projects.filter(p => 
+        String(p.id || '').toLowerCase() !== cleanTarget.toLowerCase() &&
+        String(p.workspace || '').toLowerCase() !== cleanTarget.toLowerCase()
+      );
+    }
+
+    this.saveToStorage();
+
+    if (this.eventBus) {
+      this.eventBus.emit('project:deleted', { projectId: deleteId, workspace: deleteWs });
+      this.eventBus.emit('workspace:deleted', { workspaceId: deleteWs || deleteId });
+      this.eventBus.emit('projects:updated', this.projects);
+    }
+
+    if (this.notifications && targetProject) {
+      this.notifications.success(`Papan proyek "${targetProject.name}" berhasil dihapus dari Supabase.`);
+    }
+
+    return true;
+  }
+
+  async updateProject(projectId, updates = {}) {
     const project = this.getProject(projectId);
     if (!project) return null;
 
     Object.assign(project, updates);
     this.saveToStorage();
 
-    // Sinkronkan ke PostgreSQL di backend
-    apiService.updateProject(project.id, updates).catch(err => {
-      console.warn('[ProjectService] Gagal update project di backend:', err.message);
-    });
+    try {
+      await apiService.updateProject(project.id, updates);
+    } catch (e) {}
 
     if (this.eventBus) {
       this.eventBus.emit('project:updated', { project });
       this.eventBus.emit('projects:updated', this.projects);
     }
     return project;
-  }
-
-  /**
-   * Menghapus proyek berdasarkan ID
-   * @param {string} projectId
-   * @returns {Project|null}
-   */
-  deleteProject(projectId) {
-    const index = this.projects.findIndex(p => p.id === projectId);
-    if (index !== -1) {
-      const removed = this.projects.splice(index, 1)[0];
-      this.saveToStorage();
-
-      // Hapus dari PostgreSQL di backend
-      apiService.deleteProject(projectId).catch(err => {
-        console.warn('[ProjectService] Gagal hapus dari PostgreSQL backend:', err.message);
-      });
-
-      if (this.eventBus) {
-        this.eventBus.emit('project:deleted', { projectId });
-        this.eventBus.emit('projects:updated', this.projects);
-      }
-      if (this.notifications) {
-        this.notifications.success(`Proyek "${removed.name}" berhasil dihapus.`);
-      }
-      return removed;
-    }
-    return null;
   }
 }

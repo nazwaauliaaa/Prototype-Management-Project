@@ -179,13 +179,13 @@ export class ApiService {
       return result.data.data;
     } catch (err) {
       console.warn('[ApiService] Gagal menyimpan project ke backend:', err.message);
-      return null;
+      throw err;
     }
   }
 
   async updateProject(id, updates) {
     try {
-      const result = await this.safeFetch(`/projects?id=${encodeURIComponent(id)}`, {
+      const result = await this.safeFetch(`/projects/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -200,14 +200,14 @@ export class ApiService {
 
   async deleteProject(id) {
     try {
-      const result = await this.safeFetch(`/projects?id=${encodeURIComponent(id)}`, {
+      const result = await this.safeFetch(`/projects/${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
       if (!result.ok) throw new Error(`HTTP ${result.status}`);
       return true;
     } catch (err) {
       console.warn('[ApiService] Gagal menghapus project di backend:', err.message);
-      return false;
+      throw err;
     }
   }
 

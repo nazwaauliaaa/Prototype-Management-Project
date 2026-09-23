@@ -18,6 +18,8 @@ export class DashboardView extends BaseView {
     this.authService = container.resolve('AuthService');
     this.eventBus = container.resolve('EventBus');
     this.isThemeDrawerOpen = false;
+    this.pendingDeleteBoard = null;
+    this._eventsAttached = false;
 
     // Re-render when role switches or projects/tasks update
     this._rerender = () => {
@@ -26,6 +28,12 @@ export class DashboardView extends BaseView {
       }
     };
 
+    this._setupEvents();
+  }
+
+  _setupEvents() {
+    if (this._eventsAttached) return;
+    this._eventsAttached = true;
     this.eventBus.on('auth:login', this._rerender);
     this.eventBus.on('project:added', this._rerender);
     this.eventBus.on('project:created', this._rerender);
@@ -35,7 +43,29 @@ export class DashboardView extends BaseView {
     this.eventBus.on('workspace:changed', this._rerender);
     this.eventBus.on('workspaces:updated', this._rerender);
     this.eventBus.on('workspace:deleted', this._rerender);
-    this.pendingDeleteBoard = null;
+  }
+
+  _cleanupEvents() {
+    if (!this._eventsAttached) return;
+    this._eventsAttached = false;
+    this.eventBus.off('auth:login', this._rerender);
+    this.eventBus.off('project:added', this._rerender);
+    this.eventBus.off('project:created', this._rerender);
+    this.eventBus.off('projects:updated', this._rerender);
+    this.eventBus.off('tasks:updated', this._rerender);
+    this.eventBus.off('workspace:created', this._rerender);
+    this.eventBus.off('workspace:changed', this._rerender);
+    this.eventBus.off('workspaces:updated', this._rerender);
+    this.eventBus.off('workspace:deleted', this._rerender);
+  }
+
+  mount(hostElement) {
+    this._setupEvents();
+    super.mount(hostElement);
+    if (this.projectService && !this._hasInitFetched) {
+      this._hasInitFetched = true;
+      this.projectService.fetchProjects();
+    }
   }
 
   openDeleteBoardModal(projectId, workspace, boardName) {
@@ -43,7 +73,7 @@ export class DashboardView extends BaseView {
     const modal = this.element ? this.element.querySelector('#modal-confirm-delete-board') : null;
     const msg = this.element ? this.element.querySelector('#delete-board-modal-msg') : null;
     if (msg) {
-      msg.innerHTML = `Apakah Anda yakin ingin menghapus papan <strong>"${boardName}"</strong>? Papan ini akan disembunyikan dari daftar Papan Proyek Utama &amp; Tim.`;
+      msg.innerHTML = `Apakah Anda yakin ingin menghapus papan <strong>"${boardName}"</strong>? Papan akan dihapus secara permanen dari database Supabase.`;
     }
     if (modal) {
       modal.classList.remove('hidden');
@@ -58,80 +88,51 @@ export class DashboardView extends BaseView {
     }
   }
 
-  confirmDeleteBoard() {
+  async confirmDeleteBoard() {
     if (!this.pendingDeleteBoard) return;
     const { projectId, workspace, boardName } = this.pendingDeleteBoard;
 
-    // 1. Simpan ke deleted_workspaces di localStorage
+    const btnConfirm = this.element ? this.element.querySelector('#btn-confirm-delete-board') : null;
+    const origBtnHtml = btnConfirm ? btnConfirm.innerHTML : '';
+    if (btnConfirm) {
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = `
+        <span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+        <span>Menghapus dari Supabase...</span>
+      `;
+    }
+
     try {
-      const deleted = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
-      if (projectId && !deleted.includes(projectId)) deleted.push(projectId);
-      if (workspace && !deleted.includes(workspace)) deleted.push(workspace);
-      localStorage.setItem('deleted_workspaces', JSON.stringify(deleted));
-    } catch (e) {
-      console.error('Error updating deleted_workspaces:', e);
-    }
+      // 1. Hapus dari Supabase via ProjectService (menunggu konfirmasi server)
+      await this.projectService.deleteProject(projectId || workspace);
 
-    // 2. Hapus dari custom_workspaces di localStorage jika custom
-    try {
-      const custom = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
-      const updatedCustom = custom.filter(w => w.id !== projectId && w.id !== workspace);
-      localStorage.setItem('custom_workspaces', JSON.stringify(updatedCustom));
-    } catch (e) {
-      console.error('Error updating custom_workspaces:', e);
-    }
+      // 2. Tutup modal konfirmasi
+      this.closeDeleteBoardModal();
 
-    // 3. Hapus dari ProjectService jika ada
-    if (this.projectService && typeof this.projectService.deleteProject === 'function') {
-      try {
-        this.projectService.deleteProject(projectId);
-      } catch (e) {}
-    }
-
-    // 4. Tutup modal
-    this.closeDeleteBoardModal();
-
-    // 5. Beri notifikasi & kirim event
-    if (this.notificationService) {
-      this.notificationService.success(`Papan proyek "${boardName}" berhasil dihapus.`);
-    }
-
-    if (this.eventBus) {
-      this.eventBus.emit('workspace:deleted', { workspaceId: projectId });
-      this.eventBus.emit('projects:updated');
-    }
-
-    // 6. Refresh UI
-    if (this.element) {
-      this.mount(this.element);
-    }
-  }
-
-  restoreDefaultBoards() {
-    try {
-      localStorage.removeItem('deleted_workspaces');
-    } catch (e) {}
-
-    if (this.notificationService) {
-      this.notificationService.success('Semua papan proyek bawaan berhasil dipulihkan.');
-    }
-
-    if (this.eventBus) {
-      this.eventBus.emit('workspaces:updated');
-      this.eventBus.emit('projects:updated');
-    }
-
-    if (this.element) {
-      this.mount(this.element);
+      // 3. Render ulang UI langsung
+      if (this.element) {
+        this.mount(this.element);
+      }
+    } catch (err) {
+      console.error('[DashboardView] Gagal menghapus papan:', err);
+      const msg = this.element ? this.element.querySelector('#delete-board-modal-msg') : null;
+      if (msg) {
+        msg.innerHTML = `<span class="text-rose-400 font-semibold">Gagal menghapus dari Supabase: ${err.message}</span>`;
+      }
+      if (this.notificationService) {
+        this.notificationService.error(`Gagal menghapus papan: ${err.message}`);
+      }
+    } finally {
+      if (btnConfirm) {
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = origBtnHtml;
+      }
     }
   }
 
   formatProjectTitle(name) {
     if (!name) return 'Panen Kunci';
     const s = String(name).trim();
-    if (/\bhub\b/i.test(s)) {
-      return s;
-    }
     const sLower = s.toLowerCase();
     if (sLower === 'layarbaca' || sLower === 'layar-baca' || sLower === 'layar baca') return 'LayarBaca';
     if (sLower === 'creativoffive' || sLower === 'creativoffice' || sLower === 'creative office') return 'Creative Office';
@@ -139,111 +140,13 @@ export class DashboardView extends BaseView {
     if (sLower === 'ruangkreasi' || sLower === 'ruang-kreasi' || sLower === 'ruang kreasi') return 'Ruang Kreasi';
     if (sLower === 'aikreativ' || sLower === 'ai-kreativ' || sLower === 'ai kreativ') return 'AIKreativ';
     if (sLower === 'sharinginaja' || sLower === 'sharing-inaja' || sLower === 'sharing in aja') return 'Sharinginaja';
-    const cleaned = s.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d{3,}$/gi, '').trim();
-    return cleaned || s;
+    return s;
   }
 
   getDisplayBoards() {
-    let deletedWs = [];
-    try {
-      deletedWs = JSON.parse(localStorage.getItem('deleted_workspaces') || '[]');
-    } catch (e) {}
-    const isDeleted = (id) => id && Array.isArray(deletedWs) && deletedWs.includes(id);
-
-    const defaultBoards = [
-      {
-        id: 'creativoffice',
-        name: 'Creative Office',
-        workspace: 'creativoffice',
-        category: 'Creative Hub',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #0b061a 0%, #3b1d75 100%)', name: 'Obsidian Violet' }
-      },
-      {
-        id: 'panen-kunci',
-        name: 'Panen Kunci',
-        workspace: 'panen-kunci',
-        category: 'SaaS & Infrastruktur',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%)', name: 'Creative Indigo' }
-      },
-      {
-        id: 'layarbaca',
-        name: 'LayarBaca',
-        workspace: 'layarbaca',
-        category: 'Media & Publikasi',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)', name: 'Berry Fuchsia' }
-      },
-      {
-        id: 'aikreativ',
-        name: 'AIKreativ',
-        workspace: 'aikreativ',
-        category: 'AI & Otomasi',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%)', name: 'Cosmic Indigo' }
-      },
-      {
-        id: 'sharinginaja',
-        name: 'Sharinginaja',
-        workspace: 'sharinginaja',
-        category: 'Cloud Asset Hub',
-        theme: { type: 'gradient', value: 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)', name: 'Emerald Forest' }
-      }
-    ];
-
-    const result = [];
-    const seenWorkspaces = new Set();
-    const seenIds = new Set();
-
-    // 1. Custom workspaces from localStorage ('custom_workspaces') - put newly created ones at the very front
-    try {
-      const customWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
-      customWs.forEach(w => {
-        const wsKey = String(w.id || '').toLowerCase();
-        const wsTitle = w.title || w.name;
-        if (wsKey && !seenWorkspaces.has(wsKey) && !isDeleted(w.id)) {
-          seenWorkspaces.add(wsKey);
-          seenIds.add(w.id);
-          const color = w.color || '#8b5cf6';
-          result.push({
-            id: w.id,
-            name: wsTitle,
-            workspace: w.id,
-            category: w.tag || 'Ruang Kerja',
-            theme: w.theme || {
-              type: 'gradient',
-              value: `linear-gradient(135deg, ${color} 0%, #1e1b4b 100%)`,
-              name: wsTitle
-            },
-            isCustom: true,
-            isUserCreated: true
-          });
-        }
-      });
-    } catch (e) {}
-
-    // 2. User created or stored projects from ProjectService
+    // Single Source of Truth: Data diambil murni dari ProjectService yang terhubung langsung ke Supabase
     const allProjects = this.projectService ? this.projectService.getAllProjects() : [];
-    allProjects.forEach(p => {
-      const pId = String(p.id || '');
-      const wsKey = String(p.workspace || p.id || '').toLowerCase();
-      if (!seenIds.has(pId) && !seenWorkspaces.has(wsKey) && !isDeleted(p.id) && !isDeleted(p.workspace)) {
-        seenIds.add(pId);
-        seenWorkspaces.add(wsKey);
-        result.push(p);
-      }
-    });
-
-    // 3. Default portfolio boards to ensure standard boards are always available
-    defaultBoards.forEach(db => {
-      const wsKey = db.workspace.toLowerCase();
-      const match = result.some(item => 
-        (item.workspace && String(item.workspace).toLowerCase() === wsKey) ||
-        (item.id && String(item.id).toLowerCase() === String(db.id).toLowerCase())
-      );
-      if (!match && !isDeleted(db.id) && !isDeleted(db.workspace)) {
-        result.push(db);
-      }
-    });
-
-    return result;
+    return allProjects;
   }
 
   render() {
@@ -438,58 +341,47 @@ export class DashboardView extends BaseView {
             </div>
           </section>
 
-          <!-- 1. KEY METRICS STATS SUMMARY (Kompak & Glassmorphic) -->
-          <section class="relative z-10 grid grid-cols-3 gap-3 sm:gap-4">
-            <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-purple-500/40 transition-all flex items-center justify-between gap-2">
-              <div class="min-w-0">
-                <span class="text-[11px] sm:text-[12px] font-medium text-white/70 truncate block">Papan Aktif</span>
-                <span class="text-[19px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${totalProjects}</span>
+          <!-- 1. KEY METRICS STATS SUMMARY (Fluid & Glassmorphic) -->
+          <section class="relative z-10 grid grid-cols-3 gap-2 sm:gap-4">
+            <div class="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-purple-500/40 transition-all flex items-center justify-between gap-1.5 sm:gap-2">
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] sm:text-[12px] font-medium text-white/70 block leading-tight">Papan Aktif</span>
+                <span class="text-[18px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${totalProjects}</span>
               </div>
-              <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center shrink-0 shadow-sm">
-                <span class="material-symbols-outlined text-[20px] sm:text-[22px]">dashboard</span>
+              <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-[18px] sm:text-[22px]">dashboard</span>
               </span>
             </div>
 
-            <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-blue-500/40 transition-all flex items-center justify-between gap-2">
-              <div class="min-w-0">
-                <span class="text-[11px] sm:text-[12px] font-medium text-white/70 truncate block">Tugas Berjalan</span>
-                <span class="text-[19px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${activeTasks}</span>
+            <div class="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-blue-500/40 transition-all flex items-center justify-between gap-1.5 sm:gap-2">
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] sm:text-[12px] font-medium text-white/70 block leading-tight">Tugas Berjalan</span>
+                <span class="text-[18px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${activeTasks}</span>
               </div>
-              <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center shrink-0 shadow-sm">
-                <span class="material-symbols-outlined text-[20px] sm:text-[22px]">pending_actions</span>
+              <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-[18px] sm:text-[22px]">pending_actions</span>
               </span>
             </div>
 
-            <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-emerald-500/40 transition-all flex items-center justify-between gap-2">
-              <div class="min-w-0">
-                <span class="text-[11px] sm:text-[12px] font-medium text-white/70 truncate block">Tugas Selesai</span>
-                <span class="text-[19px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${completedTasks}</span>
+            <div class="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 dark:bg-black/30 backdrop-blur-xl border border-white/10 shadow-lg hover:border-emerald-500/40 transition-all flex items-center justify-between gap-1.5 sm:gap-2">
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] sm:text-[12px] font-medium text-white/70 block leading-tight">Tugas Selesai</span>
+                <span class="text-[18px] sm:text-[24px] font-bold text-white leading-tight mt-0.5 block drop-shadow-sm">${completedTasks}</span>
               </div>
-              <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center shrink-0 shadow-sm">
-                <span class="material-symbols-outlined text-[20px] sm:text-[22px]">task_alt</span>
+              <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-[18px] sm:text-[22px]">task_alt</span>
               </span>
             </div>
           </section>
 
           <!-- 2. BOARDS GRID SECTION -->
           <section class="relative z-10 flex flex-col gap-3.5">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-[20px] text-purple-400">view_kanban</span>
-                <h2 class="text-[17px] font-bold text-white tracking-tight drop-shadow-sm">Papan Proyek Utama &amp; Tim</h2>
+                <h2 class="text-[16px] sm:text-[17px] font-bold text-white tracking-tight drop-shadow-sm">Papan Proyek Utama &amp; Tim</h2>
               </div>
-              <div class="flex items-center gap-2">
-                ${hasDeletedBoards ? `
-                <button
-                  id="btn-restore-dash-boards"
-                  type="button"
-                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[11px] font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
-                  title="Kembalikan semua papan proyek bawaan yang terhapus"
-                >
-                  <span class="material-symbols-outlined text-[15px]">settings_backup_restore</span>
-                  <span>Pulihkan Papan</span>
-                </button>
-                ` : ''}
+              <div class="flex items-center gap-2 shrink-0">
                 <span class="text-[11px] font-semibold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2.5 py-0.5 rounded-full shadow-xs">
                   ${displayProjects.length} Papan Aktif
                 </span>
@@ -497,7 +389,7 @@ export class DashboardView extends BaseView {
             </div>
 
             <!-- Boards Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
               ${displayProjects.map(project => {
                 const formattedName = this.formatProjectTitle(project.name);
                 let theme = project.theme;
@@ -523,11 +415,11 @@ export class DashboardView extends BaseView {
                 }
 
                 const boardTasks = this.taskService ? this.taskService.getTasksForBoard(project) : [];
-                const taskCount = this.taskService ? boardTasks.length : (project.tasksCount?.total ?? 0);
+                const taskCount = this.taskService && boardTasks.length > 0 ? boardTasks.length : (project.tasksCount?.total ?? 0);
 
                 return `
                   <div 
-                    class="board-card group relative h-28 sm:h-32 rounded-xl overflow-hidden p-3.5 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between border border-black/10 active:scale-[0.98]"
+                    class="board-card group relative h-32 sm:h-36 rounded-xl sm:rounded-2xl overflow-hidden p-3.5 sm:p-4 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between border border-white/10 active:scale-[0.98]"
                     data-project-id="${project.id}"
                     data-workspace="${project.workspace || 'panen-kunci'}"
                     style="${bgStyle}"
@@ -538,32 +430,33 @@ export class DashboardView extends BaseView {
                     <!-- Board Title & Remove Action -->
                     <div class="relative z-10 flex items-start justify-between gap-1.5">
                       <div class="flex flex-col min-w-0 pr-1">
-                        <h3 class="font-bold text-white text-[15px] sm:text-[16px] leading-tight drop-shadow-md truncate group-hover:text-white">
+                        <h3 class="font-bold text-white text-[15px] sm:text-[16px] leading-snug drop-shadow-md truncate group-hover:text-white">
                           ${formattedName}
                         </h3>
-                        <span class="text-white/80 text-[11px] font-medium drop-shadow-sm mt-0.5 truncate">
-                          ${project.workspace ? project.workspace.toUpperCase() : 'PANEN-KUNCI'}
+                        <span class="text-white/80 text-[10.5px] sm:text-[11px] font-mono drop-shadow-sm mt-0.5 truncate">
+                          ${project.workspace ? project.workspace.toUpperCase() : (project.code || 'PANEN-KUNCI')}
                         </span>
                       </div>
                       <!-- Remove / Delete Board Button -->
                       <button
                         type="button"
-                        class="btn-remove-board opacity-90 hover:opacity-100 w-7 h-7 sm:w-6.5 sm:h-6.5 rounded-lg bg-black/45 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:border-rose-400/50 shrink-0 shadow-xs active:scale-90"
+                        class="btn-remove-board relative z-30 pointer-events-auto min-w-[34px] min-h-[34px] w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl bg-black/50 hover:bg-rose-600 text-white/90 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:border-rose-400/60 shrink-0 shadow-md active:scale-90"
                         data-project-id="${project.id}"
                         data-workspace="${project.workspace || project.id}"
                         data-board-name="${formattedName}"
                         title="Hapus papan ${formattedName}"
+                        aria-label="Hapus papan ${formattedName}"
                       >
-                        <span class="material-symbols-outlined text-[15px] sm:text-[14px]">delete</span>
+                        <span class="material-symbols-outlined text-[16px] pointer-events-none">delete</span>
                       </button>
                     </div>
 
                     <!-- Bottom Footer inside card -->
                     <div class="relative z-10 flex items-center justify-between text-white/90 text-[11px]">
-                      <span class="bg-black/30 backdrop-blur-xs px-2 py-0.5 rounded-md font-mono text-[10.5px]">
+                      <span class="bg-black/35 backdrop-blur-xs px-2.5 py-0.5 rounded-md font-mono text-[10.5px]">
                         ${taskCount} Tugas
                       </span>
-                      <div class="w-6 h-6 rounded-md bg-white/15 backdrop-blur-xs flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                      <div class="w-6.5 h-6.5 rounded-md bg-white/15 backdrop-blur-xs flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
                       </div>
                     </div>
@@ -574,16 +467,16 @@ export class DashboardView extends BaseView {
               <!-- Create New Board Card -->
               <div
                 id="btn-card-create-board"
-                class="h-28 sm:h-32 rounded-xl border-2 border-dashed border-white/20 hover:border-purple-400 bg-white/5 hover:bg-purple-600/15 backdrop-blur-md p-3.5 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center shadow-lg"
+                class="h-32 sm:h-36 rounded-xl sm:rounded-2xl border-2 border-dashed border-white/20 hover:border-purple-400 bg-white/5 hover:bg-purple-600/15 backdrop-blur-md p-3.5 sm:p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center shadow-lg"
                 role="button"
                 tabindex="0"
                 title="Klik untuk membuat papan baru"
               >
-                <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span class="material-symbols-outlined text-[20px]">add</span>
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <span class="material-symbols-outlined text-[20px] sm:text-[22px]">add</span>
                 </div>
                 <div>
-                  <span class="text-[13px] font-bold text-white group-hover:text-purple-300 transition-colors">Buat Papan Baru</span>
+                  <span class="text-[13px] sm:text-[14px] font-bold text-white group-hover:text-purple-300 transition-colors">Buat Papan Baru</span>
                   <p class="text-[10.5px] text-white/60 mt-0.5">Tambah proyek &amp; alur kerja CreativOffice</p>
                 </div>
               </div>
@@ -741,16 +634,16 @@ export class DashboardView extends BaseView {
         </div>
 
         <!-- Modal Konfirmasi Hapus Papan Proyek Utama & Tim -->
-        <div id="modal-confirm-delete-board" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div class="bg-[#181135] border border-rose-500/30 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+        <div id="modal-confirm-delete-board" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div class="bg-[#181135] border border-rose-500/30 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl flex flex-col gap-4 relative z-10">
             <div class="flex items-start gap-3.5">
               <div class="w-11 h-11 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-[24px]">delete_forever</span>
               </div>
               <div class="flex flex-col gap-1 min-w-0 flex-1">
                 <h3 class="text-white text-[16px] font-bold">Hapus Papan Proyek?</h3>
-                <p id="delete-board-modal-msg" class="text-white/70 text-[12.5px] leading-relaxed">
-                  Apakah Anda yakin ingin menghapus papan ini? Papan akan disembunyikan dari Papan Proyek Utama &amp; Tim.
+                <p id="delete-board-modal-msg" class="text-white/75 text-[12.5px] leading-relaxed">
+                  Apakah Anda yakin ingin menghapus papan ini? Papan akan dihapus secara permanen dari database Supabase.
                 </p>
               </div>
             </div>
@@ -772,18 +665,7 @@ export class DashboardView extends BaseView {
   }
 
   unmount() {
-    if (this._rerender) {
-      this.eventBus.off('auth:login', this._rerender);
-      this.eventBus.off('project:added', this._rerender);
-      this.eventBus.off('project:created', this._rerender);
-      this.eventBus.off('projects:updated', this._rerender);
-      this.eventBus.off('tasks:updated', this._rerender);
-      this.eventBus.off('workspace:created', this._rerender);
-      this.eventBus.off('workspace:changed', this._rerender);
-      this.eventBus.off('workspaces:updated', this._rerender);
-      this.eventBus.off('workspace:selected', this._rerender);
-      this.eventBus.off('workspace:deleted', this._rerender);
-    }
+    this._cleanupEvents();
     super.unmount();
   }
 
@@ -808,26 +690,36 @@ export class DashboardView extends BaseView {
         });
       };
 
-      card.addEventListener('click', openBoard);
+      card.addEventListener('click', (e) => {
+        // Prevent opening board if delete button or its children were clicked
+        if (e.target.closest('.btn-remove-board')) return;
+        openBoard();
+      });
+
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
+          if (e.target.closest('.btn-remove-board')) return;
           e.preventDefault();
           openBoard();
         }
       });
     });
 
-    // Tombol Hapus Papan di setiap kartu
+    // Tombol Hapus Papan di setiap kartu (Responsive & Touch-safe)
     const removeBtns = this.element ? this.element.querySelectorAll('.btn-remove-board') : [];
     removeBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      const handleDeleteTrigger = (e) => {
         e.stopPropagation();
         e.preventDefault();
         const projectId = btn.getAttribute('data-project-id');
         const workspace = btn.getAttribute('data-workspace') || projectId;
         const boardName = btn.getAttribute('data-board-name') || 'Papan Proyek';
         this.openDeleteBoardModal(projectId, workspace, boardName);
-      });
+      };
+
+      btn.addEventListener('click', handleDeleteTrigger);
+      btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      btn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     });
 
     // Modal Konfirmasi Hapus Papan
@@ -854,15 +746,6 @@ export class DashboardView extends BaseView {
         if (e.target === modalDelete) {
           this.closeDeleteBoardModal();
         }
-      });
-    }
-
-    // Tombol Pulihkan Papan
-    const btnRestoreBoards = this.element ? this.element.querySelector('#btn-restore-dash-boards') : null;
-    if (btnRestoreBoards) {
-      btnRestoreBoards.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.restoreDefaultBoards();
       });
     }
 

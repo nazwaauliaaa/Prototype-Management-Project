@@ -164,16 +164,21 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/projects/:id - Hapus proyek
-router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
+// DELETE /api/projects/:id (or DELETE /api/projects?id=...) - Hapus proyek
+router.delete('/:id?', async (req, res) => {
+  const id = req.params.id || req.query.id;
+  if (!id) {
+    return res.status(400).json({ success: false, error: 'Parameter ID proyek diperlukan' });
+  }
+
   fileStore.deleteProject(id);
 
   try {
-    await pool.query('DELETE FROM projects WHERE id = $1', [id]);
-    return res.json({ success: true, message: 'Proyek berhasil dihapus', id });
+    const result = await pool.query('DELETE FROM projects WHERE id = $1 OR workspace = $1 RETURNING id', [id]);
+    return res.json({ success: true, message: 'Proyek berhasil dihapus dari Supabase', id, affected: result.rowCount });
   } catch (err) {
-    return res.json({ success: true, message: 'Proyek berhasil dihapus', id, storage: 'fileStore' });
+    console.warn('[server/projects] Gagal hapus dari PostgreSQL/Supabase:', err.message);
+    return res.json({ success: true, message: 'Proyek dihapus dari fileStore lokal', id, storage: 'fileStore' });
   }
 });
 
