@@ -1473,11 +1473,12 @@ export class KanbanBoardView extends BaseView {
         }
         .custom-scrollbar {
           -webkit-overflow-scrolling: touch;
-          touch-action: pan-y;
+          touch-action: pan-x pan-y;
         }
 
         .kanban-card {
           transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+          touch-action: pan-x pan-y;
         }
         .kanban-card[draggable="true"] {
           cursor: grab;
@@ -1521,6 +1522,7 @@ export class KanbanBoardView extends BaseView {
           height: 100%;
           max-height: 100%;
           min-height: 0;
+          touch-action: pan-x pan-y;
         }
         .kanban-column.drag-over {
           background-color: rgba(30, 20, 60, 0.95) !important;
@@ -1536,28 +1538,7 @@ export class KanbanBoardView extends BaseView {
           overscroll-behavior-y: contain;
           -webkit-overflow-scrolling: touch;
           padding-right: 3px;
-        }
-        .kanban-cards-area::-webkit-scrollbar {
-          width: 5px;
-        }
-        .kanban-cards-area::-webkit-scrollbar-button {
-          display: none !important;
-          width: 0 !important;
-          height: 0 !important;
-        }
-        .kanban-cards-area::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .kanban-cards-area::-webkit-scrollbar-thumb {
-          background: rgba(168, 85, 247, 0.35);
-          border-radius: 999px;
-        }
-        .kanban-cards-area::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.75);
-        }
-        .kanban-cards-area {
-          -webkit-overflow-scrolling: touch;
-          touch-action: pan-y;
+          touch-action: pan-x pan-y;
         }
         .column-drop-hint {
           display: none !important;
@@ -2051,7 +2032,31 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-5 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%;">
+            <!-- Mobile Column Navigation Tabs (Mobile Only) -->
+            <div class="sm:hidden flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-none bg-black/35 backdrop-blur-md border-b border-white/10 shrink-0 select-none z-10" id="mobile-kanban-tabs">
+              ${this.columns.map((col, idx) => {
+                const validColIds = this.columns.map(c => c.id);
+                const colTasks = allTasks.filter(t => {
+                  if (t.status === col.id) return true;
+                  if (idx === 0 && (!t.status || !validColIds.includes(t.status))) return true;
+                  return false;
+                });
+                return `
+                  <button
+                    type="button"
+                    class="btn-mobile-col-tab px-3 py-1 rounded-xl text-[11.5px] font-bold flex items-center gap-1.5 shrink-0 transition-all border ${idx === 0 ? 'bg-purple-600/50 border-purple-400 text-white shadow-sm ring-1 ring-purple-400/40' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'}"
+                    data-col-id="${col.id}"
+                    data-col-index="${idx}"
+                  >
+                    <span class="w-2 h-2 rounded-full ${col.dot || 'bg-purple-400'} shrink-0"></span>
+                    <span class="truncate max-w-[110px]">${col.title}</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[9.5px] font-mono font-bold bg-white/10 text-white">${colTasks.length}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-5 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; scroll-behavior: smooth;">
               
               ${this.columns.map((col, colIdx) => {
       const validColIds = this.columns.map(c => c.id);
@@ -2220,14 +2225,15 @@ export class KanbanBoardView extends BaseView {
                         const picName = task.pic?.name || '';
                         const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
                         const picAvatar = task.pic?.avatar || picMember?.avatar || (perms.user && picName && perms.user.name && picName.toLowerCase() === perms.user.name.toLowerCase() ? perms.user.avatar : null);
-                        const isAssigned = false;
+                        const isTouchDevice = (typeof window !== 'undefined') && (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
 
                         return `
                         <div
-                          class="kanban-card p-3 rounded-xl ${isAssigned ? 'bg-purple-950/70 border-2 border-purple-400 shadow-2xl shadow-purple-600/40 ring-2 ring-purple-400/50' : 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40'} backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2 group active:scale-[0.99] w-full max-w-full box-border text-white relative"
+                          class="kanban-card p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40 backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2 group active:scale-[0.99] w-full max-w-full box-border text-white relative select-none"
                           data-task-id="${task.id}"
                           data-task-status="${task.status}"
-                          draggable="true"
+                          draggable="${isTouchDevice ? 'false' : 'true'}"
+                          style="touch-action: pan-x pan-y;"
                         >
                           <!-- Card Top Row: Code, Tags & Quick Actions -->
                           <div class="flex items-center justify-between gap-1.5 min-w-0">
@@ -2235,12 +2241,6 @@ export class KanbanBoardView extends BaseView {
                               <span class="px-2 py-0.5 rounded-md bg-white/10 border border-white/15 font-mono text-[10.5px] font-bold text-white whitespace-nowrap shrink-0 tracking-wide">
                                 ${task.code || '#TASK'}
                               </span>
-                              ${isAssigned ? `
-                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-xs uppercase tracking-wider whitespace-nowrap shrink-0 animate-pulse">
-                                <span class="material-symbols-outlined text-[11px]">verified</span>
-                                <span>Tugas Anda</span>
-                              </span>
-                              ` : ''}
                             </div>
 
                             <div class="flex items-center gap-1 shrink-0">
@@ -2345,27 +2345,27 @@ export class KanbanBoardView extends BaseView {
                             </div>
 
                             <!-- Shift Column Buttons (Quick status shift) -->
-                            <div class="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5 gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                            <div class="flex items-center bg-white/10 sm:bg-white/5 border border-white/15 rounded-lg p-0.5 gap-0.5 shrink-0 opacity-90 sm:opacity-70 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
                               ${colIdx > 0 ? `
                               <button
-                                class="btn-shift-col w-5 h-5 rounded hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                                class="btn-shift-col w-6 h-6 sm:w-5 sm:h-5 rounded hover:bg-white/20 active:bg-purple-600/40 text-white/90 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
                                 data-task-id="${task.id}"
                                 data-dir="prev"
                                 title="Pindah ke ${this._escapeHtml(this.columns[colIdx - 1]?.title || 'kolom sebelumnya')}"
                                 type="button"
                               >
-                                <span class="material-symbols-outlined text-[13px]">arrow_back</span>
+                                <span class="material-symbols-outlined text-[14px] sm:text-[13px]">arrow_back</span>
                               </button>
                               ` : ''}
                               ${colIdx < this.columns.length - 1 ? `
                               <button
-                                class="btn-shift-col w-5 h-5 rounded hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                                class="btn-shift-col w-6 h-6 sm:w-5 sm:h-5 rounded hover:bg-white/20 active:bg-purple-600/40 text-white/90 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
                                 data-task-id="${task.id}"
                                 data-dir="next"
                                 title="Pindah ke ${this._escapeHtml(this.columns[colIdx + 1]?.title || 'kolom berikutnya')}"
                                 type="button"
                               >
-                                <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                                <span class="material-symbols-outlined text-[14px] sm:text-[13px]">arrow_forward</span>
                               </button>
                               ` : ''}
                             </div>
@@ -3427,6 +3427,8 @@ export class KanbanBoardView extends BaseView {
   _setupDragAndDrop() {
     this._setupDesktopDragAndDrop();
     this._setupTouchDragAndDrop();
+    this._setupMobileBoardSwipe();
+    this._setupMobileTabs();
   }
 
   /**
@@ -3762,9 +3764,9 @@ export class KanbanBoardView extends BaseView {
    * Touch Drag-and-Drop — Mobile support dengan pergeseran dinamis
    */
   _setupTouchDragAndDrop() {
-    const cards = this.element.querySelectorAll('.kanban-card[draggable]');
-    const LONG_PRESS_MS = 320;
-    const DRAG_THRESHOLD = 8;
+    const cards = this.element.querySelectorAll('.kanban-card');
+    const LONG_PRESS_MS = 280;
+    const DRAG_THRESHOLD = 14;
 
     cards.forEach(card => {
       let pressTimer = null;
@@ -3997,6 +3999,114 @@ export class KanbanBoardView extends BaseView {
     });
 
     this._touchDragState = null;
+  }
+
+  /**
+   * Gesture Geser Mobile — Memungkinkan geser kolom kanban dengan sapuan jari (touch swipe)
+   */
+  _setupMobileBoardSwipe() {
+    const board = this.element.querySelector('#kanban-board');
+    if (!board) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let initialScrollLeft = 0;
+    let isHorizontalGesture = false;
+    let isSwiping = false;
+
+    board.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1 || this._touchDragState) return;
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      initialScrollLeft = board.scrollLeft;
+      isHorizontalGesture = false;
+      isSwiping = false;
+    }, { passive: true });
+
+    board.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1 || this._touchDragState) return;
+      const touch = e.touches[0];
+      const deltaX = touchStartX - touch.clientX;
+      const deltaY = touchStartY - touch.clientY;
+
+      if (!isHorizontalGesture && !isSwiping) {
+        if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1) {
+          isHorizontalGesture = true;
+          isSwiping = true;
+        }
+      }
+
+      if (isSwiping) {
+        board.scrollLeft = initialScrollLeft + deltaX;
+      }
+    }, { passive: true });
+
+    board.addEventListener('touchend', () => {
+      isSwiping = false;
+      isHorizontalGesture = false;
+    }, { passive: true });
+
+    board.addEventListener('touchcancel', () => {
+      isSwiping = false;
+      isHorizontalGesture = false;
+    }, { passive: true });
+  }
+
+  /**
+   * Setup Mobile Column Tabs — Navigasi tab kolom untuk layar mobile
+   */
+  _setupMobileTabs() {
+    const board = this.element.querySelector('#kanban-board');
+    const tabs = this.element.querySelectorAll('.btn-mobile-col-tab');
+    if (!board || tabs.length === 0) return;
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        const colId = tab.getAttribute('data-col-id');
+        const colEl = this.element.querySelector(`.kanban-column[data-column-id="${colId}"]`);
+        if (colEl) {
+          colEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          tabs.forEach(t => {
+            t.className = 'btn-mobile-col-tab px-3 py-1 rounded-xl text-[11.5px] font-bold flex items-center gap-1.5 shrink-0 transition-all border bg-white/5 border-white/10 text-white/70 hover:text-white';
+          });
+          tab.className = 'btn-mobile-col-tab px-3 py-1 rounded-xl text-[11.5px] font-bold flex items-center gap-1.5 shrink-0 transition-all border bg-purple-600/50 border-purple-400 text-white shadow-sm ring-1 ring-purple-400/40';
+        }
+      });
+    });
+
+    let scrollRaf = null;
+    board.addEventListener('scroll', () => {
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = requestAnimationFrame(() => {
+        const boardRect = board.getBoundingClientRect();
+        const columns = board.querySelectorAll('.kanban-column');
+        let closestColId = null;
+        let minDiff = Infinity;
+
+        columns.forEach(col => {
+          const colRect = col.getBoundingClientRect();
+          const diff = Math.abs(colRect.left - boardRect.left);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestColId = col.getAttribute('data-column-id');
+          }
+        });
+
+        if (closestColId) {
+          tabs.forEach(t => {
+            const isMatch = t.getAttribute('data-col-id') === closestColId;
+            if (isMatch) {
+              t.className = 'btn-mobile-col-tab px-3 py-1 rounded-xl text-[11.5px] font-bold flex items-center gap-1.5 shrink-0 transition-all border bg-purple-600/50 border-purple-400 text-white shadow-sm ring-1 ring-purple-400/40';
+              t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            } else {
+              t.className = 'btn-mobile-col-tab px-3 py-1 rounded-xl text-[11.5px] font-bold flex items-center gap-1.5 shrink-0 transition-all border bg-white/5 border-white/10 text-white/70 hover:text-white';
+            }
+          });
+        }
+      });
+    }, { passive: true });
   }
 
   /**
