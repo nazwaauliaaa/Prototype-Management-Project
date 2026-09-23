@@ -2152,9 +2152,9 @@ export class AuthView extends BaseView {
         feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Login admin berhasil! Membuka Dashboard...</span>`;
       }
 
-      // loginWithRole akan emit 'auth:login' yang ditangani app.js untuk navigasi ke dashboard
+      // loginWithRole emit 'auth:login' → app.js navigateTo('dashboard') secara synchronous
+      // JANGAN set window.location.hash di sini karena akan trigger hashchange kedua
       this.authService.loginWithRole('admin');
-      window.location.hash = '#/dashboard';
 
       if (this.notificationService) {
         this.notificationService.success('Selamat datang, Administrator Creative Office!');
