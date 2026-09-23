@@ -60,8 +60,6 @@ export class NewTaskModal extends BaseModal {
     let boardColumns = [
       { id: 'backlog', title: 'Daftar Pekerjaan', color: 'bg-slate-400' },
       { id: 'in-progress', title: 'Sedang Berjalan', color: 'bg-blue-500' },
-      { id: 'review-qa', title: 'Review QA Lapangan', color: 'bg-amber-500' },
-      { id: 'ready-launch', title: 'Siap Launching', color: 'bg-purple-500' },
       { id: 'done', title: 'Selesai', color: 'bg-emerald-500' }
     ];
 
@@ -70,11 +68,15 @@ export class NewTaskModal extends BaseModal {
       if (savedCols) {
         const parsed = JSON.parse(savedCols);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          boardColumns = parsed.map(c => ({
-            id: c.id,
-            title: c.title,
-            color: c.dot || 'bg-blue-500'
-          }));
+          const allowedIds = ['backlog', 'in-progress', 'done'];
+          const filtered = parsed.filter(c => allowedIds.includes(c.id));
+          if (filtered.length > 0) {
+            boardColumns = filtered.map(c => ({
+              id: c.id,
+              title: c.title,
+              color: c.dot || 'bg-blue-500'
+            }));
+          }
         }
       }
     } catch (e) { }

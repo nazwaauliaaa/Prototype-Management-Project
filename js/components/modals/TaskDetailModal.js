@@ -731,11 +731,9 @@ export class TaskDetailModal extends BaseModal {
                 Kolom / Status
               </label>
               <select id="edit-task-status" class="hidden">
-                <option value="backlog" ${task.status === 'backlog' ? 'selected' : ''}>📋 Daftar Pekerjaan (Backlog)</option>
-                <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>⏳ Sedang Berjalan (In Progress)</option>
-                <option value="review-qa" ${task.status === 'review-qa' ? 'selected' : ''}>🔍 Review QA Lapangan</option>
-                <option value="ready-launch" ${task.status === 'ready-launch' ? 'selected' : ''}>🚀 Siap Launching</option>
-                <option value="done" ${task.status === 'done' ? 'selected' : ''}>✅ Selesai (Done)</option>
+                <option value="backlog" ${task.status === 'backlog' ? 'selected' : ''}>📋 Daftar Pekerjaan</option>
+                <option value="in-progress" ${(task.status === 'in-progress' || task.status === 'review-qa' || task.status === 'ready-launch') ? 'selected' : ''}>⏳ Sedang Berjalan</option>
+                <option value="done" ${task.status === 'done' ? 'selected' : ''}>✅ Selesai</option>
               </select>
 
               <button
@@ -745,10 +743,8 @@ export class TaskDetailModal extends BaseModal {
                 aria-expanded="false"
               >
                 <span id="custom-edit-status-text" class="truncate">
-                  ${task.status === 'backlog' ? '📋 Daftar Pekerjaan (Backlog)' :
-                    task.status === 'in-progress' ? '⏳ Sedang Berjalan (In Progress)' :
-                    task.status === 'review-qa' ? '🔍 Review QA Lapangan' :
-                    task.status === 'ready-launch' ? '🚀 Siap Launching' : '✅ Selesai (Done)'}
+                  ${task.status === 'backlog' ? '📋 Daftar Pekerjaan' :
+                    (task.status === 'in-progress' || task.status === 'review-qa' || task.status === 'ready-launch') ? '⏳ Sedang Berjalan' : '✅ Selesai'}
                 </span>
                 <span class="material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200 shrink-0" id="custom-edit-status-chevron">expand_more</span>
               </button>
@@ -757,24 +753,16 @@ export class TaskDetailModal extends BaseModal {
                 id="custom-edit-status-menu"
                 class="hidden absolute top-[calc(100%+4px)] left-0 right-0 w-full bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden py-1 transition-all animate-in fade-in slide-in-from-top-1 duration-150"
               >
-                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'backlog' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="backlog" data-label="📋 Daftar Pekerjaan (Backlog)">
-                  <span class="truncate">📋 Daftar Pekerjaan (Backlog)</span>
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'backlog' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="backlog" data-label="📋 Daftar Pekerjaan">
+                  <span class="truncate">📋 Daftar Pekerjaan</span>
                   ${task.status === 'backlog' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
                 </button>
-                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'in-progress' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="in-progress" data-label="⏳ Sedang Berjalan (In Progress)">
-                  <span class="truncate">⏳ Sedang Berjalan (In Progress)</span>
-                  ${task.status === 'in-progress' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${(task.status === 'in-progress' || task.status === 'review-qa' || task.status === 'ready-launch') ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="in-progress" data-label="⏳ Sedang Berjalan">
+                  <span class="truncate">⏳ Sedang Berjalan</span>
+                  ${(task.status === 'in-progress' || task.status === 'review-qa' || task.status === 'ready-launch') ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
                 </button>
-                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'review-qa' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="review-qa" data-label="🔍 Review QA Lapangan">
-                  <span class="truncate">🔍 Review QA Lapangan</span>
-                  ${task.status === 'review-qa' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
-                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'ready-launch' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="ready-launch" data-label="🚀 Siap Launching">
-                  <span class="truncate">🚀 Siap Launching</span>
-                  ${task.status === 'ready-launch' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
-                </button>
-                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'done' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="done" data-label="✅ Selesai (Done)">
-                  <span class="truncate">✅ Selesai (Done)</span>
+                <button type="button" class="btn-edit-status-option w-full px-3.5 py-2 text-left text-[12.5px] font-medium flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer ${task.status === 'done' ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}" data-value="done" data-label="✅ Selesai">
+                  <span class="truncate">✅ Selesai</span>
                   ${task.status === 'done' ? '<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check</span>' : ''}
                 </button>
               </div>

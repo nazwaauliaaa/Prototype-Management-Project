@@ -220,35 +220,15 @@ export class KanbanBoardView extends BaseView {
   }
 
   _initColumns() {
-    const saved = localStorage.getItem(`kanban_columns_${this.currentWorkspace}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.columns = parsed;
-          return;
-        }
-      } catch (e) { }
-    }
-
-    // Default columns matching modern Trello workflow
-    if (this.currentWorkspace.toLowerCase() === 'aikreativ') {
-      this.columns = [
-        { id: 'backlog', title: 'To Do', color: 'border-white/20', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
-        { id: 'in-progress', title: 'Doing', color: 'border-blue-400/50', dot: 'bg-blue-400', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
-        { id: 'review-qa', title: 'Review QA', color: 'border-rose-400/50', dot: 'bg-rose-400', badge: 'bg-rose-500/20 text-rose-300 border border-rose-400/30' },
-        { id: 'ready-launch', title: 'Ready to Launch', color: 'border-purple-400/50', dot: 'bg-purple-400', badge: 'bg-purple-500/20 text-purple-300 border border-purple-400/30' },
-        { id: 'done', title: 'Done', color: 'border-emerald-400/50', dot: 'bg-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
-      ];
-    } else {
-      this.columns = [
-        { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-white/20', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
-        { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-400/50', dot: 'bg-blue-400', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
-        { id: 'review-qa', title: 'Review QA Lapangan', color: 'border-rose-400/50', dot: 'bg-rose-400', badge: 'bg-rose-500/20 text-rose-300 border border-rose-400/30' },
-        { id: 'ready-launch', title: 'Siap Launching', color: 'border-purple-400/50', dot: 'bg-purple-400', badge: 'bg-purple-500/20 text-purple-300 border border-purple-400/30' },
-        { id: 'done', title: 'Selesai', color: 'border-emerald-400/50', dot: 'bg-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
-      ];
-    }
+    // Di setiap kanban hanya ada Daftar pekerjaan, Sedang berjalan dan Selesai
+    this.columns = [
+      { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-white/20', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
+      { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-400/50', dot: 'bg-blue-400', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
+      { id: 'done', title: 'Selesai', color: 'border-emerald-400/50', dot: 'bg-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
+    ];
+    try {
+      localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
+    } catch (e) {}
   }
 
   mount(hostElement) {
@@ -1324,7 +1304,7 @@ export class KanbanBoardView extends BaseView {
       canPowerUps: !isUser && isAdmin,
       canAutomation: !isUser && isAdmin,
       canChangeVisibility: !isUser && isAdmin,
-      canAddList: !isUser,
+      canAddList: false,
       canDeleteList: !isUser && (isAdmin || isPM),
       canRenameList: !isUser,
       canListActions: !isUser && (isAdmin || isPM),
@@ -1370,17 +1350,8 @@ export class KanbanBoardView extends BaseView {
       }
     }
 
-    if (!Array.isArray(this.columns) || this.columns.length === 0) {
+    if (!Array.isArray(this.columns) || this.columns.length !== 3) {
       this._initColumns();
-    }
-    if (!Array.isArray(this.columns) || this.columns.length === 0) {
-      this.columns = [
-        { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-700' },
-        { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
-        { id: 'review-qa', title: 'Review QA Lapangan', color: 'border-rose-500', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' },
-        { id: 'ready-launch', title: 'Siap Launching', color: 'border-purple-500', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700' },
-        { id: 'done', title: 'Selesai', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
-      ];
     }
 
     const perms = this.getPermissions();
@@ -2082,6 +2053,8 @@ export class KanbanBoardView extends BaseView {
                 const validColIds = this.columns.map(c => c.id);
                 const colTasks = allTasks.filter(t => {
                   if (t.status === col.id) return true;
+                  if (col.id === 'in-progress' && (t.status === 'review-qa' || t.status === 'review' || t.status === 'ready-launch' || t.status === 'testing' || t.status === 'doing')) return true;
+                  if (col.id === 'done' && (t.status === 'completed' || t.status === 'finish')) return true;
                   if (idx === 0 && (!t.status || !validColIds.includes(t.status))) return true;
                   return false;
                 });
@@ -2112,6 +2085,8 @@ export class KanbanBoardView extends BaseView {
       const validColIds = this.columns.map(c => c.id);
       const colTasks = allTasks.filter(t => {
         if (t.status === col.id) return true;
+        if (col.id === 'in-progress' && (t.status === 'review-qa' || t.status === 'review' || t.status === 'ready-launch' || t.status === 'testing' || t.status === 'doing')) return true;
+        if (col.id === 'done' && (t.status === 'completed' || t.status === 'finish')) return true;
         if (colIdx === 0 && (!t.status || !validColIds.includes(t.status))) return true;
         return false;
       });
