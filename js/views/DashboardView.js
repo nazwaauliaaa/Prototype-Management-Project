@@ -106,8 +106,24 @@ export class DashboardView extends BaseView {
       // 1. Hapus dari Supabase via ProjectService (menunggu konfirmasi server)
       await this.projectService.deleteProject(projectId || workspace);
 
+      // 1b. Hapus dari TaskService jika ada
+      if (this.taskService && typeof this.taskService.deleteWorkspaceTasks === 'function') {
+        try {
+          this.taskService.deleteWorkspaceTasks(workspace || projectId);
+        } catch (e) {}
+      }
+
       // 2. Tutup modal konfirmasi
       this.closeDeleteBoardModal();
+
+      if (this.notificationService) {
+        this.notificationService.success(`Papan proyek "${boardName}" berhasil dihapus.`);
+      }
+
+      if (this.eventBus) {
+        this.eventBus.emit('workspace:deleted', { workspaceId: projectId });
+        this.eventBus.emit('projects:updated');
+      }
 
       // 3. Render ulang UI langsung
       if (this.element) {
@@ -187,11 +203,23 @@ export class DashboardView extends BaseView {
     } catch (e) {}
     const hasDeletedBoards = Array.isArray(deletedWs) && deletedWs.length > 0;
 
-    // Calculate metrics
+    // Calculate metrics strictly scoped to the active display projects
     const totalProjects = displayProjects.length;
-    const allTasks = this.taskService ? this.taskService.getTasks() : [];
-    const completedTasks = allTasks.filter(t => t.status === 'done').length;
-    const activeTasks = allTasks.length - completedTasks;
+    let completedTasks = 0;
+    let activeTasks = 0;
+
+    if (this.taskService) {
+      displayProjects.forEach(project => {
+        const bTasks = this.taskService.getTasksForBoard(project) || [];
+        bTasks.forEach(t => {
+          if (t && t.status === 'done') {
+            completedTasks++;
+          } else {
+            activeTasks++;
+          }
+        });
+      });
+    }
 
     // Determine polite time greeting
     const hour = new Date().getHours();

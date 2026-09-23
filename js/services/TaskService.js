@@ -115,6 +115,54 @@ export class TaskService {
     } catch (e) {}
   }
 
+  getDeletedWorkspaces() {
+    try {
+      const stored = localStorage.getItem('deleted_workspaces');
+      if (!stored) return new Set();
+      const arr = JSON.parse(stored);
+      return new Set(Array.isArray(arr) ? arr.map(w => String(w).toLowerCase().trim()) : []);
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  _deduplicateTasks(tasks) {
+    if (!Array.isArray(tasks)) return [];
+    const deletedIds = this.getDeletedTaskIds();
+    const deletedWorkspaces = this.getDeletedWorkspaces();
+    const seenIds = new Set();
+    const seenSignatures = new Set();
+    const result = [];
+
+    for (const t of tasks) {
+      if (!t || !t.id) continue;
+      const strId = String(t.id).trim();
+      const strCode = t.code ? String(t.code).toUpperCase().trim() : '';
+      const ws = String(t.workspace || '').toLowerCase().trim();
+      const cleanWs = ws.replace(/[-_\s]+/g, '');
+      const title = String(t.title || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
+      // Abaikan tugas yang sudah dihapus atau dari workspace yang telah dihapus
+      if (deletedIds.has(strId) || (strCode && deletedIds.has(strCode))) continue;
+      if (deletedWorkspaces.has(ws) || (t.projectId && deletedWorkspaces.has(String(t.projectId).toLowerCase().trim()))) continue;
+      if (seenIds.has(strId)) continue;
+
+      // Unique signature: (workspace + code) atau (workspace + title jika starter/auto)
+      const sigCode = (cleanWs && strCode && strCode !== '#TASK') ? `${cleanWs}::c::${strCode}` : null;
+      const isAutoOrStarter = strId.startsWith('task-auto-') || strId.startsWith('task-starter-') || strId.startsWith('task-pk-') || strId.startsWith('task-co-') || strId.startsWith('task-ai-') || strId.startsWith('task-sh-');
+      const sigTitle = (cleanWs && title && isAutoOrStarter) ? `${cleanWs}::t::${title}` : null;
+
+      if (sigCode && seenSignatures.has(sigCode)) continue;
+      if (sigTitle && seenSignatures.has(sigTitle)) continue;
+
+      seenIds.add(strId);
+      if (sigCode) seenSignatures.add(sigCode);
+      if (sigTitle) seenSignatures.add(sigTitle);
+      result.push(t);
+    }
+    return result;
+  }
+
   /**
    * Sinkronisasi data tugas dengan Backend (Port 5000 / LAN / Supabase / Cloud Sync)
    */
@@ -122,6 +170,7 @@ export class TaskService {
     if (this.isSyncing) return;
     this.isSyncing = true;
     const deletedIds = this.getDeletedTaskIds();
+    const deletedWorkspaces = this.getDeletedWorkspaces();
 
     try {
       const remoteTasks = await apiService.getTasks();
@@ -131,8 +180,11 @@ export class TaskService {
           if (!t || !t.id) return;
           const strId = String(t.id);
           const strCode = t.code ? String(t.code) : '';
-          // Jangan pernah masukkan tugas yang sudah ada di daftar deleted_tasks
-          if (deletedIds.has(strId) || (strCode && deletedIds.has(strCode))) {
+          const ws = String(t.workspace || '').toLowerCase().trim();
+          const pId = String(t.projectId || '').toLowerCase().trim();
+
+          // Jangan pernah masukkan tugas yang sudah ada di daftar deleted_tasks atau deleted_workspaces
+          if (deletedIds.has(strId) || (strCode && deletedIds.has(strCode)) || deletedWorkspaces.has(ws) || deletedWorkspaces.has(pId)) {
             apiService.deleteTask(strId).catch(() => {});
             return;
           }
@@ -165,8 +217,7 @@ export class TaskService {
           }
         }
 
-        const mergedTasks = Array.from(remoteMap.values())
-          .filter(t => !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
+        const mergedTasks = this._deduplicateTasks(Array.from(remoteMap.values()));
         const changed = this._hasTasksChanged(mergedTasks);
 
         if (changed) {
@@ -201,11 +252,12 @@ export class TaskService {
 
   loadFromStorage() {
     const deletedIds = this.getDeletedTaskIds();
+    const deletedWorkspaces = this.getDeletedWorkspaces();
     try {
       // Purge old mock tasks on first load with new version
-      if (localStorage.getItem('mock_tasks_purged_v4') !== 'true') {
+      if (localStorage.getItem('mock_tasks_purged_v5') !== 'true') {
         localStorage.removeItem('creative_office_tasks');
-        localStorage.setItem('mock_tasks_purged_v4', 'true');
+        localStorage.setItem('mock_tasks_purged_v5', 'true');
       }
 
       const stored = localStorage.getItem('creative_office_tasks');
@@ -218,9 +270,10 @@ export class TaskService {
             'task-11', 'task-12', 'task-13', 'task-14', 'task-15'
           ]);
 
-          this.tasks = parsed
-            .filter(t => t && !oldMockIds.has(String(t.id)) && !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))))
+          const filtered = parsed
+            .filter(t => t && !oldMockIds.has(String(t.id)))
             .map(t => new Task(t));
+          this.tasks = this._deduplicateTasks(filtered);
           this.saveToStorage();
           return;
         }
@@ -232,7 +285,7 @@ export class TaskService {
     // Hanya inisialisasi default jika belum pernah disimpan sama sekali di browser
     if (localStorage.getItem('creative_office_tasks') === null) {
       this.initDefaultTasks();
-      this.tasks = this.tasks.filter(t => !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
+      this.tasks = this._deduplicateTasks(this.tasks);
       this.saveToStorage();
     }
   }
@@ -479,6 +532,50 @@ export class TaskService {
         timeline: '25 - 30 Sep',
         hours: 12,
         qaProgress: { passed: 3, total: 3 }
+      }),
+
+      // LayarBaca default tasks
+      new Task({
+        id: 'task-lb-01',
+        code: '#LB-101',
+        title: 'Kickoff Redaksi & Kurasi Konten LayarBaca',
+        description: 'Penetapan kalender publikasi, penugasan editor, dan kurasi naskah artikel.',
+        workspace: 'layarbaca',
+        board: 'kampanye-q3',
+        status: 'in-progress',
+        priority: 'High',
+        pic: { name: 'Kevin Santoso', initials: 'KS', role: 'DevOps & Security' },
+        timeline: '18 - 25 Sep',
+        hours: 16,
+        qaProgress: { passed: 1, total: 3 }
+      }),
+      new Task({
+        id: 'task-lb-02',
+        code: '#LB-102',
+        title: 'Desain Tata Letak & Tipografi Media Baca',
+        description: 'Penyusunan format visual bacaan yang responsif dan nyaman untuk desktop dan mobile.',
+        workspace: 'layarbaca',
+        board: 'kampanye-q3',
+        status: 'backlog',
+        priority: 'Medium',
+        pic: { name: 'Sari Rahmawati', initials: 'SR', role: 'Creative Lead' },
+        timeline: '22 - 28 Sep',
+        hours: 12,
+        qaProgress: { passed: 0, total: 2 }
+      }),
+      new Task({
+        id: 'task-lb-03',
+        code: '#LB-103',
+        title: 'Verifikasi Kualitas Publikasi & Review Akhir',
+        description: 'Pemeriksaan akhir tata bahasa, format e-reader, dan persetujuan rilis.',
+        workspace: 'layarbaca',
+        board: 'kampanye-q3',
+        status: 'ready-launch',
+        priority: 'Critical',
+        pic: { name: 'Budi Pratama', initials: 'BP', role: 'QA Lead' },
+        timeline: '25 - 30 Sep',
+        hours: 14,
+        qaProgress: { passed: 3, total: 3 }
       })
     ];
   }
@@ -525,8 +622,10 @@ export class TaskService {
       'task-11', 'task-12', 'task-13', 'task-14', 'task-15'
     ]);
     const deletedIds = this.getDeletedTaskIds();
+    const deletedWorkspaces = this.getDeletedWorkspaces();
 
-    let result = this.tasks.filter(t => t && !oldMockIds.has(String(t.id)) && !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
+    const dedupedAll = this._deduplicateTasks(this.tasks.filter(t => !oldMockIds.has(String(t.id))));
+    let result = dedupedAll;
 
     if (workspace && workspace !== 'all') {
       const wsLower = workspace.toLowerCase();
@@ -597,13 +696,20 @@ export class TaskService {
     const initKey = `board_initialized_${currentWs}_${projIdStr || ''}`;
     const wasInitialized = localStorage.getItem(initKey) === 'true';
 
-    if (matched.length === 0 && !wasInitialized && currentWs !== 'workspace-utama') {
+    // Cek apakah di database tasks sudah ada yang memiliki workspace ini
+    const hasExistingInTasks = this.tasks.some(t => {
+      const tWs = String(t.workspace || '').toLowerCase().trim();
+      return tWs === currentWs || (currentWs.includes('creativ') && tWs.includes('creativ')) || (currentWs.includes('panen') && tWs.includes('panen'));
+    });
+
+    if (matched.length === 0 && !wasInitialized && !hasExistingInTasks && currentWs !== 'workspace-utama') {
       localStorage.setItem(initKey, 'true');
       const boardLabel = projectName || targetWs || 'Proyek';
       const cleanPrefix = (boardLabel.split(/[\s-_]+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 3) || 'TSK');
+      const cleanWsKey = currentWs.replace(/[^a-z0-9]/g, '');
       const starterTasks = [
         new Task({
-          id: `task-auto-${Date.now()}-1`,
+          id: `task-starter-${cleanWsKey}-1`,
           code: `#${cleanPrefix}-101`,
           title: `Kickoff & Ruang Lingkup: ${boardLabel}`,
           description: `Penetapan sasaran tim, pembagian PIC, dan alur pengerjaan papan ${boardLabel}.`,
@@ -617,7 +723,7 @@ export class TaskService {
           qaProgress: { passed: 1, total: 3 }
         }),
         new Task({
-          id: `task-auto-${Date.now()}-2`,
+          id: `task-starter-${cleanWsKey}-2`,
           code: `#${cleanPrefix}-102`,
           title: `Penyusunan Konten & Kebutuhan Desain`,
           description: `Riset kebutuhan visual, wireframe, dan validasi aset deliverable.`,
@@ -631,7 +737,7 @@ export class TaskService {
           qaProgress: { passed: 0, total: 2 }
         }),
         new Task({
-          id: `task-auto-${Date.now()}-3`,
+          id: `task-starter-${cleanWsKey}-3`,
           code: `#${cleanPrefix}-103`,
           title: `Ulasan Mutu QA & Finalisasi Deliverable`,
           description: `Pemeriksaan standar kualitas dan verifikasi sebelum persetujuan akhir.`,
@@ -645,16 +751,19 @@ export class TaskService {
           qaProgress: { passed: 3, total: 3 }
         })
       ];
-      const deletedIds = this.getDeletedTaskIds();
-      const validStarters = starterTasks.filter(t => !deletedIds.has(String(t.id)) && (!t.code || !deletedIds.has(String(t.code))));
-      validStarters.forEach(t => this.tasks.unshift(t));
+      const validStarters = this._deduplicateTasks(starterTasks);
+      validStarters.forEach(t => {
+        const exists = this.tasks.some(x => String(x.id) === String(t.id));
+        if (!exists) this.tasks.unshift(t);
+      });
+      this.tasks = this._deduplicateTasks(this.tasks);
       this.saveToStorage();
       matched = validStarters;
     } else {
       localStorage.setItem(initKey, 'true');
     }
 
-    return matched;
+    return this._deduplicateTasks(matched);
   }
 
   /**
@@ -892,16 +1001,47 @@ export class TaskService {
   }
 
   /**
+   * Hapus semua tugas yang terasosiasi dengan workspace atau projectId tertentu
+   * @param {string} workspaceOrProjectId
+   */
+  deleteWorkspaceTasks(workspaceOrProjectId) {
+    if (!workspaceOrProjectId) return;
+    const target = String(workspaceOrProjectId).toLowerCase().trim();
+    const cleanTarget = target.replace(/[-_\s]+/g, '');
+
+    const tasksToDelete = this.tasks.filter(t => {
+      const ws = String(t.workspace || '').toLowerCase().trim();
+      const cleanWs = ws.replace(/[-_\s]+/g, '');
+      const pid = String(t.projectId || '').toLowerCase().trim();
+      return ws === target || cleanWs === cleanTarget || pid === target;
+    });
+
+    tasksToDelete.forEach(t => {
+      this.addDeletedTaskId(t.id);
+      if (t.code) this.addDeletedTaskId(t.code);
+      apiService.deleteTask(t.id).catch(() => {});
+    });
+
+    this.tasks = this.tasks.filter(t => !tasksToDelete.some(dt => dt.id === t.id));
+    this.saveToStorage();
+    if (this.eventBus) {
+      this.eventBus.emit('tasks:updated', this.tasks);
+    }
+    this.broadcastLocalChange();
+  }
+
+  /**
    * Calculate summary metrics for executive dashboard
    */
   getMetrics() {
-    const totalActive = this.tasks.filter(t => t.status !== 'done').length;
-    const completed = this.tasks.filter(t => t.status === 'done').length;
-    const onTrackCount = this.tasks.filter(t => t.status === 'in-progress' || t.status === 'ready-launch').length;
-    const qaReviews = this.tasks.filter(t => t.status === 'review-qa').length;
-    const totalTasks = this.tasks.length || 1;
+    const validTasks = this.getTasks();
+    const totalActive = validTasks.filter(t => t.status !== 'done').length;
+    const completed = validTasks.filter(t => t.status === 'done').length;
+    const onTrackCount = validTasks.filter(t => t.status === 'in-progress' || t.status === 'ready-launch').length;
+    const qaReviews = validTasks.filter(t => t.status === 'review-qa').length;
+    const totalTasks = validTasks.length || 1;
     const completionPercent = Math.round((completed / totalTasks) * 100);
-    const totalHours = this.tasks.reduce((sum, t) => sum + (t.hours || 0), 0);
+    const totalHours = validTasks.reduce((sum, t) => sum + (t.hours || 0), 0);
 
     return {
       totalActive,
