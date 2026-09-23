@@ -35,6 +35,7 @@ import { ProjectService } from './services/ProjectService.js';
 import { WorkspacesView } from './views/WorkspacesView.js';
 import { ProfileView } from './views/ProfileView.js';
 import { UserManagementView } from './views/UserManagementView.js';
+import { supabaseService } from './services/SupabaseService.js';
 
 /**
  * CreativeOfficeApp - Bootstrap & Dependency Injection Root
@@ -655,6 +656,9 @@ class CreativeOfficeApp {
     // ProjectService (SRP / DIP)
     const projectService = new ProjectService(eventBus, notificationService);
     this.container.register('ProjectService', projectService);
+
+    // SupabaseService (SRP)
+    this.container.register('SupabaseService', supabaseService);
 
     // ModalManager (SRP / OCP)
     const modalManager = new ModalManager(eventBus);
