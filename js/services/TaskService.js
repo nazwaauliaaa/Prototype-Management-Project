@@ -959,9 +959,6 @@ export class TaskService {
 
       this.eventBus.emit('tasks:updated', this.tasks);
       this.broadcastLocalChange();
-      if (this.notifications) {
-        this.notifications.info(`Status ${task.code || 'tugas'} diubah: ${oldStatus} ➔ ${newStatus}`);
-      }
       return true;
     }
     return false;
