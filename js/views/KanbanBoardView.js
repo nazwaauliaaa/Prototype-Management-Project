@@ -220,15 +220,15 @@ export class KanbanBoardView extends BaseView {
   }
 
   _initColumns() {
-    // Di setiap kanban hanya ada Daftar pekerjaan, Sedang berjalan dan Selesai
     this.columns = [
       { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-white/20', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
       { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-400/50', dot: 'bg-blue-400', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
       { id: 'done', title: 'Selesai', color: 'border-emerald-400/50', dot: 'bg-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
     ];
+
     try {
       localStorage.setItem(`kanban_columns_${this.currentWorkspace}`, JSON.stringify(this.columns));
-    } catch (e) {}
+    } catch (e) { }
   }
 
   mount(hostElement) {
@@ -1304,7 +1304,7 @@ export class KanbanBoardView extends BaseView {
       canPowerUps: !isUser && isAdmin,
       canAutomation: !isUser && isAdmin,
       canChangeVisibility: !isUser && isAdmin,
-      canAddList: false,
+      canAddList: !isUser,
       canDeleteList: !isUser && (isAdmin || isPM),
       canRenameList: !isUser,
       canListActions: !isUser && (isAdmin || isPM),
@@ -1350,9 +1350,12 @@ export class KanbanBoardView extends BaseView {
       }
     }
 
-    if (!Array.isArray(this.columns) || this.columns.length !== 3) {
-      this._initColumns();
-    }
+    this._initColumns();
+    this.columns = [
+      { id: 'backlog', title: 'Daftar Pekerjaan', color: 'border-slate-300', dot: 'bg-slate-400', badge: 'bg-white/10 text-white/90 border border-white/15' },
+      { id: 'in-progress', title: 'Sedang Berjalan', color: 'border-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30' },
+      { id: 'done', title: 'Selesai', color: 'border-emerald-500', dot: 'bg-emerald-600', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }
+    ];
 
     const perms = this.getPermissions();
     const currentWsName = this.getWorkspaceName(this.currentWorkspace);
@@ -2050,12 +2053,12 @@ export class KanbanBoardView extends BaseView {
             <!-- Mobile Column Navigation Tabs (Mobile Only) -->
             <div class="sm:hidden flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-none bg-black/35 backdrop-blur-md border-b border-white/10 shrink-0 select-none z-10" id="mobile-kanban-tabs">
               ${this.columns.map((col, idx) => {
-                const validColIds = this.columns.map(c => c.id);
+                const validColIds = ['backlog', 'in-progress', 'done'];
                 const colTasks = allTasks.filter(t => {
                   if (t.status === col.id) return true;
-                  if (col.id === 'in-progress' && (t.status === 'review-qa' || t.status === 'review' || t.status === 'ready-launch' || t.status === 'testing' || t.status === 'doing')) return true;
-                  if (col.id === 'done' && (t.status === 'completed' || t.status === 'finish')) return true;
-                  if (idx === 0 && (!t.status || !validColIds.includes(t.status))) return true;
+                  if (col.id === 'in-progress' && (t.status === 'review-qa' || t.status === 'ready-launch' || t.status === 'doing' || t.status === 'review' || t.status === 'testing')) return true;
+                  if (col.id === 'done' && (t.status === 'completed')) return true;
+                  if (idx === 0 && (!t.status || !validColIds.includes(t.status)) && !['review-qa', 'ready-launch', 'doing', 'review', 'testing', 'completed'].includes(t.status)) return true;
                   return false;
                 });
                 return `
@@ -2082,12 +2085,12 @@ export class KanbanBoardView extends BaseView {
             <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-8 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; scroll-behavior: smooth;">
               
               ${this.columns.map((col, colIdx) => {
-      const validColIds = this.columns.map(c => c.id);
+      const validColIds = ['backlog', 'in-progress', 'done'];
       const colTasks = allTasks.filter(t => {
         if (t.status === col.id) return true;
-        if (col.id === 'in-progress' && (t.status === 'review-qa' || t.status === 'review' || t.status === 'ready-launch' || t.status === 'testing' || t.status === 'doing')) return true;
-        if (col.id === 'done' && (t.status === 'completed' || t.status === 'finish')) return true;
-        if (colIdx === 0 && (!t.status || !validColIds.includes(t.status))) return true;
+        if (col.id === 'in-progress' && (t.status === 'review-qa' || t.status === 'ready-launch' || t.status === 'doing' || t.status === 'review' || t.status === 'testing')) return true;
+        if (col.id === 'done' && (t.status === 'completed')) return true;
+        if (colIdx === 0 && (!t.status || !validColIds.includes(t.status)) && !['review-qa', 'ready-launch', 'doing', 'review', 'testing', 'completed'].includes(t.status)) return true;
         return false;
       });
 
@@ -2423,48 +2426,6 @@ export class KanbanBoardView extends BaseView {
                   </div>
                 `;
     }).join('')}
-
-              <!-- + Add another list (Trello Style) -->
-              ${perms.canAddList ? `
-              <div class="w-[260px] sm:w-[280px] lg:w-[260px] shrink-0 self-start">
-                ${this.isAddingList ? `
-                  <div class="bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-3 border border-white/15 shadow-2xl shadow-purple-950/70 flex flex-col gap-2.5 text-white">
-                    <input
-                      id="input-new-list-title"
-                      type="text"
-                      placeholder="Masukkan judul daftar..."
-                      class="w-full px-3 py-2 text-[13px] bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                      autofocus
-                    />
-                    <div class="flex items-center gap-2">
-                      <button
-                        id="btn-confirm-add-list"
-                        type="button"
-                        class="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white text-[12px] font-semibold rounded-lg shadow-md transition-all cursor-pointer border border-purple-400/30"
-                      >
-                        Tambah daftar
-                      </button>
-                      <button
-                        id="btn-cancel-add-list"
-                        type="button"
-                        class="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-                      >
-                        <span class="material-symbols-outlined text-[18px]">close</span>
-                      </button>
-                    </div>
-                  </div>
-                ` : `
-                  <button
-                    id="btn-add-another-list"
-                    class="w-full flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#0e0a22]/70 hover:bg-[#0e0a22]/90 backdrop-blur-xl text-white font-semibold text-[13.5px] transition-all border border-white/15 cursor-pointer shadow-lg active:scale-98"
-                    type="button"
-                  >
-                    <span class="material-symbols-outlined text-[20px] text-purple-300">add</span>
-                    <span>Add another list</span>
-                  </button>
-                `}
-              </div>
-              ` : ''}
 
             </div>
           </div>

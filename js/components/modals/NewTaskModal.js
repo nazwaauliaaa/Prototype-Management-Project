@@ -56,30 +56,12 @@ export class NewTaskModal extends BaseModal {
     const workspaces = this.getWorkspacesList();
     const members = this.getRegisteredMembers();
 
-    // Dapatkan kolom aktual papan untuk status awal tugas
+    // Dapatkan kolom aktual papan untuk status awal tugas (hanya 3 kolom standar)
     let boardColumns = [
       { id: 'backlog', title: 'Daftar Pekerjaan', color: 'bg-slate-400' },
       { id: 'in-progress', title: 'Sedang Berjalan', color: 'bg-blue-500' },
       { id: 'done', title: 'Selesai', color: 'bg-emerald-500' }
     ];
-
-    try {
-      const savedCols = localStorage.getItem(`kanban_columns_${activeWs}`) || (activeProjectId ? localStorage.getItem(`kanban_columns_${activeProjectId}`) : null);
-      if (savedCols) {
-        const parsed = JSON.parse(savedCols);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const allowedIds = ['backlog', 'in-progress', 'done'];
-          const filtered = parsed.filter(c => allowedIds.includes(c.id));
-          if (filtered.length > 0) {
-            boardColumns = filtered.map(c => ({
-              id: c.id,
-              title: c.title,
-              color: c.dot || 'bg-blue-500'
-            }));
-          }
-        }
-      }
-    } catch (e) { }
 
     if (activeStatus && !boardColumns.some(c => c.id === activeStatus)) {
       boardColumns.unshift({
