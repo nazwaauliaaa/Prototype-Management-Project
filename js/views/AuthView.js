@@ -24,6 +24,30 @@ export class AuthView extends BaseView {
     }).catch(() => {});
   }
 
+  /**
+   * Jika pengguna sudah login, jangan render scanner QR melainkan langsung navigasi
+   */
+  mount(hostElement) {
+    if (this.authService && this.authService.isLoggedIn()) {
+      const u = this.authService.getCurrentUser();
+      const role = (u?.role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
+      const eb = this.container ? this.container.resolve('EventBus') : (this.eventBus || null);
+
+      if (role === 'admin') {
+        if (eb) eb.emit('navigate', { view: 'dashboard' });
+        window.location.hash = '#/dashboard';
+        return;
+      } else if (role === 'user') {
+        const allowedWs = (u && u.assignedWorkspace) || (u && u.workspaceAccess && u.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
+        const allowedProj = (u && u.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
+        if (eb) eb.emit('navigate', { view: 'kanban', projectId: allowedProj, workspace: allowedWs });
+        window.location.hash = `#/kanban/${allowedProj}`;
+        return;
+      }
+    }
+    super.mount(hostElement);
+  }
+
   getApprovedUsers() {
     try {
       const approvedMap = new Map();
@@ -2160,16 +2184,33 @@ export class AuthView extends BaseView {
         feedback.innerHTML = `<span class="text-status-success font-semibold animate-pulse">Login admin berhasil! Membuka Dashboard...</span>`;
       }
 
-      // loginWithRole emit 'auth:login' → app.js navigateTo('dashboard') secara synchronous
+      // 1. Simpan sesi login admin
       this.authService.loginWithRole('admin');
 
       if (this.notificationService) {
         this.notificationService.success('Selamat datang, Administrator Creative Office!');
       }
+
+      // 2. Navigasikan langsung ke Dashboard & update hash
+      setTimeout(() => {
+        stopCamera();
+        const eb = this.container ? this.container.resolve('EventBus') : (this.eventBus || null);
+        if (eb) {
+          eb.emit('navigate', { view: 'dashboard' });
+        }
+        window.location.hash = '#/dashboard';
+      }, 150);
     };
 
     if (formAdminLogin) {
       formAdminLogin.addEventListener('submit', handleAdminLoginSubmit);
+    }
+
+    const btnSubmitAdminPwd = this.element.querySelector('#btn-submit-admin-pwd');
+    if (btnSubmitAdminPwd) {
+      btnSubmitAdminPwd.addEventListener('click', (e) => {
+        handleAdminLoginSubmit(e);
+      });
     }
 
     // Automatically activate camera when QR gate loads (User requirement)

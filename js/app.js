@@ -744,8 +744,10 @@ class CreativeOfficeApp {
         const allowedWs = (currentUser.assignedWorkspace) || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
         if (role === 'admin') {
+          window.location.hash = '#/dashboard';
           this.navigateTo('dashboard');
         } else {
+          window.location.hash = `#/kanban/${allowedProj}`;
           this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
         }
         return;
@@ -755,9 +757,12 @@ class CreativeOfficeApp {
       if (role === 'user') {
         const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
+        window.location.hash = `#/kanban/${allowedProj}`;
         this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
         return;
       }
+
+      window.location.hash = '#/dashboard';
       this.navigateTo('dashboard');
     });
   }
@@ -782,6 +787,22 @@ class CreativeOfficeApp {
         return;
       }
       this.navigateTo('auth');
+      return;
+    }
+
+    // Jika sudah terautentikasi dan berada di rute auth/login/register, otomatis redirect ke tampilan kerja
+    if (authService.isLoggedIn() && (cleanHash === 'auth' || cleanHash === 'login' || cleanHash === 'register')) {
+      const currentUser = authService.getCurrentUser();
+      const role = (currentUser?.role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
+      if (role === 'user') {
+        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
+        const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
+        window.location.hash = `#/kanban/${allowedProj}`;
+        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+      } else {
+        window.location.hash = '#/dashboard';
+        this.navigateTo('dashboard');
+      }
       return;
     }
 
