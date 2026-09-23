@@ -639,17 +639,35 @@ export class DashboardView extends BaseView {
               <div class="flex items-center gap-2">
                 <div class="flex-1 flex flex-col gap-1">
                   <span class="text-[9.5px] text-white/60">Warna Awal</span>
-                  <div class="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-xl border border-white/10">
-                    <input id="input-custom-dash-bg-1" type="color" value="${customC1}" class="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 shrink-0" />
-                    <span id="label-custom-dash-bg-1" class="text-[10.5px] font-mono text-white/80">${customC1}</span>
+                  <div class="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-xl border border-white/10 focus-within:border-purple-400/80 focus-within:ring-1 focus-within:ring-purple-400/40 transition-all">
+                    <input id="input-custom-dash-bg-1" type="color" value="${customC1}" class="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 shrink-0" title="Pilih warna dari palet" />
+                    <input
+                      id="text-custom-dash-bg-1"
+                      type="text"
+                      value="${customC1}"
+                      maxlength="7"
+                      class="w-full bg-transparent text-[11px] font-mono text-white/90 placeholder-white/40 border-0 outline-none uppercase focus:text-white"
+                      placeholder="#0b061a"
+                      title="Klik untuk ubah kode hex warna (contoh: #0b061a)"
+                      spellcheck="false"
+                    />
                   </div>
                 </div>
 
                 <div class="flex-1 flex flex-col gap-1">
                   <span class="text-[9.5px] text-white/60">Warna Aksen</span>
-                  <div class="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-xl border border-white/10">
-                    <input id="input-custom-dash-bg-2" type="color" value="${customC2}" class="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 shrink-0" />
-                    <span id="label-custom-dash-bg-2" class="text-[10.5px] font-mono text-white/80">${customC2}</span>
+                  <div class="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-xl border border-white/10 focus-within:border-purple-400/80 focus-within:ring-1 focus-within:ring-purple-400/40 transition-all">
+                    <input id="input-custom-dash-bg-2" type="color" value="${customC2}" class="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 shrink-0" title="Pilih warna dari palet" />
+                    <input
+                      id="text-custom-dash-bg-2"
+                      type="text"
+                      value="${customC2}"
+                      maxlength="7"
+                      class="w-full bg-transparent text-[11px] font-mono text-white/90 placeholder-white/40 border-0 outline-none uppercase focus:text-white"
+                      placeholder="#3b1d75"
+                      title="Klik untuk ubah kode hex warna (contoh: #3b1d75)"
+                      spellcheck="false"
+                    />
                   </div>
                 </div>
               </div>
@@ -935,31 +953,74 @@ export class DashboardView extends BaseView {
       }
     };
 
-    // Live Preview for custom colors
+    // Live Preview for custom colors & 2-way sync with text inputs
     const customCol1 = this.element ? this.element.querySelector('#input-custom-dash-bg-1') : null;
     const customCol2 = this.element ? this.element.querySelector('#input-custom-dash-bg-2') : null;
-    const customLbl1 = this.element ? this.element.querySelector('#label-custom-dash-bg-1') : null;
-    const customLbl2 = this.element ? this.element.querySelector('#label-custom-dash-bg-2') : null;
+    const customTxt1 = this.element ? this.element.querySelector('#text-custom-dash-bg-1') : null;
+    const customTxt2 = this.element ? this.element.querySelector('#text-custom-dash-bg-2') : null;
     const customPreview = this.element ? this.element.querySelector('#preview-custom-dash-bg') : null;
     const btnApplyCustom = this.element ? this.element.querySelector('#btn-apply-custom-dash-bg') : null;
 
+    const normalizeHex = (val) => {
+      if (!val) return null;
+      let s = String(val).trim();
+      if (!s.startsWith('#')) s = '#' + s;
+      if (/^#[0-9A-Fa-f]{6}$/.test(s)) return s.toLowerCase();
+      if (/^#[0-9A-Fa-f]{3}$/.test(s)) {
+        return ('#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3]).toLowerCase();
+      }
+      return null;
+    };
+
     const updateCustomPreview = () => {
-      if (!customCol1 || !customCol2 || !customPreview) return;
-      const c1 = customCol1.value || '#0b061a';
-      const c2 = customCol2.value || '#3b1d75';
-      if (customLbl1) customLbl1.textContent = c1;
-      if (customLbl2) customLbl2.textContent = c2;
+      if (!customPreview) return;
+      const c1 = (customTxt1 ? normalizeHex(customTxt1.value) : null) || (customCol1 ? customCol1.value : '#0b061a');
+      const c2 = (customTxt2 ? normalizeHex(customTxt2.value) : null) || (customCol2 ? customCol2.value : '#3b1d75');
       customPreview.style.background = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
     };
 
-    if (customCol1) customCol1.addEventListener('input', updateCustomPreview);
-    if (customCol2) customCol2.addEventListener('input', updateCustomPreview);
+    if (customCol1) {
+      customCol1.addEventListener('input', () => {
+        if (customTxt1) customTxt1.value = customCol1.value;
+        updateCustomPreview();
+      });
+    }
+    if (customCol2) {
+      customCol2.addEventListener('input', () => {
+        if (customTxt2) customTxt2.value = customCol2.value;
+        updateCustomPreview();
+      });
+    }
+
+    const bindColorTextInput = (txtEl, colorEl) => {
+      if (!txtEl || !colorEl) return;
+      txtEl.addEventListener('input', () => {
+        const hex = normalizeHex(txtEl.value);
+        if (hex) {
+          colorEl.value = hex;
+        }
+        updateCustomPreview();
+      });
+      txtEl.addEventListener('blur', () => {
+        const hex = normalizeHex(txtEl.value);
+        if (hex) {
+          txtEl.value = hex;
+          colorEl.value = hex;
+        } else {
+          txtEl.value = colorEl.value;
+        }
+        updateCustomPreview();
+      });
+    };
+
+    bindColorTextInput(customTxt1, customCol1);
+    bindColorTextInput(customTxt2, customCol2);
 
     if (btnApplyCustom) {
       btnApplyCustom.addEventListener('click', (e) => {
         e.stopPropagation();
-        const c1 = customCol1 ? customCol1.value : '#0b061a';
-        const c2 = customCol2 ? customCol2.value : '#3b1d75';
+        const c1 = (customTxt1 ? normalizeHex(customTxt1.value) : null) || (customCol1 ? customCol1.value : '#0b061a');
+        const c2 = (customTxt2 ? normalizeHex(customTxt2.value) : null) || (customCol2 ? customCol2.value : '#3b1d75');
         const customGradient = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
         const themeObj = {
           type: 'gradient',
