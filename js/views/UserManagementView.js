@@ -48,6 +48,14 @@ export class UserManagementView extends BaseView {
       });
     }
 
+    if (this.eventBus) {
+      this.eventBus.on('projects:updated', () => {
+        if (this.element) {
+          this._refreshBoardSelectors();
+        }
+      });
+    }
+
     this._initUsers();
     // Sinkronkan data terbaru dari server saat view dibuat
     this.syncFromBackend(true);
@@ -62,6 +70,11 @@ export class UserManagementView extends BaseView {
         try {
           const sbUsers = await this.supabaseService.getUsers();
           if (Array.isArray(sbUsers)) {
+            const defaultBoard = this.getAvailableBoards()[0];
+            const defId = defaultBoard?.id || 'panen-kunci';
+            const defWs = defaultBoard?.workspace || defId;
+            const defName = defaultBoard?.name || 'Panen Kunci';
+
             remoteUsers = sbUsers.map(row => ({
               id: row.id,
               username: row.username || (row.email ? `@${row.email.split('@')[0]}` : `@${row.name?.toLowerCase().replace(/\s+/g, '')}`),
@@ -70,9 +83,9 @@ export class UserManagementView extends BaseView {
               nip: row.nip || '',
               position: row.position || row.title || 'Anggota Tim',
               school: row.school || '',
-              assignedProjectId: row.assigned_project_id || (row.workspace_access && row.workspace_access[0]) || 'creativoffice',
-              assignedWorkspace: row.assigned_workspace || (row.workspace_access && row.workspace_access[0]) || 'creativoffice',
-              assignedBoardName: row.assigned_board_name || 'CreativOffice',
+              assignedProjectId: row.assigned_project_id || (row.workspace_access && row.workspace_access[0]) || defId,
+              assignedWorkspace: row.assigned_workspace || (row.workspace_access && row.workspace_access[0]) || defWs,
+              assignedBoardName: row.assigned_board_name || defName,
               assignedTaskId: row.assigned_task_id || 'all',
               assignedTaskTitle: row.assigned_task_title || 'Seluruh Papan (Semua Tugas)',
               device: row.bound_device_name || row.device || (row.bound_device_id ? 'Terikat' : 'Belum Terikat'),
@@ -205,55 +218,99 @@ export class UserManagementView extends BaseView {
    * Helper untuk mendeteksi kunci kanonik papan proyek agar tidak terjadi opsi duplikat
    */
   _getCanonicalBoardKey(id, name, workspace) {
-    const raw = `${id || ''} ${name || ''} ${workspace || ''}`.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (raw.includes('creativ') || raw.includes('office')) return 'creativoffice';
-    if (raw.includes('panen') || raw.includes('panan') || raw.includes('kunci')) return 'panen-kunci';
-    if (raw.includes('ruang') || raw.includes('kreasi')) return 'ruangkreasi';
-    if (raw.includes('aikreativ') || raw.includes('studioai') || raw.includes('aistudio')) return 'aikreativ';
-    if (raw.includes('sharing') || raw.includes('sharinginaja')) return 'sharinginaja';
-    if (raw.includes('layar') || raw.includes('baca')) return 'layarbaca';
-    return String(name || id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return String(id || workspace || name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   }
 
   /**
    * Mengambil daftar seluruh papan / project yang aktif di sistem tanpa duplikasi
+   * Murni mengambil data live dari ProjectService / Supabase
    */
   getAvailableBoards() {
-    const defaultBoards = [
-      { id: 'creativoffice', name: 'CreativOffice (Creative Office)', workspace: 'creativoffice' },
-      { id: 'panen-kunci', name: 'Panen Kunci (Utama)', workspace: 'panen-kunci' },
-      { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi' },
-      { id: 'aikreativ', name: 'AIKreativ Studio', workspace: 'aikreativ' },
-      { id: 'sharinginaja', name: 'Sharinginaja Platform', workspace: 'sharinginaja' },
-      { id: 'layarbaca', name: 'LayarBaca', workspace: 'layarbaca' }
-    ];
-
-    const map = new Map();
-    defaultBoards.forEach(b => {
-      const key = this._getCanonicalBoardKey(b.id, b.name, b.workspace);
-      map.set(key, b);
-    });
-
-    if (this.projectService) {
+    let projects = [];
+    if (this.projectService && typeof this.projectService.getAllProjects === 'function') {
       try {
-        const customProjects = this.projectService.getAllProjects();
-        customProjects.forEach(p => {
-          if (p && (p.id || p.name)) {
-            const key = this._getCanonicalBoardKey(p.id, p.name || p.title, p.workspace);
-            // Hanya tambahkan jika bukan duplikat dari papan standar yang sudah ada
-            if (!map.has(key)) {
-              map.set(key, {
-                id: p.id,
-                name: p.name || p.title || p.id,
-                workspace: p.workspace || p.id
-              });
-            }
-          }
-        });
+        projects = this.projectService.getAllProjects();
       } catch (e) {}
     }
 
+    // Fallback ke localStorage jika projectService belum termuat
+    if (!projects || projects.length === 0) {
+      try {
+        const stored = localStorage.getItem('creative_office_projects');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            projects = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    const map = new Map();
+    (projects || []).forEach(p => {
+      if (p && (p.id || p.name || p.title || p.workspace)) {
+        const id = String(p.id || p.workspace || '').trim();
+        const name = String(p.name || p.title || id).trim();
+        const workspace = String(p.workspace || id).trim();
+        const key = this._getCanonicalBoardKey(id, name, workspace);
+        if (key && !map.has(key)) {
+          map.set(key, {
+            id: id,
+            name: name,
+            workspace: workspace
+          });
+        }
+      }
+    });
+
     return Array.from(map.values());
+  }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  _renderBoardChecklistHtml(type, availableBoards, selectedIds = []) {
+    if (!availableBoards || availableBoards.length === 0) {
+      return `
+        <div class="p-3 text-center text-xs text-white/50 italic">
+          Belum ada papan proyek aktif di sistem.
+        </div>
+      `;
+    }
+    return availableBoards.map(b => {
+      const isChecked = selectedIds.includes(b.id) || selectedIds.includes(b.workspace);
+      return `
+        <label class="item-${type}-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none ${isChecked ? 'bg-purple-600/20 border border-purple-500/30' : 'border border-transparent'}">
+          <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
+            <input
+              type="checkbox"
+              class="cb-${type}-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
+              value="${this.escapeHtml(b.id)}"
+              data-name="${this.escapeHtml(b.name)}"
+              ${isChecked ? 'checked' : ''}
+            />
+            <span class="truncate font-medium text-white/90 text-[11px] sm:text-[11.5px]">${this.escapeHtml(b.name)}</span>
+          </div>
+          <span class="text-[9px] sm:text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 rounded uppercase shrink-0">
+            ${this.escapeHtml(b.workspace || b.id)}
+          </span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  _renderBoardOptionsHtml(availableBoards, selectedIds = []) {
+    return (availableBoards || []).map(b => {
+      const isSelected = selectedIds.includes(b.id) || selectedIds.includes(b.workspace);
+      return `<option value="${this.escapeHtml(b.id)}" data-name="${this.escapeHtml(b.name)}" ${isSelected ? 'selected' : ''}>${this.escapeHtml(b.name)}</option>`;
+    }).join('');
   }
 
   /**
@@ -620,6 +677,8 @@ export class UserManagementView extends BaseView {
 
   _renderCreateModal() {
     const availableBoards = this.getAvailableBoards();
+    const defaultBoard = availableBoards.length > 0 ? availableBoards[0] : null;
+    const defaultIds = defaultBoard ? [defaultBoard.id] : [];
 
     return `
       <div id="modal-create-user" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
@@ -676,7 +735,7 @@ export class UserManagementView extends BaseView {
               <div>
                 <div class="flex items-center justify-between mb-1.5 gap-2">
                   <label class="block text-[11px] font-semibold text-white/80 truncate">Tujuan Papan Kanban (Bisa &gt; 1)</label>
-                  <span id="count-selected-new-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">1 Papan Terpilih</span>
+                  <span id="count-selected-new-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">${defaultBoard ? '1 Papan Terpilih' : '0 Papan Terpilih'}</span>
                 </div>
 
                 <!-- Custom Multi-Select Dropdown Trigger -->
@@ -688,10 +747,12 @@ export class UserManagementView extends BaseView {
                   title="Klik untuk memilih satu atau beberapa papan proyek"
                 >
                   <div id="tags-selected-new-projects" class="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-1 py-0.5 min-w-0">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs max-w-full">
-                      <span class="truncate max-w-[130px] sm:max-w-[170px]">CreativOffice (Creative Office)</span>
-                      <span class="btn-remove-new-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="creativoffice">close</span>
-                    </span>
+                    ${defaultBoard ? `
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs max-w-full">
+                        <span class="truncate max-w-[130px] sm:max-w-[170px]">${this.escapeHtml(defaultBoard.name)}</span>
+                        <span class="btn-remove-new-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="${this.escapeHtml(defaultBoard.id)}">close</span>
+                      </span>
+                    ` : `<span class="text-white/40 text-[10.5px] italic">Klik untuk memilih minimal 1 papan...</span>`}
                   </div>
                   <span id="icon-chevron-new-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform duration-200">expand_more</span>
                 </div>
@@ -718,32 +779,14 @@ export class UserManagementView extends BaseView {
                   </div>
 
                   <!-- Board Checklist -->
-                  <div class="flex flex-col gap-1">
-                    ${availableBoards.map(b => `
-                      <label class="item-new-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none ${b.id === 'creativoffice' ? 'bg-purple-600/20 border border-purple-500/30' : 'border border-transparent'}">
-                        <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
-                          <input
-                            type="checkbox"
-                            class="cb-new-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
-                            value="${b.id}"
-                            data-name="${b.name}"
-                            ${b.id === 'creativoffice' ? 'checked' : ''}
-                          />
-                          <span class="truncate font-medium text-white/90 text-[11px] sm:text-[11.5px]">${b.name}</span>
-                        </div>
-                        <span class="text-[9px] sm:text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 rounded uppercase shrink-0">
-                          ${b.workspace || b.id}
-                        </span>
-                      </label>
-                    `).join('')}
+                  <div id="checklist-new-projects-wrap" class="flex flex-col gap-1">
+                    ${this._renderBoardChecklistHtml('new', availableBoards, defaultIds)}
                   </div>
                 </div>
 
                 <!-- Hidden Synced Native Select -->
                 <select id="select-new-project" multiple class="hidden">
-                  ${availableBoards.map(b => `
-                    <option value="${b.id}" data-name="${b.name}" ${b.id === 'creativoffice' ? 'selected' : ''}>${b.name}</option>
-                  `).join('')}
+                  ${this._renderBoardOptionsHtml(availableBoards, defaultIds)}
                 </select>
 
                 <p class="text-[9.5px] sm:text-[10px] text-white/50 mt-1">Saat scan QR SampulKreativ, pengguna memiliki hak akses ke seluruh papan yang dipilih.</p>
@@ -841,7 +884,7 @@ export class UserManagementView extends BaseView {
               <div>
                 <div class="flex items-center justify-between mb-1.5 gap-2">
                   <label class="block text-[11px] font-semibold text-white/80 truncate">Tujuan Papan Kanban (Bisa &gt; 1)</label>
-                  <span id="count-selected-edit-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">1 Papan Terpilih</span>
+                  <span id="count-selected-edit-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">0 Papan Terpilih</span>
                 </div>
 
                 <!-- Custom Multi-Select Dropdown Trigger -->
@@ -852,7 +895,9 @@ export class UserManagementView extends BaseView {
                   tabindex="0"
                   title="Klik untuk memilih satu atau beberapa papan proyek"
                 >
-                  <div id="tags-selected-edit-projects" class="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-1 py-0.5 min-w-0"></div>
+                  <div id="tags-selected-edit-projects" class="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-1 py-0.5 min-w-0">
+                    <span class="text-white/40 text-[10.5px] italic">Klik untuk memilih minimal 1 papan...</span>
+                  </div>
                   <span id="icon-chevron-edit-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform duration-200">expand_more</span>
                 </div>
 
@@ -878,31 +923,14 @@ export class UserManagementView extends BaseView {
                   </div>
 
                   <!-- Board Checklist -->
-                  <div class="flex flex-col gap-1">
-                    ${availableBoards.map(b => `
-                      <label class="item-edit-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none border border-transparent">
-                        <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
-                          <input
-                            type="checkbox"
-                            class="cb-edit-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
-                            value="${b.id}"
-                            data-name="${b.name}"
-                          />
-                          <span class="truncate font-medium text-white/90 text-[11px] sm:text-[11.5px]">${b.name}</span>
-                        </div>
-                        <span class="text-[9px] sm:text-[9.5px] font-mono text-purple-300 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 rounded uppercase shrink-0">
-                          ${b.workspace || b.id}
-                        </span>
-                      </label>
-                    `).join('')}
+                  <div id="checklist-edit-projects-wrap" class="flex flex-col gap-1">
+                    ${this._renderBoardChecklistHtml('edit', availableBoards, [])}
                   </div>
                 </div>
 
                 <!-- Hidden Synced Native Select -->
                 <select id="select-edit-project" multiple class="hidden">
-                  ${availableBoards.map(b => `
-                    <option value="${b.id}" data-name="${b.name}">${b.name}</option>
-                  `).join('')}
+                  ${this._renderBoardOptionsHtml(availableBoards, [])}
                 </select>
 
                 <p class="text-[9.5px] sm:text-[10px] text-white/50 mt-1">Pengguna dapat mengakses dan mengerjakan tugas pada seluruh papan yang dicentang.</p>
@@ -994,7 +1022,9 @@ export class UserManagementView extends BaseView {
       const updateTaskOptions = (preferredTaskId = null) => {
         if (!taskSelect) return;
         const checked = getCheckedBoxes();
-        const boardIds = checked.length > 0 ? checked.map(c => c.value) : ['creativoffice'];
+        const available = this.getAvailableBoards();
+        const defaultFallbackId = available.length > 0 ? available[0].id : null;
+        const boardIds = checked.length > 0 ? checked.map(c => c.value) : (defaultFallbackId ? [defaultFallbackId] : []);
         const tasks = this.getTasksForBoards(boardIds);
 
         const boardCountLabel = boardIds.length > 1 ? `${boardIds.length} Papan Terpilih` : 'Papan Ini';
@@ -1195,6 +1225,7 @@ export class UserManagementView extends BaseView {
     };
 
     // Initialize selectors
+    this._setupMultiBoardSelector = setupMultiBoardSelector;
     const newBoardSelector = setupMultiBoardSelector('new');
     const editBoardSelector = setupMultiBoardSelector('edit');
     this._newBoardSelector = newBoardSelector;
@@ -1219,9 +1250,11 @@ export class UserManagementView extends BaseView {
     const openCreateModal = () => {
       if (modalCreate) {
         modalCreate.classList.remove('hidden');
-        // Reset to default: 'creativoffice' checked
+        // Reset to default: first available active board checked
+        const available = this.getAvailableBoards();
+        const firstId = available.length > 0 ? available[0].id : null;
         this.element.querySelectorAll('.cb-new-project').forEach(cb => {
-          cb.checked = cb.value === 'creativoffice';
+          cb.checked = Boolean(firstId && cb.value === firstId);
         });
         newBoardSelector.syncUI();
         const firstInput = modalCreate.querySelector('input');
@@ -1298,8 +1331,14 @@ export class UserManagementView extends BaseView {
         let assignedBoardNames = checkedBoxes.map(cb => cb.getAttribute('data-name') || cb.value);
 
         if (assignedProjects.length === 0) {
-          assignedProjects = ['creativoffice'];
-          assignedBoardNames = ['CreativOffice'];
+          const available = this.getAvailableBoards();
+          if (available.length > 0) {
+            assignedProjects = [available[0].id];
+            assignedBoardNames = [available[0].name];
+          } else {
+            assignedProjects = ['panen-kunci'];
+            assignedBoardNames = ['Panen Kunci'];
+          }
         }
 
         const assignedProjectId = assignedProjects[0];
@@ -1429,8 +1468,14 @@ export class UserManagementView extends BaseView {
         let assignedBoardNames = checkedEditBoxes.map(cb => cb.getAttribute('data-name') || cb.value);
 
         if (assignedProjects.length === 0) {
-          assignedProjects = ['creativoffice'];
-          assignedBoardNames = ['CreativOffice'];
+          const available = this.getAvailableBoards();
+          if (available.length > 0) {
+            assignedProjects = [available[0].id];
+            assignedBoardNames = [available[0].name];
+          } else {
+            assignedProjects = ['panen-kunci'];
+            assignedBoardNames = ['Panen Kunci'];
+          }
         }
 
         const assignedProjectId = assignedProjects[0];
@@ -1521,8 +1566,10 @@ export class UserManagementView extends BaseView {
         const user = this.getUsers().find(u => u.id === userId);
         if (!user) return;
 
-        const targetProj = user.assignedProjectId || 'creativoffice';
-        const targetWs = user.assignedWorkspace || targetProj;
+        const defaultBoard = this.getAvailableBoards()[0];
+        const defaultBoardId = defaultBoard?.id || 'panen-kunci';
+        const targetProj = user.assignedProjectId || defaultBoardId;
+        const targetWs = user.assignedWorkspace || (defaultBoard?.workspace || targetProj);
         const targetTask = user.assignedTaskId;
 
         if (confirm(`Masuk langsung sebagai ${user.fullName} (${user.username}) ke Papan Kanban "${user.assignedBoardName || targetProj}"?`)) {
@@ -1609,15 +1656,25 @@ export class UserManagementView extends BaseView {
         this.element.querySelector('#input-edit-telegram-id').value = user.telegramId || '';
 
         // Determine user's boards for edit checkboxes
+        const defaultBoard = this.getAvailableBoards()[0];
+        const defaultBoardId = defaultBoard?.id || null;
         const userBoardIds = (user.assignedProjects && Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0)
           ? user.assignedProjects
           : ((user.workspaceAccess && Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0)
             ? user.workspaceAccess
-            : (user.assignedProjectId ? [user.assignedProjectId] : ['creativoffice']));
+            : (user.assignedProjectId ? [user.assignedProjectId] : (defaultBoardId ? [defaultBoardId] : [])));
 
         const editCbs = this.element.querySelectorAll('.cb-edit-project');
         editCbs.forEach(cb => {
-          cb.checked = userBoardIds.includes(cb.value);
+          const val = cb.value;
+          const boardObj = this.getAvailableBoards().find(b => b.id === val);
+          const isMatch = userBoardIds.some(uid => {
+            if (uid === val) return true;
+            if (boardObj && (boardObj.workspace === uid || boardObj.name.toLowerCase() === String(uid).toLowerCase())) return true;
+            if (val.includes('panen') && String(uid).includes('panen')) return true;
+            return false;
+          });
+          cb.checked = isMatch;
         });
 
         if (this._editBoardSelector) {
@@ -1702,6 +1759,43 @@ export class UserManagementView extends BaseView {
           this.mount(this.element);
         }
       });
+    }
+  }
+
+  /**
+   * Memperbarui daftar opsi papan Kanban pada modal Buat & Edit Pengguna secara real-time
+   * saat event projects:updated terdeteksi dari Supabase / Dashboard
+   */
+  _refreshBoardSelectors() {
+    if (!this.element) return;
+    const availableBoards = this.getAvailableBoards();
+    const defaultBoard = availableBoards.length > 0 ? availableBoards[0] : null;
+
+    // Refresh Create Modal Checklist & Select
+    const newWrap = this.element.querySelector('#checklist-new-projects-wrap');
+    const newSelect = this.element.querySelector('#select-new-project');
+    if (newWrap) {
+      newWrap.innerHTML = this._renderBoardChecklistHtml('new', availableBoards, defaultBoard ? [defaultBoard.id] : []);
+    }
+    if (newSelect) {
+      newSelect.innerHTML = this._renderBoardOptionsHtml(availableBoards, defaultBoard ? [defaultBoard.id] : []);
+    }
+
+    // Refresh Edit Modal Checklist & Select
+    const editWrap = this.element.querySelector('#checklist-edit-projects-wrap');
+    const editSelect = this.element.querySelector('#select-edit-project');
+    if (editWrap) {
+      editWrap.innerHTML = this._renderBoardChecklistHtml('edit', availableBoards, []);
+    }
+    if (editSelect) {
+      editSelect.innerHTML = this._renderBoardOptionsHtml(availableBoards, []);
+    }
+
+    // Re-bind listeners for both selectors
+    if (typeof this._setupMultiBoardSelector === 'function') {
+      this._newBoardSelector = this._setupMultiBoardSelector('new');
+      this._editBoardSelector = this._setupMultiBoardSelector('edit');
+      this._newBoardSelector?.syncUI();
     }
   }
 }
