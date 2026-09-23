@@ -1093,6 +1093,13 @@ body[data-page="kanban"] #app-content,
   height: 6px;
 }
 
+.custom-scrollbar::-webkit-scrollbar-button,
+[data-cards-area]::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .custom-scrollbar::-webkit-scrollbar-track,
 [data-cards-area]::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.04);
@@ -1112,8 +1119,6 @@ body[data-page="kanban"] #app-content,
 
 .custom-scrollbar,
 [data-cards-area] {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(168, 85, 247, 0.45) rgba(255, 255, 255, 0.04);
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }

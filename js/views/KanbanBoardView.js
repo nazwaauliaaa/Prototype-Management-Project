@@ -1331,8 +1331,6 @@ export class KanbanBoardView extends BaseView {
           background: rgba(100, 116, 139, 0.75);
         }
         .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
           -webkit-overflow-scrolling: touch;
           touch-action: pan-y;
         }
@@ -1399,22 +1397,26 @@ export class KanbanBoardView extends BaseView {
           padding-right: 3px;
         }
         .kanban-cards-area::-webkit-scrollbar {
-          width: 6px;
+          width: 5px;
+        }
+        .kanban-cards-area::-webkit-scrollbar-button {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
         }
         .kanban-cards-area::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.04);
-          border-radius: 999px;
+          background: transparent;
         }
         .kanban-cards-area::-webkit-scrollbar-thumb {
-          background: rgba(168, 85, 247, 0.45);
+          background: rgba(168, 85, 247, 0.35);
           border-radius: 999px;
         }
         .kanban-cards-area::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.8);
+          background: rgba(168, 85, 247, 0.75);
         }
         .kanban-cards-area {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(168, 85, 247, 0.45) rgba(255, 255, 255, 0.04);
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
         }
         .column-drop-hint {
           display: none !important;
@@ -1888,15 +1890,15 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all text-white self-stretch h-full max-h-full min-h-0"
+                    class="kanban-column flex flex-col bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[285px] sm:w-[295px] min-w-[285px] max-w-[320px] shrink-0 transition-all text-white self-stretch h-full max-h-full min-h-0"
                     data-column-id="${col.id}"
                     style="${colColor ? `border-top: 3px solid ${colColor};` : ''} max-height: 100%; display: flex; flex-direction: column; min-height: 0;"
                   >
-                    <!-- Column Header matching Trello with count and action icons -->
-                    <div class="column-header-inner flex items-center justify-between pb-1.5 mb-2 border-b-2 ${col.color && !col.color.includes('slate-300') ? col.color : 'border-white/15'} shrink-0" style="position:relative;">
-                      <div class="flex items-center gap-1.5 min-w-0 flex-1 group/col-header">
-                        <span class="w-2.5 h-2.5 rounded-full ${col.dot || 'bg-purple-400'} inline-block shrink-0"></span>
-                        <div class="column-title-wrapper flex items-center gap-1 min-w-0 flex-1">
+                    <!-- Column Header with Full Title, Count, and Clean Actions -->
+                    <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color && !col.color.includes('slate-300') ? col.color : 'border-white/15'} shrink-0" style="position:relative;">
+                      <div class="flex items-center gap-2 min-w-0 flex-1 group/col-header">
+                        <span class="w-2.5 h-2.5 rounded-full ${col.dot || 'bg-purple-400'} inline-block shrink-0 shadow-xs"></span>
+                        <div class="column-title-wrapper flex items-center gap-1.5 min-w-0 flex-1">
                           <h3 
                             class="column-header-title font-bold text-[13.5px] text-white tracking-tight truncate ${perms.canRenameList ? 'cursor-pointer hover:text-purple-300' : ''} transition-colors" 
                             data-column-id="${col.id}"
@@ -1904,33 +1906,21 @@ export class KanbanBoardView extends BaseView {
                           >${col.title}</h3>
                           ${perms.canRenameList ? `
                           <button
-                            class="btn-edit-column-title w-5 h-5 rounded flex items-center justify-center text-white/50 hover:text-purple-300 hover:bg-white/10 transition-all opacity-80 sm:opacity-0 group-hover/col-header:opacity-100 cursor-pointer shrink-0"
+                            class="btn-edit-column-title w-5 h-5 rounded flex items-center justify-center text-white/40 hover:text-purple-300 hover:bg-white/10 transition-all opacity-0 group-hover/col-header:opacity-100 cursor-pointer shrink-0"
                             data-column-id="${col.id}"
                             title="Ubah nama daftar (${col.title})"
                             type="button"
                           >
-                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                            <span class="material-symbols-outlined text-[13px]">edit</span>
                           </button>
                           ` : ''}
                         </div>
-                        <span class="column-count-badge px-2 py-0.5 rounded-full ${col.badge && !col.badge.includes('slate-100') ? col.badge : 'bg-white/10 text-white/90 border border-white/15'} text-[10.5px] font-mono font-bold shrink-0">
+                        <span class="column-count-badge px-2 py-0.5 rounded-full ${col.badge && !col.badge.includes('slate-100') ? col.badge : 'bg-white/10 text-white/90 border border-white/15'} text-[10.5px] font-mono font-bold shrink-0 ml-auto">
                           ${colTasks.length}
                         </span>
                       </div>
 
-                      <div class="flex items-center gap-1 shrink-0">
-                        ${perms.canClearColumn ? `
-                        <button class="btn-clear-kanban-col w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-rose-400 hover:bg-white/10 transition-colors cursor-pointer" data-column-id="${col.id}" data-column-title="${col.title}" title="Bersihkan/hapus semua kartu di kolom ini" type="button">
-                          <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
-                        </button>
-                        ` : ''}
-                        ${perms.canCollapseList ? `
-                        <button class="HWSXYBl9AjpaH2 bqDBTa8KAMX3yi fHETqJ4siBv5Ok w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" type="button" data-testid="list-collapse-button" title="Ciutkan daftar">
-                          <span role="img" aria-label="Collapse list" class="text-white/50 hover:text-white flex items-center">
-                            <svg fill="none" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" fill-rule="evenodd" d="M6.25 8.75H0v-1.5h6.25zm3.5-1.5H16v1.5H9.75z" clip-rule="evenodd"></path><path fill="currentColor" fill-rule="evenodd" d="M5.19 8 2.22 5.03l1.06-1.06 3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5-1.06-1.06zm4.03-.53 3.5-3.5 1.06 1.06L10.81 8l2.97 2.97-1.06 1.06-3.5-3.5a.75.75 0 0 1 0-1.06" clip-rule="evenodd"></path></svg>
-                          </span>
-                        </button>
-                        ` : ''}
+                      <div class="flex items-center gap-1 shrink-0 ml-2">
                         <!-- List Actions ··· Button -->
                         ${perms.canListActions ? `
                         <button
@@ -2059,88 +2049,150 @@ export class KanbanBoardView extends BaseView {
 
                         return `
                         <div
-                          class="kanban-card p-3 rounded-xl ${isAssigned ? 'bg-purple-950/70 border-2 border-purple-400 shadow-2xl shadow-purple-600/40 ring-2 ring-purple-400/50' : 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40'} backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2.5 group active:scale-[0.99] w-full max-w-full box-border text-white relative"
+                          class="kanban-card p-3 rounded-xl ${isAssigned ? 'bg-purple-950/70 border-2 border-purple-400 shadow-2xl shadow-purple-600/40 ring-2 ring-purple-400/50' : 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-950/40'} backdrop-blur-md transition-all cursor-pointer flex flex-col gap-2 group active:scale-[0.99] w-full max-w-full box-border text-white relative"
                           data-task-id="${task.id}"
                           data-task-status="${task.status}"
                           draggable="true"
                         >
-                          <!-- Card Code & Priority & Delete Button -->
-                          <div class="flex items-center justify-between gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                              <span class="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10.5px] font-bold text-white">
+                          <!-- Card Top Row: Code, Tags & Quick Actions -->
+                          <div class="flex items-center justify-between gap-1.5 min-w-0">
+                            <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
+                              <span class="px-2 py-0.5 rounded-md bg-white/10 border border-white/15 font-mono text-[10.5px] font-bold text-white whitespace-nowrap shrink-0 tracking-wide">
                                 ${task.code || '#TASK'}
                               </span>
                               ${isAssigned ? `
-                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md shadow-purple-500/30 uppercase tracking-wider animate-pulse">
-                                <span class="material-symbols-outlined text-[12px]">verified</span>
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-xs uppercase tracking-wider whitespace-nowrap shrink-0 animate-pulse">
+                                <span class="material-symbols-outlined text-[11px]">verified</span>
                                 <span>Tugas Anda</span>
                               </span>
                               ` : ''}
                             </div>
-                            <div class="flex items-center gap-1">
-                              <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${this.getPriorityBadge(task.priority)}">
-                                ${task.priority}
+
+                            <div class="flex items-center gap-1 shrink-0">
+                              <!-- Star / Favorite Task Toggle -->
+                              <button
+                                class="btn-star-task w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer ${task.isStarred ? 'text-amber-400 bg-amber-400/10' : 'text-white/30 hover:text-amber-300 opacity-0 group-hover:opacity-100 hover:bg-white/10'}"
+                                data-task-id="${task.id}"
+                                title="${task.isStarred ? 'Hapus bintang favorit' : 'Tandai sebagai favorit'}"
+                                type="button"
+                              >
+                                <span class="material-symbols-outlined text-[14px]" style="${task.isStarred ? 'font-variation-settings: \'FILL\' 1;' : ''}">star</span>
+                              </button>
+
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-bold whitespace-nowrap shrink-0 ${this.getPriorityBadge(task.priority)}">
+                                <span class="w-1.5 h-1.5 rounded-full ${task.priority === 'Critical' ? 'bg-rose-400 animate-pulse' : (task.priority === 'High' ? 'bg-amber-400' : (task.priority === 'Medium' ? 'bg-purple-400' : 'bg-blue-400'))}"></span>
+                                <span>${task.priority}</span>
                               </span>
-                              ${perms.canEditCard ? `
-                              <button
-                                class="btn-edit-kanban-card w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-purple-300 hover:bg-white/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
-                                data-task-id="${task.id}"
-                                title="Edit tugas ini"
-                                type="button"
-                              >
-                                <span class="material-symbols-outlined text-[15px]">edit</span>
-                              </button>
-                              ` : ''}
-                              ${perms.canDeleteCard ? `
-                              <button
-                                class="btn-delete-kanban-card w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-rose-400 hover:bg-white/10 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
-                                data-task-id="${task.id}"
-                                title="Hapus kartu ini"
-                                type="button"
-                              >
-                                <span class="material-symbols-outlined text-[15px]">delete</span>
-                              </button>
+
+                              <!-- Quick Edit & Delete Buttons on Card Hover -->
+                              ${(perms.canEditCard || perms.canDeleteCard) ? `
+                              <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0" onclick="event.stopPropagation()">
+                                ${perms.canEditCard ? `
+                                <button
+                                  class="btn-edit-kanban-card w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-purple-300 hover:bg-white/15 transition-colors cursor-pointer"
+                                  data-task-id="${task.id}"
+                                  title="Edit tugas"
+                                  type="button"
+                                >
+                                  <span class="material-symbols-outlined text-[14px]">edit</span>
+                                </button>
+                                ` : ''}
+                                ${perms.canDeleteCard ? `
+                                <button
+                                  class="btn-delete-kanban-card w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                                  data-task-id="${task.id}"
+                                  title="Hapus kartu"
+                                  type="button"
+                                >
+                                  <span class="material-symbols-outlined text-[14px]">delete</span>
+                                </button>
+                                ` : ''}
+                              </div>
                               ` : ''}
                             </div>
                           </div>
 
                           <!-- Title -->
-                          <h4 class="text-[12.5px] sm:text-[13px] font-semibold text-white/90 group-hover:text-white transition-colors leading-snug break-words">
-                            ${task.title}
+                          <h4 class="text-[12.5px] sm:text-[13px] font-semibold text-white/95 group-hover:text-purple-200 transition-colors leading-snug break-words">
+                            ${this._escapeHtml(task.title)}
                           </h4>
 
                           <!-- Visual Thumbnail & Attachments if Available -->
                           ${this._renderCardAttachments(task)}
 
-                          <!-- Footer: PIC & Column Shift Buttons -->
+                          <!-- Badges (Timeline, QA Checklist, Description, Tags) -->
+                          ${(task.timeline || (task.qaProgress && task.qaProgress.total > 0) || task.description || (task.tags && task.tags.length > 0)) ? `
+                          <div class="flex items-center gap-1.5 flex-wrap text-[10.5px] text-white/60">
+                            ${task.timeline ? `
+                            <span class="inline-flex items-center gap-1 font-medium bg-white/5 px-1.5 py-0.5 rounded border border-white/10" title="Tenggat Waktu: ${this._escapeHtml(task.timeline)}">
+                              <span class="material-symbols-outlined text-[12px] text-purple-300">calendar_today</span>
+                              <span>${this._escapeHtml(task.timeline)}</span>
+                            </span>
+                            ` : ''}
+                            ${(task.qaProgress && task.qaProgress.total > 0) ? `
+                            <span class="inline-flex items-center gap-1 font-medium px-1.5 py-0.5 rounded border ${task.qaProgress.passed === task.qaProgress.total ? 'bg-emerald-500/10 text-emerald-300 border-emerald-400/20' : 'bg-white/5 text-purple-200 border-white/10'}" title="QA Checklist: ${task.qaProgress.passed} selesai dari ${task.qaProgress.total}">
+                              <span class="material-symbols-outlined text-[12px] ${task.qaProgress.passed === task.qaProgress.total ? 'text-emerald-400' : 'text-purple-300'}">check_circle</span>
+                              <span>${task.qaProgress.passed}/${task.qaProgress.total} QA</span>
+                            </span>
+                            ` : ''}
+                            ${task.description ? `
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/50" title="Memiliki deskripsi tugas">
+                              <span class="material-symbols-outlined text-[12px]">subject</span>
+                            </span>
+                            ` : ''}
+                            ${(Array.isArray(task.tags) && task.tags.length > 0) ? task.tags.map(tag => `
+                            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-purple-500/15 text-purple-200 border border-purple-400/20">
+                              #${this._escapeHtml(tag)}
+                            </span>
+                            `).join('') : ''}
+                          </div>
+                          ` : ''}
+
+                          <!-- Footer: PIC & Column Shift Controls -->
                           <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] text-white/60">
-                            <div class="flex items-center gap-1.5 min-w-0">
+                            <div class="flex items-center gap-1.5 min-w-0" title="PIC: ${this._escapeHtml(task.pic?.name || 'Tim')}">
                               ${picAvatar ? `
-                                <img src="${picAvatar}" alt="${task.pic?.name || 'PIC'}" class="w-5 h-5 rounded-full object-cover shadow-2xs shrink-0 ring-1 ring-white/20" />
+                                <img src="${picAvatar}" alt="${this._escapeHtml(picName)}" class="w-5 h-5 rounded-full object-cover ring-1 ring-white/20 shrink-0" />
                               ` : `
                                 <div class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center text-[9px] font-bold shadow-2xs shrink-0">
                                   ${task.pic?.initials || 'SR'}
                                 </div>
                               `}
-                              <span class="text-[11px] font-medium text-white/80 truncate max-w-[80px]">
-                                ${(task.pic?.name || 'Tim').split(' ')[0]}
+                              <span class="text-[11px] font-medium text-white/80 truncate max-w-[85px]">
+                                ${this._escapeHtml((task.pic?.name || 'Tim').split(' ')[0])}
                               </span>
                               ${(task.attachments?.length || task.assets?.length) ? `
-                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-white/10 border border-white/10 text-[10px] font-bold text-purple-200 shrink-0" title="${(task.attachments || task.assets).length} file lampiran">
-                                  <span class="material-symbols-outlined text-[12px] text-purple-300">attach_file</span>
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-[10px] font-bold text-purple-200 shrink-0" title="${(task.attachments || task.assets).length} file lampiran">
+                                  <span class="material-symbols-outlined text-[11px] text-purple-300">attach_file</span>
                                   <span>${(task.attachments || task.assets).length}</span>
                                 </span>
                               ` : ''}
                             </div>
 
                             <!-- Shift Column Buttons (Quick status shift) -->
-                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                              <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors" data-task-id="${task.id}" data-dir="prev" title="Pindah ke kolom kiri">
-                                <span class="material-symbols-outlined text-[14px]">arrow_back</span>
+                            <div class="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5 gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                              ${colIdx > 0 ? `
+                              <button
+                                class="btn-shift-col w-5 h-5 rounded hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                                data-task-id="${task.id}"
+                                data-dir="prev"
+                                title="Pindah ke ${this._escapeHtml(this.columns[colIdx - 1]?.title || 'kolom sebelumnya')}"
+                                type="button"
+                              >
+                                <span class="material-symbols-outlined text-[13px]">arrow_back</span>
                               </button>
-                              <button class="btn-shift-col w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors" data-task-id="${task.id}" data-dir="next" title="Pindah ke kolom kanan">
-                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                              ` : ''}
+                              ${colIdx < this.columns.length - 1 ? `
+                              <button
+                                class="btn-shift-col w-5 h-5 rounded hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                                data-task-id="${task.id}"
+                                data-dir="next"
+                                title="Pindah ke ${this._escapeHtml(this.columns[colIdx + 1]?.title || 'kolom berikutnya')}"
+                                type="button"
+                              >
+                                <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
                               </button>
+                              ` : ''}
                             </div>
                           </div>
 
@@ -2219,25 +2271,7 @@ export class KanbanBoardView extends BaseView {
 
         </div>
 
-        <!-- Floating Bottom Dock matching screenshot (Admin & PM only) -->
-        ${!perms.isUser ? `
-        <nav
-          id="kanban-bottom-dock"
-          class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0e0a22]/90 backdrop-blur-2xl px-3 py-1.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-1.5 sm:gap-2 transition-all text-white"
-        >
-          <!-- Board / Kanban Button -->
-          <button
-            id="btn-dock-board"
-            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all relative ${!this.isInboxOpen ? 'text-purple-300 bg-purple-600/20 shadow-xs border border-purple-400/30' : 'text-white/60 hover:text-white hover:bg-white/10'} cursor-pointer active:scale-95"
-            title="Tampilan Papan Kanban"
-            type="button"
-          >
-            <span class="material-symbols-outlined text-[17px]">view_week</span>
-            <span>Kanban</span>
-            ${!this.isInboxOpen ? '<span class="absolute -bottom-1 left-3 right-3 h-[2px] bg-purple-400 rounded-full"></span>' : ''}
-          </button>
-        </nav>
-        ` : ''}
+
 
         <!-- ==================== POPUPS & MODALS FOR ALL ICONS ==================== -->
 
@@ -4094,6 +4128,8 @@ export class KanbanBoardView extends BaseView {
         if (
           e.target.closest('.btn-delete-kanban-card') ||
           e.target.closest('.btn-edit-kanban-card') ||
+          e.target.closest('.btn-star-task') ||
+          e.target.closest('.btn-shift-col') ||
           e.target.closest('.btn-clear-kanban-col') ||
           e.target.closest('.btn-list-actions') ||
           e.target.closest('.btn-edit-column-title') ||
@@ -4115,6 +4151,7 @@ export class KanbanBoardView extends BaseView {
         if (
           e.target.closest('.btn-delete-kanban-card') ||
           e.target.closest('.btn-edit-kanban-card') ||
+          e.target.closest('.btn-star-task') ||
           e.target.closest('.btn-shift-col')
         ) {
           return;
@@ -4133,6 +4170,23 @@ export class KanbanBoardView extends BaseView {
         const task = this.taskService.getTask(taskId);
         if (task && this.modalManager) {
           this.modalManager.open('task-detail', { task, editMode: true, isEditing: true });
+        }
+      });
+    });
+
+    // 4c. Card star/favorite buttons
+    const cardStarButtons = this.element.querySelectorAll('.btn-star-task');
+    cardStarButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const taskId = btn.getAttribute('data-task-id');
+        if (taskId && this.taskService) {
+          this.taskService.toggleStar(taskId);
+          const task = this.taskService.getTask(taskId);
+          if (this.notificationService) {
+            this.notificationService.success(task?.isStarred ? 'Tugas ditambahkan ke favorit ⭐' : 'Tugas dihapus dari favorit');
+          }
+          this.mount(this.element);
         }
       });
     });
