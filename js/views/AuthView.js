@@ -3,6 +3,7 @@ import { QRCodeGenerator } from '../services/QRCodeGenerator.js';
 import { apiService } from '../services/ApiService.js';
 import { getDeviceId, getDeviceName, simulateSwitchDevice } from '../utils/deviceHelper.js';
 import { User } from '../models/User.js';
+import { DEFAULT_SEEDED_USERS } from '../data/seedUsers.js';
 import jsQR from 'jsqr';
 
 /**
@@ -16,9 +17,16 @@ export class AuthView extends BaseView {
     this.authService = container.resolve('AuthService');
     this.notificationService = container.resolve('NotificationService');
 
+    // Inisialisasi awal fallback managed users dari seed agar mobile/device baru tidak kosong
+    try {
+      if (!localStorage.getItem('creative_office_managed_users')) {
+        localStorage.setItem('creative_office_managed_users', JSON.stringify(DEFAULT_SEEDED_USERS));
+      }
+    } catch (e) {}
+
     // Pre-fetch data penugasan pengguna dari server/database saat scanner dibuka
     apiService.getManagedUsers().then(fresh => {
-      if (Array.isArray(fresh)) {
+      if (Array.isArray(fresh) && fresh.length > 0) {
         try { localStorage.setItem('creative_office_managed_users', JSON.stringify(fresh)); } catch (e) {}
       }
     }).catch(() => {});
@@ -1010,8 +1018,15 @@ export class AuthView extends BaseView {
             const rawStored = localStorage.getItem('creative_office_managed_users');
             managedList = rawStored ? JSON.parse(rawStored) : [];
           } catch (e) {}
-          if (!Array.isArray(managedList)) {
-            managedList = [];
+          if (!Array.isArray(managedList) || managedList.length === 0) {
+            managedList = Array.isArray(DEFAULT_SEEDED_USERS) ? [...DEFAULT_SEEDED_USERS] : [];
+          } else if (Array.isArray(DEFAULT_SEEDED_USERS)) {
+            // Pastikan user dari seed selalu tercakup jika belum ada di managedList
+            DEFAULT_SEEDED_USERS.forEach(seed => {
+              if (!managedList.some(m => m.id === seed.id || (m.username && seed.username && m.username.toLowerCase() === seed.username.toLowerCase()))) {
+                managedList.push(seed);
+              }
+            });
           }
 
           const clean = String(codeStr || '').trim();
@@ -1177,6 +1192,54 @@ export class AuthView extends BaseView {
         }
       };
 
+      // Helper untuk mencari tugas yang telah didelegasikan oleh Admin kepada user ini
+      const findTasksAssignedToUser = (userObj, codeStr) => {
+        try {
+          const uName = String(userObj?.name || userObj?.fullName || userObj?.full_name || '').toLowerCase().trim();
+          const uUsername = String(userObj?.username || userObj?.user_name || '').replace(/^@/, '').toLowerCase().trim();
+          const cleanStr = String(codeStr || '').toLowerCase().trim();
+
+          let allTasks = [];
+          if (this.container && this.container.has && this.container.has('TaskService')) {
+            const ts = this.container.resolve('TaskService');
+            if (ts && Array.isArray(ts.tasks) && ts.tasks.length > 0) {
+              allTasks = ts.tasks;
+            }
+          }
+          if (allTasks.length === 0) {
+            try {
+              const storedTasks = localStorage.getItem('creative_office_tasks');
+              if (storedTasks) {
+                const parsed = JSON.parse(storedTasks);
+                if (Array.isArray(parsed)) allTasks = parsed;
+              }
+            } catch (e) {}
+          }
+
+          if (allTasks.length === 0) return [];
+
+          return allTasks.filter(t => {
+            if (!t) return false;
+            const picName = String(t.pic?.name || t.pic || '').toLowerCase().trim();
+            if (!picName) return false;
+
+            if (uName && (picName === uName || picName.includes(uName) || uName.includes(picName))) return true;
+            if (uUsername && (picName.includes(uUsername) || uUsername.includes(picName))) return true;
+            if (cleanStr && (cleanStr.includes(picName) || picName.includes(cleanStr))) return true;
+
+            const uWords = uName.split(/\s+/).filter(w => w.length >= 3);
+            const picWords = picName.split(/\s+/).filter(w => w.length >= 3);
+            const overlap = uWords.filter(w => picWords.includes(w));
+            if (overlap.length >= 2 || (overlap.length === 1 && (uWords.length === 1 || picWords.length === 1))) {
+              return true;
+            }
+            return false;
+          });
+        } catch (e) {
+          return [];
+        }
+      };
+
       const applyUserAssignment = (userObj, codeStr) => {
         const managed = getManagedAssignment(userObj, codeStr);
         console.log('[AuthView] applyUserAssignment matched managed:', managed);
@@ -1195,6 +1258,9 @@ export class AuthView extends BaseView {
           } else if (managed.assignedProjectId) {
             assignedProjects = [managed.assignedProjectId];
             assignedBoardNames = [managed.assignedBoardName || managed.assignedProjectId];
+          } else if (Array.isArray(managed.workspaceAccess) && managed.workspaceAccess.length > 0) {
+            assignedProjects = managed.workspaceAccess.filter(Boolean);
+            assignedBoardNames = managed.assignedBoardNames || [];
           }
           taskId = managed.assignedTaskId;
           taskTitle = managed.assignedTaskTitle;
@@ -1207,15 +1273,67 @@ export class AuthView extends BaseView {
           } else if (userObj.assignedProjectId) {
             assignedProjects = [userObj.assignedProjectId];
             assignedBoardNames = [userObj.assignedBoardName || userObj.assignedProjectId];
+          } else if (Array.isArray(userObj.workspaceAccess) && userObj.workspaceAccess.length > 0) {
+            assignedProjects = userObj.workspaceAccess.filter(Boolean);
+          } else if (Array.isArray(userObj.workspace_access) && userObj.workspace_access.length > 0) {
+            assignedProjects = userObj.workspace_access.filter(Boolean);
+          } else if (userObj.assignedWorkspace) {
+            assignedProjects = [userObj.assignedWorkspace];
           }
           if (!taskId) taskId = userObj.assignedTaskId;
           if (!taskTitle) taskTitle = userObj.assignedTaskTitle;
         }
 
+        // =========================================================================
+        // DETEKSI TUGASAN DARI ADMIN (TASK PIC MATCHING)
+        // Jika Admin telah mendelegasikan tugas ke pengguna ini (t.pic.name cocok),
+        // otomatis masukkan papan proyek dari tugas tersebut ke assignedProjects!
+        // =========================================================================
+        const assignedTasks = findTasksAssignedToUser(userObj || managed, codeStr);
+        if (assignedTasks.length > 0) {
+          assignedTasks.forEach(t => {
+            const proj = t.projectId || t.workspace || t.board;
+            if (proj && !assignedProjects.includes(proj)) {
+              assignedProjects.push(proj);
+            }
+          });
+          if (!taskId || taskId === 'all') {
+            taskId = assignedTasks[0].id;
+            taskTitle = assignedTasks[0].title;
+          }
+        }
+
+        // Peta standardisasi nama seluruh papan proyek
+        const PROJECT_NAME_MAP = {
+          'proj-1790146409036-876': 'Panen Kunci',
+          'panen-kunci-9036': 'Panen Kunci',
+          'panen-kunci': 'Panen Kunci',
+          'proj-1790146434093-686': 'Creative Office',
+          'creativoffice-4093': 'Creative Office',
+          'creativoffice': 'Creative Office',
+          'creativeoffice': 'Creative Office',
+          'proj-1790146459019-450': 'AIKreativ',
+          'aikreativ-9019': 'AIKreativ',
+          'aikreativ': 'AIKreativ',
+          'proj-1790146474472-592': 'Sharinginaja',
+          'sharinginaja-4472': 'Sharinginaja',
+          'sharinginaja': 'Sharinginaja',
+          'proj-1790146495006-9': 'Ruang Kreasi',
+          'ruangkreasi-5006': 'Ruang Kreasi',
+          'ruangkreasi': 'Ruang Kreasi',
+          'proj-1790146512680-427': 'LayarBaca',
+          'layarbaca-2680': 'LayarBaca',
+          'layarbaca': 'LayarBaca'
+        };
+
+        if (assignedBoardNames.length < assignedProjects.length) {
+          assignedBoardNames = assignedProjects.map(p => PROJECT_NAME_MAP[p] || (p.startsWith('proj-') ? 'Papan Proyek' : p.split(/[-_\s]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')));
+        }
+
         const role = (managed && managed.role) || (userObj && userObj.role) || 'user';
         const isAdmin = role.toLowerCase() === 'admin';
 
-        // Strict Guard: User non-admin gakan bisa masuk/login sebelum admin nambahin papan proyek
+        // Strict Guard: User non-admin gakan bisa masuk/login jika memang belum ditugaskan papan maupun tugas apapun
         if (!isAdmin && assignedProjects.length === 0) {
           return {
             hasAccess: false,
@@ -1226,25 +1344,41 @@ export class AuthView extends BaseView {
         }
 
         if (isAdmin && assignedProjects.length === 0) {
-          assignedProjects = ['creativoffice'];
-          assignedBoardNames = ['CreativOffice'];
+          assignedProjects = ['proj-1790146434093-686'];
+          assignedBoardNames = ['Creative Office'];
         }
 
-        targetProj = assignedProjects[0] || (managed && (managed.assignedProjectId || managed.assignedWorkspace)) || 'creativoffice';
+        targetProj = assignedProjects[0] || (managed && (managed.assignedProjectId || managed.assignedWorkspace)) || 'proj-1790146434093-686';
         targetWs = (managed && managed.assignedWorkspace) || targetProj;
 
-        // Normalize creativoffice spelling if target is specifically creativoffice
-        if (targetProj.toLowerCase().includes('creativ') || targetProj.toLowerCase().includes('creative')) {
-          targetProj = 'creativoffice';
-        }
-        if (targetWs.toLowerCase().includes('creativ') || targetWs.toLowerCase().includes('creative')) {
-          targetWs = 'creativoffice';
+        // Standardisasi slug workspace dan project ID
+        if (targetProj === 'proj-1790146434093-686' || targetProj.toLowerCase().includes('creativ')) {
+          targetWs = 'creativoffice-4093';
+          targetProj = 'proj-1790146434093-686';
+        } else if (targetProj === 'proj-1790146409036-876' || targetProj.toLowerCase().includes('panen')) {
+          targetWs = 'panen-kunci-9036';
+          targetProj = 'proj-1790146409036-876';
+        } else if (targetProj === 'proj-1790146459019-450' || targetProj.toLowerCase().includes('aikreativ')) {
+          targetWs = 'aikreativ-9019';
+          targetProj = 'proj-1790146459019-450';
+        } else if (targetProj === 'proj-1790146474472-592' || targetProj.toLowerCase().includes('sharing')) {
+          targetWs = 'sharinginaja-4472';
+          targetProj = 'proj-1790146474472-592';
+        } else if (targetProj === 'proj-1790146495006-9' || targetProj.toLowerCase().includes('ruangkreasi')) {
+          targetWs = 'ruangkreasi-5006';
+          targetProj = 'proj-1790146495006-9';
+        } else if (targetProj === 'proj-1790146512680-427' || targetProj.toLowerCase().includes('layar')) {
+          targetWs = 'layarbaca-2680';
+          targetProj = 'proj-1790146512680-427';
         }
 
         localStorage.setItem('active_workspace', targetWs);
         localStorage.setItem('active_project_id', targetProj);
         localStorage.setItem('user_invited_workspace', targetWs);
         localStorage.setItem('user_invited_project', targetProj);
+        try {
+          localStorage.setItem('user_allowed_boards', JSON.stringify(assignedProjects));
+        } catch (e) {}
 
         if (taskId && taskId !== 'all') {
           localStorage.setItem('active_assigned_task_id', taskId);
@@ -1392,10 +1526,10 @@ export class AuthView extends BaseView {
             assignedWorkspace: targetWs,
             assignedTaskId: taskId && taskId !== 'all' ? taskId : null,
             assignedTaskTitle: taskTitle || null,
-            workspaceAccess: (managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj],
-            assignedProjects: (managed && managed.assignedProjects) || [targetProj],
-            assignedBoardNames: (managed && managed.assignedBoardNames) || [],
-            assignedBoardName: (managed && managed.assignedBoardName) || null,
+            workspaceAccess: assignedProjects.length > 0 ? assignedProjects : ((managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj]),
+            assignedProjects: assignedProjects,
+            assignedBoardNames: assignedBoardNames,
+            assignedBoardName: assignedBoardNames[0] || (managed && managed.assignedBoardName) || null,
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName(),
             loginMethod: 'qr',
@@ -1698,10 +1832,10 @@ export class AuthView extends BaseView {
             assignedWorkspace: targetWs,
             assignedTaskId: taskId && taskId !== 'all' ? taskId : null,
             assignedTaskTitle: taskTitle || null,
-            workspaceAccess: (managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj],
-            assignedProjects: (managed && managed.assignedProjects) || [targetProj],
-            assignedBoardNames: (managed && managed.assignedBoardNames) || [],
-            assignedBoardName: (managed && managed.assignedBoardName) || null,
+            workspaceAccess: assignedProjects.length > 0 ? assignedProjects : ((managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj]),
+            assignedProjects: assignedProjects,
+            assignedBoardNames: assignedBoardNames,
+            assignedBoardName: assignedBoardNames[0] || (managed && managed.assignedBoardName) || null,
             boundDeviceId: apiService.getDeviceId(),
             boundDeviceName: apiService.getDeviceName(),
             loginMethod: 'qr',
@@ -1845,9 +1979,10 @@ export class AuthView extends BaseView {
 
             userInstance.assignedProjectId = targetProj;
             userInstance.assignedWorkspace = targetWs;
-            userInstance.workspaceAccess = (managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj];
+            userInstance.workspaceAccess = assignedProjects.length > 0 ? assignedProjects : ((managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj]);
             userInstance.assignedProjects = assignedProjects;
             userInstance.assignedBoardNames = assignedBoardNames;
+            userInstance.assignedBoardName = assignedBoardNames[0] || (managed && managed.assignedBoardName) || null;
             if (taskId && taskId !== 'all') {
               userInstance.assignedTaskId = taskId;
               userInstance.assignedTaskTitle = taskTitle;

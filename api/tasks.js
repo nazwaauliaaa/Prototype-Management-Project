@@ -1,6 +1,15 @@
-// Vercel Serverless Function untuk /api/tasks dengan Supabase PostgreSQL & in-memory cache
+import { createRequire } from 'module';
 
 let inMemoryTasks = [];
+try {
+  const req = createRequire(import.meta.url);
+  const defaultTasks = req('../server/data/tasks.json');
+  if (Array.isArray(defaultTasks) && defaultTasks.length > 0) {
+    inMemoryTasks = [...defaultTasks];
+  }
+} catch (e) {
+  console.warn('[api/tasks] Could not load default tasks from json:', e.message);
+}
 
 let pgPool = null;
 async function getPgPool() {
@@ -76,7 +85,7 @@ export default async function handler(req, res) {
           }
           query += ' ORDER BY created_at DESC';
           const dbRes = await pool.query(query, params);
-          if (dbRes.rows) {
+          if (dbRes.rows && dbRes.rows.length > 0) {
             const formatted = dbRes.rows.map(formatTaskRow);
             inMemoryTasks = formatted;
             return res.status(200).json({ success: true, count: formatted.length, data: formatted });

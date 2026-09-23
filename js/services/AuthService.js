@@ -1,4 +1,5 @@
 import { User } from '../models/User.js';
+import { DEFAULT_SEEDED_USERS } from '../data/seedUsers.js';
 
 /**
  * AuthService - Single Responsibility Principle (SRP)
@@ -747,12 +748,47 @@ export class AuthService {
       }
     } catch (e) {}
 
-    // 2. Fallback to user session object
+    // 2. Fallback to DEFAULT_SEEDED_USERS
+    if (rawBoardIds.length === 0 && Array.isArray(DEFAULT_SEEDED_USERS)) {
+      const uEmail = (user.email || '').toLowerCase().trim();
+      const uUsername = (user.username || '').toLowerCase().trim();
+      const uName = (user.name || user.fullName || '').toLowerCase().trim();
+      const uId = String(user.id || '').trim();
+
+      const seedMatch = DEFAULT_SEEDED_USERS.find(m => {
+        if (!m) return false;
+        const mEmail = (m.email || '').toLowerCase().trim();
+        const mUsername = (m.username || '').toLowerCase().trim();
+        const mName = (m.name || m.fullName || '').toLowerCase().trim();
+        const mId = String(m.id || '').trim();
+        return (uEmail && mEmail === uEmail) ||
+               (uUsername && mUsername === uUsername) ||
+               (uId && mId === uId) ||
+               (uName && (mName === uName || mName.includes(uName) || uName.includes(mName)));
+      });
+
+      if (seedMatch) {
+        if (Array.isArray(seedMatch.assignedProjects) && seedMatch.assignedProjects.length > 0) {
+          rawBoardIds = seedMatch.assignedProjects.filter(Boolean);
+        } else if (seedMatch.assignedProjectId) {
+          rawBoardIds = [seedMatch.assignedProjectId];
+        }
+        if (Array.isArray(seedMatch.assignedBoardNames)) {
+          boardNameHints = seedMatch.assignedBoardNames;
+        } else if (seedMatch.assignedBoardName) {
+          boardNameHints = [seedMatch.assignedBoardName];
+        }
+      }
+    }
+
+    // 3. Fallback to user session object
     if (rawBoardIds.length === 0) {
       if (Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0) {
         rawBoardIds = user.assignedProjects.filter(Boolean);
       } else if (Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0) {
         rawBoardIds = user.workspaceAccess.filter(Boolean);
+      } else if (Array.isArray(user.workspace_access) && user.workspace_access.length > 0) {
+        rawBoardIds = user.workspace_access.filter(Boolean);
       } else if (user.assignedProjectId) {
         rawBoardIds = [user.assignedProjectId];
       } else if (user.assignedWorkspace) {
@@ -764,6 +800,33 @@ export class AuthService {
       } else if (user.assignedBoardName) {
         boardNameHints = user.assignedBoardName.split(',').map(s => s.trim());
       }
+    }
+
+    // 4. Fallback: Deteksi tugas yang ditugaskan ke pengguna ini di database tugas (t.pic.name cocok)
+    if (rawBoardIds.length === 0) {
+      try {
+        const uName = (user.name || user.fullName || '').toLowerCase().trim();
+        const uUsername = (user.username || '').replace(/^@/, '').toLowerCase().trim();
+        const rawTasks = localStorage.getItem('creative_office_tasks');
+        if (rawTasks) {
+          const tasks = JSON.parse(rawTasks);
+          if (Array.isArray(tasks)) {
+            tasks.forEach(t => {
+              if (!t) return;
+              const picName = String(t.pic?.name || t.pic || '').toLowerCase().trim();
+              if (!picName) return;
+              const isMatch = (uName && (picName === uName || picName.includes(uName) || uName.includes(picName))) ||
+                              (uUsername && (picName.includes(uUsername) || uUsername.includes(picName)));
+              if (isMatch) {
+                const proj = t.projectId || t.workspace || t.board;
+                if (proj && !rawBoardIds.includes(proj)) {
+                  rawBoardIds.push(proj);
+                }
+              }
+            });
+          }
+        }
+      } catch (e) {}
     }
 
     // 3. Map raw IDs to standardized board objects with proper names & icons

@@ -278,6 +278,29 @@ export class SupabaseService {
   }
 
   /**
+   * Mengambil semua pengguna dari Supabase tabel 'users'
+   * @returns {Promise<Array|null>}
+   */
+  async getUsers() {
+    if (!this.client) return null;
+    try {
+      const { data, error } = await this.client
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.warn('[SupabaseService] Gagal fetch users:', error.message);
+        return null;
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('[SupabaseService] Exception getUsers:', err.message);
+      return null;
+    }
+  }
+
+  /**
    * Menyimpan / upsert daftar pengguna (batch) ke Supabase tabel 'users'
    * @param {Array<Object>} users
    * @returns {Promise<Array|null>}
