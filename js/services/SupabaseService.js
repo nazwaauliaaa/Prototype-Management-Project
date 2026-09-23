@@ -208,52 +208,245 @@ export class SupabaseService {
   }
 
   /**
-   * Mengambil seluruh data pengguna dari tabel users di Supabase
+   * Menyimpan / upsert satu pengguna langsung ke Supabase tabel 'users'
+   * @param {Object} u
+   * @returns {Promise<Object|null>}
    */
-  async getUsers() {
-    if (!this.client) return null;
+  async saveUser(u) {
+    if (!this.client || !u) return null;
     try {
+      const id = u.id || `usr-${Date.now()}`;
+      const fullName = u.fullName || u.name || 'User';
+      const username = u.username || `@${fullName.toLowerCase().replace(/\s+/g, '')}`;
+      const role = u.role || 'student';
+      const position = u.position || u.title || 'Anggota Tim';
+      const email = u.email || `${username.replace(/^@/, '')}@sampulkreativ.id`;
+      const projId = u.assignedProjectId || 'creativoffice';
+      const workspace = u.assignedWorkspace || projId;
+      const boardName = u.assignedBoardName || 'CreativOffice';
+      const taskId = u.assignedTaskId || 'all';
+      const taskTitle = u.assignedTaskTitle || 'Seluruh Papan (Semua Tugas)';
+      const device = u.device || 'Belum Terikat';
+      const isDeviceBound = Boolean(u.isDeviceBound);
+      const nip = u.nip || '';
+      const school = u.school || '';
+      const qrData = u.qr_data || username;
+      const workspaceAccess = Array.isArray(u.assignedProjects) && u.assignedProjects.length > 0
+        ? u.assignedProjects
+        : (Array.isArray(u.workspaceAccess) ? u.workspaceAccess : [workspace]);
+
+      const payload = {
+        id,
+        name: fullName,
+        full_name: fullName,
+        username,
+        role,
+        title: position,
+        jobdesk: position,
+        email,
+        nip,
+        position,
+        school,
+        assigned_project_id: projId,
+        assigned_workspace: workspace,
+        assigned_board_name: boardName,
+        assigned_task_id: taskId,
+        assigned_task_title: taskTitle,
+        device,
+        is_device_bound: isDeviceBound,
+        qr_data: qrData,
+        workspace_access: workspaceAccess,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await this.client
         .from('users')
-        .select('*')
-        .order('created_at', { ascending: true });
+        .upsert(payload)
+        .select()
+        .single();
+
       if (error) {
-        console.warn('[SupabaseService] Gagal fetch users:', error.message);
+        console.warn('[SupabaseService] Gagal upsert user ke Supabase:', error.message);
         return null;
       }
-      return data || [];
+      console.log(`[SupabaseService] ✅ User "${fullName}" (${username}) berhasil disimpan di Supabase`);
+      return data;
     } catch (err) {
-      console.warn('[SupabaseService] Exception getUsers:', err.message);
+      console.warn('[SupabaseService] Exception saveUser:', err.message);
       return null;
     }
   }
 
   /**
-   * Menghapus user dari Supabase berdasarkan ID
+   * Menyimpan / upsert daftar pengguna (batch) ke Supabase tabel 'users'
+   * @param {Array<Object>} users
+   * @returns {Promise<Array|null>}
    */
-  async deleteUser(id) {
-    if (!this.client) return false;
+  async saveUsers(users) {
+    if (!this.client || !Array.isArray(users) || users.length === 0) return null;
+    const results = [];
+    for (const u of users) {
+      const res = await this.saveUser(u);
+      if (res) results.push(res);
+    }
+    return results;
+  }
+
+  /**
+   * Mengambil tugas dari Supabase tabel 'tasks'
+   * @param {string} [workspace]
+   * @param {string} [projectId]
+   * @returns {Promise<Array>}
+   */
+  async getTasks(workspace = null, projectId = null) {
+    if (!this.client) return null;
     try {
-      const { error } = await this.client
-        .from('users')
-        .delete()
-        .eq('id', id);
-      return !error;
+      let query = this.client
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (workspace && workspace !== 'all') {
+        query = query.eq('workspace', workspace);
+      }
+      if (projectId) {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn('[SupabaseService] Gagal fetch tasks:', error.message);
+        return null;
+      }
+      return data || [];
     } catch (err) {
+      console.warn('[SupabaseService] Exception getTasks:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Menyimpan / membuat tugas baru langsung ke Supabase tabel 'tasks'
+   * @param {Object} t
+   * @returns {Promise<Object|null>}
+   */
+  async createTask(t) {
+    if (!this.client || !t) return null;
+    try {
+      const payload = {
+        id: t.id || 'task-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900),
+        code: t.code || `#PK-${Math.floor(100 + Math.random() * 900)}`,
+        title: t.title || 'Tugas Baru',
+        description: t.description || '',
+        workspace: t.workspace || 'panen-kunci',
+        board: t.board || 'backend-core',
+        status: t.status || 'in-progress',
+        priority: t.priority || 'Medium',
+        pic: t.pic || { name: 'Kevin Santoso', initials: 'KS' },
+        timeline: t.timeline || '',
+        hours: Number(t.hours) || 0,
+        assets: t.assets || [],
+        qa_progress: t.qaProgress || t.qa_progress || { passed: 0, total: 4 },
+        is_starred: Boolean(t.isStarred || t.is_starred),
+        tags: t.tags || [],
+        location: t.location || '',
+        resolution: t.resolution || '',
+        project_id: t.projectId || t.project_id || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await this.client
+        .from('tasks')
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.warn('[SupabaseService] Gagal simpan task ke Supabase:', error.message);
+        return null;
+      }
+      console.log(`[SupabaseService] ✅ Task "${t.title}" berhasil disimpan di Supabase (${t.id})`);
+      return data;
+    } catch (err) {
+      console.warn('[SupabaseService] Exception createTask:', err.message);
+      return null;
+    }
+  }
+
+  async saveTask(t) {
+    return this.createTask(t);
+  }
+
+  /**
+   * Menyimpan multiple tasks ke Supabase
+   * @param {Array<Object>} tasks
+   */
+  async saveTasks(tasks) {
+    if (!this.client || !Array.isArray(tasks) || tasks.length === 0) return null;
+    const results = [];
+    for (const t of tasks) {
+      const res = await this.createTask(t);
+      if (res) results.push(res);
+    }
+    return results;
+  }
+
+  /**
+   * Update task di Supabase
+   * @param {string} taskId
+   * @param {Object} updates
+   * @returns {Promise<boolean>}
+   */
+  async updateTask(taskId, updates) {
+    if (!this.client || !taskId || !updates) return false;
+    try {
+      const payload = {
+        updated_at: new Date().toISOString()
+      };
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.priority !== undefined) payload.priority = updates.priority;
+      if (updates.pic !== undefined) payload.pic = updates.pic;
+      if (updates.timeline !== undefined) payload.timeline = updates.timeline;
+      if (updates.hours !== undefined) payload.hours = Number(updates.hours) || 0;
+      if (updates.assets !== undefined) payload.assets = updates.assets;
+      if (updates.qaProgress !== undefined) payload.qa_progress = updates.qaProgress;
+      if (updates.qa_progress !== undefined) payload.qa_progress = updates.qa_progress;
+      if (updates.isStarred !== undefined) payload.is_starred = Boolean(updates.isStarred);
+      if (updates.tags !== undefined) payload.tags = updates.tags;
+      if (updates.workspace !== undefined) payload.workspace = updates.workspace;
+      if (updates.board !== undefined) payload.board = updates.board;
+
+      const { error } = await this.client
+        .from('tasks')
+        .update(payload)
+        .or(`id.eq.${taskId},code.eq.${taskId}`);
+
+      if (error) {
+        console.warn('[SupabaseService] Gagal update task di Supabase:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('[SupabaseService] Exception updateTask:', err.message);
       return false;
     }
   }
 
   /**
-   * Mengosongkan seluruh isi tabel users di Supabase
+   * Menghapus task dari Supabase
+   * @param {string} taskId
+   * @returns {Promise<boolean>}
    */
-  async clearAllUsers() {
-    if (!this.client) return false;
+  async deleteTask(taskId) {
+    if (!this.client || !taskId) return false;
     try {
       const { error } = await this.client
-        .from('users')
+        .from('tasks')
         .delete()
-        .neq('id', '___empty_all_flag___');
+        .or(`id.eq.${taskId},code.eq.${taskId}`);
+
       return !error;
     } catch (err) {
       return false;
@@ -262,3 +455,4 @@ export class SupabaseService {
 }
 
 export const supabaseService = new SupabaseService();
+

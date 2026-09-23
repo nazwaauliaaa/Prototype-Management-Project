@@ -2,6 +2,123 @@ import { Project } from '../models/Project.js';
 import { apiService } from './ApiService.js';
 import { supabaseService } from './SupabaseService.js';
 
+export const DEFAULT_SEEDED_PROJECTS = [
+  {
+    id: "proj-1790146512680-427",
+    code: "LAYARBACA-2680",
+    name: "LayarBaca",
+    description: "Platform publikasi media baca dan kurasi konten kreatif editorial",
+    workspace: "layarbaca-2680",
+    status: "active",
+    type: "existing",
+    progress: 60,
+    priority: "High",
+    startDate: "18 Sep 2026",
+    dueDate: "30 Sep 2026",
+    members: [],
+    tasksCount: { total: 5, completed: 0 },
+    budget: "Rp 35.000.000",
+    theme: null,
+    isUserCreated: true,
+    createdAt: "2026-09-23T04:15:12.680Z"
+  },
+  {
+    id: "proj-1790146495006-9",
+    code: "RUANGKREASI-5006",
+    name: "Ruang Kreasi",
+    description: "Pusat kolaborasi ide, perancangan konsep kreatif dan media kreasi tim",
+    workspace: "ruangkreasi-5006",
+    status: "active",
+    type: "existing",
+    progress: 40,
+    priority: "Medium",
+    startDate: "15 Sep 2026",
+    dueDate: "15 Okt 2026",
+    members: [],
+    tasksCount: { total: 2, completed: 0 },
+    budget: "Rp 25.000.000",
+    theme: null,
+    isUserCreated: true,
+    createdAt: "2026-09-23T04:14:55.006Z"
+  },
+  {
+    id: "proj-1790146474472-592",
+    code: "SHARINGINAJA-4472",
+    name: "Sharinginaja",
+    description: "Platform modul pembelajaran kolaboratif, mentoring, dan transfer knowledge",
+    workspace: "sharinginaja-4472",
+    status: "active",
+    type: "existing",
+    progress: 55,
+    priority: "High",
+    startDate: "12 Sep 2026",
+    dueDate: "28 Sep 2026",
+    members: [],
+    tasksCount: { total: 5, completed: 0 },
+    budget: "Rp 40.000.000",
+    theme: null,
+    isUserCreated: true,
+    createdAt: "2026-09-23T04:14:34.472Z"
+  },
+  {
+    id: "proj-1790146459019-450",
+    code: "AIKREATIV-9019",
+    name: "AIKreativ",
+    description: "Studio otomatisasi dan pengembangan pipeline model AI visual interaktif",
+    workspace: "aikreativ-9019",
+    status: "active",
+    type: "existing",
+    progress: 70,
+    priority: "Critical",
+    startDate: "10 Sep 2026",
+    dueDate: "05 Okt 2026",
+    members: [],
+    tasksCount: { total: 7, completed: 0 },
+    budget: "Rp 60.000.000",
+    theme: null,
+    isUserCreated: true,
+    createdAt: "2026-09-23T04:14:19.019Z"
+  },
+  {
+    id: "proj-1790146434093-686",
+    code: "CREATIVOFFICE-4093",
+    name: "Creative Office",
+    description: "Sistem administrasi portal manajemen proyek, autentikasi single device QR & Kanban",
+    workspace: "creativoffice-4093",
+    status: "active",
+    type: "existing",
+    progress: 85,
+    priority: "Critical",
+    startDate: "01 Sep 2026",
+    dueDate: "30 Sep 2026",
+    members: [],
+    tasksCount: { total: 5, completed: 0 },
+    budget: "Rp 50.000.000",
+    theme: null,
+    isUserCreated: true,
+    createdAt: "2026-09-23T04:13:54.093Z"
+  },
+  {
+    id: "proj-1790146409036-876",
+    code: "PANEN-KUNCI-9036",
+    name: "Panen Kunci",
+    description: "Manajemen operasional backend core, multi-tenant database & keamanan payment SaaS",
+    workspace: "panen-kunci-9036",
+    status: "active",
+    type: "existing",
+    progress: 75,
+    priority: "Critical",
+    startDate: "05 Sep 2026",
+    dueDate: "30 Sep 2026",
+    members: [],
+    tasksCount: { total: 7, completed: 0 },
+    budget: "Rp 55.000.000",
+    theme: null,
+    isUserCreated: true,
+    createdAt: "2026-09-23T04:13:29.036Z"
+  }
+];
+
 /**
  * ProjectService - Single Responsibility Principle (SRP) & Dependency Inversion Principle (DIP)
  * Manages project portfolio data with Supabase as the Single Source of Truth,
@@ -97,7 +214,7 @@ export class ProjectService {
       }
 
       // 3. Jika berhasil mendapatkan data dari server/Supabase
-      if (Array.isArray(remoteProjects)) {
+      if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
         this.projects = remoteProjects.map(p => new Project(p));
         this.deduplicateProjects();
         this.saveToStorage();
@@ -137,7 +254,8 @@ export class ProjectService {
     } catch (e) {
       console.warn('Failed to load projects from storage:', e);
     }
-    this.projects = [];
+    this.projects = DEFAULT_SEEDED_PROJECTS.map(p => new Project(p));
+    this.saveToStorage();
   }
 
   deduplicateProjects() {
@@ -169,6 +287,10 @@ export class ProjectService {
   }
 
   getAllProjects() {
+    if (!this.projects || this.projects.length === 0) {
+      this.projects = DEFAULT_SEEDED_PROJECTS.map(p => new Project(p));
+      this.saveToStorage();
+    }
     return [...this.projects];
   }
 

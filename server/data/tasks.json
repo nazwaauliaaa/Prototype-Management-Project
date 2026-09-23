@@ -1,17 +1,79 @@
 [
   {
-    "id": "task-lb-01",
-    "code": "#LB-101",
-    "title": "Kickoff Redaksi & Kurasi Konten LayarBaca",
-    "description": "Penetapan kalender publikasi, penugasan editor, dan kurasi naskah artikel.",
-    "workspace": "layarbaca",
+    "id": "task-1790146512958-443",
+    "code": "#L-102",
+    "title": "Penyusunan Rencana Kerja & Kebutuhan Ruang Kerja LayarBaca",
+    "description": "Penyusunan alokasi workstation tim redaksi, jadwal rilis berkala naskah, dan pengadaan aset desain media baca digital.",
+    "workspace": "layarbaca-2680",
+    "projectId": "proj-1790146512680-427",
     "board": "kampanye-q3",
     "status": "in-progress",
     "priority": "High",
     "pic": {
+      "name": "Muhammad Yusar Ghani",
+      "initials": "YG",
+      "role": "Frontend Developer"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 16,
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": true,
+    "tags": [
+      "LayarBaca",
+      "Perencanaan"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-1790146512956-637",
+    "code": "#L-101",
+    "title": "Kickoff & Ruang Lingkup: LayarBaca",
+    "description": "Penetapan sasaran tim editorial, pembagian PIC, dan alur pengerjaan papan LayarBaca.",
+    "workspace": "layarbaca-2680",
+    "projectId": "proj-1790146512680-427",
+    "board": "kampanye-q3",
+    "status": "review-qa",
+    "priority": "Critical",
+    "pic": {
       "name": "Kevin Santoso",
       "initials": "KS",
       "role": "DevOps & Security"
+    },
+    "timeline": "15 - 22 Sep",
+    "hours": 12,
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Kickoff"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-lb-01",
+    "code": "#LB-101",
+    "title": "Kickoff Redaksi & Kurasi Konten LayarBaca",
+    "description": "Penetapan kalender publikasi, penugasan editor, dan kurasi naskah artikel.",
+    "workspace": "layarbaca-2680",
+    "projectId": "proj-1790146512680-427",
+    "board": "kampanye-q3",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
     },
     "timeline": "18 - 25 Sep",
     "hours": 16,
@@ -21,25 +83,27 @@
     },
     "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Editorial"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790138767365
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-lb-02",
     "code": "#LB-102",
     "title": "Desain Tata Letak & Tipografi Media Baca",
     "description": "Penyusunan format visual bacaan yang responsif dan nyaman untuk desktop dan mobile.",
-    "workspace": "layarbaca",
+    "workspace": "layarbaca-2680",
+    "projectId": "proj-1790146512680-427",
     "board": "kampanye-q3",
     "status": "backlog",
     "priority": "Medium",
     "pic": {
-      "name": "Sari Rahmawati",
-      "initials": "SR",
-      "role": "Creative Lead"
+      "name": "Muhammad Yusar Ghani",
+      "initials": "YG",
+      "role": "Frontend Developer"
     },
     "timeline": "22 - 28 Sep",
     "hours": 12,
@@ -49,18 +113,20 @@
     },
     "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "UI/UX"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790139248019
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-lb-03",
     "code": "#LB-103",
     "title": "Verifikasi Kualitas Publikasi & Review Akhir",
     "description": "Pemeriksaan akhir tata bahasa, format e-reader, dan persetujuan rilis.",
-    "workspace": "layarbaca",
+    "workspace": "layarbaca-2680",
+    "projectId": "proj-1790146512680-427",
     "board": "kampanye-q3",
     "status": "ready-launch",
     "priority": "Critical",
@@ -77,18 +143,140 @@
     },
     "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "QA"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790139248134
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-rk-01",
+    "code": "#RK-101",
+    "title": "Brainstorming Konsep Kreatif & Ruang Kolaborasi",
+    "description": "Penetapan ide kreasi visual, media sharing antar tim, dan workspace digital kolaboratif.",
+    "workspace": "ruangkreasi-5006",
+    "projectId": "proj-1790146495006-9",
+    "board": "ideasi-kreatif",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Muhammad Yusar Ghani",
+      "initials": "YG",
+      "role": "Frontend Developer"
+    },
+    "timeline": "15 - 24 Sep",
+    "hours": 18,
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": true,
+    "tags": [
+      "Brainstorming"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-rk-02",
+    "code": "#RK-102",
+    "title": "Finalisasi Kurasi Proyek Ruang Kreasi",
+    "description": "Verifikasi hasil karya tim dan persiapan showcase prototipe internal.",
+    "workspace": "ruangkreasi-5006",
+    "projectId": "proj-1790146495006-9",
+    "board": "ideasi-kreatif",
+    "status": "ready-launch",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "25 - 30 Sep",
+    "hours": 10,
+    "qaProgress": {
+      "passed": 2,
+      "total": 2
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Showcase"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-sh-01",
+    "code": "#SH-101",
+    "title": "Perencanaan Konten Kolaborasi Tim & Sharing Session",
+    "description": "Penyusunan silabus materi sharing antar karyawan dan siswa PKL seputar teknologi web.",
+    "workspace": "sharinginaja-4472",
+    "projectId": "proj-1790146474472-592",
+    "board": "sprint-1",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Ahmadi Jaka Abdul Manaf",
+      "initials": "AJ",
+      "role": "Backend Developer"
+    },
+    "timeline": "12 - 20 Sep",
+    "hours": 14,
+    "qaProgress": {
+      "passed": 1,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Silabus"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-sh-02",
+    "code": "#SH-102",
+    "title": "Desain Asset Visual & Distribusi Modul",
+    "description": "Pembuatan slide presentasi visual interaktif, template infografis, dan dokumentasi PDF.",
+    "workspace": "sharinginaja-4472",
+    "projectId": "proj-1790146474472-592",
+    "board": "sprint-1",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 12,
+    "qaProgress": {
+      "passed": 0,
+      "total": 2
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Asset"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-sh-03",
     "code": "#SH-103",
     "title": "Finalisasi Ulasan Mutu & Verifikasi QA",
     "description": "Uji fungsionalitas seluruh alur kerja proyek sebelum rilis.",
-    "workspace": "sharinginaja",
+    "workspace": "sharinginaja-4472",
+    "projectId": "proj-1790146474472-592",
     "board": "sprint-1",
     "status": "ready-launch",
     "priority": "Critical",
@@ -98,109 +286,180 @@
       "role": "QA Lead"
     },
     "timeline": "25 - 30 Sep",
-    "hours": 12,
-    "assets": [],
+    "hours": 14,
     "qaProgress": {
       "passed": 3,
       "total": 3
     },
+    "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "QA"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131712187
+    "updatedAt": 1790147877830
   },
   {
-    "id": "task-sh-02",
-    "code": "#SH-102",
-    "title": "Penyusunan Konten Desain & Aset Grafis Promosi",
-    "description": "Pembuatan variasi visual materi kampanye dan preview deliverable.",
-    "workspace": "sharinginaja",
+    "id": "task-sh-04",
+    "code": "#SH-104",
+    "title": "Integrasi Feed Diskusi & Notifikasi Realtime",
+    "description": "Implementasi forum tanya jawab dan websocket notifikasi untuk interaksi tim.",
+    "workspace": "sharinginaja-4472",
+    "projectId": "proj-1790146474472-592",
+    "board": "sprint-1",
+    "status": "review-qa",
+    "priority": "High",
+    "pic": {
+      "name": "Ahmadi Jaka Abdul Manaf",
+      "initials": "AJ",
+      "role": "Backend Developer"
+    },
+    "timeline": "20 - 27 Sep",
+    "hours": 16,
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": true,
+    "tags": [
+      "Backend",
+      "WebSocket"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-sh-05",
+    "code": "#SH-105",
+    "title": "Evaluasi Dampak Program & Dokumentasi Akhir",
+    "description": "Pengumpulan testimoni, rekapitulasi rating materi, dan penyusunan laporan keberhasilan sesi.",
+    "workspace": "sharinginaja-4472",
+    "projectId": "proj-1790146474472-592",
     "board": "sprint-1",
     "status": "backlog",
     "priority": "Medium",
-    "pic": {
-      "name": "Sari Rahmawati",
-      "initials": "SR",
-      "role": "Creative Lead"
-    },
-    "timeline": "20 - 27 Sep",
-    "hours": 14,
-    "assets": [],
-    "qaProgress": {
-      "passed": 0,
-      "total": 2
-    },
-    "isStarred": false,
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131712146
-  },
-  {
-    "id": "task-sh-01",
-    "code": "#SH-101",
-    "title": "Kickoff & Setup Ruang Kolaborasi Tim",
-    "description": "Pembagian peran anggota, jadwal deliverable, dan milestone awal.",
-    "workspace": "sharinginaja",
-    "board": "sprint-1",
-    "status": "in-progress",
-    "priority": "High",
     "pic": {
       "name": "Kevin Santoso",
       "initials": "KS",
       "role": "DevOps & Security"
     },
-    "timeline": "18 - 25 Sep",
-    "hours": 16,
+    "timeline": "26 - 30 Sep",
+    "hours": 10,
+    "qaProgress": {
+      "passed": 0,
+      "total": 2
+    },
     "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Laporan"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-ai-01",
+    "code": "#AI-101",
+    "title": "Konfigurasi Model AI & Integrasi Vision API",
+    "description": "Optimasi inference prompt dan response parser untuk pipeline visual.",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
+    "board": "studio-ai",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Ahmadi Jaka Abdul Manaf",
+      "initials": "AJ",
+      "role": "Backend Developer"
+    },
+    "timeline": "18 - 24 Sep",
+    "hours": 20,
+    "qaProgress": {
+      "passed": 2,
+      "total": 4
+    },
+    "assets": [],
+    "isStarred": true,
+    "tags": [
+      "AI",
+      "Vision"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-ai-02",
+    "code": "#AI-102",
+    "title": "Implementasi Pipeline Otomasi & Webhook Server",
+    "description": "Setup routing background worker dan queue microservice.",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
+    "board": "studio-ai",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "20 - 26 Sep",
+    "hours": 15,
     "qaProgress": {
       "passed": 1,
       "total": 3
     },
+    "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Pipeline"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131712110
+    "updatedAt": 1790147877830
   },
   {
-    "id": "task-ai-05",
-    "code": "#AI-105",
-    "title": "Dokumentasi SDK & Panduan Operasional Studio",
-    "description": "Penyusunan handbook standar operasional dan arsitektur.",
-    "workspace": "aikreativ",
+    "id": "task-ai-03",
+    "code": "#AI-103",
+    "title": "Audit Latensi & Quality Assurance Model AI",
+    "description": "Pengujian throughput pemrosesan data di server staging.",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
     "board": "studio-ai",
-    "status": "done",
-    "priority": "Low",
+    "status": "review-qa",
+    "priority": "Critical",
     "pic": {
-      "name": "Dimas Anggara",
-      "initials": "DA",
-      "role": "Kontributor"
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
     },
-    "timeline": "10 - 16 Sep",
-    "hours": 10,
-    "assets": [],
+    "timeline": "22 - 28 Sep",
+    "hours": 18,
     "qaProgress": {
       "passed": 3,
-      "total": 3
+      "total": 4
     },
+    "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "QA",
+      "Benchmark"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131712071
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-ai-04",
     "code": "#AI-104",
     "title": "Deploy Model ke Staging & Integrasi Frontend",
     "description": "Verifikasi integrasi websocket dan update real-time antarmuka.",
-    "workspace": "aikreativ",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
     "board": "studio-ai",
     "status": "ready-launch",
     "priority": "High",
@@ -211,311 +470,276 @@
     },
     "timeline": "24 - 30 Sep",
     "hours": 14,
-    "assets": [],
     "qaProgress": {
       "passed": 4,
       "total": 4
     },
-    "isStarred": false,
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131712040
-  },
-  {
-    "id": "task-ai-03",
-    "code": "#AI-103",
-    "title": "Audit Latensi & Quality Assurance Model AI",
-    "description": "Pengujian throughput pemrosesan data di server staging.",
-    "workspace": "aikreativ",
-    "board": "studio-ai",
-    "status": "review-qa",
-    "priority": "Critical",
-    "pic": {
-      "name": "Budi Pratama",
-      "initials": "BP",
-      "role": "QA Lead"
-    },
-    "timeline": "22 - 28 Sep",
-    "hours": 18,
     "assets": [],
-    "qaProgress": {
-      "passed": 3,
-      "total": 4
-    },
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Deployment"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131711995
+    "updatedAt": 1790147877830
   },
   {
-    "id": "task-ai-02",
-    "code": "#AI-102",
-    "title": "Implementasi Pipeline Otomasi & Webhook Server",
-    "description": "Setup routing background worker dan queue microservice.",
-    "workspace": "aikreativ",
+    "id": "task-ai-05",
+    "code": "#AI-105",
+    "title": "Optimasi Token Prompt & Fine-tuning Dataset",
+    "description": "Pengurangan biaya komputasi token LLM hingga 35% tanpa mengurangi akurasi hasil sintesis.",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
+    "board": "studio-ai",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Ahmadi Jaka Abdul Manaf",
+      "initials": "AJ",
+      "role": "Backend Developer"
+    },
+    "timeline": "15 - 23 Sep",
+    "hours": 16,
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "LLM",
+      "Fine-tuning"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-ai-06",
+    "code": "#AI-106",
+    "title": "Testing Stress Benchmark & Monitoring GPU",
+    "description": "Simulasi beban 1.000 concurrent request terhadap cluster inference GPU cloud.",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
     "board": "studio-ai",
     "status": "backlog",
+    "priority": "Critical",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "26 - 30 Sep",
+    "hours": 18,
+    "qaProgress": {
+      "passed": 1,
+      "total": 4
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "StressTest"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-ai-07",
+    "code": "#AI-107",
+    "title": "Dokumentasi Integrasi Arsitektur AI Studio",
+    "description": "Penyusunan API docs dan panduan developer untuk integrasi model ke aplikasi lain.",
+    "workspace": "aikreativ-9019",
+    "projectId": "proj-1790146459019-450",
+    "board": "studio-ai",
+    "status": "ready-launch",
     "priority": "Medium",
     "pic": {
       "name": "Sari Rahmawati",
       "initials": "SR",
       "role": "Creative Lead"
     },
-    "timeline": "20 - 26 Sep",
-    "hours": 15,
-    "assets": [],
-    "qaProgress": {
-      "passed": 1,
-      "total": 3
-    },
-    "isStarred": false,
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131711962
-  },
-  {
-    "id": "task-ai-01",
-    "code": "#AI-101",
-    "title": "Konfigurasi Model AI & Integrasi Vision API",
-    "description": "Optimasi inference prompt dan response parser untuk pipeline visual.",
-    "workspace": "aikreativ",
-    "board": "studio-ai",
-    "status": "in-progress",
-    "priority": "High",
-    "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
-    },
-    "timeline": "18 - 24 Sep",
-    "hours": 20,
-    "assets": [],
-    "qaProgress": {
-      "passed": 2,
-      "total": 4
-    },
-    "isStarred": false,
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131711902
-  },
-  {
-    "id": "task-co-03",
-    "code": "#CO-103",
-    "title": "Penyusunan Manajemen Pengguna & Delegasi Tugas",
-    "description": "Pengaturan penugasan peran pegawai/siswa ke kanban board masing-masing.",
-    "workspace": "creativoffice",
-    "board": "creativoffice",
-    "status": "ready-launch",
-    "priority": "Medium",
-    "pic": {
-      "name": "Sari Rahmawati",
-      "initials": "SR",
-      "role": "Operations Lead"
-    },
-    "timeline": "22 - 28 Sep",
-    "hours": 14,
-    "assets": [],
+    "timeline": "28 - 30 Sep",
+    "hours": 12,
     "qaProgress": {
       "passed": 3,
       "total": 3
     },
-    "isStarred": false,
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131711671
-  },
-  {
-    "id": "task-co-02",
-    "code": "#CO-102",
-    "title": "Integrasi Single Device Lock & Supabase Sync",
-    "description": "Validasi QR Sampulkreativ, penugasan otomatis tugas, dan enkripsi token.",
-    "workspace": "creativoffice",
-    "board": "creativoffice",
-    "status": "review-qa",
-    "priority": "Critical",
-    "pic": {
-      "name": "Budi Pratama",
-      "initials": "BP",
-      "role": "QA Lead"
-    },
-    "timeline": "20 - 27 Sep",
-    "hours": 16,
     "assets": [],
-    "qaProgress": {
-      "passed": 2,
-      "total": 3
-    },
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Docs"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131711636
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-co-01",
     "code": "#CO-101",
     "title": "Pengembangan Prototype CreativOffice Mobile & Web",
     "description": "Implementasi antarmuka eksekutif, integrasi QR barcode scanner, dan kanban task board.",
-    "workspace": "creativoffice",
+    "workspace": "creativoffice-4093",
+    "projectId": "proj-1790146434093-686",
     "board": "creativoffice",
     "status": "in-progress",
     "priority": "High",
     "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
+      "name": "Nazwa Aulia Latifah",
+      "initials": "NA",
+      "role": "Siswa PKL"
     },
     "timeline": "18 - 25 Sep",
     "hours": 20,
-    "assets": [],
     "qaProgress": {
       "passed": 3,
       "total": 4
     },
-    "isStarred": false,
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null,
-    "updatedAt": 1790131711591
-  },
-  {
-    "id": "task-kanban-board-test-01",
-    "code": "#PK-876",
-    "title": "Tugas Baru",
-    "description": "",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
-    "status": "backlog",
-    "priority": "Medium",
-    "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
-    },
-    "timeline": "",
-    "hours": 0,
     "assets": [],
-    "qaProgress": {
-      "passed": 0,
-      "total": 4
-    },
-    "isStarred": false,
-    "tags": [],
+    "isStarred": true,
+    "tags": [
+      "UI",
+      "Prototype"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1789962134013
+    "updatedAt": 1790147877830
   },
   {
-    "id": "task-1789626231217-115",
-    "code": "#PK-622",
-    "title": "Tugas Baru",
-    "description": "",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
+    "id": "task-co-02",
+    "code": "#CO-102",
+    "title": "Integrasi Single Device Lock & Supabase Sync",
+    "description": "Validasi QR Sampulkreativ, penugasan otomatis tugas, dan enkripsi token.",
+    "workspace": "creativoffice-4093",
+    "projectId": "proj-1790146434093-686",
+    "board": "creativoffice",
+    "status": "review-qa",
+    "priority": "Critical",
+    "pic": {
+      "name": "Muhamad Fazli Esfandiar",
+      "initials": "FE",
+      "role": "Siswa PKL"
+    },
+    "timeline": "20 - 27 Sep",
+    "hours": 16,
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Security",
+      "DeviceLock"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-co-03",
+    "code": "#CO-103",
+    "title": "Penyusunan Manajemen Pengguna & Delegasi Tugas",
+    "description": "Pengaturan penugasan peran pegawai/siswa ke kanban board masing-masing.",
+    "workspace": "creativoffice-4093",
+    "projectId": "proj-1790146434093-686",
+    "board": "creativoffice",
     "status": "ready-launch",
     "priority": "Medium",
     "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
+      "name": "Nazwa Aulia Latifah",
+      "initials": "NA",
+      "role": "Siswa PKL"
     },
-    "timeline": "",
-    "hours": 0,
-    "assets": [],
+    "timeline": "22 - 28 Sep",
+    "hours": 14,
     "qaProgress": {
-      "passed": 0,
-      "total": 4
+      "passed": 3,
+      "total": 3
     },
+    "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Users"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1789698743858
+    "updatedAt": 1790147877830
   },
   {
-    "id": "task-1789626382411-393",
-    "code": "#PK-934",
-    "title": "Tugas Baru",
-    "description": "",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
-    "status": "review-qa",
-    "priority": "Medium",
+    "id": "task-co-04",
+    "code": "#CO-104",
+    "title": "Implementasi Realtime Synchronization & EventBus",
+    "description": "Sinkronisasi perubahan status antar tab dan multi-device secara instan.",
+    "workspace": "creativoffice-4093",
+    "projectId": "proj-1790146434093-686",
+    "board": "creativoffice",
+    "status": "in-progress",
+    "priority": "High",
     "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
+      "name": "Muhamad Fazli Esfandiar",
+      "initials": "FE",
+      "role": "Siswa PKL"
     },
-    "timeline": "",
-    "hours": 0,
-    "assets": [],
+    "timeline": "21 - 28 Sep",
+    "hours": 15,
     "qaProgress": {
-      "passed": 0,
-      "total": 4
+      "passed": 2,
+      "total": 3
     },
+    "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Realtime"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1789698742032
+    "updatedAt": 1790147877830
   },
   {
-    "id": "task-1789626716325-842",
-    "code": "#PK-162",
-    "title": "Tugas Baru",
-    "description": "",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
+    "id": "task-co-05",
+    "code": "#CO-105",
+    "title": "Pengujian Responsivitas UI Multi-Device (Desktop, Tablet, Mobile)",
+    "description": "Verifikasi tampilan bebas overlap dan konsistensi tombol di seluruh resolusi layar.",
+    "workspace": "creativoffice-4093",
+    "projectId": "proj-1790146434093-686",
+    "board": "creativoffice",
     "status": "backlog",
     "priority": "Medium",
     "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
     },
-    "timeline": "",
-    "hours": 0,
-    "assets": [],
+    "timeline": "24 - 30 Sep",
+    "hours": 12,
     "qaProgress": {
-      "passed": 0,
-      "total": 4
+      "passed": 1,
+      "total": 3
     },
+    "assets": [],
     "isStarred": false,
-    "tags": [],
+    "tags": [
+      "Responsive"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null,
-    "updatedAt": 1789962189061
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-pk-01",
     "code": "#PK-401",
     "title": "Konfigurasi Redis Cache & Auth Microservice OAuth2",
     "description": "Optimasi token validation store ke Redis cluster dengan target latensi <5ms.",
-    "workspace": "panen-kunci",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
     "board": "backend-core",
     "status": "in-progress",
     "priority": "High",
     "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
+      "name": "Fakhrul Miandi Rachman",
+      "initials": "FR",
+      "role": "Siswa PKL"
     },
     "timeline": "18 - 24 Sep",
     "hours": 22,
@@ -523,20 +747,174 @@
       "passed": 2,
       "total": 4
     },
-    "isStarred": false,
-    "updatedAt": 1790131711717,
     "assets": [],
-    "tags": [],
+    "isStarred": true,
+    "tags": [
+      "Backend",
+      "Redis"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null
+    "updatedAt": 1790147877830
   },
   {
     "id": "task-pk-02",
     "code": "#PK-402",
     "title": "Audit Keamanan Penetration Testing Multi-Tenant",
     "description": "Verifikasi isolasi database tenant dan enkripsi data at rest AES-256.",
-    "workspace": "panen-kunci",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
+    "board": "backend-core",
+    "status": "review-qa",
+    "priority": "Critical",
+    "pic": {
+      "name": "Siti Asti Nurjanah",
+      "initials": "SA",
+      "role": "Siswa PKL"
+    },
+    "timeline": "20 - 26 Sep",
+    "hours": 18,
+    "qaProgress": {
+      "passed": 3,
+      "total": 4
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Security",
+      "Audit"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-pk-03",
+    "code": "#PK-403",
+    "title": "Pemeriksaan SLA & Integrasi Payment Gateway SaaS",
+    "description": "Pengujian webhook callback redundan untuk transaksi otomatis.",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
+    "board": "backend-core",
+    "status": "ready-launch",
+    "priority": "High",
+    "pic": {
+      "name": "Mubarokah Denis Pratama",
+      "initials": "DP",
+      "role": "Siswa PKL"
+    },
+    "timeline": "22 - 28 Sep",
+    "hours": 16,
+    "qaProgress": {
+      "passed": 4,
+      "total": 4
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Payment"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-pk-04",
+    "code": "#PK-404",
+    "title": "Setup Monitoring Datadog & CloudWatch Alerts",
+    "description": "Pemberitahuan otomatis saat latency API melebihi threshold 200ms.",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
+    "board": "backend-core",
+    "status": "done",
+    "priority": "Medium",
+    "pic": {
+      "name": "Fakhrul Miandi Rachman",
+      "initials": "FR",
+      "role": "Siswa PKL"
+    },
+    "timeline": "10 - 15 Sep",
+    "hours": 12,
+    "qaProgress": {
+      "passed": 4,
+      "total": 4
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Monitoring"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-pk-05",
+    "code": "#PK-405",
+    "title": "Dokumentasi OpenAPI & Swagger RESTful Endpoints",
+    "description": "Penyusunan panduan integrasi third-party API untuk mitra platform.",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
+    "board": "backend-core",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Siti Asti Nurjanah",
+      "initials": "SA",
+      "role": "Siswa PKL"
+    },
+    "timeline": "25 - 30 Sep",
+    "hours": 14,
+    "qaProgress": {
+      "passed": 0,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Swagger"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-pk-06",
+    "code": "#PK-406",
+    "title": "Optimasi Query Database & Penanganan Deadlock",
+    "description": "Penerapan indeks gabungan dan query analyzer untuk menjaga waktu respons <100ms.",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
+    "board": "backend-core",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Mubarokah Denis Pratama",
+      "initials": "DP",
+      "role": "Siswa PKL"
+    },
+    "timeline": "19 - 26 Sep",
+    "hours": 16,
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [
+      "Database"
+    ],
+    "location": "",
+    "resolution": "",
+    "updatedAt": 1790147877830
+  },
+  {
+    "id": "task-pk-07",
+    "code": "#PK-407",
+    "title": "Review Keamanan Endpoint QR Scanner & Device Signature",
+    "description": "Pemeriksaan validasi fingerprint ganda dan sanitasi payload scan.",
+    "workspace": "panen-kunci-9036",
+    "projectId": "proj-1790146409036-876",
     "board": "backend-core",
     "status": "review-qa",
     "priority": "Critical",
@@ -545,102 +923,19 @@
       "initials": "KS",
       "role": "DevOps & Security"
     },
-    "timeline": "20 - 26 Sep",
-    "hours": 18,
+    "timeline": "23 - 29 Sep",
+    "hours": 15,
     "qaProgress": {
       "passed": 3,
       "total": 4
     },
-    "isStarred": false,
-    "updatedAt": 1790131711764,
     "assets": [],
-    "tags": [],
+    "isStarred": false,
+    "tags": [
+      "Security"
+    ],
     "location": "",
     "resolution": "",
-    "projectId": null
-  },
-  {
-    "id": "task-pk-03",
-    "code": "#PK-403",
-    "title": "Pemeriksaan SLA & Integrasi Payment Gateway SaaS",
-    "description": "Pengujian webhook callback redundan untuk transaksi otomatis.",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
-    "status": "ready-launch",
-    "priority": "High",
-    "pic": {
-      "name": "Budi Pratama",
-      "initials": "BP",
-      "role": "QA Lead"
-    },
-    "timeline": "22 - 28 Sep",
-    "hours": 16,
-    "qaProgress": {
-      "passed": 4,
-      "total": 4
-    },
-    "isStarred": false,
-    "updatedAt": 1790131711801,
-    "assets": [],
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null
-  },
-  {
-    "id": "task-pk-04",
-    "code": "#PK-404",
-    "title": "Setup Monitoring Datadog & CloudWatch Alerts",
-    "description": "Pemberitahuan otomatis saat latency API melebihi threshold 200ms.",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
-    "status": "done",
-    "priority": "Medium",
-    "pic": {
-      "name": "Kevin Santoso",
-      "initials": "KS",
-      "role": "DevOps & Security"
-    },
-    "timeline": "10 - 15 Sep",
-    "hours": 12,
-    "qaProgress": {
-      "passed": 4,
-      "total": 4
-    },
-    "isStarred": false,
-    "updatedAt": 1790131711835,
-    "assets": [],
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null
-  },
-  {
-    "id": "task-pk-05",
-    "code": "#PK-405",
-    "title": "Dokumentasi OpenAPI & Swagger RESTful Endpoints",
-    "description": "Penyusunan panduan integrasi third-party API untuk mitra platform.",
-    "workspace": "panen-kunci",
-    "board": "backend-core",
-    "status": "backlog",
-    "priority": "Medium",
-    "pic": {
-      "name": "Sari Rahmawati",
-      "initials": "SR",
-      "role": "Creative Lead"
-    },
-    "timeline": "25 - 30 Sep",
-    "hours": 14,
-    "qaProgress": {
-      "passed": 0,
-      "total": 3
-    },
-    "isStarred": false,
-    "updatedAt": 1790131711870,
-    "assets": [],
-    "tags": [],
-    "location": "",
-    "resolution": "",
-    "projectId": null
+    "updatedAt": 1790147877831
   }
 ]

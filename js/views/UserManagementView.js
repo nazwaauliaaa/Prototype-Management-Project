@@ -2,6 +2,170 @@ import { BaseView } from '../core/BaseView.js';
 import { apiService } from '../services/ApiService.js';
 import { supabaseService } from '../services/SupabaseService.js';
 
+export const DEFAULT_SEEDED_USERS = [
+  {
+    id: "usr-1790146619716",
+    username: "@jax_ck",
+    fullName: "Fakhrul Miandi Rachman",
+    role: "student",
+    nip: "2026",
+    position: "Siswa PKL",
+    school: "",
+    assignedProjectId: "proj-1790146409036-876",
+    assignedWorkspace: "panen-kunci-9036",
+    assignedBoardName: "Panen Kunci",
+    assignedProjects: ["proj-1790146409036-876"],
+    assignedBoardNames: ["Panen Kunci"],
+    workspaceAccess: ["proj-1790146409036-876"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (Semua Tugas)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@jax_ck"
+  },
+  {
+    id: "usr-1790146648510",
+    username: "@stastii",
+    fullName: "Siti Asti Nurjanah",
+    role: "student",
+    nip: "2026",
+    position: "Siswa PKL",
+    school: "",
+    assignedProjectId: "proj-1790146409036-876",
+    assignedWorkspace: "panen-kunci-9036",
+    assignedBoardName: "Panen Kunci",
+    assignedProjects: ["proj-1790146409036-876"],
+    assignedBoardNames: ["Panen Kunci"],
+    workspaceAccess: ["proj-1790146409036-876"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (Semua Tugas)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@stastii"
+  },
+  {
+    id: "usr-1790146707502",
+    username: "@jambul004",
+    fullName: "Mubarokah Denis Pratama",
+    role: "student",
+    nip: "2026",
+    position: "Siswa PKL",
+    school: "",
+    assignedProjectId: "proj-1790146409036-876",
+    assignedWorkspace: "panen-kunci-9036",
+    assignedBoardName: "Panen Kunci",
+    assignedProjects: ["proj-1790146409036-876"],
+    assignedBoardNames: ["Panen Kunci"],
+    workspaceAccess: ["proj-1790146409036-876"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (Semua Tugas)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@jambul004"
+  },
+  {
+    id: "usr-1790146750822",
+    username: "@nazwaauliaal",
+    fullName: "Nazwa Aulia Latifah",
+    role: "student",
+    nip: "2026",
+    position: "Siswa PKL",
+    school: "",
+    assignedProjectId: "proj-1790146434093-686",
+    assignedWorkspace: "creativoffice-4093",
+    assignedBoardName: "CreativOffice",
+    assignedProjects: ["proj-1790146434093-686"],
+    assignedBoardNames: ["CreativOffice"],
+    workspaceAccess: ["proj-1790146434093-686"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (Semua Tugas)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@nazwaauliaal"
+  },
+  {
+    id: "usr-1790146790072",
+    username: "@fazlies",
+    fullName: "Muhamad Fazli Esfandiar",
+    role: "student",
+    nip: "2026",
+    position: "2026",
+    school: "",
+    assignedProjectId: "proj-1790146434093-686",
+    assignedWorkspace: "creativoffice-4093",
+    assignedBoardName: "CreativOffice",
+    assignedProjects: ["proj-1790146434093-686"],
+    assignedBoardNames: ["CreativOffice"],
+    workspaceAccess: ["proj-1790146434093-686"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (Semua Tugas)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@fazlies"
+  },
+  {
+    id: "usr-1790146861189",
+    username: "@cardinal",
+    fullName: "Ahmadi Jaka Abdul Manaf",
+    role: "employee",
+    nip: "2026",
+    position: "Backend Developer",
+    school: "",
+    assignedProjectId: "proj-1790146474472-592",
+    assignedWorkspace: "sharinginaja-4472",
+    assignedBoardName: "SharinginAja",
+    assignedProjects: ["proj-1790146474472-592", "proj-1790146459019-450"],
+    assignedBoardNames: ["SharinginAja", "AIKreativ"],
+    workspaceAccess: ["proj-1790146474472-592", "proj-1790146459019-450"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (2 Papan Terpilih)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@cardinal"
+  },
+  {
+    id: "usr-1790146913655",
+    username: "@yusariusly",
+    fullName: "Muhammad Yusar Ghani",
+    role: "employee",
+    nip: "2026",
+    position: "Frontend Developer",
+    school: "",
+    assignedProjectId: "proj-1790146512680-427",
+    assignedWorkspace: "layarbaca-2680",
+    assignedBoardName: "LayarBaca",
+    assignedProjects: ["proj-1790146512680-427", "proj-1790146495006-9"],
+    assignedBoardNames: ["LayarBaca", "RuangKreasi"],
+    workspaceAccess: ["proj-1790146512680-427", "proj-1790146495006-9"],
+    assignedTaskId: "all",
+    assignedTaskTitle: "Seluruh Papan (2 Papan Terpilih)",
+    device: "Belum Terikat",
+    isDeviceBound: false,
+    telegramChat: "",
+    telegramId: "",
+    apiDeposit: "",
+    qr_data: "@yusariusly"
+  }
+];
+
 /**
  * UserManagementView - Halaman Manajemen Pengguna untuk Administrator
  * Memungkinkan Admin melihat daftar karyawan/siswa PKL, mengelola perangkat, membuat akun baru,
@@ -69,7 +233,7 @@ export class UserManagementView extends BaseView {
       if (this.supabaseService && this.supabaseService.isConfigured()) {
         try {
           const sbUsers = await this.supabaseService.getUsers();
-          if (Array.isArray(sbUsers)) {
+          if (Array.isArray(sbUsers) && sbUsers.length > 0) {
             const defaultBoard = this.getAvailableBoards()[0];
             const defId = defaultBoard?.id || 'panen-kunci';
             const defWs = defaultBoard?.workspace || defId;
@@ -174,13 +338,13 @@ export class UserManagementView extends BaseView {
           defaultLegacyUsernames.includes(u.username)
         );
         if (onlyLegacy) {
-          localStorage.setItem('creative_office_managed_users', JSON.stringify([]));
+          localStorage.setItem('creative_office_managed_users', JSON.stringify(DEFAULT_SEEDED_USERS));
           return;
         }
       }
 
-      if (!Array.isArray(currentUsers)) {
-        localStorage.setItem('creative_office_managed_users', JSON.stringify([]));
+      if (!Array.isArray(currentUsers) || currentUsers.length === 0) {
+        localStorage.setItem('creative_office_managed_users', JSON.stringify(DEFAULT_SEEDED_USERS));
       }
     } catch (e) {}
   }
@@ -190,18 +354,24 @@ export class UserManagementView extends BaseView {
       const stored = localStorage.getItem('creative_office_managed_users');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
       }
     } catch (e) {}
-    return [];
+    return DEFAULT_SEEDED_USERS;
   }
 
   saveUsers(users) {
     try {
       localStorage.setItem('creative_office_managed_users', JSON.stringify(users));
-      // 🚀 Langsung kirim dan sinkronkan ke Database PostgreSQL / Supabase & Vercel Serverless
+      // 🚀 1. Langsung kirim dan sinkronkan ke Supabase jika aktif
+      if (this.supabaseService && this.supabaseService.isConfigured()) {
+        this.supabaseService.saveUsers(users).catch(err => {
+          console.warn('[UserManagementView] Gagal sync users ke Supabase:', err.message);
+        });
+      }
+      // 🚀 2. Langsung kirim ke Backend API & PostgreSQL (Port 5000 / LAN / Cloud)
       apiService.saveManagedUsers(users).catch(err => {
         console.warn('[UserManagementView] Gagal sync ke server backend:', err.message);
       });
@@ -1412,8 +1582,13 @@ export class UserManagementView extends BaseView {
 
         users.push(newUser);
         this.saveUsers(users);
+        if (this.supabaseService && this.supabaseService.isConfigured()) {
+          this.supabaseService.saveUser(newUser).catch(err => {
+            console.warn('[UserManagementView] Gagal sync user baru ke Supabase:', err.message);
+          });
+        }
         apiService.saveManagedUser(newUser).catch(err => {
-          console.warn('[UserManagementView] Gagal sync user baru ke Supabase:', err.message);
+          console.warn('[UserManagementView] Gagal sync user baru ke backend API:', err.message);
         });
         closeCreateModal();
         if (this.notificationService) {
@@ -1539,9 +1714,17 @@ export class UserManagementView extends BaseView {
           users[idx].telegramId = telegramId;
 
           this.saveUsers(users);
+          if (this.supabaseService && this.supabaseService.isConfigured()) {
+            this.supabaseService.saveUser(users[idx]).catch(err => {
+              console.warn('[UserManagementView] Gagal sync edit user ke Supabase:', err.message);
+            });
+          }
+          apiService.saveManagedUser(users[idx]).catch(err => {
+            console.warn('[UserManagementView] Gagal sync edit user ke backend API:', err.message);
+          });
           closeEditModal();
           if (this.notificationService) {
-            this.notificationService.success(`Perubahan akun ${users[idx].username} & penugasan papan berhasil disimpan!`);
+            this.notificationService.success(`Perubahan akun ${users[idx].username} & penugasan papan berhasil disimpan ke Supabase!`);
           }
           this.mount(this.element);
         }

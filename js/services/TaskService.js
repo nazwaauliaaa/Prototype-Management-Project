@@ -1,5 +1,6 @@
 import { Task } from '../models/Task.js';
 import { apiService } from './ApiService.js';
+import { supabaseService } from './SupabaseService.js';
 
 /**
  * TaskService - Single Responsibility Principle (SRP)
@@ -173,7 +174,22 @@ export class TaskService {
     const deletedWorkspaces = this.getDeletedWorkspaces();
 
     try {
-      const remoteTasks = await apiService.getTasks();
+      let remoteTasks = null;
+      if (supabaseService.isConfigured()) {
+        try {
+          const sbTasks = await supabaseService.getTasks();
+          if (Array.isArray(sbTasks) && sbTasks.length > 0) {
+            remoteTasks = sbTasks;
+          }
+        } catch (sbErr) {
+          console.warn('[TaskService] Direct Supabase fetch tasks warning:', sbErr.message);
+        }
+      }
+
+      if (!Array.isArray(remoteTasks)) {
+        remoteTasks = await apiService.getTasks();
+      }
+
       if (Array.isArray(remoteTasks) && remoteTasks.length > 0) {
         const remoteMap = new Map();
         remoteTasks.forEach(t => {
@@ -794,13 +810,24 @@ export class TaskService {
     this.tasks.unshift(newTask);
     this.saveToStorage();
 
-    // Simpan ke PostgreSQL / Supabase secara asynchronous
+    // 🚀 1. Simpan langsung ke Supabase jika aktif
+    if (supabaseService.isConfigured()) {
+      supabaseService.createTask(newTask).then((saved) => {
+        if (saved) {
+          console.log(`[TaskService] ✅ Task "${newTask.title}" tersimpan langsung di Supabase (${saved.id || newTask.id})`);
+        }
+      }).catch(err => {
+        console.warn('[TaskService] Gagal sync task ke Supabase:', err.message);
+      });
+    }
+
+    // 🚀 2. Simpan ke Backend API & PostgreSQL (Port 5000 / LAN)
     apiService.createTask(newTask).then((saved) => {
       if (saved) {
-        console.log(`[TaskService] ✅ Task "${newTask.title}" tersimpan di Supabase (${saved.id || newTask.id})`);
+        console.log(`[TaskService] ✅ Task "${newTask.title}" tersimpan di Backend (${saved.id || newTask.id})`);
       }
     }).catch(err => {
-      console.warn('[TaskService] Gagal sync task ke Supabase:', err.message);
+      console.warn('[TaskService] Gagal sync task ke Backend:', err.message);
     });
 
     this.eventBus.emit('tasks:updated', this.tasks);
@@ -831,7 +858,14 @@ export class TaskService {
 
       this.saveToStorage();
 
-      // Hapus dari Backend / Supabase
+      // 🚀 1. Hapus langsung dari Supabase jika aktif
+      if (supabaseService.isConfigured()) {
+        supabaseService.deleteTask(cleanId).catch(err => {
+          console.warn('[TaskService] Gagal hapus task di Supabase:', err.message);
+        });
+      }
+
+      // 🚀 2. Hapus dari Backend / PostgreSQL
       apiService.deleteTask(cleanId).catch(err => {
         console.warn('[TaskService] Gagal hapus task di backend:', err.message);
       });
@@ -843,6 +877,9 @@ export class TaskService {
       }
       return { task: removed, index };
     } else {
+      if (supabaseService.isConfigured()) {
+        supabaseService.deleteTask(cleanId).catch(() => {});
+      }
       apiService.deleteTask(cleanId).catch(() => {});
     }
     return null;
@@ -908,8 +945,16 @@ export class TaskService {
       task.updatedAt = Date.now();
       this.saveToStorage();
 
+      // 🚀 1. Update ke Supabase jika aktif
+      if (supabaseService.isConfigured()) {
+        supabaseService.updateTask(task.id, { status: newStatus, updatedAt: task.updatedAt }).catch(err => {
+          console.warn('[TaskService] Gagal update status di Supabase:', err.message);
+        });
+      }
+
+      // 🚀 2. Update ke Backend API
       apiService.updateTask(task.id, { status: newStatus, updatedAt: task.updatedAt }).catch(err => {
-        console.warn('[TaskService] Gagal update status di PostgreSQL:', err.message);
+        console.warn('[TaskService] Gagal update status di Backend API:', err.message);
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
@@ -936,8 +981,14 @@ export class TaskService {
       task.title = trimmed;
       this.saveToStorage();
 
+      // 🚀 1. Update ke Supabase jika aktif
+      if (supabaseService.isConfigured()) {
+        supabaseService.updateTask(taskId, { title: trimmed }).catch(() => {});
+      }
+
+      // 🚀 2. Update ke Backend API
       apiService.updateTask(taskId, { title: trimmed }).catch(err => {
-        console.warn('[TaskService] Gagal update judul tugas di PostgreSQL:', err.message);
+        console.warn('[TaskService] Gagal update judul tugas di Backend API:', err.message);
       });
 
       this.eventBus.emit('tasks:updated', this.tasks);
@@ -971,8 +1022,16 @@ export class TaskService {
 
     this.saveToStorage();
 
+    // 🚀 1. Update ke Supabase jika aktif
+    if (supabaseService.isConfigured()) {
+      supabaseService.updateTask(task.id, updates).catch(err => {
+        console.warn('[TaskService] Gagal update task di Supabase:', err.message);
+      });
+    }
+
+    // 🚀 2. Update ke Backend API
     apiService.updateTask(task.id, updates).catch(err => {
-      console.warn('[TaskService] Gagal update task di PostgreSQL:', err.message);
+      console.warn('[TaskService] Gagal update task di Backend API:', err.message);
     });
 
     this.eventBus.emit('tasks:updated', this.tasks);
@@ -1019,6 +1078,9 @@ export class TaskService {
     tasksToDelete.forEach(t => {
       this.addDeletedTaskId(t.id);
       if (t.code) this.addDeletedTaskId(t.code);
+      if (supabaseService.isConfigured()) {
+        supabaseService.deleteTask(t.id).catch(() => {});
+      }
       apiService.deleteTask(t.id).catch(() => {});
     });
 
