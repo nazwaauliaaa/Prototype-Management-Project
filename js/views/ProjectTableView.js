@@ -201,7 +201,7 @@ export class ProjectTableView extends BaseView {
               </div>
 
               <!-- Table Rows Stream (No horizontal slide, smooth clean vertical stream) -->
-              <div class="flex flex-col divide-y divide-white/5 overflow-y-auto max-h-[calc(100vh-270px)] pr-1">
+              <div class="flex flex-col divide-y divide-white/5 overflow-y-auto custom-scrollbar pr-1" style="max-height: calc(100vh - 270px); overflow-y: auto;">
                 ${displayTasks.map((task, idx) => {
                   const listName = getStatusLabel(task);
                   const labelColor = getLabelColor(task);

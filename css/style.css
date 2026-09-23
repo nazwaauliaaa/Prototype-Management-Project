@@ -1051,6 +1051,42 @@ li.tNfnRxYxdIqnQH {
    CUSTOM SCROLLBAR & OVERFLOW UTILITIES
    ======================================== */
 
+/* ── Locked Viewport for Kanban & Project Boards (Prevents Window Overflow, Enables Per-Column Scroll) ── */
+body[data-page="kanban"],
+#app-shell-layout[data-page="kanban"] {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+body[data-page="kanban"] #app-content,
+#app-shell-layout[data-page="kanban"] #app-content {
+  height: calc(100vh - var(--topbar-height, 48px)) !important;
+  max-height: calc(100vh - var(--topbar-height, 48px)) !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+
+.kanban-column {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.kanban-cards-area,
+[data-cards-area] {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .custom-scrollbar::-webkit-scrollbar,
 [data-cards-area]::-webkit-scrollbar {
   width: 6px;
@@ -1059,24 +1095,25 @@ li.tNfnRxYxdIqnQH {
 
 .custom-scrollbar::-webkit-scrollbar-track,
 [data-cards-area]::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb,
 [data-cards-area]::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(168, 85, 247, 0.45);
   border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover,
 [data-cards-area]::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.75);
+  background: rgba(168, 85, 247, 0.8);
 }
 
 .custom-scrollbar,
 [data-cards-area] {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  scrollbar-color: rgba(168, 85, 247, 0.45) rgba(255, 255, 255, 0.04);
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }

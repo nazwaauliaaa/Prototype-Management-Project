@@ -244,7 +244,7 @@ export class GanttTimelineView extends BaseView {
             </div>
 
             <!-- Gantt Chart Area with Horizontal Scroll for Mobile -->
-            <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] pr-1 select-none">
+            <div class="flex-1 overflow-x-auto overflow-y-auto pr-1 select-none custom-scrollbar" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto;">
               <div class="min-w-[700px] flex flex-col">
                 
                 <!-- Table / Gantt Scale Header matching screenshot column styling -->
@@ -474,19 +474,6 @@ export class GanttTimelineView extends BaseView {
       });
     }
 
-    const tableBtn = this.element.querySelector('#btn-switch-view-table');
-    if (tableBtn) {
-      tableBtn.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'project-table', projectId: this.projectId, workspace: this.currentWorkspace });
-      });
-    }
-
-    const calBtn = this.element.querySelector('#btn-switch-view-calendar');
-    if (calBtn) {
-      calBtn.addEventListener('click', () => {
-        this.eventBus.emit('navigate', { view: 'calendar', projectId: this.projectId, workspace: this.currentWorkspace });
-      });
-    }
 
     // Dock Board Button
     const dockBoardBtn = this.element.querySelector('#btn-dock-board');

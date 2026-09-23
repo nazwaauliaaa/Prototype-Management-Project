@@ -123,9 +123,11 @@ export class AuthService {
    */
   restoreSession() {
     try {
-      // Validasi sesi tab: Jika tab browser sebelumnya ditutup, sessionStorage musnah dan sesi habis
-      const isTabSessionActive = sessionStorage.getItem('creative_office_session_active');
-      if (!isTabSessionActive) {
+      // Validasi sesi: Mendukung sessionStorage dan fallback localStorage jika diakses di tab baru
+      const isSessionActive = sessionStorage.getItem('creative_office_session_active') ||
+                              localStorage.getItem('creative_office_session_active') ||
+                              localStorage.getItem('creative_office_auth_user');
+      if (!isSessionActive) {
         this.currentUser = null;
         this.isAuthenticated = false;
         return null;
@@ -192,6 +194,8 @@ export class AuthService {
         }
 
         try {
+          sessionStorage.setItem('creative_office_session_active', 'true');
+          localStorage.setItem('creative_office_session_active', 'true');
           localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
           localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
           localStorage.setItem('active_user_role', this.currentUser.role || 'user');
@@ -501,6 +505,7 @@ export class AuthService {
     this.isAuthenticated = true;
     try {
       sessionStorage.setItem('creative_office_session_active', 'true');
+      localStorage.setItem('creative_office_session_active', 'true');
       localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
       localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
       localStorage.setItem('active_user_role', this.currentUser.role || 'user');
@@ -756,6 +761,7 @@ export class AuthService {
       this.isAuthenticated = true;
       try {
         sessionStorage.setItem('creative_office_session_active', 'true');
+        localStorage.setItem('creative_office_session_active', 'true');
         localStorage.setItem('creative_office_auth_user', JSON.stringify(this.currentUser));
         localStorage.setItem('creative_office_user', JSON.stringify(this.currentUser));
         localStorage.setItem('active_user_role', role);
@@ -797,6 +803,7 @@ export class AuthService {
     try {
       localStorage.removeItem('creative_office_auth_user');
       localStorage.removeItem('creative_office_user');
+      localStorage.removeItem('creative_office_session_active');
       localStorage.removeItem('active_user_role');
       localStorage.removeItem('active_user_email');
       localStorage.removeItem('active_user_name');

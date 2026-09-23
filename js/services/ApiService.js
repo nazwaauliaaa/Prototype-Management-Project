@@ -67,14 +67,15 @@ export class ApiService {
     let res;
     let fallbackTried = false;
 
+    const isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
     const host = (typeof window !== 'undefined' && window.location && window.location.hostname) || 'localhost';
-    const fallbackBaseUrl = `http://${host}:5000/api`;
+    const fallbackBaseUrl = isHttps ? `${window.location.origin}/api` : `http://${host}:5000/api`;
 
     try {
       res = await fetch(targetUrl, { ...options, headers });
     } catch (netErr) {
-      // Jika request awal gagal (misal koneksi ditolak di /api), coba langsung ke port 5000
-      if (!targetUrl.includes(':5000')) {
+      // Jika request awal gagal (misal koneksi ditolak di /api), coba port 5000 hanya jika di HTTP lokal
+      if (!isHttps && !targetUrl.includes(':5000')) {
         try {
           const fallbackUrl = `${fallbackBaseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
           res = await fetch(fallbackUrl, { ...options, headers });
@@ -92,8 +93,8 @@ export class ApiService {
     const contentType = res.headers.get('content-type') || '';
     const isHtmlOrText = !contentType.includes('application/json');
 
-    if (isHtmlOrText && !fallbackTried && !targetUrl.includes(':5000')) {
-      // Respons bukan JSON dari web server static, coba ke port 5000
+    if (isHtmlOrText && !fallbackTried && !targetUrl.includes(':5000') && !isHttps) {
+      // Respons bukan JSON dari web server static, coba ke port 5000 (hanya di HTTP lokal)
       try {
         const fallbackUrl = `${fallbackBaseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
         const fallbackRes = await fetch(fallbackUrl, { ...options, headers });
@@ -219,7 +220,7 @@ export class ApiService {
         res = await this.safeFetch('/users');
       }
       if (res.ok) {
-        const json = await res.json();
+        const json = res.data;
         if (json && Array.isArray(json.data) && json.data.length > 0) {
           return json.data;
         }
@@ -247,8 +248,8 @@ export class ApiService {
         });
       }
       if (res.ok) {
-        const json = await res.json();
-        return json.data || usersList;
+        const json = res.data;
+        return json?.data || usersList;
       }
       return null;
     } catch (err) {

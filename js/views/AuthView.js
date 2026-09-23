@@ -742,7 +742,7 @@ export class AuthView extends BaseView {
         for (let x = 0; x < canvasEl.width; x += step) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
-          ctx.lineTo(canvasEl.height);
+          ctx.lineTo(x, canvasEl.height);
           ctx.stroke();
         }
         for (let y = 0; y < canvasEl.height; y += step) {
@@ -2050,8 +2050,12 @@ export class AuthView extends BaseView {
           const u = this.authService.getCurrentUser();
           const allowedWs = (u?.workspaceAccess && u.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
           const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+          const eb = this.container ? this.container.resolve('EventBus') : (this.eventBus || null);
+          if (eb) eb.emit('navigate', { view: 'kanban', projectId: allowedProj, workspace: allowedWs });
           window.location.hash = `#/kanban/${allowedProj}`;
         } else {
+          const eb = this.container ? this.container.resolve('EventBus') : (this.eventBus || null);
+          if (eb) eb.emit('navigate', { view: 'dashboard' });
           window.location.hash = '#/dashboard';
         }
       }, 700);
@@ -2080,8 +2084,12 @@ export class AuthView extends BaseView {
             if (role === 'user') {
               const allowedWs = (user.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
               const allowedProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || allowedWs;
+              const eb = this.container ? this.container.resolve('EventBus') : (this.eventBus || null);
+              if (eb) eb.emit('navigate', { view: 'kanban', projectId: allowedProj, workspace: allowedWs });
               window.location.hash = `#/kanban/${allowedProj}`;
             } else {
+              const eb = this.container ? this.container.resolve('EventBus') : (this.eventBus || null);
+              if (eb) eb.emit('navigate', { view: 'dashboard' });
               window.location.hash = '#/dashboard';
             }
           }, 600);
@@ -2153,7 +2161,6 @@ export class AuthView extends BaseView {
       }
 
       // loginWithRole emit 'auth:login' → app.js navigateTo('dashboard') secara synchronous
-      // JANGAN set window.location.hash di sini karena akan trigger hashchange kedua
       this.authService.loginWithRole('admin');
 
       if (this.notificationService) {

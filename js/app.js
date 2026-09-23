@@ -686,9 +686,23 @@ class CreativeOfficeApp {
     const bottomNavHost = document.getElementById('app-bottom-nav');
     const workspaceBarHost = document.getElementById('app-workspace-bar');
 
-    if (headerHost) this.header.mount(headerHost);
-    if (sidebarHost) this.sidebar.mount(sidebarHost);
-    if (bottomNavHost) this.bottomNav.mount(bottomNavHost);
+    if (headerHost) {
+      this.header.mount(headerHost);
+      if (!authService || !authService.isLoggedIn()) {
+        headerHost.classList.add('hidden');
+        headerHost.style.display = 'none';
+      }
+    }
+    if (sidebarHost) {
+      this.sidebar.mount(sidebarHost);
+      sidebarHost.classList.add('hidden');
+      sidebarHost.style.display = 'none';
+    }
+    if (bottomNavHost) {
+      this.bottomNav.mount(bottomNavHost);
+      bottomNavHost.classList.add('hidden');
+      bottomNavHost.style.display = 'none';
+    }
     if (workspaceBarHost) this.workspaceTabBar.mount(workspaceBarHost);
 
     // Listen to global navigation events
@@ -723,9 +737,9 @@ class CreativeOfficeApp {
 
       const authService = this.container.resolve('AuthService');
       const currentUser = loggedInUser || (authService ? authService.getCurrentUser() : null);
-      const role = (currentUser?.role || 'admin').toLowerCase();
+      const role = (currentUser?.role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
 
-      // QR login: arahkan ke kanban board yang sudah di-assign
+      // QR login: arahkan ke kanban board yang sudah di-assign (kecuali admin)
       if (currentUser && currentUser.loginMethod === 'qr') {
         const allowedWs = (currentUser.assignedWorkspace) || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
         const allowedProj = (currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
@@ -737,7 +751,13 @@ class CreativeOfficeApp {
         return;
       }
 
-      // Password login (admin atau role lain): langsung ke dashboard
+      // Role user (non-admin) selalu diarahkan ke kanban board
+      if (role === 'user') {
+        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
+        const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
+        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        return;
+      }
       this.navigateTo('dashboard');
     });
   }
@@ -860,10 +880,19 @@ class CreativeOfficeApp {
 
     if (viewName === 'auth') {
       // Hide header, sidebar, workspace bar, and bottom nav in auth gate
-      if (headerHost) headerHost.classList.add('hidden');
-      if (sidebarHost) sidebarHost.classList.add('hidden');
+      if (headerHost) {
+        headerHost.classList.add('hidden');
+        headerHost.style.display = 'none';
+      }
+      if (sidebarHost) {
+        sidebarHost.classList.add('hidden');
+        sidebarHost.style.display = 'none';
+      }
       const bottomNavHost = document.getElementById('app-bottom-nav');
-      if (bottomNavHost) bottomNavHost.classList.add('hidden');
+      if (bottomNavHost) {
+        bottomNavHost.classList.add('hidden');
+        bottomNavHost.style.display = 'none';
+      }
       if (this.workspaceTabBar) this.workspaceTabBar.hide();
       if (shellLayout) {
         shellLayout.classList.remove('pl-sidebar-width');
@@ -881,20 +910,27 @@ class CreativeOfficeApp {
     }
 
     // Authenticated views: show header; hide sidebar & bottom nav for user role
-    if (headerHost) headerHost.classList.remove('hidden');
+    if (headerHost) {
+      headerHost.classList.remove('hidden');
+      headerHost.style.display = '';
+    }
     if (sidebarHost) {
       if (isUserRole) {
         sidebarHost.classList.add('hidden');
+        sidebarHost.style.display = 'none';
       } else {
         sidebarHost.classList.remove('hidden');
+        sidebarHost.style.display = '';
       }
     }
     const bottomNavHost2 = document.getElementById('app-bottom-nav');
     if (bottomNavHost2) {
       if (isUserRole) {
         bottomNavHost2.classList.add('hidden');
+        bottomNavHost2.style.display = 'none';
       } else {
         bottomNavHost2.classList.remove('hidden');
+        bottomNavHost2.style.display = '';
       }
     }
 

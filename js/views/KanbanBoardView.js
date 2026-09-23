@@ -210,7 +210,37 @@ export class KanbanBoardView extends BaseView {
     }
   }
 
+  mount(hostElement) {
+    super.mount(hostElement);
+    document.body.classList.add('overflow-hidden');
+    const shell = document.getElementById('app-shell-layout');
+    if (shell) {
+      shell.style.height = '100vh';
+      shell.style.maxHeight = '100vh';
+      shell.style.overflow = 'hidden';
+    }
+    if (hostElement) {
+      hostElement.style.height = 'calc(100vh - var(--topbar-height, 48px))';
+      hostElement.style.maxHeight = 'calc(100vh - var(--topbar-height, 48px))';
+      hostElement.style.overflow = 'hidden';
+      hostElement.style.minHeight = '0';
+    }
+  }
+
   unmount() {
+    document.body.classList.remove('overflow-hidden');
+    const shell = document.getElementById('app-shell-layout');
+    if (shell) {
+      shell.style.height = '';
+      shell.style.maxHeight = '';
+      shell.style.overflow = '';
+    }
+    if (this.element) {
+      this.element.style.height = '';
+      this.element.style.maxHeight = '';
+      this.element.style.overflow = '';
+      this.element.style.minHeight = '';
+    }
     this._stopAutoScroll();
     if (this._windowDragOverHandler) {
       window.removeEventListener('dragover', this._windowDragOverHandler);
@@ -1346,11 +1376,45 @@ export class KanbanBoardView extends BaseView {
         }
         .kanban-column {
           transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          max-height: 100%;
+          min-height: 0;
         }
         .kanban-column.drag-over {
           background-color: rgba(30, 20, 60, 0.95) !important;
           box-shadow: 0 0 0 2px #a855f7, inset 0 0 0 2px rgba(168, 85, 247, 0.25) !important;
           transform: scale(1.015);
+        }
+        .kanban-cards-area {
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          flex: 1 1 0% !important;
+          min-height: 0 !important;
+          max-height: 100% !important;
+          overscroll-behavior-y: contain;
+          -webkit-overflow-scrolling: touch;
+          padding-right: 3px;
+        }
+        .kanban-cards-area::-webkit-scrollbar {
+          width: 6px;
+        }
+        .kanban-cards-area::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.04);
+          border-radius: 999px;
+        }
+        .kanban-cards-area::-webkit-scrollbar-thumb {
+          background: rgba(168, 85, 247, 0.45);
+          border-radius: 999px;
+        }
+        .kanban-cards-area::-webkit-scrollbar-thumb:hover {
+          background: rgba(168, 85, 247, 0.8);
+        }
+        .kanban-cards-area {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(168, 85, 247, 0.45) rgba(255, 255, 255, 0.04);
         }
         .column-drop-hint {
           display: none !important;
@@ -1384,6 +1448,7 @@ export class KanbanBoardView extends BaseView {
         .kanban-column.is-collapsed {
           min-width: 48px !important;
           max-width: 48px !important;
+          max-height: none !important;
           padding: 8px 6px !important;
           cursor: pointer;
         }
@@ -1517,7 +1582,7 @@ export class KanbanBoardView extends BaseView {
       </style>
 
       <!-- Main Kanban Canvas with Theme Background -->
-      <div class="flex flex-col w-full flex-1 h-[calc(100dvh-var(--topbar-height))] max-h-[calc(100dvh-var(--topbar-height))] min-h-0 relative transition-all duration-300 select-none overflow-hidden" style="${bgStyle}">
+      <div id="kanban-canvas-container" class="flex flex-col w-full flex-1 relative transition-all duration-300 select-none overflow-hidden" style="height: calc(100vh - var(--topbar-height, 48px)); max-height: calc(100vh - var(--topbar-height, 48px)); ${bgStyle}">
         
         <!-- Ambient Studio Glow Orbs (Subtle Depth) -->
         <div class="creativoffice-orb bg-purple-600/20 w-[500px] h-[500px] -top-32 -left-32 pointer-events-none"></div>
@@ -1622,7 +1687,7 @@ export class KanbanBoardView extends BaseView {
         </div>
 
         <!-- Main Body: Split View with Left Inbox Drawer + Board Columns -->
-        <div class="flex-1 flex w-full relative min-h-0 overflow-hidden">
+        <div class="flex-1 flex w-full relative min-h-0 overflow-hidden" style="min-height: 0; flex: 1 1 0%;">
 
           <!-- Left: Inbox Drawer (Opened when isInboxOpen is true) -->
           ${this.isInboxOpen ? `
@@ -1753,7 +1818,7 @@ export class KanbanBoardView extends BaseView {
           ` : ''}
 
           <!-- Kanban Columns Stream (Responsive Scrollable) -->
-          <div class="flex-1 w-full max-w-full flex flex-col min-h-0 h-full overflow-hidden" id="kanban-scroll-area">
+          <div class="flex-1 w-full max-w-full flex flex-col min-h-0 h-full overflow-hidden" style="min-height: 0; flex: 1 1 0%;" id="kanban-scroll-area">
 
             <!-- Banner Indikator Filter Berdasarkan -->
             ${this.activeFilter !== 'all' ? `
@@ -1808,7 +1873,7 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-28 sm:pb-36 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px;">
+            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-5 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%;">
               
               ${this.columns.map((col, colIdx) => {
       const validColIds = this.columns.map(c => c.id);
@@ -1823,9 +1888,9 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col min-h-[160px] bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all text-white"
+                    class="kanban-column flex flex-col bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[280px] sm:w-[290px] lg:w-auto lg:flex-1 lg:min-w-[200px] lg:max-w-[320px] shrink-0 transition-all text-white self-stretch h-full max-h-full min-h-0"
                     data-column-id="${col.id}"
-                    style="${colColor ? `border-top: 3px solid ${colColor};` : ''}"
+                    style="${colColor ? `border-top: 3px solid ${colColor};` : ''} max-height: 100%; display: flex; flex-direction: column; min-height: 0;"
                   >
                     <!-- Column Header matching Trello with count and action icons -->
                     <div class="column-header-inner flex items-center justify-between pb-1.5 mb-2 border-b-2 ${col.color && !col.color.includes('slate-300') ? col.color : 'border-white/15'} shrink-0" style="position:relative;">
@@ -1984,7 +2049,7 @@ export class KanbanBoardView extends BaseView {
                     </div>
 
                     <!-- Cards List Container -->
-                    <div class="flex-1 px-1 py-1 flex flex-col gap-2.5" data-cards-area="${col.id}">
+                    <div class="kanban-cards-area px-1 py-1 flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar" data-cards-area="${col.id}" style="min-height: 0; flex: 1 1 0%; overflow-y: auto; overflow-x: hidden;">
                       ${colTasks.map(task => {
                         const picName = task.pic?.name || '';
                         const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
@@ -2198,21 +2263,6 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[17px]">check</span>
             </button>
 
-            <!-- 2. Tabel (Table View) -->
-            <button id="btn-switch-view-table" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
-              <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[18px] text-slate-400">table_chart</span>
-                <span>Tabel (Table)</span>
-              </div>
-            </button>
-
-            <!-- 3. Kalender (Calendar View) -->
-            <button id="btn-switch-view-calendar" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
-              <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
-                <span>Kalender (Calendar)</span>
-              </div>
-            </button>
 
             <!-- 4. Timeline (Gantt) -->
             <button id="btn-switch-view-gantt" class="w-full p-2 rounded-xl text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-medium text-[12.5px] transition-colors cursor-pointer" type="button">
@@ -3875,22 +3925,22 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    const switchTableBtn = this.element.querySelector('#btn-switch-view-table');
-    if (switchTableBtn) {
-      switchTableBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this._closeAllPopups();
-        this.eventBus.emit('navigate', { view: 'project-table', workspace: this.currentWorkspace, projectId: this.projectId });
-      });
-    }
-
-    const switchCalendarBtn = this.element.querySelector('#btn-switch-view-calendar');
-    if (switchCalendarBtn) {
-      switchCalendarBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this._closeAllPopups();
-        this.eventBus.emit('navigate', { view: 'calendar', workspace: this.currentWorkspace, projectId: this.projectId });
-      });
+    // Horizontal wheel scroll helper for #kanban-board when not scrolling inside a column
+    const boardEl = this.element.querySelector('#kanban-board');
+    if (boardEl) {
+      boardEl.addEventListener('wheel', (e) => {
+        const cardsArea = e.target.closest('.kanban-cards-area');
+        if (cardsArea) {
+          const canScrollDown = e.deltaY > 0 && cardsArea.scrollTop + cardsArea.clientHeight < cardsArea.scrollHeight - 1;
+          const canScrollUp = e.deltaY < 0 && cardsArea.scrollTop > 1;
+          if (canScrollDown || canScrollUp) {
+            return;
+          }
+        }
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.shiftKey) {
+          boardEl.scrollLeft += e.deltaY;
+        }
+      }, { passive: true });
     }
 
     const switchGanttBtn = this.element.querySelector('#btn-switch-view-gantt');

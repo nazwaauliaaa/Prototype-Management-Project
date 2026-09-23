@@ -1,5 +1,565 @@
 [
   {
+    "id": "task-auto-1790132261773-1",
+    "code": "#L-101",
+    "title": "Kickoff & Ruang Lingkup: LayarBaca",
+    "description": "Penetapan sasaran tim, pembagian PIC, dan alur pengerjaan papan LayarBaca.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 16,
+    "assets": [],
+    "qaProgress": {
+      "passed": 1,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790132263380
+  },
+  {
+    "id": "task-auto-1790132261773-2",
+    "code": "#L-102",
+    "title": "Penyusunan Konten & Kebutuhan Desain",
+    "description": "Riset kebutuhan visual, wireframe, dan validasi aset deliverable.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "22 - 28 Sep",
+    "hours": 12,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 2
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790132263278
+  },
+  {
+    "id": "task-auto-1790132261773-3",
+    "code": "#L-103",
+    "title": "Ulasan Mutu QA & Finalisasi Deliverable",
+    "description": "Pemeriksaan standar kualitas dan verifikasi sebelum persetujuan akhir.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "ready-launch",
+    "priority": "Critical",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "25 - 30 Sep",
+    "hours": 14,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790132262521
+  },
+  {
+    "id": "task-auto-1790131742667-1",
+    "code": "#L-101",
+    "title": "Kickoff & Ruang Lingkup: LayarBaca",
+    "description": "Penetapan sasaran tim, pembagian PIC, dan alur pengerjaan papan LayarBaca.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 16,
+    "assets": [],
+    "qaProgress": {
+      "passed": 1,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790131743058
+  },
+  {
+    "id": "task-auto-1790131742668-2",
+    "code": "#L-102",
+    "title": "Penyusunan Konten & Kebutuhan Desain",
+    "description": "Riset kebutuhan visual, wireframe, dan validasi aset deliverable.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "22 - 28 Sep",
+    "hours": 12,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 2
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790131742977
+  },
+  {
+    "id": "task-auto-1790131742668-3",
+    "code": "#L-103",
+    "title": "Ulasan Mutu QA & Finalisasi Deliverable",
+    "description": "Pemeriksaan standar kualitas dan verifikasi sebelum persetujuan akhir.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "ready-launch",
+    "priority": "Critical",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "25 - 30 Sep",
+    "hours": 14,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790131742892
+  },
+  {
+    "id": "task-sh-03",
+    "code": "#SH-103",
+    "title": "Finalisasi Ulasan Mutu & Verifikasi QA",
+    "description": "Uji fungsionalitas seluruh alur kerja proyek sebelum rilis.",
+    "workspace": "sharinginaja",
+    "board": "sprint-1",
+    "status": "ready-launch",
+    "priority": "Critical",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "25 - 30 Sep",
+    "hours": 12,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131712187
+  },
+  {
+    "id": "task-sh-02",
+    "code": "#SH-102",
+    "title": "Penyusunan Konten Desain & Aset Grafis Promosi",
+    "description": "Pembuatan variasi visual materi kampanye dan preview deliverable.",
+    "workspace": "sharinginaja",
+    "board": "sprint-1",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "20 - 27 Sep",
+    "hours": 14,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 2
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131712146
+  },
+  {
+    "id": "task-sh-01",
+    "code": "#SH-101",
+    "title": "Kickoff & Setup Ruang Kolaborasi Tim",
+    "description": "Pembagian peran anggota, jadwal deliverable, dan milestone awal.",
+    "workspace": "sharinginaja",
+    "board": "sprint-1",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 16,
+    "assets": [],
+    "qaProgress": {
+      "passed": 1,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131712110
+  },
+  {
+    "id": "task-ai-05",
+    "code": "#AI-105",
+    "title": "Dokumentasi SDK & Panduan Operasional Studio",
+    "description": "Penyusunan handbook standar operasional dan arsitektur.",
+    "workspace": "aikreativ",
+    "board": "studio-ai",
+    "status": "done",
+    "priority": "Low",
+    "pic": {
+      "name": "Dimas Anggara",
+      "initials": "DA",
+      "role": "Kontributor"
+    },
+    "timeline": "10 - 16 Sep",
+    "hours": 10,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131712071
+  },
+  {
+    "id": "task-ai-04",
+    "code": "#AI-104",
+    "title": "Deploy Model ke Staging & Integrasi Frontend",
+    "description": "Verifikasi integrasi websocket dan update real-time antarmuka.",
+    "workspace": "aikreativ",
+    "board": "studio-ai",
+    "status": "ready-launch",
+    "priority": "High",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "24 - 30 Sep",
+    "hours": 14,
+    "assets": [],
+    "qaProgress": {
+      "passed": 4,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131712040
+  },
+  {
+    "id": "task-ai-03",
+    "code": "#AI-103",
+    "title": "Audit Latensi & Quality Assurance Model AI",
+    "description": "Pengujian throughput pemrosesan data di server staging.",
+    "workspace": "aikreativ",
+    "board": "studio-ai",
+    "status": "review-qa",
+    "priority": "Critical",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "22 - 28 Sep",
+    "hours": 18,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131711995
+  },
+  {
+    "id": "task-ai-02",
+    "code": "#AI-102",
+    "title": "Implementasi Pipeline Otomasi & Webhook Server",
+    "description": "Setup routing background worker dan queue microservice.",
+    "workspace": "aikreativ",
+    "board": "studio-ai",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "20 - 26 Sep",
+    "hours": 15,
+    "assets": [],
+    "qaProgress": {
+      "passed": 1,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131711962
+  },
+  {
+    "id": "task-ai-01",
+    "code": "#AI-101",
+    "title": "Konfigurasi Model AI & Integrasi Vision API",
+    "description": "Optimasi inference prompt dan response parser untuk pipeline visual.",
+    "workspace": "aikreativ",
+    "board": "studio-ai",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "18 - 24 Sep",
+    "hours": 20,
+    "assets": [],
+    "qaProgress": {
+      "passed": 2,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131711902
+  },
+  {
+    "id": "task-co-03",
+    "code": "#CO-103",
+    "title": "Penyusunan Manajemen Pengguna & Delegasi Tugas",
+    "description": "Pengaturan penugasan peran pegawai/siswa ke kanban board masing-masing.",
+    "workspace": "creativoffice",
+    "board": "creativoffice",
+    "status": "ready-launch",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Operations Lead"
+    },
+    "timeline": "22 - 28 Sep",
+    "hours": 14,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131711671
+  },
+  {
+    "id": "task-co-02",
+    "code": "#CO-102",
+    "title": "Integrasi Single Device Lock & Supabase Sync",
+    "description": "Validasi QR Sampulkreativ, penugasan otomatis tugas, dan enkripsi token.",
+    "workspace": "creativoffice",
+    "board": "creativoffice",
+    "status": "review-qa",
+    "priority": "Critical",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "20 - 27 Sep",
+    "hours": 16,
+    "assets": [],
+    "qaProgress": {
+      "passed": 2,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131711636
+  },
+  {
+    "id": "task-co-01",
+    "code": "#CO-101",
+    "title": "Pengembangan Prototype CreativOffice Mobile & Web",
+    "description": "Implementasi antarmuka eksekutif, integrasi QR barcode scanner, dan kanban task board.",
+    "workspace": "creativoffice",
+    "board": "creativoffice",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 20,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 4
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790131711591
+  },
+  {
+    "id": "task-auto-1790131349586-1",
+    "code": "#L-101",
+    "title": "Kickoff & Ruang Lingkup: LayarBaca",
+    "description": "Penetapan sasaran tim, pembagian PIC, dan alur pengerjaan papan LayarBaca.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "in-progress",
+    "priority": "High",
+    "pic": {
+      "name": "Kevin Santoso",
+      "initials": "KS",
+      "role": "DevOps & Security"
+    },
+    "timeline": "18 - 25 Sep",
+    "hours": 16,
+    "assets": [],
+    "qaProgress": {
+      "passed": 1,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790131350215
+  },
+  {
+    "id": "task-auto-1790131349587-2",
+    "code": "#L-102",
+    "title": "Penyusunan Konten & Kebutuhan Desain",
+    "description": "Riset kebutuhan visual, wireframe, dan validasi aset deliverable.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "backlog",
+    "priority": "Medium",
+    "pic": {
+      "name": "Sari Rahmawati",
+      "initials": "SR",
+      "role": "Creative Lead"
+    },
+    "timeline": "22 - 28 Sep",
+    "hours": 12,
+    "assets": [],
+    "qaProgress": {
+      "passed": 0,
+      "total": 2
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790131350137
+  },
+  {
+    "id": "task-auto-1790131349587-3",
+    "code": "#L-103",
+    "title": "Ulasan Mutu QA & Finalisasi Deliverable",
+    "description": "Pemeriksaan standar kualitas dan verifikasi sebelum persetujuan akhir.",
+    "workspace": "layarbaca",
+    "board": "kampanye-q3",
+    "status": "ready-launch",
+    "priority": "Critical",
+    "pic": {
+      "name": "Budi Pratama",
+      "initials": "BP",
+      "role": "QA Lead"
+    },
+    "timeline": "25 - 30 Sep",
+    "hours": 14,
+    "assets": [],
+    "qaProgress": {
+      "passed": 3,
+      "total": 3
+    },
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": "layarbaca",
+    "updatedAt": 1790131350031
+  },
+  {
     "id": "task-kanban-board-test-01",
     "code": "#PK-876",
     "title": "Tugas Baru",
@@ -636,7 +1196,12 @@
       "total": 4
     },
     "isStarred": false,
-    "updatedAt": 1789635550765
+    "updatedAt": 1790131711717,
+    "assets": [],
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null
   },
   {
     "id": "task-pk-02",
@@ -659,7 +1224,12 @@
       "total": 4
     },
     "isStarred": false,
-    "updatedAt": 1789635550765
+    "updatedAt": 1790131711764,
+    "assets": [],
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null
   },
   {
     "id": "task-pk-03",
@@ -682,7 +1252,12 @@
       "total": 4
     },
     "isStarred": false,
-    "updatedAt": 1789635550765
+    "updatedAt": 1790131711801,
+    "assets": [],
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null
   },
   {
     "id": "task-pk-04",
@@ -705,7 +1280,12 @@
       "total": 4
     },
     "isStarred": false,
-    "updatedAt": 1789635550765
+    "updatedAt": 1790131711835,
+    "assets": [],
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null
   },
   {
     "id": "task-pk-05",
@@ -728,6 +1308,11 @@
       "total": 3
     },
     "isStarred": false,
-    "updatedAt": 1789635550765
+    "updatedAt": 1790131711870,
+    "assets": [],
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null
   }
 ]
