@@ -179,7 +179,18 @@ export class Header {
                 <span class="material-symbols-outlined text-[19px]">search</span>
               </button>
             </div>
-            ` : ''}
+            ` : `
+            <!-- Mobile Refresh Button for User -->
+            <button
+              id="btn-mobile-user-refresh"
+              aria-label="Segarkan Papan"
+              title="Segarkan data papan"
+              class="md:hidden w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center border border-white/15 transition-all cursor-pointer shrink-0 shadow-xs"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[19px] text-purple-300">refresh</span>
+            </button>
+            `}
             <!-- User Profile Dropdown / Switcher -->
             <div class="relative ml-0.5">
               <button
@@ -565,6 +576,18 @@ export class Header {
       });
     }
 
+
+    const mobileUserRefreshBtn = this.element.querySelector('#btn-mobile-user-refresh');
+    if (mobileUserRefreshBtn) {
+      mobileUserRefreshBtn.addEventListener('click', () => {
+        const icon = mobileUserRefreshBtn.querySelector('.material-symbols-outlined');
+        if (icon) icon.classList.add('animate-spin');
+        this.eventBus.emit('board:refresh');
+        setTimeout(() => {
+          if (icon) icon.classList.remove('animate-spin');
+        }, 800);
+      });
+    }
 
     const mobileSearchBtn = this.element.querySelector('#btn-mobile-search');
     if (mobileSearchBtn) {

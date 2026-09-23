@@ -185,6 +185,38 @@ export class KanbanBoardView extends BaseView {
     };
     this.eventBus.on('user:assignment-updated', this._onAssignmentUpdated);
     window.addEventListener('user:assignment-updated', this._onAssignmentUpdated);
+
+    // Auto-update kanban whenever board:refresh is emitted
+    this._onBoardRefresh = async () => {
+      await this.refreshBoard();
+    };
+    this.eventBus.on('board:refresh', this._onBoardRefresh);
+  }
+
+  /**
+   * Muat ulang data papan kanban dari backend/storage secara mulus
+   */
+  async refreshBoard() {
+    if (this._isRefreshing) return;
+    this._isRefreshing = true;
+    try {
+      if (this.taskService && typeof this.taskService.syncFromBackend === 'function') {
+        await this.taskService.syncFromBackend(false);
+      }
+      if (this.projectService && typeof this.projectService.syncFromBackend === 'function') {
+        await this.projectService.syncFromBackend();
+      }
+    } catch (e) {
+      console.warn('Error refreshing board data:', e);
+    } finally {
+      this._isRefreshing = false;
+      if (this.element) {
+        this.mount(this.element);
+      }
+      if (this.notificationService) {
+        this.notificationService.success('Papan berhasil diperbarui ✨');
+      }
+    }
   }
 
   _initColumns() {
@@ -1787,8 +1819,18 @@ export class KanbanBoardView extends BaseView {
             </button>
             ` : `
             <button
+              id="btn-kanban-refresh"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-[11px] sm:text-[12px] font-semibold backdrop-blur-md transition-all cursor-pointer shadow-xs border border-white/10 shrink-0"
+              title="Segarkan Data Papan"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[15px] sm:text-[16px] text-purple-300">refresh</span>
+              <span>Segarkan</span>
+            </button>
+
+            <button
               id="btn-board-avatar"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11px] font-semibold backdrop-blur-md transition-all cursor-pointer shadow-xs border border-white/10"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11px] font-semibold backdrop-blur-md transition-all cursor-pointer shadow-xs border border-white/10 shrink-0"
               title="Lihat Anggota Papan"
               type="button"
             >
@@ -2058,7 +2100,13 @@ export class KanbanBoardView extends BaseView {
               }).join('')}
             </div>
 
-            <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-5 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; scroll-behavior: smooth;">
+            <!-- Pull-to-Refresh Indicator (Mobile Touch) -->
+            <div id="pull-to-refresh-indicator" class="sm:hidden w-full flex items-center justify-center gap-2 py-0 text-purple-200 text-[11.5px] font-semibold transition-all duration-150 overflow-hidden shrink-0 select-none pointer-events-none" style="max-height: 0px; opacity: 0;">
+              <span class="material-symbols-outlined text-[17px] text-purple-300 ptr-icon transition-transform">arrow_downward</span>
+              <span class="ptr-text">Tarik ke bawah untuk menyegarkan</span>
+            </div>
+
+            <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-8 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; scroll-behavior: smooth;">
               
               ${this.columns.map((col, colIdx) => {
       const validColIds = this.columns.map(c => c.id);
@@ -2073,9 +2121,9 @@ export class KanbanBoardView extends BaseView {
 
       return `
                   <div
-                    class="kanban-column flex flex-col bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[285px] sm:w-[295px] min-w-[285px] max-w-[320px] shrink-0 transition-all text-white self-stretch h-full max-h-full min-h-0"
+                    class="kanban-column flex flex-col bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-2.5 sm:p-3 border border-white/15 shadow-2xl shadow-purple-950/70 w-[285px] sm:w-[295px] min-w-[285px] max-w-[320px] shrink-0 transition-all text-white self-start h-auto"
                     data-column-id="${col.id}"
-                    style="${colColor ? `border-top: 3px solid ${colColor};` : ''} max-height: 100%; display: flex; flex-direction: column; min-height: 0;"
+                    style="${colColor ? `border-top: 3px solid ${colColor};` : ''} display: flex; flex-direction: column;"
                   >
                     <!-- Column Header with Full Title, Count, and Clean Actions -->
                     <div class="column-header-inner flex items-center justify-between pb-2 mb-2 border-b-2 ${col.color && !col.color.includes('slate-300') ? col.color : 'border-white/15'} shrink-0" style="position:relative;">
@@ -2221,8 +2269,8 @@ export class KanbanBoardView extends BaseView {
                       <span>Lepaskan kartu di sini</span>
                     </div>
 
-                    <!-- Cards List Container -->
-                    <div class="kanban-cards-area px-1 py-1 flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar" data-cards-area="${col.id}" style="min-height: 0; flex: 1 1 0%; overflow-y: auto; overflow-x: hidden;">
+                    <!-- Cards List Container (Tumbuh ke bawah, scroll ada di papan luar) -->
+                    <div class="kanban-cards-area px-1 py-1 flex flex-col gap-2.5 w-full overflow-visible" data-cards-area="${col.id}" style="min-height: 36px;">
                       ${colTasks.map(task => {
                         const picName = task.pic?.name || '';
                         const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
@@ -2403,7 +2451,7 @@ export class KanbanBoardView extends BaseView {
 
               <!-- + Add another list (Trello Style) -->
               ${perms.canAddList ? `
-              <div class="w-[260px] sm:w-[280px] lg:w-[260px] shrink-0">
+              <div class="w-[260px] sm:w-[280px] lg:w-[260px] shrink-0 self-start">
                 ${this.isAddingList ? `
                   <div class="bg-[#0e0a22]/85 backdrop-blur-2xl rounded-2xl p-3 border border-white/15 shadow-2xl shadow-purple-950/70 flex flex-col gap-2.5 text-white">
                     <input
@@ -3431,6 +3479,7 @@ export class KanbanBoardView extends BaseView {
     this._setupTouchDragAndDrop();
     this._setupMobileBoardSwipe();
     this._setupMobileTabs();
+    this._setupMobilePullToRefresh();
   }
 
   /**
@@ -3458,7 +3507,7 @@ export class KanbanBoardView extends BaseView {
           if (this._draggedTaskId || window._activeKanbanDragTaskId) {
             this._lastDragX = ev.clientX;
             this._lastDragY = ev.clientY;
-            this._handleAutoScroll(ev.clientX, kanbanBoard);
+            this._handleAutoScroll(ev.clientX, ev.clientY, kanbanBoard);
           }
         };
         window.addEventListener('dragover', this._windowDragOverHandler);
@@ -3517,7 +3566,7 @@ export class KanbanBoardView extends BaseView {
 
         this._lastDragX = e.clientX;
         this._lastDragY = e.clientY;
-        this._handleAutoScroll(e.clientX, kanbanBoard);
+        this._handleAutoScroll(e.clientX, e.clientY, kanbanBoard);
 
         const col = e.target.closest('.kanban-column');
         if (!col) return;
@@ -3636,63 +3685,66 @@ export class KanbanBoardView extends BaseView {
   }
 
   /**
-   * Mulai atau perbarui auto-scroll horizontal pada papan kanban saat kartu didekatkan ke tepi layar/container
+   * Mulai atau perbarui auto-scroll horizontal dan vertikal pada papan kanban saat kartu didekatkan ke tepi layar/container
    * @param {number} clientX
+   * @param {number} [clientY]
    * @param {HTMLElement} [container]
    */
-  _handleAutoScroll(clientX, container = null) {
+  _handleAutoScroll(clientX, clientY = null, container = null) {
     const scrollContainer = container || this.element?.querySelector('#kanban-board');
     if (!scrollContainer) return;
 
     const rect = scrollContainer.getBoundingClientRect();
-    const EDGE_THRESHOLD = 120; // Zona tepi (px) untuk memicu auto-scroll
+    const EDGE_THRESHOLD_X = 120; // Zona tepi horizontal (px)
+    const EDGE_THRESHOLD_Y = 80;  // Zona tepi vertikal (px)
     const MIN_SPEED = 6;
     const MAX_SPEED = 28;
 
-    let direction = 0; // -1 = geser kiri, 1 = geser kanan
-    let intensity = 0; // 0 s.d. 1
-
-    // Jarak ke tepi kiri scroll container dan viewport
+    let dirX = 0;
+    let intensityX = 0;
     const distToLeft = Math.min(clientX - rect.left, clientX);
-    // Jarak ke tepi kanan scroll container dan viewport
     const distToRight = Math.min(rect.right - clientX, window.innerWidth - clientX);
 
-    if (distToLeft < EDGE_THRESHOLD && distToLeft >= -30) {
-      direction = -1;
-      intensity = Math.min(1, Math.max(0, (EDGE_THRESHOLD - distToLeft) / EDGE_THRESHOLD));
-    } else if (distToRight < EDGE_THRESHOLD && distToRight >= -30) {
-      direction = 1;
-      intensity = Math.min(1, Math.max(0, (EDGE_THRESHOLD - distToRight) / EDGE_THRESHOLD));
+    if (distToLeft < EDGE_THRESHOLD_X && distToLeft >= -30) {
+      dirX = -1;
+      intensityX = Math.min(1, Math.max(0, (EDGE_THRESHOLD_X - distToLeft) / EDGE_THRESHOLD_X));
+    } else if (distToRight < EDGE_THRESHOLD_X && distToRight >= -30) {
+      dirX = 1;
+      intensityX = Math.min(1, Math.max(0, (EDGE_THRESHOLD_X - distToRight) / EDGE_THRESHOLD_X));
     }
 
-    if (direction !== 0) {
-      // Akselerasi eksponensial yang nyaman
-      const speed = Math.round(MIN_SPEED + (intensity * intensity) * (MAX_SPEED - MIN_SPEED));
-      this._autoScrollSpeed = direction * speed;
+    let dirY = 0;
+    let intensityY = 0;
+    if (clientY !== null) {
+      const distToTop = clientY - rect.top;
+      const distToBottom = rect.bottom - clientY;
+      if (distToTop < EDGE_THRESHOLD_Y && distToTop >= -20) {
+        dirY = -1;
+        intensityY = Math.min(1, Math.max(0, (EDGE_THRESHOLD_Y - distToTop) / EDGE_THRESHOLD_Y));
+      } else if (distToBottom < EDGE_THRESHOLD_Y && distToBottom >= -20) {
+        dirY = 1;
+        intensityY = Math.min(1, Math.max(0, (EDGE_THRESHOLD_Y - distToBottom) / EDGE_THRESHOLD_Y));
+      }
+    }
 
+    this._autoScrollSpeedX = dirX ? dirX * Math.round(MIN_SPEED + (intensityX * intensityX) * (MAX_SPEED - MIN_SPEED)) : 0;
+    this._autoScrollSpeedY = dirY ? dirY * Math.round(MIN_SPEED + (intensityY * intensityY) * (MAX_SPEED - MIN_SPEED)) : 0;
+
+    if (this._autoScrollSpeedX !== 0 || this._autoScrollSpeedY !== 0) {
       if (!this._autoScrollRaf) {
         const scrollStep = () => {
-          if (!this._autoScrollSpeed || !scrollContainer) {
+          if ((!this._autoScrollSpeedX && !this._autoScrollSpeedY) || !scrollContainer) {
             this._stopAutoScroll();
             return;
           }
 
-          // Cek batas kiri
-          if (this._autoScrollSpeed < 0 && scrollContainer.scrollLeft <= 0) {
-            this._stopAutoScroll();
-            return;
+          if (this._autoScrollSpeedX) {
+            scrollContainer.scrollLeft += this._autoScrollSpeedX;
+          }
+          if (this._autoScrollSpeedY) {
+            scrollContainer.scrollTop += this._autoScrollSpeedY;
           }
 
-          // Cek batas kanan
-          const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-          if (this._autoScrollSpeed > 0 && scrollContainer.scrollLeft >= maxScrollLeft - 1) {
-            this._stopAutoScroll();
-            return;
-          }
-
-          scrollContainer.scrollLeft += this._autoScrollSpeed;
-
-          // Perbarui posisi kolom dan placeholder di bawah kursor saat kontainer bergeser
           if (this._lastDragX && this._lastDragY) {
             this._updateHoveredColumnWhileScrolling(scrollContainer, this._lastDragX, this._lastDragY);
           }
@@ -3712,6 +3764,8 @@ export class KanbanBoardView extends BaseView {
    */
   _stopAutoScroll() {
     this._autoScrollSpeed = 0;
+    this._autoScrollSpeedX = 0;
+    this._autoScrollSpeedY = 0;
     if (this._autoScrollRaf) {
       cancelAnimationFrame(this._autoScrollRaf);
       this._autoScrollRaf = null;
@@ -3902,7 +3956,7 @@ export class KanbanBoardView extends BaseView {
 
     this._lastDragX = x;
     this._lastDragY = y;
-    this._handleAutoScroll(x);
+    this._handleAutoScroll(x, y);
 
     state.ghost.style.left = `${x - 140}px`;
     state.ghost.style.top = `${y - 40}px`;
@@ -4112,6 +4166,82 @@ export class KanbanBoardView extends BaseView {
   }
 
   /**
+   * Setup Mobile Pull-To-Refresh — Menyegarkan data papan saat ditarik ke bawah pada layar HP
+   */
+  _setupMobilePullToRefresh() {
+    const board = this.element.querySelector('#kanban-board');
+    const indicator = this.element.querySelector('#pull-to-refresh-indicator');
+    if (!board || !indicator) return;
+
+    const icon = indicator.querySelector('.ptr-icon');
+    const text = indicator.querySelector('.ptr-text');
+    let startY = 0;
+    let startX = 0;
+    let isPulling = false;
+
+    board.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1 || this._touchDragState) return;
+      if (board.scrollTop > 2) return;
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+      isPulling = false;
+    }, { passive: true });
+
+    board.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1 || this._touchDragState) return;
+      if (board.scrollTop > 2) {
+        isPulling = false;
+        return;
+      }
+
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaY = currentY - startY;
+      const deltaX = currentX - startX;
+
+      if (deltaY > 15 && Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
+        isPulling = true;
+        const progress = Math.min(deltaY * 0.45, 60);
+        indicator.style.maxHeight = `${progress}px`;
+        indicator.style.opacity = `${Math.min(progress / 40, 1)}`;
+        indicator.style.paddingTop = '6px';
+        indicator.style.paddingBottom = '6px';
+
+        if (progress >= 40) {
+          if (icon) icon.style.transform = 'rotate(180deg)';
+          if (text) text.textContent = 'Lepaskan untuk menyegarkan';
+        } else {
+          if (icon) icon.style.transform = 'rotate(0deg)';
+          if (text) text.textContent = 'Tarik ke bawah untuk menyegarkan';
+        }
+      }
+    }, { passive: true });
+
+    const handleRelease = async () => {
+      if (!isPulling) return;
+      isPulling = false;
+
+      const currentH = parseFloat(indicator.style.maxHeight || '0');
+      if (currentH >= 38) {
+        if (icon) {
+          icon.textContent = 'refresh';
+          icon.classList.add('animate-spin');
+        }
+        if (text) text.textContent = 'Menyegarkan papan...';
+        await this.refreshBoard();
+      } else {
+        indicator.style.maxHeight = '0px';
+        indicator.style.opacity = '0';
+        indicator.style.paddingTop = '0px';
+        indicator.style.paddingBottom = '0px';
+      }
+    };
+
+    board.addEventListener('touchend', handleRelease, { passive: true });
+    board.addEventListener('touchcancel', handleRelease, { passive: true });
+  }
+
+  /**
    * Pindahkan kartu tugas ke kolom target dan urutkan sesuai posisi drop
    * @param {string} taskId
    * @param {string} targetColId
@@ -4256,7 +4386,19 @@ export class KanbanBoardView extends BaseView {
   }
 
   bindEvents() {
-    // 0. Trello View Switcher Button
+    // 0. Kanban Refresh Button
+    const refreshBtn = this.element.querySelector('#btn-kanban-refresh');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const icon = refreshBtn.querySelector('.material-symbols-outlined');
+        if (icon) icon.classList.add('animate-spin');
+        await this.refreshBoard();
+      });
+    }
+
+    // 0b. Trello View Switcher Button
     const viewSwitchBtn = this.element.querySelector('#btn-board-view-switch');
     if (viewSwitchBtn) {
       viewSwitchBtn.addEventListener('click', (e) => {
@@ -5656,5 +5798,12 @@ export class KanbanBoardView extends BaseView {
         }
       });
     }
+  }
+
+  unmount() {
+    if (this._onBoardRefresh) {
+      this.eventBus.off('board:refresh', this._onBoardRefresh);
+    }
+    super.unmount();
   }
 }
