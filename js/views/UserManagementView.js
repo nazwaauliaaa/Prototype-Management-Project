@@ -767,6 +767,29 @@ export class UserManagementView extends BaseView {
       boardList = [u.assignedProjectId === 'panen-kunci' ? 'Panen Kunci' : u.assignedProjectId];
     }
 
+    const coreMap = {
+      'proj-1790146409036-876': 'Panen Kunci',
+      'proj-1790146434093-686': 'Creative Office',
+      'proj-1790146459019-450': 'AIKreativ',
+      'proj-1790146474472-592': 'Sharinginaja',
+      'proj-1790146495006-9': 'Ruang Kreasi',
+      'proj-1790146512680-427': 'LayarBaca',
+      'panen-kunci': 'Panen Kunci',
+      'creativoffice': 'Creative Office',
+      'aikreativ': 'AIKreativ',
+      'sharinginaja': 'Sharinginaja',
+      'ruangkreasi': 'Ruang Kreasi',
+      'layarbaca': 'LayarBaca'
+    };
+    boardList = boardList.map(item => {
+      const s = String(item).trim();
+      if (coreMap[s]) return coreMap[s];
+      if (coreMap[s.toLowerCase()]) return coreMap[s.toLowerCase()];
+      const matchProj = this.getAvailableBoards().find(b => b.id === s || b.workspace === s);
+      if (matchProj && matchProj.name) return matchProj.name;
+      return s;
+    });
+
     const primaryBoard = boardList[0] || (u.assignedProjectId === 'panen-kunci' ? 'Panen Kunci' : u.assignedProjectId) || 'Panen Kunci';
     const extraBoardsCount = boardList.length - 1;
     const allBoardsTooltip = boardList.join(', ');

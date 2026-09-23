@@ -549,19 +549,138 @@ export class AuthService {
     const role = (user.role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
     const isAdmin = role === 'admin';
 
-    // Standard metadata map
-    const stdBoardMeta = {
-      'panen-kunci': { id: 'panen-kunci', name: 'Panen Kunci', workspace: 'panen-kunci', code: 'PK', category: 'SaaS & Infrastruktur', icon: '🌾' },
-      'aikreativ': { id: 'aikreativ', name: 'AIKreasi', workspace: 'aikreativ', code: 'AI', category: 'AI & Otomasi', icon: '🤖' },
-      'layarbaca': { id: 'layarbaca', name: 'LayarBaca', workspace: 'layarbaca', code: 'LB', category: 'Media & Publikasi', icon: '📖' },
-      'creativoffice': { id: 'creativoffice', name: 'Creative Office', workspace: 'creativoffice', code: 'CO', category: 'Creative Hub', icon: '💼' },
-      'sharinginaja': { id: 'sharinginaja', name: 'Sharinginaja', workspace: 'sharinginaja', code: 'SH', category: 'Cloud Asset Hub', icon: '☁️' },
-      'ruangkreasi': { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi', code: 'RK', category: 'Creative Studio', icon: '🎨' }
+    // Core catalog of known projects with standardized IDs and aliases
+    const coreCatalog = [
+      { id: 'proj-1790146409036-876', slug: 'panen-kunci-9036', aliases: ['panen-kunci', 'panenkunci', 'panan'], name: 'Panen Kunci', workspace: 'panen-kunci', code: 'PK', category: 'SaaS & Infrastruktur', icon: '🌾' },
+      { id: 'proj-1790146434093-686', slug: 'creativoffice-4093', aliases: ['creativoffice', 'creativeoffice', 'creativ', 'creative'], name: 'Creative Office', workspace: 'creativoffice', code: 'CO', category: 'Creative Hub', icon: '💼' },
+      { id: 'proj-1790146459019-450', slug: 'aikreativ-9019', aliases: ['aikreativ', 'aikreasi', 'ai'], name: 'AIKreativ', workspace: 'aikreativ', code: 'AI', category: 'AI & Otomasi', icon: '🤖' },
+      { id: 'proj-1790146474472-592', slug: 'sharinginaja-4472', aliases: ['sharinginaja', 'sharing'], name: 'Sharinginaja', workspace: 'sharinginaja', code: 'SH', category: 'Cloud Asset Hub', icon: '☁️' },
+      { id: 'proj-1790146495006-9', slug: 'ruangkreasi-5006', aliases: ['ruangkreasi', 'kreasi'], name: 'Ruang Kreasi', workspace: 'ruangkreasi', code: 'RK', category: 'Creative Studio', icon: '🎨' },
+      { id: 'proj-1790146512680-427', slug: 'layarbaca-2680', aliases: ['layarbaca', 'layar'], name: 'LayarBaca', workspace: 'layarbaca', code: 'LB', category: 'Media & Publikasi', icon: '📖' }
+    ];
+
+    // Helper to resolve board info from all available sources
+    const resolveBoard = (rawId, nameHint = null) => {
+      if (!rawId) return null;
+      const cleanId = String(rawId).trim();
+      const cleanLower = cleanId.toLowerCase();
+
+      // 1. Match from coreCatalog
+      const matched = coreCatalog.find(c => 
+        c.id === cleanId || 
+        c.workspace === cleanId || 
+        c.slug === cleanLower ||
+        c.name.toLowerCase() === cleanLower ||
+        c.aliases.some(a => a === cleanLower || cleanLower.includes(a))
+      );
+      if (matched) {
+        return {
+          id: cleanId,
+          name: matched.name,
+          workspace: matched.workspace,
+          code: matched.code,
+          category: matched.category,
+          icon: matched.icon
+        };
+      }
+
+      // 2. Match from creative_office_projects in localStorage
+      try {
+        const rawProjs = localStorage.getItem('creative_office_projects');
+        if (rawProjs) {
+          const projs = JSON.parse(rawProjs);
+          if (Array.isArray(projs)) {
+            const found = projs.find(p => p && (p.id === cleanId || p.workspace === cleanId || (p.code && p.code.toLowerCase() === cleanLower)));
+            if (found && (found.name || found.title)) {
+              const name = String(found.name || found.title).trim();
+              let icon = '📋';
+              let category = found.category || 'Papan Proyek';
+              const nLower = name.toLowerCase();
+              if (nLower.includes('panen')) { icon = '🌾'; category = 'SaaS & Infrastruktur'; }
+              else if (nLower.includes('aikreativ') || nLower.includes('aikreasi') || nLower.includes('ai')) { icon = '🤖'; category = 'AI & Otomasi'; }
+              else if (nLower.includes('creativ') || nLower.includes('creative')) { icon = '💼'; category = 'Creative Hub'; }
+              else if (nLower.includes('ruang kreasi') || nLower.includes('kreasi')) { icon = '🎨'; category = 'Creative Studio'; }
+              else if (nLower.includes('sharing')) { icon = '☁️'; category = 'Cloud Asset Hub'; }
+              else if (nLower.includes('layar')) { icon = '📖'; category = 'Media & Publikasi'; }
+
+              return {
+                id: cleanId,
+                name,
+                workspace: found.workspace || cleanId,
+                code: found.code || 'PRJ',
+                category,
+                icon
+              };
+            }
+          }
+        }
+      } catch (e) {}
+
+      // 3. Match from custom_workspaces
+      try {
+        const rawWs = localStorage.getItem('custom_workspaces');
+        if (rawWs) {
+          const customWs = JSON.parse(rawWs);
+          if (Array.isArray(customWs)) {
+            const found = customWs.find(w => w && (w.id === cleanId || w.workspace === cleanId));
+            if (found && (found.title || found.name)) {
+              return {
+                id: cleanId,
+                name: found.title || found.name,
+                workspace: found.id || cleanId,
+                code: 'WS',
+                category: 'Ruang Kerja',
+                icon: '📁'
+              };
+            }
+          }
+        }
+      } catch (e) {}
+
+      // 4. Use provided name hint if valid
+      if (nameHint && !nameHint.startsWith('proj-') && !nameHint.startsWith('Proj ')) {
+        const hintName = String(nameHint).trim();
+        let icon = '📋';
+        let category = 'Papan Ditugaskan';
+        const hLower = hintName.toLowerCase();
+        if (hLower.includes('panen')) { icon = '🌾'; category = 'SaaS & Infrastruktur'; }
+        else if (hLower.includes('aikreativ') || hLower.includes('aikreasi') || hLower.includes('ai')) { icon = '🤖'; category = 'AI & Otomasi'; }
+        else if (hLower.includes('creativ') || hLower.includes('creative')) { icon = '💼'; category = 'Creative Hub'; }
+        else if (hLower.includes('ruang kreasi') || hLower.includes('kreasi')) { icon = '🎨'; category = 'Creative Studio'; }
+        else if (hLower.includes('sharing')) { icon = '☁️'; category = 'Cloud Asset Hub'; }
+        else if (hLower.includes('layar')) { icon = '📖'; category = 'Media & Publikasi'; }
+
+        return {
+          id: cleanId,
+          name: hintName,
+          workspace: cleanId,
+          code: 'PRJ',
+          category,
+          icon
+        };
+      }
+
+      // 5. Fallback: clean display title
+      return {
+        id: cleanId,
+        name: cleanId.startsWith('proj-') ? 'Papan Proyek' : cleanId.split(/[-_\s]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        workspace: cleanId,
+        code: 'PRJ',
+        category: 'Papan Ditugaskan',
+        icon: '📋'
+      };
     };
 
-    // If Admin, all standard and custom projects are allowed
+    // If Admin, all projects are allowed
     if (isAdmin) {
-      const allBoards = Object.values(stdBoardMeta);
+      const allBoards = coreCatalog.map(c => ({
+        id: c.id,
+        name: c.name,
+        workspace: c.workspace,
+        code: c.code,
+        category: c.category,
+        icon: c.icon
+      }));
       try {
         const customWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
         customWs.forEach(w => {
@@ -581,8 +700,10 @@ export class AuthService {
     }
 
     // Non-admin (User / Member):
-    // 1. Cross-reference with `creative_office_managed_users` to get latest assignment from admin
     let rawBoardIds = [];
+    let boardNameHints = [];
+
+    // 1. Cross-reference with `creative_office_managed_users`
     try {
       const rawManaged = localStorage.getItem('creative_office_managed_users');
       if (rawManaged) {
@@ -615,12 +736,18 @@ export class AuthService {
             } else if (found.assignedWorkspace) {
               rawBoardIds = [found.assignedWorkspace];
             }
+
+            if (Array.isArray(found.assignedBoardNames)) {
+              boardNameHints = found.assignedBoardNames;
+            } else if (found.assignedBoardName) {
+              boardNameHints = found.assignedBoardName.split(',').map(s => s.trim());
+            }
           }
         }
       }
     } catch (e) {}
 
-    // 2. Fallback to user session object if managed users didn't find anything
+    // 2. Fallback to user session object
     if (rawBoardIds.length === 0) {
       if (Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0) {
         rawBoardIds = user.assignedProjects.filter(Boolean);
@@ -631,41 +758,29 @@ export class AuthService {
       } else if (user.assignedWorkspace) {
         rawBoardIds = [user.assignedWorkspace];
       }
+
+      if (Array.isArray(user.assignedBoardNames)) {
+        boardNameHints = user.assignedBoardNames;
+      } else if (user.assignedBoardName) {
+        boardNameHints = user.assignedBoardName.split(',').map(s => s.trim());
+      }
     }
 
-    // 3. Map raw IDs to standardized board objects
+    // 3. Map raw IDs to standardized board objects with proper names & icons
     const resolvedBoards = [];
     const seen = new Set();
 
-    rawBoardIds.forEach(rawId => {
+    rawBoardIds.forEach((rawId, idx) => {
       if (!rawId) return;
-      const cleanId = String(rawId).trim().toLowerCase();
-      // Resolve alias
-      let matchedKey = cleanId;
-      if (cleanId.includes('panen') || cleanId.includes('panan')) matchedKey = 'panen-kunci';
-      else if (cleanId.includes('aikreativ') || cleanId.includes('aikreasi')) matchedKey = 'aikreativ';
-      else if (cleanId.includes('layarbaca')) matchedKey = 'layarbaca';
-      else if (cleanId.includes('creativ') || cleanId.includes('creative')) matchedKey = 'creativoffice';
-      else if (cleanId.includes('sharinginaja')) matchedKey = 'sharinginaja';
-      else if (cleanId.includes('ruangkreasi')) matchedKey = 'ruangkreasi';
+      const hint = boardNameHints[idx] || null;
+      const bObj = resolveBoard(rawId, hint);
+      if (!bObj) return;
 
-      if (seen.has(matchedKey)) return;
-      seen.add(matchedKey);
+      const dedupeKey = (bObj.workspace || bObj.id || '').toLowerCase();
+      if (seen.has(dedupeKey)) return;
+      seen.add(dedupeKey);
 
-      if (stdBoardMeta[matchedKey]) {
-        resolvedBoards.push(stdBoardMeta[matchedKey]);
-      } else {
-        // Custom board
-        const formattedTitle = cleanId.split(/[-_\s]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        resolvedBoards.push({
-          id: rawId,
-          name: formattedTitle,
-          workspace: rawId,
-          code: cleanId.slice(0, 2).toUpperCase(),
-          category: 'Papan Ditugaskan',
-          icon: '📋'
-        });
-      }
+      resolvedBoards.push(bObj);
     });
 
     return resolvedBoards;

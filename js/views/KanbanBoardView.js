@@ -374,12 +374,18 @@ export class KanbanBoardView extends BaseView {
       this.project = this.projectService.getProject(projectId);
       if (!this.project) {
         const stdMap = {
-          'creativoffice': { id: 'creativoffice', name: 'CreativOffice', workspace: 'creativoffice' },
+          'creativoffice': { id: 'creativoffice', name: 'Creative Office', workspace: 'creativoffice' },
           'panen-kunci': { id: 'panen-kunci', name: 'Panen Kunci', workspace: 'panen-kunci' },
           'layarbaca': { id: 'layarbaca', name: 'LayarBaca', workspace: 'layarbaca' },
           'aikreativ': { id: 'aikreativ', name: 'AIKreativ', workspace: 'aikreativ' },
           'sharinginaja': { id: 'sharinginaja', name: 'Sharinginaja', workspace: 'sharinginaja' },
-          'ruangkreasi': { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi' }
+          'ruangkreasi': { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi' },
+          'proj-1790146409036-876': { id: 'proj-1790146409036-876', name: 'Panen Kunci', workspace: 'panen-kunci' },
+          'proj-1790146434093-686': { id: 'proj-1790146434093-686', name: 'Creative Office', workspace: 'creativoffice' },
+          'proj-1790146459019-450': { id: 'proj-1790146459019-450', name: 'AIKreativ', workspace: 'aikreativ' },
+          'proj-1790146474472-592': { id: 'proj-1790146474472-592', name: 'Sharinginaja', workspace: 'sharinginaja' },
+          'proj-1790146495006-9': { id: 'proj-1790146495006-9', name: 'Ruang Kreasi', workspace: 'ruangkreasi' },
+          'proj-1790146512680-427': { id: 'proj-1790146512680-427', name: 'LayarBaca', workspace: 'layarbaca' }
         };
         if (projectId && stdMap[projectId]) {
           this.project = stdMap[projectId];
@@ -416,23 +422,76 @@ export class KanbanBoardView extends BaseView {
     if (!name) return 'Panen Kunci';
     const s = String(name).trim();
     const sLower = s.toLowerCase();
+
+    const coreMap = {
+      'proj-1790146409036-876': 'Panen Kunci',
+      'proj-1790146434093-686': 'Creative Office',
+      'proj-1790146459019-450': 'AIKreativ',
+      'proj-1790146474472-592': 'Sharinginaja',
+      'proj-1790146495006-9': 'Ruang Kreasi',
+      'proj-1790146512680-427': 'LayarBaca',
+      'panen-kunci': 'Panen Kunci',
+      'creativoffice': 'Creative Office',
+      'aikreativ': 'AIKreativ',
+      'sharinginaja': 'Sharinginaja',
+      'ruangkreasi': 'Ruang Kreasi',
+      'layarbaca': 'LayarBaca'
+    };
+    if (coreMap[s]) return coreMap[s];
+    if (coreMap[sLower]) return coreMap[sLower];
+
     if (sLower.includes('layarbaca') || sLower.includes('layar baca')) return 'LayarBaca';
-    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office') || sLower.includes('creativoffice')) return 'CreativOffice';
+    if (sLower.includes('creativoffive') || sLower.includes('creative office') || sLower.includes('creativ office') || sLower.includes('creativoffice')) return 'Creative Office';
     if (sLower.includes('panankunci') || sLower.includes('panen kunci') || sLower.includes('panen-kunci') || sLower.includes('panenkunci')) return 'Panen Kunci';
     if (sLower.includes('ruangkreasi') || sLower.includes('ruang kreasi')) return 'Ruang Kreasi';
-    if (sLower.includes('aikreativ') || sLower.includes('ai kreativ')) return 'AIKreativ';
+    if (sLower.includes('aikreativ') || sLower.includes('ai kreativ') || sLower.includes('aikreasi')) return 'AIKreativ';
     if (sLower.includes('sharinginaja') || sLower.includes('sharing in aja')) return 'Sharinginaja';
+
+    // Search in projectService
+    if (this.projectService) {
+      const p = this.projectService.getProject(s);
+      if (p && (p.name || p.title)) return p.name || p.title;
+    }
+
+    // Search in localStorage
+    try {
+      const raw = localStorage.getItem('creative_office_projects');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        const match = arr.find(p => p && (p.id === s || p.workspace === s || p.id === sLower));
+        if (match && (match.name || match.title)) return match.name || match.title;
+      }
+    } catch (e) {}
 
     // Strip trailing slug patterns like -hub-2521, _hub_123, -2521
     const cleaned = s.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d{3,}$/gi, '').trim();
+    if (cleaned.startsWith('proj-') || cleaned.startsWith('Proj ')) return 'Papan Proyek';
     return cleaned || s;
   }
 
   getWorkspaceName(wsKey) {
     if (!wsKey) return 'Panen Kunci';
+    const sKey = String(wsKey).toLowerCase().trim();
+
+    const coreMap = {
+      'proj-1790146409036-876': 'Panen Kunci',
+      'proj-1790146434093-686': 'Creative Office',
+      'proj-1790146459019-450': 'AIKreativ',
+      'proj-1790146474472-592': 'Sharinginaja',
+      'proj-1790146495006-9': 'Ruang Kreasi',
+      'proj-1790146512680-427': 'LayarBaca',
+      'panen-kunci': 'Panen Kunci',
+      'creativoffice': 'Creative Office',
+      'aikreativ': 'AIKreativ',
+      'sharinginaja': 'Sharinginaja',
+      'ruangkreasi': 'Ruang Kreasi',
+      'layarbaca': 'LayarBaca'
+    };
+    if (coreMap[wsKey]) return coreMap[wsKey];
+    if (coreMap[sKey]) return coreMap[sKey];
+
     if (this.projectService) {
       const projects = this.projectService.getAllProjects();
-      const sKey = String(wsKey).toLowerCase().trim();
       const found = projects.find(p => 
         (p.workspace && String(p.workspace).toLowerCase() === sKey) || 
         (p.id && String(p.id).toLowerCase() === sKey) ||
@@ -465,6 +524,7 @@ export class KanbanBoardView extends BaseView {
       return knownNames[cleanKey];
     }
     const stripped = rawStr.replace(/[-_]hub[-_]\d+/gi, '').replace(/[-_]\d+$/g, '');
+    if (stripped.startsWith('proj-')) return 'Papan Proyek';
     return stripped.split(/[-_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
