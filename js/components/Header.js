@@ -163,17 +163,17 @@ export class Header {
           </div>
           ` : `
           <div class="flex-1 max-w-xl mx-1 sm:mx-4 flex items-center justify-center sm:justify-start min-w-0">
-            ${allowedBoards.length > 1 ? `
-              <!-- Multi-Board Switcher Button for User Member -->
+            ${allowedBoards.length >= 1 ? `
+              <!-- Board Switcher / Indicator Button for User Member -->
               <div class="relative flex items-center min-w-0">
                 <button
                   id="btn-header-user-board-switcher"
                   class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-950/60 hover:from-purple-800/80 hover:to-indigo-800/80 text-white font-semibold text-[11.5px] sm:text-[12.5px] border border-purple-400/40 shadow-md shadow-purple-950/40 cursor-pointer transition-all active:scale-95 group shrink-0"
-                  title="Klik untuk berpindah ke papan kanban lain yang ditugaskan"
+                  title="Klik untuk melihat papan yang ditugaskan kepada Anda"
                   type="button"
                 >
-                  <span class="flex items-center justify-center w-5 h-5 rounded-lg bg-purple-500/30 text-[11px] shrink-0">${currentActiveBoard?.icon || '📋'}</span>
-                  <span class="font-bold text-purple-100 truncate max-w-[120px] sm:max-w-[180px]">${currentActiveBoard?.name || 'Papan Kanban'}</span>
+                  <span class="flex items-center justify-center w-5 h-5 rounded-lg bg-purple-500/30 text-[11px] shrink-0">${currentActiveBoard?.icon || (allowedBoards[0] && allowedBoards[0].icon) || '📋'}</span>
+                  <span class="font-bold text-purple-100 truncate max-w-[120px] sm:max-w-[180px]">${currentActiveBoard?.name || (allowedBoards[0] && allowedBoards[0].name) || 'Papan Kanban'}</span>
                   <span class="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-purple-400/20 text-purple-300 border border-purple-400/30 font-mono shrink-0">${allowedBoards.length} Papan</span>
                   <span class="material-symbols-outlined text-[16px] text-purple-300 group-hover:translate-y-0.5 transition-transform shrink-0">expand_more</span>
                 </button>
@@ -221,18 +221,12 @@ export class Header {
                   </div>
                 </div>
               </div>
-            ` : (allowedBoards.length === 1 ? `
-              <button id="btn-header-user-kanban-badge" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-purple-900/40 hover:bg-purple-900/60 text-purple-200 text-[11px] sm:text-[12px] font-semibold border border-purple-400/30 truncate cursor-pointer transition-all active:scale-98" title="Papan Kanban Aktif" type="button">
-                <span class="text-[13px] shrink-0">${allowedBoards[0].icon || '🌾'}</span>
-                <span class="truncate font-bold">${allowedBoards[0].name}</span>
-                <span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-purple-500/30 text-purple-300 shrink-0">Papan Aktif</span>
-              </button>
             ` : `
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-400/30 text-[11px] font-semibold">
                 <span class="material-symbols-outlined text-[14px]">warning</span>
                 <span>Belum Ada Papan Ditugaskan</span>
               </span>
-            `)}
+            `}
           </div>
           `}
 

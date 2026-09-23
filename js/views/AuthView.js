@@ -1380,13 +1380,8 @@ export class AuthView extends BaseView {
           localStorage.setItem('user_allowed_boards', JSON.stringify(assignedProjects));
         } catch (e) {}
 
-        if (taskId && taskId !== 'all') {
-          localStorage.setItem('active_assigned_task_id', taskId);
-          localStorage.setItem('active_assigned_task_title', taskTitle || '');
-        } else {
-          localStorage.removeItem('active_assigned_task_id');
-          localStorage.removeItem('active_assigned_task_title');
-        }
+        localStorage.removeItem('active_assigned_task_id');
+        localStorage.removeItem('active_assigned_task_title');
 
         return {
           hasAccess: true,

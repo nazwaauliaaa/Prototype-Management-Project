@@ -75,7 +75,7 @@ export class KanbanBoardView extends BaseView {
     // Drag state
     this._draggedTaskId = null;
     this._draggedFromCol = null;
-    this.highlightTaskId = localStorage.getItem('active_assigned_task_id') || null;
+    this.highlightTaskId = null;
 
     // Auto-scroll state during card drag
     this._autoScrollRaf = null;
@@ -1828,7 +1828,7 @@ export class KanbanBoardView extends BaseView {
             </span>
           </div>
 
-          ${(perms.isUser && this.getUserAllowedBoards().length > 1) ? `
+          ${(perms.isUser && this.getUserAllowedBoards().length >= 1) ? `
           <!-- User Multi-Board Switcher Button in Kanban Sub-bar -->
           <div class="relative flex items-center shrink-0">
             <button
@@ -2051,30 +2051,6 @@ export class KanbanBoardView extends BaseView {
               </div>
             ` : ''}
 
-            <!-- Banner Indikator Tugas Ditugaskan Khusus untuk Pengguna -->
-            ${localStorage.getItem('active_assigned_task_id') ? `
-              <div id="banner-user-assigned-task" class="mx-3 sm:mx-6 mb-2.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-900/70 via-indigo-900/50 to-purple-950/70 border border-purple-400/40 backdrop-blur-md text-white flex items-center justify-between gap-3 shadow-xl shadow-purple-950/60 animate-in fade-in duration-300">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-8 h-8 rounded-xl bg-purple-500/30 border border-purple-400/40 flex items-center justify-center shrink-0 text-purple-300">
-                    <span class="material-symbols-outlined text-[20px]">task_alt</span>
-                  </div>
-                  <div class="min-w-0 text-[12px]">
-                    <span class="font-bold text-white">Tugas Ditugaskan:</span>
-                    <span class="text-amber-300 font-bold ml-1.5">${localStorage.getItem('active_assigned_task_title') || 'Tugas Spesifik Anda'}</span>
-                    <span class="text-purple-200/70 ml-1.5 hidden sm:inline">— Kartu tugas telah disorot khusus untuk Anda.</span>
-                  </div>
-                </div>
-                <button
-                  id="btn-scroll-to-assigned-task"
-                  class="px-3 py-1 rounded-xl bg-purple-600/50 hover:bg-purple-600/80 active:scale-95 text-white text-[11px] font-bold tracking-wider shrink-0 transition-all flex items-center gap-1 cursor-pointer border border-purple-400/35 shadow-sm"
-                  type="button"
-                >
-                  <span class="material-symbols-outlined text-[13px]">my_location</span>
-                  <span>Lihat Kartu</span>
-                </button>
-              </div>
-            ` : ''}
-
             <div class="flex flex-row items-stretch gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-hidden px-3 sm:px-6 pt-2 pb-5 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%;">
               
               ${this.columns.map((col, colIdx) => {
@@ -2244,8 +2220,7 @@ export class KanbanBoardView extends BaseView {
                         const picName = task.pic?.name || '';
                         const picMember = boardMembers.find(bm => (task.pic?.email && bm.email && bm.email.toLowerCase() === task.pic.email.toLowerCase()) || (picName && bm.name && bm.name.toLowerCase() === picName.toLowerCase()));
                         const picAvatar = task.pic?.avatar || picMember?.avatar || (perms.user && picName && perms.user.name && picName.toLowerCase() === perms.user.name.toLowerCase() ? perms.user.avatar : null);
-                        const isAssigned = (this.highlightTaskId && String(task.id) === String(this.highlightTaskId)) ||
-                                           (localStorage.getItem('active_assigned_task_id') && String(localStorage.getItem('active_assigned_task_id')) === String(task.id));
+                        const isAssigned = false;
 
                         return `
                         <div
@@ -4216,31 +4191,10 @@ export class KanbanBoardView extends BaseView {
       });
     }
 
-    // Scroll directly to assigned task button
-    const btnScrollAssigned = this.element.querySelector('#btn-scroll-to-assigned-task');
-    if (btnScrollAssigned) {
-      btnScrollAssigned.addEventListener('click', () => {
-        const assignedId = localStorage.getItem('active_assigned_task_id') || this.highlightTaskId;
-        if (!assignedId) return;
-        const targetCard = this.element.querySelector(`[data-task-id="${assignedId}"]`);
-        if (targetCard) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-          targetCard.classList.add('scale-105', 'ring-4', 'ring-purple-400');
-          setTimeout(() => {
-            targetCard.classList.remove('scale-105', 'ring-4', 'ring-purple-400');
-          }, 1600);
-        }
-      });
-    }
-
-    // Auto-scroll to assigned task card on initial load
-    if (this.highlightTaskId) {
-      setTimeout(() => {
-        const targetCard = this.element?.querySelector(`[data-task-id="${this.highlightTaskId}"]`);
-        if (targetCard) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        }
-      }, 450);
+    // Ensure kanban board always starts at leftmost column on load
+    const kanbanBoardEl = this.element.querySelector('#kanban-board');
+    if (kanbanBoardEl) {
+      kanbanBoardEl.scrollLeft = 0;
     }
 
     // 1.1 Header Project Switcher Button Toggle

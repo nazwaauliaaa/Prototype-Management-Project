@@ -1696,13 +1696,8 @@ export class UserManagementView extends BaseView {
             localStorage.setItem('user_invited_workspace', targetWs);
             localStorage.setItem('user_invited_project', targetProj);
 
-            if (targetTask && targetTask !== 'all') {
-              localStorage.setItem('active_assigned_task_id', targetTask);
-              localStorage.setItem('active_assigned_task_title', user.assignedTaskTitle || '');
-            } else {
-              localStorage.removeItem('active_assigned_task_id');
-              localStorage.removeItem('active_assigned_task_title');
-            }
+            localStorage.removeItem('active_assigned_task_id');
+            localStorage.removeItem('active_assigned_task_title');
           } catch (e) {}
 
           if (this.notificationService) {
