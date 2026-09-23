@@ -46,7 +46,14 @@
     "qaProgress": {
       "passed": 0,
       "total": 2
-    }
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790139248019
   },
   {
     "id": "task-lb-03",
@@ -67,7 +74,14 @@
     "qaProgress": {
       "passed": 3,
       "total": 3
-    }
+    },
+    "assets": [],
+    "isStarred": false,
+    "tags": [],
+    "location": "",
+    "resolution": "",
+    "projectId": null,
+    "updatedAt": 1790139248134
   },
   {
     "id": "task-sh-03",
