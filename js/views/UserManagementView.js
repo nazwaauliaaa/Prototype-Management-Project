@@ -13,74 +13,14 @@ export class UserManagementView extends BaseView {
     this.notificationService = container.resolve('NotificationService');
     this.projectService = container.resolve('ProjectService');
     this.taskService = container.resolve('TaskService');
+    this.supabaseService = container.resolve('SupabaseService');
 
     this.searchQuery = '';
     this.editingUser = null;
     this.isCreateModalOpen = false;
     this.isEditModalOpen = false;
 
-    this.defaultUsers = [
-      {
-        id: 'usr-1790046404637',
-        username: '@nazwaaulial',
-        fullName: 'Nazwa Aulia Latifah',
-        role: 'student',
-        nip: '2026',
-        position: 'Siswa PKL',
-        school: '',
-        assignedProjectId: 'creativoffice',
-        assignedWorkspace: 'creativoffice',
-        assignedBoardName: 'CreativOffice',
-        assignedTaskId: 'all',
-        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        qr_data: '@nazwaaulial'
-      },
-      {
-        id: 'usr-1790046919250',
-        username: '@jax_ck',
-        fullName: 'Fakhrul Miandi Rachman',
-        role: 'student',
-        nip: '2026',
-        position: 'Siswa PKL',
-        school: '',
-        assignedProjectId: 'panen-kunci',
-        assignedWorkspace: 'panen-kunci',
-        assignedBoardName: 'Panen Kunci (Utama)',
-        assignedTaskId: 'all',
-        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        qr_data: '@jax_ck'
-      },
-      {
-        id: 'usr-1790049070981',
-        username: '@fazlies',
-        fullName: 'Muhamad Fazli Esfandiar',
-        role: 'student',
-        nip: '2026',
-        position: 'Siswa PKL',
-        school: '',
-        assignedProjectId: 'creativoffice',
-        assignedWorkspace: 'creativoffice',
-        assignedBoardName: 'CreativOffice (Creative Office)',
-        assignedTaskId: 'all',
-        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        telegramChat: '',
-        telegramId: '',
-        apiDeposit: '',
-        qr_data: '@fazlies'
-      }
-    ];
+    this.defaultUsers = [];
 
     this.broadcastChannel = null;
     if (typeof BroadcastChannel !== 'undefined') {
@@ -114,27 +54,53 @@ export class UserManagementView extends BaseView {
 
   async syncFromBackend(silent = false) {
     try {
-      const remoteUsers = await apiService.getManagedUsers();
-      if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+      let remoteUsers = null;
+
+      // 1. Coba ambil langsung dari Supabase tabel users jika client terhubung
+      if (this.supabaseService && this.supabaseService.isConfigured()) {
+        try {
+          const sbUsers = await this.supabaseService.getUsers();
+          if (Array.isArray(sbUsers)) {
+            remoteUsers = sbUsers.map(row => ({
+              id: row.id,
+              username: row.username || (row.email ? `@${row.email.split('@')[0]}` : `@${row.name?.toLowerCase().replace(/\s+/g, '')}`),
+              fullName: row.full_name || row.name,
+              role: row.role || 'student',
+              nip: row.nip || '',
+              position: row.position || row.title || 'Anggota Tim',
+              school: row.school || '',
+              assignedProjectId: row.assigned_project_id || (row.workspace_access && row.workspace_access[0]) || 'creativoffice',
+              assignedWorkspace: row.assigned_workspace || (row.workspace_access && row.workspace_access[0]) || 'creativoffice',
+              assignedBoardName: row.assigned_board_name || 'CreativOffice',
+              assignedTaskId: row.assigned_task_id || 'all',
+              assignedTaskTitle: row.assigned_task_title || 'Seluruh Papan (Semua Tugas)',
+              device: row.bound_device_name || row.device || (row.bound_device_id ? 'Terikat' : 'Belum Terikat'),
+              isDeviceBound: Boolean(row.bound_device_id || row.is_device_bound),
+              telegramChat: row.telegram_chat || '',
+              telegramId: row.telegram_id || '',
+              apiDeposit: row.api_deposit || '',
+              qr_data: row.qr_data || row.username || row.name,
+              updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now()
+            }));
+          }
+        } catch (sbErr) {
+          console.warn('[UserManagementView] Direct Supabase fetch users warning:', sbErr.message);
+        }
+      }
+
+      // 2. Fallback ke API backend
+      if (remoteUsers === null) {
+        remoteUsers = await apiService.getManagedUsers();
+      }
+
+      if (Array.isArray(remoteUsers)) {
         const stored = localStorage.getItem('creative_office_managed_users');
-        let localUsers = [];
-        try { localUsers = JSON.parse(stored) || []; } catch (e) {}
+        const remoteStr = JSON.stringify(remoteUsers);
 
-        const userMap = new Map();
-        // 1. Masukkan default users
-        this.defaultUsers.forEach(u => userMap.set(u.id || u.username.toLowerCase(), u));
-        // 2. Timpa dengan local users jika ada
-        localUsers.forEach(u => userMap.set(u.id || (u.username && u.username.toLowerCase()), u));
-        // 3. Timpa dengan remote users dari database/server
-        remoteUsers.forEach(u => userMap.set(u.id || (u.username && u.username.toLowerCase()), u));
-
-        const merged = Array.from(userMap.values());
-        const mergedStr = JSON.stringify(merged);
-
-        if (stored !== mergedStr) {
-          localStorage.setItem('creative_office_managed_users', mergedStr);
+        if (stored !== remoteStr) {
+          localStorage.setItem('creative_office_managed_users', remoteStr);
           this._updateTableBody();
-          if (!silent && this.notificationService) {
+          if (!silent && this.notificationService && remoteUsers.length > 0) {
             this.notificationService.info('Daftar pengguna disinkronkan dari database server.');
           }
         }
@@ -166,6 +132,12 @@ export class UserManagementView extends BaseView {
       ? filtered.map(u => this._renderUserRow(u)).join('')
       : (allUsers.length === 0 ? this._renderEmptyState() : this._renderSearchEmptyState());
 
+    // Update total count badge
+    const countBadge = this.element.querySelector('#badge-total-users');
+    if (countBadge) {
+      countBadge.textContent = `${allUsers.length} Pengguna`;
+    }
+
     if (typeof this._bindRowEvents === 'function') {
       this._bindRowEvents();
     }
@@ -178,20 +150,23 @@ export class UserManagementView extends BaseView {
       if (stored) {
         try { currentUsers = JSON.parse(stored); } catch (e) {}
       }
-      if (!Array.isArray(currentUsers) || currentUsers.length === 0) {
-        localStorage.setItem('creative_office_managed_users', JSON.stringify(this.defaultUsers));
-      } else {
-        let changed = false;
-        this.defaultUsers.forEach(d => {
-          const dUsn = d.username.replace(/^@/, '').toLowerCase();
-          if (!currentUsers.some(u => (u.username && u.username.replace(/^@/, '').toLowerCase() === dUsn) || (u.fullName && u.fullName.toLowerCase() === d.fullName.toLowerCase()))) {
-            currentUsers.push(d);
-            changed = true;
-          }
-        });
-        if (changed) {
-          localStorage.setItem('creative_office_managed_users', JSON.stringify(currentUsers));
+
+      // Bersihkan jika masih berisi data default lama yang sudah dihapus di Supabase
+      const defaultLegacyIds = ['usr-1790046404637', 'usr-1790046919250', 'usr-1790049070981'];
+      const defaultLegacyUsernames = ['@nazwaaulial', '@jax_ck', '@fazlies'];
+      if (Array.isArray(currentUsers) && currentUsers.length > 0) {
+        const onlyLegacy = currentUsers.every(u => 
+          defaultLegacyIds.includes(u.id) || 
+          defaultLegacyUsernames.includes(u.username)
+        );
+        if (onlyLegacy) {
+          localStorage.setItem('creative_office_managed_users', JSON.stringify([]));
+          return;
         }
+      }
+
+      if (!Array.isArray(currentUsers)) {
+        localStorage.setItem('creative_office_managed_users', JSON.stringify([]));
       }
     } catch (e) {}
   }
@@ -201,12 +176,12 @@ export class UserManagementView extends BaseView {
       const stored = localStorage.getItem('creative_office_managed_users');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
     } catch (e) {}
-    return [...this.defaultUsers];
+    return [];
   }
 
   saveUsers(users) {
@@ -362,9 +337,23 @@ export class UserManagementView extends BaseView {
               <span>Kembali ke Dashboard</span>
             </button>
 
-            <span class="text-xs font-semibold text-white/70 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/15 backdrop-blur-md">
-              Total: <span class="text-purple-300 font-bold">${allUsers.length} Pengguna</span>
-            </span>
+            <div class="flex items-center gap-2">
+              ${allUsers.length > 0 ? `
+              <button
+                id="btn-clear-all-users"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-400/30 text-xs font-semibold backdrop-blur-md transition-all cursor-pointer active:scale-95 shadow-sm"
+                title="Hapus / Kosongkan Seluruh Pengguna"
+              >
+                <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
+                <span>Kosongkan Pengguna</span>
+              </button>
+              ` : ''}
+
+              <span class="text-xs font-semibold text-white/70 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/15 backdrop-blur-md">
+                Total: <span id="badge-total-users" class="text-purple-300 font-bold">${allUsers.length} Pengguna</span>
+              </span>
+            </div>
           </div>
 
           <!-- Page Header -->
@@ -1681,8 +1670,13 @@ export class UserManagementView extends BaseView {
           const updated = users.filter(u => u.id !== userId);
           this.saveUsers(updated);
           apiService.deleteManagedUser(userId).catch(err => {
-            console.warn('[UserManagementView] Gagal hapus user dari Supabase:', err.message);
+            console.warn('[UserManagementView] Gagal hapus user dari backend:', err.message);
           });
+          if (this.supabaseService && this.supabaseService.isConfigured()) {
+            this.supabaseService.deleteUser(userId).catch(err => {
+              console.warn('[UserManagementView] Gagal hapus user dari Supabase:', err.message);
+            });
+          }
           if (this.notificationService) {
             this.notificationService.success(`Akun ${user.username} telah dihapus dari sistem & Supabase.`);
           }
@@ -1690,5 +1684,23 @@ export class UserManagementView extends BaseView {
         }
       });
     });
+
+    // Clear All Users Button
+    const btnClearAll = this.element.querySelector('#btn-clear-all-users');
+    if (btnClearAll) {
+      btnClearAll.addEventListener('click', async () => {
+        if (confirm('Apakah Anda yakin ingin mengosongkan SELURUH pengguna? Data pengguna akan dihapus dari aplikasi & database.')) {
+          this.saveUsers([]);
+          await apiService.clearAllManagedUsers().catch(() => {});
+          if (this.supabaseService && this.supabaseService.isConfigured()) {
+            await this.supabaseService.clearAllUsers().catch(() => {});
+          }
+          if (this.notificationService) {
+            this.notificationService.success('Seluruh pengguna berhasil dikosongkan.');
+          }
+          this.mount(this.element);
+        }
+      });
+    }
   }
 }

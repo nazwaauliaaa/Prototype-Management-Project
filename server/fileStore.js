@@ -279,66 +279,9 @@ export const fileStore = {
 
   // ================= MANAGED USERS (Manajemen Pengguna) =================
   getManagedUsers() {
-    const defaultManagedUsers = [
-      {
-        id: 'usr-1790046404637',
-        username: '@nazwaaulial',
-        fullName: 'Nazwa Aulia Latifah',
-        role: 'student',
-        nip: '2026',
-        position: 'Siswa PKL',
-        school: '',
-        assignedProjectId: 'creativoffice',
-        assignedWorkspace: 'creativoffice',
-        assignedBoardName: 'CreativOffice',
-        assignedTaskId: 'all',
-        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        qr_data: '@nazwaaulial',
-        updatedAt: Date.now()
-      },
-      {
-        id: 'usr-1790046919250',
-        username: '@jax_ck',
-        fullName: 'Fakhrul Miandi Rachman',
-        role: 'student',
-        nip: '2026',
-        position: 'Siswa PKL',
-        school: '',
-        assignedProjectId: 'panen-kunci',
-        assignedWorkspace: 'panen-kunci',
-        assignedBoardName: 'Panen Kunci (Utama)',
-        assignedTaskId: 'all',
-        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        qr_data: '@jax_ck',
-        updatedAt: Date.now()
-      },
-      {
-        id: 'usr-1790049070981',
-        username: '@fazlies',
-        fullName: 'Muhamad Fazli Esfandiar',
-        role: 'student',
-        nip: '2026',
-        position: 'Siswa PKL',
-        school: '',
-        assignedProjectId: 'creativoffice',
-        assignedWorkspace: 'creativoffice',
-        assignedBoardName: 'CreativOffice (Creative Office)',
-        assignedTaskId: 'all',
-        assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-        device: 'Belum Terikat',
-        isDeviceBound: false,
-        qr_data: '@fazlies',
-        updatedAt: Date.now()
-      }
-    ];
-
-    let users = readJsonFile(USERS_FILE, defaultManagedUsers);
-    if (!Array.isArray(users) || users.length === 0) {
-      users = defaultManagedUsers;
+    let users = readJsonFile(USERS_FILE, []);
+    if (!Array.isArray(users)) {
+      users = [];
       writeJsonFile(USERS_FILE, users);
     }
     return users;
@@ -383,5 +326,12 @@ export const fileStore = {
       return removed;
     }
     return null;
+  },
+
+  clearAllManagedUsers() {
+    writeJsonFile(USERS_FILE, []);
+    console.log(`[fileStore] 🗑️ Cleared all managed users`);
+    return [];
   }
 };
+

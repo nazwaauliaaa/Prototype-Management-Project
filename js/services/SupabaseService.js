@@ -206,6 +206,59 @@ export class SupabaseService {
       this.activeChannel = null;
     }
   }
+
+  /**
+   * Mengambil seluruh data pengguna dari tabel users di Supabase
+   */
+  async getUsers() {
+    if (!this.client) return null;
+    try {
+      const { data, error } = await this.client
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.warn('[SupabaseService] Gagal fetch users:', error.message);
+        return null;
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('[SupabaseService] Exception getUsers:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Menghapus user dari Supabase berdasarkan ID
+   */
+  async deleteUser(id) {
+    if (!this.client) return false;
+    try {
+      const { error } = await this.client
+        .from('users')
+        .delete()
+        .eq('id', id);
+      return !error;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
+   * Mengosongkan seluruh isi tabel users di Supabase
+   */
+  async clearAllUsers() {
+    if (!this.client) return false;
+    try {
+      const { error } = await this.client
+        .from('users')
+        .delete()
+        .neq('id', '___empty_all_flag___');
+      return !error;
+    } catch (err) {
+      return false;
+    }
+  }
 }
 
 export const supabaseService = new SupabaseService();

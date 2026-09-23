@@ -18,7 +18,7 @@ export class AuthView extends BaseView {
 
     // Pre-fetch data penugasan pengguna dari server/database saat scanner dibuka
     apiService.getManagedUsers().then(fresh => {
-      if (Array.isArray(fresh) && fresh.length > 0) {
+      if (Array.isArray(fresh)) {
         try { localStorage.setItem('creative_office_managed_users', JSON.stringify(fresh)); } catch (e) {}
       }
     }).catch(() => {});
@@ -967,76 +967,13 @@ export class AuthView extends BaseView {
       // Helper untuk mencari data penugasan dari Manajemen Pengguna (creative_office_managed_users)
       const getManagedAssignment = (userObj, codeStr) => {
         try {
-          const defaultManagedSeed = [
-            {
-              id: 'usr-1790046404637',
-              username: '@nazwaaulial',
-              fullName: 'Nazwa Aulia Latifah',
-              role: 'student',
-              nip: '2026',
-              position: 'Siswa PKL',
-              school: '',
-              assignedProjectId: 'creativoffice',
-              assignedWorkspace: 'creativoffice',
-              assignedBoardName: 'CreativOffice',
-              assignedTaskId: 'all',
-              assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-              qr_data: '@nazwaaulial'
-            },
-            {
-              id: 'usr-1790046919250',
-              username: '@jax_ck',
-              fullName: 'Fakhrul Miandi Rachman',
-              role: 'student',
-              nip: '2026',
-              position: 'Siswa PKL',
-              school: '',
-              assignedProjectId: 'panen-kunci',
-              assignedWorkspace: 'panen-kunci',
-              assignedBoardName: 'Panen Kunci (Utama)',
-              assignedTaskId: 'all',
-              assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-              qr_data: '@jax_ck'
-            },
-            {
-              id: 'usr-1790049070981',
-              username: '@fazlies',
-              fullName: 'Muhamad Fazli Esfandiar',
-              role: 'student',
-              nip: '2026',
-              position: 'Siswa PKL',
-              school: '',
-              assignedProjectId: 'creativoffice',
-              assignedWorkspace: 'creativoffice',
-              assignedBoardName: 'CreativOffice (Creative Office)',
-              assignedTaskId: 'all',
-              assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-              qr_data: '@fazlies'
-            }
-          ];
-
           let managedList = [];
           try {
             const rawStored = localStorage.getItem('creative_office_managed_users');
             managedList = rawStored ? JSON.parse(rawStored) : [];
           } catch (e) {}
-
-          if (!Array.isArray(managedList) || managedList.length === 0) {
-            managedList = defaultManagedSeed;
-            try { localStorage.setItem('creative_office_managed_users', JSON.stringify(defaultManagedSeed)); } catch (e) {}
-          } else {
-            // Pastikan akun utama (@jax_ck, @nazwaaulial, @fazlies) selalu terdaftar jika belum ada
-            let updated = false;
-            defaultManagedSeed.forEach(seed => {
-              const seedUsn = seed.username.replace(/^@/, '').toLowerCase();
-              if (!managedList.some(m => (m.username && m.username.replace(/^@/, '').toLowerCase() === seedUsn) || (m.fullName && m.fullName.toLowerCase() === seed.fullName.toLowerCase()))) {
-                managedList.push(seed);
-                updated = true;
-              }
-            });
-            if (updated) {
-              try { localStorage.setItem('creative_office_managed_users', JSON.stringify(managedList)); } catch (e) {}
-            }
+          if (!Array.isArray(managedList)) {
+            managedList = [];
           }
 
           const clean = String(codeStr || '').trim();

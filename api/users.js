@@ -1,63 +1,8 @@
 // Vercel Serverless Function untuk /api/users dan /api/users/managed
 
-const DEFAULT_USERS = [
-  {
-    id: 'usr-1790046404637',
-    username: '@nazwaaulial',
-    fullName: 'Nazwa Aulia Latifah',
-    role: 'student',
-    nip: '2026',
-    position: 'Siswa PKL',
-    school: '',
-    assignedProjectId: 'creativoffice',
-    assignedWorkspace: 'creativoffice',
-    assignedBoardName: 'CreativOffice',
-    assignedTaskId: 'all',
-    assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-    device: 'Belum Terikat',
-    isDeviceBound: false,
-    qr_data: '@nazwaaulial',
-    updatedAt: Date.now()
-  },
-  {
-    id: 'usr-1790046919250',
-    username: '@jax_ck',
-    fullName: 'Fakhrul Miandi Rachman',
-    role: 'student',
-    nip: '2026',
-    position: 'Siswa PKL',
-    school: '',
-    assignedProjectId: 'panen-kunci',
-    assignedWorkspace: 'panen-kunci',
-    assignedBoardName: 'Panen Kunci (Utama)',
-    assignedTaskId: 'all',
-    assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-    device: 'Belum Terikat',
-    isDeviceBound: false,
-    qr_data: '@jax_ck',
-    updatedAt: Date.now()
-  },
-  {
-    id: 'usr-1790049070981',
-    username: '@fazlies',
-    fullName: 'Muhamad Fazli Esfandiar',
-    role: 'student',
-    nip: '2026',
-    position: 'Siswa PKL',
-    school: '',
-    assignedProjectId: 'creativoffice',
-    assignedWorkspace: 'creativoffice',
-    assignedBoardName: 'CreativOffice (Creative Office)',
-    assignedTaskId: 'all',
-    assignedTaskTitle: 'Seluruh Papan (Semua Tugas)',
-    device: 'Belum Terikat',
-    isDeviceBound: false,
-    qr_data: '@fazlies',
-    updatedAt: Date.now()
-  }
-];
+const DEFAULT_USERS = [];
 
-let inMemoryUsers = [...DEFAULT_USERS];
+let inMemoryUsers = [];
 
 // Helper database PostgreSQL jika DATABASE_URL dikonfigurasi di Vercel
 let pgPool = null;
@@ -95,7 +40,7 @@ export default async function handler(req, res) {
       if (pool) {
         try {
           const dbRes = await pool.query('SELECT * FROM public.users ORDER BY created_at ASC');
-          if (dbRes.rows && dbRes.rows.length > 0) {
+          if (dbRes && Array.isArray(dbRes.rows)) {
             const mapped = dbRes.rows.map(r => ({
               id: r.id,
               username: r.username || (r.email ? `@${r.email.split('@')[0]}` : `@${r.name?.toLowerCase().replace(/\s+/g, '')}`),
@@ -231,6 +176,15 @@ export default async function handler(req, res) {
     // ================= DELETE /api/users =================
     if (req.method === 'DELETE') {
       const { id } = req.query || {};
+      if (id === 'all' || id === 'clear') {
+        inMemoryUsers = [];
+        if (pool) {
+          try {
+            await pool.query('DELETE FROM public.users');
+          } catch (e) {}
+        }
+        return res.status(200).json({ success: true, message: 'Semua user berhasil dihapus' });
+      }
       if (id) {
         inMemoryUsers = inMemoryUsers.filter(u => String(u.id) !== String(id));
         if (pool) {

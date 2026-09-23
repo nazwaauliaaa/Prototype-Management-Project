@@ -221,7 +221,7 @@ export class ApiService {
       }
       if (res.ok) {
         const json = res.data;
-        if (json && Array.isArray(json.data) && json.data.length > 0) {
+        if (json && Array.isArray(json.data)) {
           return json.data;
         }
       }
@@ -275,6 +275,23 @@ export class ApiService {
       return res.ok;
     } catch (err) {
       console.warn('[ApiService] Gagal menghapus managed user:', err.message);
+      return false;
+    }
+  }
+
+  async clearAllManagedUsers() {
+    try {
+      let res = await this.safeFetch('/users/managed/all', {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        res = await this.safeFetch('/users?id=all', {
+          method: 'DELETE'
+        });
+      }
+      return res.ok;
+    } catch (err) {
+      console.warn('[ApiService] Gagal mengosongkan managed users:', err.message);
       return false;
     }
   }

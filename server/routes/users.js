@@ -69,12 +69,12 @@ router.get('/managed', async (req, res) => {
   try {
     await ensureUserColumns();
     const result = await pool.query('SELECT * FROM public.users ORDER BY created_at ASC');
-    if (result.rows && result.rows.length > 0) {
+    if (result && Array.isArray(result.rows)) {
       const users = result.rows.map(formatUserRow);
       return res.json({ success: true, count: users.length, data: users, source: 'postgres' });
     }
   } catch (err) {
-    // Fallback ke fileStore
+    // Fallback ke fileStore jika database offline
   }
 
   const fileUsers = fileStore.getManagedUsers();
@@ -172,10 +172,30 @@ router.post('/managed', async (req, res) => {
   return res.json({ success: true, count: usersToSave.length, data: usersToSave });
 });
 
+// DELETE /api/users/managed/all - Kosongkan seluruh pengguna
+router.delete('/managed/all', async (req, res) => {
+  fileStore.clearAllManagedUsers();
+  try {
+    await pool.query('DELETE FROM public.users');
+    console.log('[server/users] ✅ Seluruh tabel users di Supabase berhasil dikosongkan');
+  } catch (err) {
+    console.warn('[server/users] Gagal kosongkan Supabase users:', err.message);
+  }
+  return res.json({ success: true, message: 'Seluruh pengguna berhasil dihapus' });
+});
+
 // DELETE /api/users/managed/:id - Hapus anggota dari sistem dan Supabase
 router.delete('/managed/:id', async (req, res) => {
   const { id } = req.params;
   
+  if (id === 'all' || id === 'clear') {
+    fileStore.clearAllManagedUsers();
+    try {
+      await pool.query('DELETE FROM public.users');
+    } catch (err) {}
+    return res.json({ success: true, message: 'Seluruh pengguna berhasil dihapus' });
+  }
+
   // Hapus dari fileStore
   fileStore.deleteManagedUser(id);
 
@@ -201,6 +221,14 @@ router.delete('/', async (req, res) => {
   const id = req.query.id || req.body?.id;
   if (!id) return res.status(400).json({ success: false, error: 'User ID diperlukan' });
   
+  if (id === 'all' || id === 'clear') {
+    fileStore.clearAllManagedUsers();
+    try {
+      await pool.query('DELETE FROM public.users');
+    } catch (err) {}
+    return res.json({ success: true, message: 'Seluruh pengguna berhasil dihapus' });
+  }
+
   fileStore.deleteManagedUser(id);
   try {
     await pool.query('DELETE FROM public.users WHERE id = $1', [id]);
