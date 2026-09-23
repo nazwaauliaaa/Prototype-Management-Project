@@ -753,12 +753,19 @@ class CreativeOfficeApp {
         return;
       }
 
-      // Role user (non-admin) selalu diarahkan ke kanban board
+      // Role user (non-admin) selalu diarahkan ke kanban board yang diizinkan
       if (role === 'user') {
-        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
-        const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
-        window.location.hash = `#/kanban/${allowedProj}`;
-        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        const allowedBoards = authService ? authService.getUserAllowedBoards(currentUser) : [];
+        if (allowedBoards.length === 0) {
+          window.location.hash = '#/auth';
+          this.navigateTo('auth');
+          return;
+        }
+        const activeProj = localStorage.getItem('active_project_id');
+        const activeWs = localStorage.getItem('active_workspace');
+        const matched = allowedBoards.find(b => b.id === activeProj || b.workspace === activeWs) || allowedBoards[0];
+        window.location.hash = `#/kanban/${matched.id}`;
+        this.navigateTo('kanban', { projectId: matched.id, workspace: matched.workspace });
         return;
       }
 
@@ -795,10 +802,17 @@ class CreativeOfficeApp {
       const currentUser = authService.getCurrentUser();
       const role = (currentUser?.role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
       if (role === 'user') {
-        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
-        const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
-        window.location.hash = `#/kanban/${allowedProj}`;
-        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        const allowedBoards = authService ? authService.getUserAllowedBoards(currentUser) : [];
+        if (allowedBoards.length === 0) {
+          // User tidak memiliki akses papan, tahan di auth gate
+          this.navigateTo('auth');
+          return;
+        }
+        const activeProj = localStorage.getItem('active_project_id');
+        const activeWs = localStorage.getItem('active_workspace');
+        const matched = allowedBoards.find(b => b.id === activeProj || b.workspace === activeWs) || allowedBoards[0];
+        window.location.hash = `#/kanban/${matched.id}`;
+        this.navigateTo('kanban', { projectId: matched.id, workspace: matched.workspace });
       } else {
         window.location.hash = '#/dashboard';
         this.navigateTo('dashboard');
@@ -878,12 +892,29 @@ class CreativeOfficeApp {
 
     // STRICT ROUTE GUARD ENFORCEMENT: Restrict non-admin users strictly to kanban, profile, and auth
     if (isUserRole && !isUserMgmtRoute) {
-      const allowedWs = params.workspace || (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
-      const allowedProj = params.projectId || (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
+      const allowedBoards = authService ? authService.getUserAllowedBoards(currentUser) : [];
+      if (allowedBoards.length === 0) {
+        viewName = 'auth';
+      } else {
+        let reqProj = params.projectId || localStorage.getItem('active_project_id');
+        let reqWs = params.workspace || localStorage.getItem('active_workspace');
+        
+        const isAllowed = allowedBoards.some(b => 
+          b.id === reqProj || 
+          b.workspace === reqWs ||
+          (reqProj && b.id.toLowerCase().replace(/[-_\s]/g, '') === reqProj.toLowerCase().replace(/[-_\s]/g, '')) ||
+          (reqWs && b.workspace.toLowerCase().replace(/[-_\s]/g, '') === reqWs.toLowerCase().replace(/[-_\s]/g, ''))
+        );
 
-      if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'profile' && viewName !== 'profil') {
-        viewName = 'kanban';
-        params = { ...params, projectId: allowedProj, workspace: allowedWs };
+        if (!isAllowed) {
+          reqProj = allowedBoards[0].id;
+          reqWs = allowedBoards[0].workspace || allowedBoards[0].id;
+        }
+
+        if (viewName !== 'kanban' && viewName !== 'auth' && viewName !== 'profile' && viewName !== 'profil') {
+          viewName = 'kanban';
+        }
+        params = { ...params, projectId: reqProj, workspace: reqWs };
       }
     }
 

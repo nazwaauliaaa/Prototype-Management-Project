@@ -584,6 +584,44 @@ export class AuthView extends BaseView {
             </div>
           </div>
         </div>
+
+        <!-- Modal Akses Ditolak: Belum Ditugaskan Papan Proyek -->
+        <div id="modal-no-board-assigned" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div class="relative w-full max-w-md bg-[#0e0a22]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-rose-500/40 p-6 flex flex-col items-center text-center text-white" style="background-color: #0e0a22; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(225, 29, 72, 0.25) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(139, 92, 246, 0.2) 0%, transparent 55%);">
+            
+            <div class="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mb-3 shadow-inner">
+              <span class="material-symbols-outlined text-4xl">view_kanban</span>
+            </div>
+
+            <span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-400/30 mb-2">
+              Akses Papan Belum Diberikan
+            </span>
+
+            <h3 id="no-board-user-title" class="text-lg font-bold text-white mb-2">
+              Belum Memiliki Papan Proyek
+            </h3>
+
+            <p id="no-board-user-description" class="text-xs text-white/70 leading-relaxed mb-4">
+              Akun Anda belum memiliki penugasan papan proyek dari Administrator. Anda baru dapat masuk setelah Admin menambahkan akses papan kanban untuk Anda di <b>Manajemen Pengguna</b>.
+            </p>
+
+            <div class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-left mb-4 flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-amber-400 text-[22px] shrink-0">admin_panel_settings</span>
+              <div class="text-[11.5px] text-white/80">
+                <span class="font-bold text-white block">Perlu Akses?</span>
+                <span>Hubungi Administrator untuk memilihkan papan proyek Anda (contoh: Panen Kunci, AIKreativ, dll).</span>
+              </div>
+            </div>
+
+            <button
+              id="btn-close-no-board-modal"
+              type="button"
+              class="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 active:scale-98 text-white font-bold text-xs transition-all cursor-pointer border border-white/15"
+            >
+              Tutup & Kembali ke Pemindai
+            </button>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -1116,34 +1154,84 @@ export class AuthView extends BaseView {
         }
       };
 
+      const handleNoBoardAssigned = (userObj) => {
+        const userName = (userObj && (userObj.name || userObj.fullName || userObj.username)) || 'Pengguna';
+        console.warn('[AuthView] Akses Ditolak: Belum ditugaskan papan proyek oleh Admin:', userName);
+
+        if (feedback) {
+          feedback.innerHTML = `<span class="text-rose-400 font-bold">❌ Akses Ditolak: Belum Memiliki Papan Proyek!</span>`;
+        }
+
+        const modal = this.element.querySelector('#modal-no-board-assigned');
+        const titleEl = this.element.querySelector('#no-board-user-title');
+        const descEl = this.element.querySelector('#no-board-user-description');
+
+        if (titleEl) titleEl.textContent = `Akun "${userName}" Belum Ditugaskan Papan`;
+        if (descEl) {
+          descEl.innerHTML = `Akun <b>${userName}</b> saat ini belum memiliki akses ke papan kanban mana pun. Sesuai kebijakan, <b>Anda belum dapat masuk</b> sebelum Administrator menambahkan penugasan papan proyek untuk Anda di Manajemen Pengguna.`;
+        }
+
+        if (modal) modal.classList.remove('hidden');
+        if (this.notificationService) {
+          this.notificationService.error(`Akses ditolak: Akun ${userName} belum ditugaskan papan proyek oleh Admin!`);
+        }
+      };
+
       const applyUserAssignment = (userObj, codeStr) => {
         const managed = getManagedAssignment(userObj, codeStr);
         console.log('[AuthView] applyUserAssignment matched managed:', managed);
 
+        let assignedProjects = [];
+        let assignedBoardNames = [];
         let targetProj = '';
         let targetWs = '';
         let taskId = '';
         let taskTitle = '';
 
         if (managed) {
-          targetProj = managed.assignedProjectId || managed.assignedWorkspace;
-          targetWs = managed.assignedWorkspace || managed.assignedProjectId || targetProj;
+          if (Array.isArray(managed.assignedProjects) && managed.assignedProjects.length > 0) {
+            assignedProjects = managed.assignedProjects.filter(Boolean);
+            assignedBoardNames = managed.assignedBoardNames || [];
+          } else if (managed.assignedProjectId) {
+            assignedProjects = [managed.assignedProjectId];
+            assignedBoardNames = [managed.assignedBoardName || managed.assignedProjectId];
+          }
           taskId = managed.assignedTaskId;
           taskTitle = managed.assignedTaskTitle;
-        } else if (userObj) {
-          targetProj = userObj.assignedProjectId || userObj.assignedWorkspace;
-          targetWs = userObj.assignedWorkspace || userObj.assignedProjectId || targetProj;
-          taskId = userObj.assignedTaskId;
-          taskTitle = userObj.assignedTaskTitle;
         }
 
-        // Fallback default only if completely unassigned
-        if (!targetProj) {
-          targetProj = 'creativoffice';
+        if (assignedProjects.length === 0 && userObj) {
+          if (Array.isArray(userObj.assignedProjects) && userObj.assignedProjects.length > 0) {
+            assignedProjects = userObj.assignedProjects.filter(Boolean);
+            assignedBoardNames = userObj.assignedBoardNames || [];
+          } else if (userObj.assignedProjectId) {
+            assignedProjects = [userObj.assignedProjectId];
+            assignedBoardNames = [userObj.assignedBoardName || userObj.assignedProjectId];
+          }
+          if (!taskId) taskId = userObj.assignedTaskId;
+          if (!taskTitle) taskTitle = userObj.assignedTaskTitle;
         }
-        if (!targetWs) {
-          targetWs = targetProj;
+
+        const role = (managed && managed.role) || (userObj && userObj.role) || 'user';
+        const isAdmin = role.toLowerCase() === 'admin';
+
+        // Strict Guard: User non-admin gakan bisa masuk/login sebelum admin nambahin papan proyek
+        if (!isAdmin && assignedProjects.length === 0) {
+          return {
+            hasAccess: false,
+            error: 'NO_BOARD_ASSIGNED',
+            managed,
+            userObj
+          };
         }
+
+        if (isAdmin && assignedProjects.length === 0) {
+          assignedProjects = ['creativoffice'];
+          assignedBoardNames = ['CreativOffice'];
+        }
+
+        targetProj = assignedProjects[0] || (managed && (managed.assignedProjectId || managed.assignedWorkspace)) || 'creativoffice';
+        targetWs = (managed && managed.assignedWorkspace) || targetProj;
 
         // Normalize creativoffice spelling if target is specifically creativoffice
         if (targetProj.toLowerCase().includes('creativ') || targetProj.toLowerCase().includes('creative')) {
@@ -1166,7 +1254,16 @@ export class AuthView extends BaseView {
           localStorage.removeItem('active_assigned_task_title');
         }
 
-        return { targetProj, targetWs, managed, taskId, taskTitle };
+        return {
+          hasAccess: true,
+          targetProj,
+          targetWs,
+          assignedProjects,
+          assignedBoardNames,
+          managed,
+          taskId,
+          taskTitle
+        };
       };
 
       // 0. Deteksi jika kode QR adalah tautan undangan proyek (misal scan QR dari AddMemberModal)
@@ -1274,7 +1371,12 @@ export class AuthView extends BaseView {
           }
 
           stopCamera();
-          const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(verifiedUser, cleanCode);
+          const assignRes = applyUserAssignment(verifiedUser, cleanCode);
+          if (!assignRes.hasAccess) {
+            handleNoBoardAssigned(assignRes.managed || verifiedUser);
+            return;
+          }
+          const { targetProj, targetWs, managed, taskId, taskTitle, assignedProjects, assignedBoardNames } = assignRes;
 
           const finalRole = (managed && managed.role) ? (managed.role === 'admin' ? 'admin' : 'user') : (verifiedUser.role || 'user');
           const finalName = (managed && managed.fullName) ? managed.fullName : verifiedUser.name;
@@ -1575,7 +1677,12 @@ export class AuthView extends BaseView {
           }
 
           stopCamera();
-          const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(registeredData, codeToReg);
+          const assignRes = applyUserAssignment(registeredData, codeToReg);
+          if (!assignRes.hasAccess) {
+            handleNoBoardAssigned(assignRes.managed || registeredData);
+            return;
+          }
+          const { targetProj, targetWs, managed, taskId, taskTitle, assignedProjects, assignedBoardNames } = assignRes;
 
           const finalRole = (managed && managed.role) ? (managed.role === 'admin' ? 'admin' : 'user') : (registeredData.role || 'user');
           const finalName = (managed && managed.fullName) ? managed.fullName : registeredData.name;
@@ -1654,7 +1761,12 @@ export class AuthView extends BaseView {
             }
           }
 
-          const { targetProj: fallbackProj, targetWs: fallbackWs, managed: fallbackManaged, taskId: fbTaskId, taskTitle: fbTaskTitle } = applyUserAssignment(userInstance, codeToReg);
+          const fallbackAssignRes = applyUserAssignment(userInstance, codeToReg);
+          if (!fallbackAssignRes.hasAccess) {
+            handleNoBoardAssigned(fallbackAssignRes.managed || userInstance);
+            return;
+          }
+          const { targetProj: fallbackProj, targetWs: fallbackWs, managed: fallbackManaged, taskId: fbTaskId, taskTitle: fbTaskTitle } = fallbackAssignRes;
           userInstance.assignedProjectId = fallbackProj;
           userInstance.assignedWorkspace = fallbackWs;
           userInstance.workspaceAccess = [fallbackWs, fallbackProj];
@@ -1724,11 +1836,18 @@ export class AuthView extends BaseView {
 
           setTimeout(() => {
             stopCamera();
-            const { targetProj, targetWs, managed, taskId, taskTitle } = applyUserAssignment(userInstance || userFromDb, cleanCode);
+            const assignRes = applyUserAssignment(userInstance || userFromDb, cleanCode);
+            if (!assignRes.hasAccess) {
+              handleNoBoardAssigned(assignRes.managed || userInstance || userFromDb);
+              return;
+            }
+            const { targetProj, targetWs, managed, taskId, taskTitle, assignedProjects, assignedBoardNames } = assignRes;
 
             userInstance.assignedProjectId = targetProj;
             userInstance.assignedWorkspace = targetWs;
-            userInstance.workspaceAccess = [targetWs, targetProj];
+            userInstance.workspaceAccess = (managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj];
+            userInstance.assignedProjects = assignedProjects;
+            userInstance.assignedBoardNames = assignedBoardNames;
             if (taskId && taskId !== 'all') {
               userInstance.assignedTaskId = taskId;
               userInstance.assignedTaskTitle = taskTitle;

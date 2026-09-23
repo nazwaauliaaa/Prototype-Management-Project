@@ -176,6 +176,15 @@ export class KanbanBoardView extends BaseView {
       }
     };
     window.addEventListener('storage', this._onStorageUpdate);
+
+    // Auto-update kanban whenever admin updates user board assignments
+    this._onAssignmentUpdated = () => {
+      if (this.element) {
+        this.mount(this.element);
+      }
+    };
+    this.eventBus.on('user:assignment-updated', this._onAssignmentUpdated);
+    window.addEventListener('user:assignment-updated', this._onAssignmentUpdated);
   }
 
   _initColumns() {
@@ -211,6 +220,35 @@ export class KanbanBoardView extends BaseView {
   }
 
   mount(hostElement) {
+    const perms = this.getPermissions();
+    if (perms.isUser) {
+      const allowedBoards = this.getUserAllowedBoards();
+      if (allowedBoards.length === 0) {
+        if (this.notificationService) {
+          this.notificationService.error('Akses ditolak: Anda belum memiliki penugasan papan proyek dari Admin.');
+        }
+        window.location.hash = '#/auth';
+        return;
+      }
+      const isAllowed = allowedBoards.some(b => 
+        b.id === this.projectId || 
+        b.workspace === this.currentWorkspace ||
+        (this.projectId && b.id.toLowerCase().replace(/[-_\s]/g, '') === this.projectId.toLowerCase().replace(/[-_\s]/g, '')) ||
+        (this.currentWorkspace && b.workspace.toLowerCase().replace(/[-_\s]/g, '') === this.currentWorkspace.toLowerCase().replace(/[-_\s]/g, ''))
+      );
+      if (!isAllowed) {
+        const fallback = allowedBoards[0];
+        if (this.notificationService) {
+          this.notificationService.warning(`Akses dibatasi: Anda belum ditugaskan ke papan "${this.formatProjectTitle(this.projectId || this.currentWorkspace)}". Dialihkan ke "${fallback.name}".`);
+        }
+        this.projectId = fallback.id;
+        this.currentWorkspace = fallback.workspace || fallback.id;
+        localStorage.setItem('active_project_id', this.projectId);
+        localStorage.setItem('active_workspace', this.currentWorkspace);
+        window.location.hash = `#/kanban/${this.projectId}`;
+      }
+    }
+
     super.mount(hostElement);
     document.body.classList.add('overflow-hidden');
     const shell = document.getElementById('app-shell-layout');
@@ -271,6 +309,10 @@ export class KanbanBoardView extends BaseView {
     if (this._onStorageUpdate) {
       window.removeEventListener('storage', this._onStorageUpdate);
     }
+    if (this._onAssignmentUpdated) {
+      this.eventBus.off('user:assignment-updated', this._onAssignmentUpdated);
+      window.removeEventListener('user:assignment-updated', this._onAssignmentUpdated);
+    }
     super.unmount();
   }
 
@@ -303,6 +345,23 @@ export class KanbanBoardView extends BaseView {
     }
     if (workspace && (workspace.toLowerCase().includes('creativ') || workspace.toLowerCase().includes('creative'))) {
       workspace = 'creativoffice';
+    }
+
+    const perms = this.getPermissions();
+    if (perms.isUser) {
+      const allowedBoards = this.getUserAllowedBoards();
+      if (allowedBoards.length > 0) {
+        const isTargetAllowed = allowedBoards.some(b => 
+          b.id === projectId || 
+          b.workspace === workspace ||
+          (projectId && b.id.toLowerCase().replace(/[-_\s]/g, '') === projectId.toLowerCase().replace(/[-_\s]/g, ''))
+        );
+        if (!isTargetAllowed) {
+          const fallback = allowedBoards[0];
+          projectId = fallback.id;
+          workspace = fallback.workspace || fallback.id;
+        }
+      }
     }
 
     this.projectId = projectId;
@@ -925,7 +984,29 @@ export class KanbanBoardView extends BaseView {
     this.eventBus.emit('invite:removed', { inviteId });
   }
 
+  getUserAllowedBoards() {
+    if (this.authService && typeof this.authService.getUserAllowedBoards === 'function') {
+      return this.authService.getUserAllowedBoards(this.getCurrentUser());
+    }
+    return [];
+  }
+
   getAvailableWorkspacesAndProjects() {
+    const perms = this.getPermissions();
+    if (perms.isUser) {
+      const allowed = this.getUserAllowedBoards();
+      return allowed.map(item => ({
+        id: item.id,
+        name: item.name,
+        code: item.code || 'PK',
+        workspace: item.workspace || item.id,
+        category: item.category || 'Papan Ditugaskan',
+        theme: null,
+        type: 'project',
+        icon: item.icon || '📋'
+      }));
+    }
+
     const list = [];
     // 1. Projects from ProjectService
     if (this.projectService) {
@@ -1686,6 +1767,65 @@ export class KanbanBoardView extends BaseView {
               <span>CreativOffice Board</span>
             </span>
           </div>
+
+          ${(perms.isUser && this.getUserAllowedBoards().length > 1) ? `
+          <!-- User Multi-Board Switcher Button in Kanban Sub-bar -->
+          <div class="relative flex items-center shrink-0">
+            <button
+              id="btn-kanban-user-board-switcher"
+              class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-purple-600/35 hover:bg-purple-600/50 text-white font-semibold text-[11.5px] sm:text-[12px] border border-purple-400/40 backdrop-blur-md shadow-sm transition-all active:scale-95 cursor-pointer group shrink-0"
+              title="Ganti ke papan proyek lain yang ditugaskan kepada Anda"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[15px] sm:text-[16px] text-purple-300 group-hover:rotate-180 transition-transform duration-300">sync_alt</span>
+              <span class="hidden sm:inline">Pindah Kanban</span>
+              <span class="sm:hidden">Papan</span>
+              <span class="px-1.5 py-0.2 rounded-md text-[9.5px] sm:text-[10px] font-mono font-bold bg-purple-400/25 text-purple-200 border border-purple-400/30">${this.getUserAllowedBoards().length} Papan</span>
+              <span class="material-symbols-outlined text-[15px] text-purple-300">expand_more</span>
+            </button>
+
+            <!-- Kanban User Board Switcher Popover -->
+            <div
+              id="popup-kanban-user-boards"
+              class="hidden absolute right-0 top-full mt-2 w-72 bg-[#0b061a]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/90 border border-white/20 p-2.5 z-50 flex flex-col gap-1 text-white animate-in fade-in zoom-in-95 duration-150"
+              style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.3) 0%, transparent 60%);"
+            >
+              <div class="px-2.5 py-1.5 border-b border-white/10 flex items-center justify-between mb-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[15px] text-purple-400">tune</span>
+                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-white/70">Papan Anda (${this.getUserAllowedBoards().length})</span>
+                </div>
+                <span class="text-[10px] text-purple-300 font-semibold">Beralih Akses</span>
+              </div>
+              <div class="flex flex-col gap-1 max-h-56 overflow-y-auto pr-0.5">
+                ${this.getUserAllowedBoards().map(board => {
+                  const isCurrent = (board.id === this.projectId || board.workspace === this.currentWorkspace || (this.projectId && board.id.toLowerCase().replace(/[-_\s]/g, '') === this.projectId.toLowerCase().replace(/[-_\s]/g, '')));
+                  return `
+                    <button
+                      type="button"
+                      class="btn-kanban-switch-user-board w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${isCurrent ? 'bg-purple-600/35 border border-purple-400/50 text-white shadow-xs' : 'hover:bg-white/10 text-white/80 hover:text-white border border-transparent'}"
+                      data-board-id="${board.id}"
+                      data-board-workspace="${board.workspace}"
+                    >
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-[13px] shrink-0">${board.icon || '📋'}</span>
+                        <div class="flex flex-col min-w-0">
+                          <span class="text-[12px] font-bold truncate leading-tight">${board.name}</span>
+                          <span class="text-[10px] text-white/50 truncate leading-tight mt-0.5">${board.category || 'Papan Kanban'}</span>
+                        </div>
+                      </div>
+                      ${isCurrent ? `
+                        <span class="material-symbols-outlined text-purple-400 text-[18px] shrink-0">check_circle</span>
+                      ` : `
+                        <span class="material-symbols-outlined text-white/30 text-[16px] shrink-0">arrow_forward</span>
+                      `}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+          ` : ''}
         </div>
 
         <!-- Main Body: Split View with Left Inbox Drawer + Board Columns -->
@@ -3947,7 +4087,8 @@ export class KanbanBoardView extends BaseView {
       '#popup-filter',
       '#popup-visibility',
       '#modal-share',
-      '#drawer-more-menu'
+      '#drawer-more-menu',
+      '#popup-kanban-user-boards'
     ];
     popups.forEach(sel => {
       const el = this.element.querySelector(sel);
@@ -4050,6 +4191,36 @@ export class KanbanBoardView extends BaseView {
         this._togglePopup('#popup-header-projects');
       });
     }
+
+    // 1.1b User Multi-Board Switcher Button Toggle & Navigation
+    const kanbanUserBoardSwitcherBtn = this.element.querySelector('#btn-kanban-user-board-switcher');
+    const kanbanUserBoardPopup = this.element.querySelector('#popup-kanban-user-boards');
+    if (kanbanUserBoardSwitcherBtn && kanbanUserBoardPopup) {
+      kanbanUserBoardSwitcherBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._togglePopup('#popup-kanban-user-boards');
+      });
+    }
+
+    const switchUserBoardBtns = this.element.querySelectorAll('.btn-kanban-switch-user-board');
+    switchUserBoardBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bId = btn.getAttribute('data-board-id');
+        const bWs = btn.getAttribute('data-board-workspace') || bId;
+        this._closeAllPopups();
+
+        this.setProject(bId, bWs);
+        window.location.hash = `#/kanban/${bId}`;
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: bId, workspace: bWs });
+
+        const name = btn.querySelector('.font-bold')?.textContent || 'Papan';
+        if (this.notificationService) {
+          this.notificationService.success(`Beralih ke papan "${name}".`);
+        }
+        this.mount(this.element);
+      });
+    });
 
     // 1.2 Header Project Switch Items
     const switchHeaderProjBtns = this.element.querySelectorAll('.btn-header-switch-project-item');
@@ -4814,8 +4985,8 @@ export class KanbanBoardView extends BaseView {
 
     // Close popups when clicking outside
     this.element.addEventListener('click', (e) => {
-      const isInsidePopup = e.target.closest('#popup-board-view-switch, #popup-header-projects, #popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu');
-      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-header-switch-project, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu');
+      const isInsidePopup = e.target.closest('#popup-board-view-switch, #popup-header-projects, #popup-board-members, #modal-powerups, #modal-automation, #popup-filter, #popup-visibility, #modal-share, #drawer-more-menu, #popup-kanban-user-boards');
+      const isTrigger = e.target.closest('#btn-board-view-switch, #btn-header-switch-project, #btn-board-avatar, #btn-board-powerups, #btn-board-automation, #btn-board-filter, #btn-board-visibility, #btn-board-share, #btn-board-more-menu, #btn-kanban-user-board-switcher');
       const isInsideLap = e.target.closest('.list-actions-popover');
       const isLapTrigger = e.target.closest('.btn-list-actions');
       if (!isInsidePopup && !isTrigger && !isInsideLap && !isLapTrigger) {

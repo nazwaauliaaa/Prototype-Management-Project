@@ -26,6 +26,18 @@ export class Header {
         this.renderToDOM();
       }
     });
+
+    this.eventBus.on('user:assignment-updated', () => {
+      if (this.hostElement) {
+        this.renderToDOM();
+      }
+    });
+
+    window.addEventListener('user:assignment-updated', () => {
+      if (this.hostElement) {
+        this.renderToDOM();
+      }
+    });
   }
 
   render() {
@@ -50,6 +62,16 @@ export class Header {
       user: { label: 'Creative Member', icon: 'person', class: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400/30' }
     };
     const activeBadge = roleBadges[activeRole || (user.role || '').toLowerCase()] || roleBadges['user'];
+
+    // Resolve allowed boards for member user
+    const allowedBoards = (isUserRole && this.authService) ? this.authService.getUserAllowedBoards(user) : [];
+    const curActiveWs = localStorage.getItem('active_workspace') || (allowedBoards[0]?.workspace) || 'panen-kunci';
+    const curActiveProj = localStorage.getItem('active_project_id') || (allowedBoards[0]?.id) || curActiveWs;
+    const currentActiveBoard = allowedBoards.find(b => 
+      b.id === curActiveProj || 
+      b.workspace === curActiveWs || 
+      (curActiveProj && b.id.toLowerCase().replace(/[-_\s]/g, '') === curActiveProj.toLowerCase().replace(/[-_\s]/g, ''))
+    ) || allowedBoards[0] || null;
 
     return `
       <header class="fixed top-0 left-0 right-0 h-topbar-height bg-surface-container-lowest/95 backdrop-blur-xl border-b border-surface-border z-50 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
@@ -140,11 +162,77 @@ export class Header {
             </button>
           </div>
           ` : `
-          <div class="flex-1 max-w-xl mx-1 sm:mx-4 hidden sm:flex items-center justify-center sm:justify-start min-w-0">
-            <button id="btn-header-user-kanban-badge" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 text-[11px] sm:text-[12px] font-semibold border border-sky-200/60 dark:border-sky-800/60 truncate cursor-pointer transition-all active:scale-98" title="Buka Papan Kanban" type="button">
-              <span class="material-symbols-outlined text-[15px] sm:text-[16px] shrink-0">view_week</span>
-              <span class="truncate">Papan Kanban • Member</span>
-            </button>
+          <div class="flex-1 max-w-xl mx-1 sm:mx-4 flex items-center justify-center sm:justify-start min-w-0">
+            ${allowedBoards.length > 1 ? `
+              <!-- Multi-Board Switcher Button for User Member -->
+              <div class="relative flex items-center min-w-0">
+                <button
+                  id="btn-header-user-board-switcher"
+                  class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-950/60 hover:from-purple-800/80 hover:to-indigo-800/80 text-white font-semibold text-[11.5px] sm:text-[12.5px] border border-purple-400/40 shadow-md shadow-purple-950/40 cursor-pointer transition-all active:scale-95 group shrink-0"
+                  title="Klik untuk berpindah ke papan kanban lain yang ditugaskan"
+                  type="button"
+                >
+                  <span class="flex items-center justify-center w-5 h-5 rounded-lg bg-purple-500/30 text-[11px] shrink-0">${currentActiveBoard?.icon || '📋'}</span>
+                  <span class="font-bold text-purple-100 truncate max-w-[120px] sm:max-w-[180px]">${currentActiveBoard?.name || 'Papan Kanban'}</span>
+                  <span class="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-purple-400/20 text-purple-300 border border-purple-400/30 font-mono shrink-0">${allowedBoards.length} Papan</span>
+                  <span class="material-symbols-outlined text-[16px] text-purple-300 group-hover:translate-y-0.5 transition-transform shrink-0">expand_more</span>
+                </button>
+
+                <!-- Dropdown Menu Papan Kanban User -->
+                <div
+                  id="header-user-board-menu"
+                  class="hidden absolute left-0 top-full mt-2 w-72 bg-[#0b061a]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/90 border border-white/15 p-2.5 z-50 flex flex-col gap-1 text-white animate-in fade-in zoom-in-95 duration-150"
+                  style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 90%, rgba(245, 158, 11, 0.14) 0%, transparent 55%);"
+                >
+                  <div class="px-2.5 py-1.5 border-b border-white/10 flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[15px] text-purple-400">dashboard_customize</span>
+                      <span class="text-[10px] font-mono font-bold tracking-wider uppercase text-white/70">Papan Ditugaskan (${allowedBoards.length})</span>
+                    </div>
+                    <span class="text-[9.5px] text-purple-300 font-semibold">Pilih Papan</span>
+                  </div>
+                  
+                  <div class="flex flex-col gap-1 max-h-56 overflow-y-auto pr-0.5">
+                    ${allowedBoards.map(board => {
+                      const isSelected = (currentActiveBoard && (board.id === currentActiveBoard.id || board.workspace === currentActiveBoard.workspace));
+                      return `
+                        <button
+                          type="button"
+                          class="header-user-board-item w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${isSelected ? 'bg-purple-600/30 border border-purple-400/50 text-white shadow-xs' : 'hover:bg-white/10 text-white/80 hover:text-white border border-transparent'}"
+                          data-board-id="${board.id}"
+                          data-board-workspace="${board.workspace}"
+                          data-board-name="${board.name}"
+                        >
+                          <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-[13px] shrink-0">${board.icon || '📋'}</span>
+                            <div class="flex flex-col min-w-0">
+                              <span class="text-[12px] font-bold truncate leading-tight">${board.name}</span>
+                              <span class="text-[10px] text-white/50 truncate leading-tight mt-0.5">${board.category || 'Papan Kanban'}</span>
+                            </div>
+                          </div>
+                          ${isSelected ? `
+                            <span class="material-symbols-outlined text-purple-400 text-[18px] shrink-0">check_circle</span>
+                          ` : `
+                            <span class="material-symbols-outlined text-white/30 text-[16px] shrink-0">arrow_forward</span>
+                          `}
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            ` : (allowedBoards.length === 1 ? `
+              <button id="btn-header-user-kanban-badge" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-purple-900/40 hover:bg-purple-900/60 text-purple-200 text-[11px] sm:text-[12px] font-semibold border border-purple-400/30 truncate cursor-pointer transition-all active:scale-98" title="Papan Kanban Aktif" type="button">
+                <span class="text-[13px] shrink-0">${allowedBoards[0].icon || '🌾'}</span>
+                <span class="truncate font-bold">${allowedBoards[0].name}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-purple-500/30 text-purple-300 shrink-0">Papan Aktif</span>
+              </button>
+            ` : `
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-400/30 text-[11px] font-semibold">
+                <span class="material-symbols-outlined text-[14px]">warning</span>
+                <span>Belum Ada Papan Ditugaskan</span>
+              </span>
+            `)}
           </div>
           `}
 
@@ -541,8 +629,19 @@ export class Header {
     const brand = this.element.querySelector('#header-brand-logo');
     if (brand) {
       brand.addEventListener('click', () => {
-        window.location.hash = '#/dashboard';
-        this.eventBus.emit('navigate', { view: 'dashboard' });
+        const activeRole = localStorage.getItem('active_user_role');
+        const user = this.authService ? this.authService.getCurrentUser() : null;
+        const isUserRole = activeRole === 'admin' ? false : ((user?.role || '').toLowerCase() === 'user' || activeRole === 'user');
+        if (isUserRole) {
+          const allowedBoards = this.authService ? this.authService.getUserAllowedBoards(user) : [];
+          const curWs = (allowedBoards[0]?.workspace) || 'panen-kunci';
+          const curProj = (allowedBoards[0]?.id) || curWs;
+          window.location.hash = `#/kanban/${curProj}`;
+          this.eventBus.emit('navigate', { view: 'kanban', projectId: curProj, workspace: curWs });
+        } else {
+          window.location.hash = '#/dashboard';
+          this.eventBus.emit('navigate', { view: 'dashboard' });
+        }
       });
     }
 
@@ -550,11 +649,44 @@ export class Header {
     if (kanbanBadge) {
       kanbanBadge.addEventListener('click', () => {
         const user = this.authService ? this.authService.getCurrentUser() : null;
-        const curWs = (user?.workspaceAccess && user.workspaceAccess[0]) || localStorage.getItem('user_invited_workspace') || localStorage.getItem('active_workspace') || 'panen-kunci';
-        const curProj = localStorage.getItem('user_invited_project') || localStorage.getItem('active_project_id') || curWs;
+        const allowedBoards = this.authService ? this.authService.getUserAllowedBoards(user) : [];
+        const curWs = (allowedBoards[0]?.workspace) || localStorage.getItem('active_workspace') || 'panen-kunci';
+        const curProj = (allowedBoards[0]?.id) || localStorage.getItem('active_project_id') || curWs;
+        window.location.hash = `#/kanban/${curProj}`;
         this.eventBus.emit('navigate', { view: 'kanban', projectId: curProj, workspace: curWs });
       });
     }
+
+    // User Board Switcher Toggle & Navigation
+    const userBoardSwitcherBtn = this.element.querySelector('#btn-header-user-board-switcher');
+    const userBoardMenu = this.element.querySelector('#header-user-board-menu');
+    if (userBoardSwitcherBtn && userBoardMenu) {
+      userBoardSwitcherBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userBoardMenu.classList.toggle('hidden');
+      });
+    }
+
+    const userBoardItems = this.element.querySelectorAll('.header-user-board-item');
+    userBoardItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bId = item.getAttribute('data-board-id');
+        const bWs = item.getAttribute('data-board-workspace') || bId;
+        const bName = item.getAttribute('data-board-name') || 'Papan Kanban';
+        
+        if (userBoardMenu) userBoardMenu.classList.add('hidden');
+
+        localStorage.setItem('active_project_id', bId);
+        localStorage.setItem('active_workspace', bWs);
+
+        window.location.hash = `#/kanban/${bId}`;
+        this.eventBus.emit('navigate', { view: 'kanban', projectId: bId, workspace: bWs });
+        
+        // Re-render header to update active title
+        this.renderToDOM();
+      });
+    });
 
     const mobileSearchBtn = this.element.querySelector('#btn-mobile-search');
     if (mobileSearchBtn) {
@@ -668,6 +800,9 @@ export class Header {
       }
       if (burgerMenu && !e.target.closest('#btn-header-burger') && !e.target.closest('#header-burger-menu')) {
         burgerMenu.classList.add('hidden');
+      }
+      if (userBoardMenu && !e.target.closest('#btn-header-user-board-switcher') && !e.target.closest('#header-user-board-menu')) {
+        userBoardMenu.classList.add('hidden');
       }
 
       // Delegated click handler to guarantee user management button responds reliably from anywhere

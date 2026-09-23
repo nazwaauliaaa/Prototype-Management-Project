@@ -482,6 +482,24 @@ export class AuthService {
    */
   loginAsUser(user, options = {}) {
     if (!user) return false;
+
+    // Strict Guard: User non-admin tidak dapat login jika belum ditugaskan papan proyek oleh Admin
+    const role = (user.role || '').toLowerCase();
+    const isAdmin = role === 'admin';
+    if (!isAdmin) {
+      const hasBoards = Boolean(
+        user.assignedProjectId || 
+        (Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0) ||
+        (Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0)
+      );
+      if (!hasBoards) {
+        if (!options?.silent && this.notifications) {
+          this.notifications.error(`Akses ditolak: Akun ${user.name || user.fullName || user.username || 'ini'} belum memiliki penugasan papan proyek dari Admin!`);
+        }
+        return false;
+      }
+    }
+
     this.currentUser = user instanceof User ? user : new User(user);
     if (user.assignedProjectId && !this.currentUser.assignedProjectId) {
       this.currentUser.assignedProjectId = user.assignedProjectId;
@@ -517,6 +535,140 @@ export class AuthService {
       this.notifications.success(`Masuk sebagai ${this.currentUser.name} (${this.currentUser.title || this.currentUser.role})`);
     }
     return true;
+  }
+
+  /**
+   * Mendapatkan daftar papan proyek yang diizinkan untuk diakses oleh user
+   * @param {Object} [targetUser]
+   * @returns {Array<{ id: string, name: string, workspace: string, code: string, category: string, icon: string }>}
+   */
+  getUserAllowedBoards(targetUser = null) {
+    const user = targetUser || this.getCurrentUser();
+    if (!user) return [];
+
+    const role = (user.role || localStorage.getItem('active_user_role') || 'admin').toLowerCase();
+    const isAdmin = role === 'admin';
+
+    // Standard metadata map
+    const stdBoardMeta = {
+      'panen-kunci': { id: 'panen-kunci', name: 'Panen Kunci', workspace: 'panen-kunci', code: 'PK', category: 'SaaS & Infrastruktur', icon: '🌾' },
+      'aikreativ': { id: 'aikreativ', name: 'AIKreasi', workspace: 'aikreativ', code: 'AI', category: 'AI & Otomasi', icon: '🤖' },
+      'layarbaca': { id: 'layarbaca', name: 'LayarBaca', workspace: 'layarbaca', code: 'LB', category: 'Media & Publikasi', icon: '📖' },
+      'creativoffice': { id: 'creativoffice', name: 'Creative Office', workspace: 'creativoffice', code: 'CO', category: 'Creative Hub', icon: '💼' },
+      'sharinginaja': { id: 'sharinginaja', name: 'Sharinginaja', workspace: 'sharinginaja', code: 'SH', category: 'Cloud Asset Hub', icon: '☁️' },
+      'ruangkreasi': { id: 'ruangkreasi', name: 'Ruang Kreasi', workspace: 'ruangkreasi', code: 'RK', category: 'Creative Studio', icon: '🎨' }
+    };
+
+    // If Admin, all standard and custom projects are allowed
+    if (isAdmin) {
+      const allBoards = Object.values(stdBoardMeta);
+      try {
+        const customWs = JSON.parse(localStorage.getItem('custom_workspaces') || '[]');
+        customWs.forEach(w => {
+          if (!allBoards.some(b => b.id === w.id || b.workspace === w.id)) {
+            allBoards.push({
+              id: w.id,
+              name: w.title || w.name,
+              workspace: w.id,
+              code: 'WS',
+              category: 'Ruang Kerja Kustom',
+              icon: '📁'
+            });
+          }
+        });
+      } catch (e) {}
+      return allBoards;
+    }
+
+    // Non-admin (User / Member):
+    // 1. Cross-reference with `creative_office_managed_users` to get latest assignment from admin
+    let rawBoardIds = [];
+    try {
+      const rawManaged = localStorage.getItem('creative_office_managed_users');
+      if (rawManaged) {
+        const managedUsers = JSON.parse(rawManaged);
+        if (Array.isArray(managedUsers)) {
+          const uEmail = (user.email || '').toLowerCase().trim();
+          const uUsername = (user.username || '').toLowerCase().trim();
+          const uName = (user.name || '').toLowerCase().trim();
+          const uId = String(user.id || '').trim();
+
+          const found = managedUsers.find(m => {
+            if (!m) return false;
+            const mEmail = (m.email || '').toLowerCase().trim();
+            const mUsername = (m.username || '').toLowerCase().trim();
+            const mName = (m.name || m.fullName || '').toLowerCase().trim();
+            const mId = String(m.id || '').trim();
+            return (uEmail && mEmail === uEmail) ||
+                   (uUsername && mUsername === uUsername) ||
+                   (uId && mId === uId) ||
+                   (uName && mName === uName);
+          });
+
+          if (found) {
+            if (Array.isArray(found.assignedProjects) && found.assignedProjects.length > 0) {
+              rawBoardIds = found.assignedProjects.filter(Boolean);
+            } else if (Array.isArray(found.workspaceAccess) && found.workspaceAccess.length > 0) {
+              rawBoardIds = found.workspaceAccess.filter(Boolean);
+            } else if (found.assignedProjectId) {
+              rawBoardIds = [found.assignedProjectId];
+            } else if (found.assignedWorkspace) {
+              rawBoardIds = [found.assignedWorkspace];
+            }
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fallback to user session object if managed users didn't find anything
+    if (rawBoardIds.length === 0) {
+      if (Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0) {
+        rawBoardIds = user.assignedProjects.filter(Boolean);
+      } else if (Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0) {
+        rawBoardIds = user.workspaceAccess.filter(Boolean);
+      } else if (user.assignedProjectId) {
+        rawBoardIds = [user.assignedProjectId];
+      } else if (user.assignedWorkspace) {
+        rawBoardIds = [user.assignedWorkspace];
+      }
+    }
+
+    // 3. Map raw IDs to standardized board objects
+    const resolvedBoards = [];
+    const seen = new Set();
+
+    rawBoardIds.forEach(rawId => {
+      if (!rawId) return;
+      const cleanId = String(rawId).trim().toLowerCase();
+      // Resolve alias
+      let matchedKey = cleanId;
+      if (cleanId.includes('panen') || cleanId.includes('panan')) matchedKey = 'panen-kunci';
+      else if (cleanId.includes('aikreativ') || cleanId.includes('aikreasi')) matchedKey = 'aikreativ';
+      else if (cleanId.includes('layarbaca')) matchedKey = 'layarbaca';
+      else if (cleanId.includes('creativ') || cleanId.includes('creative')) matchedKey = 'creativoffice';
+      else if (cleanId.includes('sharinginaja')) matchedKey = 'sharinginaja';
+      else if (cleanId.includes('ruangkreasi')) matchedKey = 'ruangkreasi';
+
+      if (seen.has(matchedKey)) return;
+      seen.add(matchedKey);
+
+      if (stdBoardMeta[matchedKey]) {
+        resolvedBoards.push(stdBoardMeta[matchedKey]);
+      } else {
+        // Custom board
+        const formattedTitle = cleanId.split(/[-_\s]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        resolvedBoards.push({
+          id: rawId,
+          name: formattedTitle,
+          workspace: rawId,
+          code: cleanId.slice(0, 2).toUpperCase(),
+          category: 'Papan Ditugaskan',
+          icon: '📋'
+        });
+      }
+    });
+
+    return resolvedBoards;
   }
 
   /**

@@ -94,6 +94,13 @@ export class UserManagementView extends BaseView {
       }
 
       if (Array.isArray(remoteUsers)) {
+        // Filter out any user IDs that are in local deleted blocklist
+        // This prevents sync from re-adding users that were deleted but not yet confirmed by Supabase
+        const deletedIds = this._getDeletedIds();
+        if (deletedIds.size > 0) {
+          remoteUsers = remoteUsers.filter(u => !deletedIds.has(String(u.id)));
+        }
+
         const stored = localStorage.getItem('creative_office_managed_users');
         const remoteStr = JSON.stringify(remoteUsers);
 
@@ -171,13 +178,42 @@ export class UserManagementView extends BaseView {
     } catch (e) {}
   }
 
+  /** Mendapatkan daftar ID pengguna yang sudah dihapus secara lokal (blocklist) */
+  _getDeletedIds() {
+    try {
+      const raw = localStorage.getItem('creative_office_deleted_user_ids');
+      if (raw) return new Set(JSON.parse(raw));
+    } catch (e) {}
+    return new Set();
+  }
+
+  /** Menambahkan ID ke blocklist pengguna dihapus */
+  _addDeletedId(id) {
+    const ids = this._getDeletedIds();
+    ids.add(String(id));
+    try {
+      localStorage.setItem('creative_office_deleted_user_ids', JSON.stringify([...ids]));
+    } catch (e) {}
+  }
+
+  /** Menghapus ID dari blocklist (setelah benar-benar terhapus dari Supabase) */
+  _removeDeletedId(id) {
+    const ids = this._getDeletedIds();
+    ids.delete(String(id));
+    try {
+      localStorage.setItem('creative_office_deleted_user_ids', JSON.stringify([...ids]));
+    } catch (e) {}
+  }
+
   getUsers() {
     try {
       const stored = localStorage.getItem('creative_office_managed_users');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return parsed;
+          const deletedIds = this._getDeletedIds();
+          // Filter out any user that is in the local deleted blocklist
+          return deletedIds.size > 0 ? parsed.filter(u => !deletedIds.has(String(u.id))) : parsed;
         }
       }
     } catch (e) {}
@@ -525,7 +561,7 @@ export class UserManagementView extends BaseView {
           <span class="px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${roleBadgeClass}">${u.role}</span>
         </td>
         <td class="px-5 py-4">
-          ${u.assignedProjectId || boardList.length > 0 ? `
+          ${boardList.length > 0 ? `
             <div class="flex flex-col gap-1 max-w-[260px]">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 w-fit" title="${allBoardsTooltip}">
@@ -544,9 +580,9 @@ export class UserManagementView extends BaseView {
               </div>
             </div>
           ` : `
-            <span class="text-xs text-white/40 italic flex items-center gap-1">
-              <span class="material-symbols-outlined text-[14px] text-white/30">hourglass_empty</span>
-              <span>Belum Ditugaskan</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-400/30">
+              <span class="material-symbols-outlined text-[14px]">block</span>
+              <span>Belum Ditugaskan Papan</span>
             </span>
           `}
         </td>
@@ -557,9 +593,10 @@ export class UserManagementView extends BaseView {
           <div class="flex items-center gap-2">
             ${u.role !== 'admin' ? `
               <button
-                class="btn-user-login-direct text-teal-300 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/30 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+                class="btn-user-login-direct ${boardList.length === 0 ? 'text-white/40 bg-white/5 border border-white/10 hover:bg-white/10' : 'text-teal-300 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/30'} px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
                 data-id="${u.id}"
-                title="Masuk langsung ke Kanban ${primaryBoard} akun ${u.username} tanpa scan"
+                data-has-board="${boardList.length > 0 ? 'true' : 'false'}"
+                title="${boardList.length > 0 ? `Masuk langsung ke Kanban ${primaryBoard} akun ${u.username} tanpa scan` : `Akun belum ditugaskan papan proyek`}"
                 type="button"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in" aria-hidden="true">
@@ -675,7 +712,7 @@ export class UserManagementView extends BaseView {
               <div>
                 <div class="flex items-center justify-between mb-1.5 gap-2">
                   <label class="block text-[11px] font-semibold text-white/80 truncate">Tujuan Papan Kanban (Bisa &gt; 1)</label>
-                  <span id="count-selected-new-projects" class="text-[9.5px] sm:text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full shadow-xs shrink-0">1 Papan Terpilih</span>
+                  <span id="count-selected-new-projects" class="text-[9.5px] sm:text-[10px] font-bold text-white/50 bg-white/10 border border-white/15 px-2 py-0.5 rounded-full shadow-xs shrink-0">0 Papan Terpilih</span>
                 </div>
 
                 <!-- Custom Multi-Select Dropdown Trigger -->
@@ -687,10 +724,7 @@ export class UserManagementView extends BaseView {
                   title="Klik untuk memilih satu atau beberapa papan proyek"
                 >
                   <div id="tags-selected-new-projects" class="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-1 py-0.5 min-w-0">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[10.5px] font-bold bg-purple-500/25 text-purple-200 border border-purple-400/35 shadow-xs max-w-full">
-                      <span class="truncate max-w-[130px] sm:max-w-[170px]">CreativOffice (Creative Office)</span>
-                      <span class="btn-remove-new-tag material-symbols-outlined text-[13px] hover:text-white cursor-pointer ml-0.5" data-val="creativoffice">close</span>
-                    </span>
+                    <span class="text-white/40 text-[10.5px] italic">Klik untuk memilih papan proyek...</span>
                   </div>
                   <span id="icon-chevron-new-projects" class="material-symbols-outlined text-[18px] text-white/60 shrink-0 ml-1.5 transition-transform duration-200">expand_more</span>
                 </div>
@@ -719,14 +753,13 @@ export class UserManagementView extends BaseView {
                   <!-- Board Checklist -->
                   <div class="flex flex-col gap-1">
                     ${availableBoards.map(b => `
-                      <label class="item-new-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none ${b.id === 'creativoffice' ? 'bg-purple-600/20 border border-purple-500/30' : 'border border-transparent'}">
+                      <label class="item-new-project-option flex items-center justify-between p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-all text-xs select-none border border-transparent">
                         <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
                           <input
                             type="checkbox"
                             class="cb-new-project rounded accent-purple-600 w-4 h-4 cursor-pointer shrink-0"
                             value="${b.id}"
                             data-name="${b.name}"
-                            ${b.id === 'creativoffice' ? 'checked' : ''}
                           />
                           <span class="truncate font-medium text-white/90 text-[11px] sm:text-[11.5px]">${b.name}</span>
                         </div>
@@ -741,7 +774,7 @@ export class UserManagementView extends BaseView {
                 <!-- Hidden Synced Native Select -->
                 <select id="select-new-project" multiple class="hidden">
                   ${availableBoards.map(b => `
-                    <option value="${b.id}" data-name="${b.name}" ${b.id === 'creativoffice' ? 'selected' : ''}>${b.name}</option>
+                    <option value="${b.id}" data-name="${b.name}">${b.name}</option>
                   `).join('')}
                 </select>
 
@@ -1296,12 +1329,7 @@ export class UserManagementView extends BaseView {
         let assignedProjects = checkedBoxes.map(cb => cb.value);
         let assignedBoardNames = checkedBoxes.map(cb => cb.getAttribute('data-name') || cb.value);
 
-        if (assignedProjects.length === 0) {
-          assignedProjects = ['creativoffice'];
-          assignedBoardNames = ['CreativOffice'];
-        }
-
-        const assignedProjectId = assignedProjects[0];
+        const assignedProjectId = assignedProjects[0] || '';
         const assignedWorkspace = assignedProjectId;
         const assignedBoardName = assignedBoardNames.join(', ');
 
@@ -1427,12 +1455,7 @@ export class UserManagementView extends BaseView {
         let assignedProjects = checkedEditBoxes.map(cb => cb.value);
         let assignedBoardNames = checkedEditBoxes.map(cb => cb.getAttribute('data-name') || cb.value);
 
-        if (assignedProjects.length === 0) {
-          assignedProjects = ['creativoffice'];
-          assignedBoardNames = ['CreativOffice'];
-        }
-
-        const assignedProjectId = assignedProjects[0];
+        const assignedProjectId = assignedProjects[0] || '';
         const assignedWorkspace = assignedProjectId;
         const assignedBoardName = assignedBoardNames.join(', ');
 
@@ -1493,6 +1516,27 @@ export class UserManagementView extends BaseView {
           users[idx].telegramId = telegramId;
 
           this.saveUsers(users);
+
+          // Update active session user if editing the currently logged-in user
+          const currentUser = this.authService ? this.authService.getCurrentUser() : null;
+          if (currentUser && (currentUser.id === userId || currentUser.username === users[idx].username)) {
+            currentUser.assignedProjects = assignedProjects;
+            currentUser.assignedBoardNames = assignedBoardNames;
+            currentUser.assignedProjectId = assignedProjectId;
+            currentUser.assignedWorkspace = assignedWorkspace;
+            currentUser.workspaceAccess = assignedProjects;
+            currentUser.assignedTaskId = assignedTaskId;
+            currentUser.assignedTaskTitle = assignedTaskTitle;
+            try {
+              localStorage.setItem('creative_office_auth_user', JSON.stringify(currentUser));
+              localStorage.setItem('creative_office_user', JSON.stringify(currentUser));
+            } catch (e) {}
+          }
+          if (this.eventBus) {
+            this.eventBus.emit('user:assignment-updated', { user: users[idx] });
+            this.eventBus.emit('auth:profile-updated', currentUser || users[idx]);
+          }
+
           closeEditModal();
           if (this.notificationService) {
             this.notificationService.success(`Perubahan akun ${users[idx].username} & penugasan papan berhasil disimpan!`);
@@ -1503,8 +1547,6 @@ export class UserManagementView extends BaseView {
     }
 
     this._editBoardSelector = editBoardSelector;
-
-
 
     this._bindRowEvents();
   }
@@ -1519,6 +1561,14 @@ export class UserManagementView extends BaseView {
         const userId = btn.getAttribute('data-id');
         const user = this.getUsers().find(u => u.id === userId);
         if (!user) return;
+
+        const hasAssignedBoard = Boolean(user.assignedProjectId || (user.assignedProjects && user.assignedProjects.length > 0));
+        if (user.role !== 'admin' && !hasAssignedBoard) {
+          if (this.notificationService) {
+            this.notificationService.warning(`Akun ${user.username} belum memiliki penugasan papan proyek! Silakan edit akun dan tambahkan minimal 1 papan sebelum masuk.`);
+          }
+          return;
+        }
 
         const targetProj = user.assignedProjectId || 'creativoffice';
         const targetWs = user.assignedWorkspace || targetProj;
@@ -1653,7 +1703,7 @@ export class UserManagementView extends BaseView {
     // Delete User Button
     const deleteBtns = this.element.querySelectorAll('.btn-user-delete');
     deleteBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const userId = btn.getAttribute('data-id');
         const users = this.getUsers();
         const user = users.find(u => u.id === userId);
@@ -1667,20 +1717,44 @@ export class UserManagementView extends BaseView {
         }
 
         if (confirm(`Apakah Anda yakin ingin menghapus akun ${user.fullName} (${user.username}) secara permanen?`)) {
+          // 1. Tambahkan ke blocklist lokal DULU agar sync tidak membawa balik user ini
+          this._addDeletedId(userId);
+
+          // 2. Hapus dari localStorage
           const updated = users.filter(u => u.id !== userId);
           this.saveUsers(updated);
+
+          // 3. Hapus dari Supabase (await agar hasilnya terkonfirmasi)
+          let supabaseOk = false;
+          if (this.supabaseService && this.supabaseService.isConfigured()) {
+            try {
+              supabaseOk = await this.supabaseService.deleteUser(userId);
+              if (!supabaseOk) {
+                console.warn('[UserManagementView] Supabase deleteUser returned false untuk ID:', userId);
+              }
+            } catch (err) {
+              console.warn('[UserManagementView] Gagal hapus user dari Supabase:', err.message);
+            }
+          }
+
+          // 4. Hapus dari backend API juga
           apiService.deleteManagedUser(userId).catch(err => {
             console.warn('[UserManagementView] Gagal hapus user dari backend:', err.message);
           });
-          if (this.supabaseService && this.supabaseService.isConfigured()) {
-            this.supabaseService.deleteUser(userId).catch(err => {
-              console.warn('[UserManagementView] Gagal hapus user dari Supabase:', err.message);
-            });
+
+          // 5. Jika Supabase berhasil, hapus dari blocklist (tidak perlu lagi)
+          //    Jika gagal, biarkan di blocklist agar user tidak muncul lagi dari sync
+          if (supabaseOk) {
+            this._removeDeletedId(userId);
           }
+
           if (this.notificationService) {
-            this.notificationService.success(`Akun ${user.username} telah dihapus dari sistem & Supabase.`);
+            const extraInfo = supabaseOk ? '' : ' (Catatan: data di Supabase mungkin belum terhapus, akan disembunyikan secara lokal)';
+            this.notificationService.success(`Akun ${user.username} telah dihapus.${extraInfo}`);
           }
-          this.mount(this.element);
+
+          // 6. Re-render tabel
+          this._updateTableBody();
         }
       });
     });
