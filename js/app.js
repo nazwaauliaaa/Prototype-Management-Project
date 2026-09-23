@@ -723,21 +723,22 @@ class CreativeOfficeApp {
 
       const authService = this.container.resolve('AuthService');
       const currentUser = loggedInUser || (authService ? authService.getCurrentUser() : null);
+      const role = (currentUser?.role || 'admin').toLowerCase();
 
-      // Only on initial QR scan login, jump to assigned kanban board
-      if (currentUser && currentUser.loginMethod === 'qr' && !window.location.hash.replace('#/', '')) {
-        const allowedWs = (currentUser && currentUser.assignedWorkspace) || (currentUser && currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
-        const allowedProj = (currentUser && currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
-        this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+      // QR login: arahkan ke kanban board yang sudah di-assign
+      if (currentUser && currentUser.loginMethod === 'qr') {
+        const allowedWs = (currentUser.assignedWorkspace) || (currentUser.workspaceAccess && currentUser.workspaceAccess[0]) || localStorage.getItem('active_workspace') || 'creativoffice';
+        const allowedProj = (currentUser.assignedProjectId) || localStorage.getItem('active_project_id') || allowedWs;
+        if (role === 'admin') {
+          this.navigateTo('dashboard');
+        } else {
+          this.navigateTo('kanban', { projectId: allowedProj, workspace: allowedWs });
+        }
         return;
       }
 
-      const currentHash = window.location.hash.replace(/^#\/?/, '');
-      if (currentHash && currentHash !== 'auth' && currentHash !== 'login') {
-        this.handleHashChange();
-      } else {
-        this.navigateTo('dashboard');
-      }
+      // Password login (admin atau role lain): langsung ke dashboard
+      this.navigateTo('dashboard');
     });
   }
 
