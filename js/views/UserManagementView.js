@@ -1,5 +1,6 @@
 import { BaseView } from '../core/BaseView.js';
 import { apiService } from '../services/ApiService.js';
+import { supabaseService } from '../services/SupabaseService.js';
 
 /**
  * UserManagementView - Halaman Manajemen Pengguna untuk Administrator
@@ -9,11 +10,11 @@ import { apiService } from '../services/ApiService.js';
 export class UserManagementView extends BaseView {
   constructor(container) {
     super(container);
-    this.authService = container.resolve('AuthService');
-    this.notificationService = container.resolve('NotificationService');
-    this.projectService = container.resolve('ProjectService');
-    this.taskService = container.resolve('TaskService');
-    this.supabaseService = container.resolve('SupabaseService');
+    this.authService = container ? container.resolve('AuthService') : null;
+    this.notificationService = container ? container.resolve('NotificationService') : null;
+    this.projectService = container ? container.resolve('ProjectService') : null;
+    this.taskService = container ? container.resolve('TaskService') : null;
+    this.supabaseService = (container && container.resolve('SupabaseService')) || supabaseService;
 
     this.searchQuery = '';
     this.editingUser = null;

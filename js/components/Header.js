@@ -86,14 +86,14 @@ export class Header {
                   <button
                     id="btn-burger-user-mgmt"
                     type="button"
-                    class="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-800/90 via-indigo-800/90 to-purple-900/90 hover:from-purple-700 hover:to-indigo-700 border border-purple-400/40 active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-md shadow-purple-950/50 cursor-pointer"
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-800/90 via-indigo-800/90 to-purple-900/90 hover:from-purple-700 hover:to-indigo-700 border border-purple-400/40 active:scale-95 text-white text-[12.5px] font-semibold flex items-center justify-between transition-all shadow-md shadow-purple-950/50 cursor-pointer pointer-events-auto relative z-20"
                     title="Buka Halaman Manajemen Pengguna"
                   >
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 pointer-events-none">
                       <span class="material-symbols-outlined text-[18px] text-purple-300">manage_accounts</span>
                       <span>Manajemen Pengguna</span>
                     </div>
-                    <span class="material-symbols-outlined text-[16px] text-white/80">arrow_forward</span>
+                    <span class="material-symbols-outlined text-[16px] text-white/80 pointer-events-none">arrow_forward</span>
                   </button>
                 </div>
               </div>
@@ -694,15 +694,19 @@ export class Header {
       });
     }
 
-    const burgerUserMgmtBtn = this.element.querySelector('#btn-dashboard-user-mgmt') || this.element.querySelector('#btn-burger-user-mgmt');
+    const burgerUserMgmtBtn = this.element.querySelector('#btn-burger-user-mgmt');
     if (burgerUserMgmtBtn) {
       burgerUserMgmtBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (burgerMenu) burgerMenu.classList.add('hidden');
         localStorage.setItem('active_user_role', 'admin');
-        window.location.hash = '#/users';
-        this.eventBus.emit('navigate', { view: 'users' });
+        if (this.eventBus) {
+          this.eventBus.emit('navigate', { view: 'users' });
+        }
+        if (window.location.hash !== '#/users') {
+          window.location.hash = '#/users';
+        }
       });
     }
 

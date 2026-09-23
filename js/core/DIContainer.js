@@ -39,7 +39,8 @@ export class DIContainer {
 
     const definition = this.services.get(key);
     if (!definition) {
-      throw new Error(`[DIContainer] Service not found for key: ${key}`);
+      console.warn(`[DIContainer] Service not found for key: ${key}`);
+      return null;
     }
 
     let instance;
