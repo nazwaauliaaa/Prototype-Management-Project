@@ -219,8 +219,6 @@ export class CreateBoardModal extends BaseModal {
               <option value="Dev / Creative Hub" selected>Dev / Creative</option>
               <option value="Produk / Inovasi">Produk / Inovasi</option>
               <option value="Studio / Digital & AI">Digital & AI</option>
-              <option value="SaaS / Security & Core">SaaS & Security</option>
-              <option value="Cloud / Infrastruktur">Cloud Infra</option>
               <option value="Marketing / Kampanye">Marketing</option>
             </select>
 
@@ -247,12 +245,6 @@ export class CreateBoardModal extends BaseModal {
               </button>
               <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Studio / Digital & AI" data-label="Digital & AI">
                 <span class="truncate">Digital & AI</span>
-              </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="SaaS / Security & Core" data-label="SaaS & Security">
-                <span class="truncate">SaaS & Security</span>
-              </button>
-              <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Cloud / Infrastruktur" data-label="Cloud Infra">
-                <span class="truncate">Cloud Infra</span>
               </button>
               <button type="button" class="btn-board-category-option w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-white/10 hover:text-white text-white/80 transition-colors cursor-pointer" data-value="Marketing / Kampanye" data-label="Marketing">
                 <span class="truncate">Marketing</span>
