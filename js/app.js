@@ -757,12 +757,12 @@ class CreativeOfficeApp {
         return;
       }
 
-      // Role user (non-admin) selalu diarahkan ke kanban board yang diizinkan
+      // Role user (non-admin) selalu diarahkan ke kanban board yang diizinkan, atau jika belum ada tugas diarahkan ke tampilan kanban kosong bertanda baca
       if (role === 'user') {
         const allowedBoards = authService ? authService.getUserAllowedBoards(currentUser) : [];
         if (allowedBoards.length === 0) {
-          window.location.hash = '#/auth';
-          this.navigateTo('auth');
+          window.location.hash = '#/kanban/empty';
+          this.navigateTo('kanban', { projectId: 'empty', workspace: 'empty' });
           return;
         }
         const activeProj = localStorage.getItem('active_project_id');
@@ -808,8 +808,9 @@ class CreativeOfficeApp {
       if (role === 'user') {
         const allowedBoards = authService ? authService.getUserAllowedBoards(currentUser) : [];
         if (allowedBoards.length === 0) {
-          // User tidak memiliki akses papan, tahan di auth gate
-          this.navigateTo('auth');
+          // User belum memiliki penugasan papan/tugas: tetap masuk ke kanban kosong dengan tanda baca admin belum memberi tugas
+          window.location.hash = '#/kanban/empty';
+          this.navigateTo('kanban', { projectId: 'empty', workspace: 'empty' });
           return;
         }
         const activeProj = localStorage.getItem('active_project_id');
@@ -898,7 +899,10 @@ class CreativeOfficeApp {
     if (isUserRole && !isUserMgmtRoute) {
       const allowedBoards = authService ? authService.getUserAllowedBoards(currentUser) : [];
       if (allowedBoards.length === 0) {
-        viewName = 'auth';
+        if (viewName !== 'profile' && viewName !== 'profil' && viewName !== 'auth') {
+          viewName = 'kanban';
+        }
+        params = { ...params, projectId: 'empty', workspace: 'empty' };
       } else {
         let reqProj = params.projectId || localStorage.getItem('active_project_id');
         let reqWs = params.workspace || localStorage.getItem('active_workspace');

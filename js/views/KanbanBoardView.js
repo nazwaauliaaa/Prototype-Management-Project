@@ -235,29 +235,25 @@ export class KanbanBoardView extends BaseView {
     const perms = this.getPermissions();
     if (perms.isUser) {
       const allowedBoards = this.getUserAllowedBoards();
-      if (allowedBoards.length === 0) {
-        if (this.notificationService) {
-          this.notificationService.error('Akses ditolak: Anda belum memiliki penugasan papan proyek dari Admin.');
+      if (allowedBoards.length > 0) {
+        const isAllowed = allowedBoards.some(b => 
+          b.id === this.projectId || 
+          b.workspace === this.currentWorkspace ||
+          (this.projectId && b.id.toLowerCase().replace(/[-_\s]/g, '') === this.projectId.toLowerCase().replace(/[-_\s]/g, '')) ||
+          (this.currentWorkspace && b.workspace.toLowerCase().replace(/[-_\s]/g, '') === this.currentWorkspace.toLowerCase().replace(/[-_\s]/g, ''))
+        );
+        if (!isAllowed) {
+          const fallback = allowedBoards[0];
+          this.projectId = fallback.id;
+          this.currentWorkspace = fallback.workspace || fallback.id;
+          localStorage.setItem('active_project_id', this.projectId);
+          localStorage.setItem('active_workspace', this.currentWorkspace);
+          window.location.hash = `#/kanban/${this.projectId}`;
         }
-        window.location.hash = '#/auth';
-        return;
-      }
-      const isAllowed = allowedBoards.some(b => 
-        b.id === this.projectId || 
-        b.workspace === this.currentWorkspace ||
-        (this.projectId && b.id.toLowerCase().replace(/[-_\s]/g, '') === this.projectId.toLowerCase().replace(/[-_\s]/g, '')) ||
-        (this.currentWorkspace && b.workspace.toLowerCase().replace(/[-_\s]/g, '') === this.currentWorkspace.toLowerCase().replace(/[-_\s]/g, ''))
-      );
-      if (!isAllowed) {
-        const fallback = allowedBoards[0];
-        if (this.notificationService) {
-          this.notificationService.warning(`Akses dibatasi: Anda belum ditugaskan ke papan "${this.formatProjectTitle(this.projectId || this.currentWorkspace)}". Dialihkan ke "${fallback.name}".`);
-        }
-        this.projectId = fallback.id;
-        this.currentWorkspace = fallback.workspace || fallback.id;
-        localStorage.setItem('active_project_id', this.projectId);
-        localStorage.setItem('active_workspace', this.currentWorkspace);
-        window.location.hash = `#/kanban/${this.projectId}`;
+      } else {
+        // User belum memiliki penugasan papan/tugas dari admin: tetap izinkan membuka kanban dengan tampilan kosong bertanda baca
+        this.projectId = 'empty';
+        this.currentWorkspace = 'empty';
       }
     }
 
@@ -1063,6 +1059,58 @@ export class KanbanBoardView extends BaseView {
     return [];
   }
 
+  /**
+   * Memeriksa apakah user saat ini belum mendapatkan tugas dari admin
+   * @returns {boolean}
+   */
+  isUserWithoutAssignedTasks() {
+    const perms = this.getPermissions();
+    if (!perms.isUser) return false;
+
+    const user = this.getCurrentUser();
+    if (!user) return true;
+
+    // 1. Jika admin secara eksplisit menyetel belum ada tugas
+    if (user.assignedTaskId === 'none') {
+      return true;
+    }
+
+    // 2. Jika papan yang diizinkan kosong
+    const allowedBoards = this.getUserAllowedBoards();
+    if (allowedBoards.length === 0) {
+      return true;
+    }
+
+    // 3. Gunakan method hasAssignedTasks dari AuthService jika tersedia
+    if (this.authService && typeof this.authService.hasAssignedTasks === 'function') {
+      return !this.authService.hasAssignedTasks(user);
+    }
+
+    // 4. Periksa apakah ada tugas untuk user di TaskService
+    if (this.taskService) {
+      const allTasks = this.taskService.getTasks();
+      const uName = (user.name || '').toLowerCase().trim();
+      const uEmail = (user.email || '').toLowerCase().trim();
+      const hasTask = allTasks.some(t => {
+        const picName = (t.pic?.name || t.pic || '').toLowerCase().trim();
+        const picEmail = (t.pic?.email || '').toLowerCase().trim();
+        return (uName && (picName === uName || picName.includes(uName))) ||
+               (uEmail && picEmail === uEmail);
+      });
+      if (hasTask) return false;
+    }
+
+    if (user.assignedTaskId === 'all') {
+      return false;
+    }
+
+    if (user.assignedTaskId && user.assignedTaskId !== 'none') {
+      return false;
+    }
+
+    return true;
+  }
+
   getAvailableWorkspacesAndProjects() {
     const perms = this.getPermissions();
     if (perms.isUser) {
@@ -1418,9 +1466,11 @@ export class KanbanBoardView extends BaseView {
       } catch (e) { }
     }
 
+    const isUserNoTasks = this.isUserWithoutAssignedTasks();
+
     // Filter tasks for this project / workspace
-    const boardTasks = this.taskService ? (typeof this.taskService.getTasksForBoard === 'function' ? this.taskService.getTasksForBoard(this.project || { id: this.projectId, workspace: this.currentWorkspace }) : this.taskService.getTasks()) : [];
-    const allTasks = boardTasks.filter(t => {
+    const boardTasks = isUserNoTasks ? [] : (this.taskService ? (typeof this.taskService.getTasksForBoard === 'function' ? this.taskService.getTasksForBoard(this.project || { id: this.projectId, workspace: this.currentWorkspace }) : this.taskService.getTasks()) : []);
+    let allTasks = boardTasks.filter(t => {
       if (this.highlightTaskId && t.id === this.highlightTaskId) return true;
       if (this.activeFilter === 'critical') return t.priority === 'Critical';
       if (this.activeFilter === 'high') return t.priority === 'High' || t.priority === 'Critical';
@@ -1428,6 +1478,15 @@ export class KanbanBoardView extends BaseView {
       if (this.activeFilter === 'in-progress') return t.status === 'in-progress';
       return true;
     });
+
+    // Jika user memiliki tugas spesifik yang di-assign oleh admin, batasi kartu sesuai tugas tersebut
+    if (perms.isUser && !isUserNoTasks) {
+      const u = this.getCurrentUser();
+      const uName = (u?.name || '').toLowerCase().trim();
+      if (u?.assignedTaskId && u.assignedTaskId !== 'all' && u.assignedTaskId !== 'none') {
+        allTasks = allTasks.filter(t => t.id === u.assignedTaskId || (uName && t.pic?.name && t.pic.name.toLowerCase().includes(uName)));
+      }
+    }
 
     // Background style according to theme
     let bgStyle = '';
@@ -1820,10 +1879,10 @@ export class KanbanBoardView extends BaseView {
         <div class="w-full px-4 sm:px-6 py-2 bg-black/25 backdrop-blur-md border-b border-white/10 flex items-center justify-between z-20 relative shrink-0">
           <div class="flex items-center gap-2.5 min-w-0">
             <h1 class="text-[18px] sm:text-[20px] font-bold text-white tracking-tight drop-shadow-sm truncate">
-              ${boardTitle}
+              ${isUserNoTasks ? 'Papan Tugas • Belum Ada Tugas' : boardTitle}
             </h1>
-            <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-white/80 border border-white/15">
-              <span>CreativOffice Board</span>
+            <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${isUserNoTasks ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' : 'bg-white/10 text-white/80 border border-white/15'}">
+              <span>${isUserNoTasks ? 'Menunggu Penugasan Admin' : 'CreativOffice Board'}</span>
             </span>
           </div>
 
@@ -2051,6 +2110,7 @@ export class KanbanBoardView extends BaseView {
             ` : ''}
 
             <!-- Mobile Column Navigation Tabs (Mobile Only) -->
+            ${!isUserNoTasks ? `
             <div class="sm:hidden flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-none bg-black/35 backdrop-blur-md border-b border-white/10 shrink-0 select-none z-10" id="mobile-kanban-tabs">
               ${this.columns.map((col, idx) => {
                 const validColIds = ['backlog', 'in-progress', 'done'];
@@ -2075,6 +2135,7 @@ export class KanbanBoardView extends BaseView {
                 `;
               }).join('')}
             </div>
+            ` : ''}
 
             <!-- Pull-to-Refresh Indicator (Mobile Touch) -->
             <div id="pull-to-refresh-indicator" class="sm:hidden w-full flex items-center justify-center gap-2 py-0 text-purple-200 text-[11.5px] font-semibold transition-all duration-150 overflow-hidden shrink-0 select-none pointer-events-none" style="max-height: 0px; opacity: 0;">
@@ -2082,6 +2143,96 @@ export class KanbanBoardView extends BaseView {
               <span class="ptr-text">Tarik ke bawah untuk menyegarkan</span>
             </div>
 
+            ${isUserNoTasks ? `
+              <!-- Empty State: Admin Belum Memberi Tugas (Halaman Kosong & Tanda Baca Jelas) -->
+              <div class="flex-1 w-full flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+                <div class="w-full max-w-lg bg-[#0e0a22]/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-10 border border-purple-400/30 shadow-[0_0_50px_rgba(147,51,234,0.25),0_20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center text-center relative overflow-hidden text-white">
+                  
+                  <!-- Ambient Top Accent Glow -->
+                  <div class="absolute -top-16 -left-16 w-48 h-48 bg-purple-600/30 rounded-full blur-3xl pointer-events-none"></div>
+                  <div class="absolute -top-16 -right-16 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                  <!-- Neon Icon Badge -->
+                  <div class="relative mb-5 flex items-center justify-center">
+                    <div class="w-20 h-20 rounded-3xl bg-amber-500/15 border-2 border-amber-400/40 flex items-center justify-center shadow-lg shadow-amber-500/20 text-amber-400">
+                      <span class="material-symbols-outlined text-[42px] animate-pulse">assignment_late</span>
+                    </div>
+                    <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0e0a22] border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-xs">
+                      <span class="material-symbols-outlined text-[14px]">priority_high</span>
+                    </span>
+                  </div>
+
+                  <!-- Status Chip Indicator -->
+                  <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-bold tracking-wider uppercase shadow-xs mb-3">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>Menunggu Penugasan Admin</span>
+                  </div>
+
+                  <!-- Main Heading / Tanda Baca -->
+                  <h2 class="text-2xl sm:text-[26px] font-extrabold text-white tracking-tight leading-snug">
+                    Admin Belum Memberi Tugas
+                  </h2>
+
+                  <!-- Friendly Description -->
+                  <p class="text-sm text-white/70 max-w-sm mx-auto leading-relaxed mt-2.5">
+                    Halo, <span class="font-bold text-white">${perms.user.name || 'Pengguna'}</span>! Akun Anda telah berhasil login ke sistem CreativOffice. Saat ini Administrator belum memberikan atau menugaskan pekerjaan untuk akun Anda.
+                  </p>
+
+                  <!-- Status Guide Card -->
+                  <div class="w-full mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 text-left flex flex-col gap-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-purple-300 uppercase tracking-wider">
+                      <span class="material-symbols-outlined text-[16px]">info</span>
+                      <span>Informasi & Petunjuk</span>
+                    </div>
+                    <ul class="text-[12px] text-white/65 space-y-1.5 pl-0.5">
+                      <li class="flex items-start gap-2">
+                        <span class="text-amber-400 font-bold shrink-0">•</span>
+                        <span>Halaman papan ini sengaja dikosongkan sampai Admin mendelegasikan tugas kepada Anda.</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <span class="text-amber-400 font-bold shrink-0">•</span>
+                        <span>Silakan hubungi Admin atau Project Manager untuk konfirmasi pembagian tugas pekerjaan Anda.</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <span class="text-amber-400 font-bold shrink-0">•</span>
+                        <span>Jika Admin baru saja memberikan tugas di Manajemen Pengguna, klik tombol <b>Segarkan Halaman</b> di bawah.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex flex-col sm:flex-row items-center gap-3 w-full mt-6">
+                    <button
+                      id="btn-empty-state-refresh"
+                      type="button"
+                      class="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-900/40 border border-purple-400/30 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[17px]">refresh</span>
+                      <span>Segarkan Halaman</span>
+                    </button>
+
+                    <button
+                      id="btn-empty-state-profile"
+                      type="button"
+                      class="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/15 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[16px]">person</span>
+                      <span>Profil Saya</span>
+                    </button>
+
+                    <button
+                      id="btn-empty-state-logout"
+                      type="button"
+                      class="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-rose-500/30 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[16px]">logout</span>
+                      <span>Keluar</span>
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            ` : `
             <div class="flex flex-row items-start gap-3 sm:gap-3.5 w-full max-w-full flex-1 min-h-0 h-full overflow-x-auto overflow-y-auto px-3 sm:px-6 pt-2 pb-8 custom-scrollbar" id="kanban-board" style="scroll-padding: 24px; min-height: 0; flex: 1 1 0%; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; scroll-behavior: smooth;">
               
               ${this.columns.map((col, colIdx) => {
@@ -2428,6 +2579,7 @@ export class KanbanBoardView extends BaseView {
     }).join('')}
 
             </div>
+            `}
           </div>
 
         </div>
@@ -4322,6 +4474,42 @@ export class KanbanBoardView extends BaseView {
   }
 
   bindEvents() {
+    // Empty state: Admin Belum Memberi Tugas action buttons
+    const emptyRefreshBtn = this.element.querySelector('#btn-empty-state-refresh');
+    if (emptyRefreshBtn) {
+      emptyRefreshBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const icon = emptyRefreshBtn.querySelector('.material-symbols-outlined');
+        if (icon) icon.classList.add('animate-spin');
+        await this.refreshBoard();
+      });
+    }
+
+    const emptyProfileBtn = this.element.querySelector('#btn-empty-state-profile');
+    if (emptyProfileBtn) {
+      emptyProfileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.hash = '#/profile';
+        if (this.eventBus) this.eventBus.emit('navigate', { view: 'profile' });
+      });
+    }
+
+    const emptyLogoutBtn = this.element.querySelector('#btn-empty-state-logout');
+    if (emptyLogoutBtn) {
+      emptyLogoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.authService && typeof this.authService.logout === 'function') {
+          this.authService.logout();
+        } else {
+          sessionStorage.clear();
+          localStorage.removeItem('creative_office_auth_user');
+          localStorage.removeItem('creative_office_user');
+          localStorage.removeItem('creative_office_session_active');
+          window.location.hash = '#/auth';
+        }
+      });
+    }
+
     // 0. Kanban Refresh Button
     const refreshBtn = this.element.querySelector('#btn-kanban-refresh');
     if (refreshBtn) {

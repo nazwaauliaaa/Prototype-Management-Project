@@ -1333,23 +1333,17 @@ export class AuthView extends BaseView {
         const role = (managed && managed.role) || (userObj && userObj.role) || 'user';
         const isAdmin = role.toLowerCase() === 'admin';
 
-        // Strict Guard: User non-admin gakan bisa masuk/login jika memang belum ditugaskan papan maupun tugas apapun
-        if (!isAdmin && assignedProjects.length === 0) {
-          return {
-            hasAccess: false,
-            error: 'NO_BOARD_ASSIGNED',
-            managed,
-            userObj
-          };
-        }
+        // Jika user non-admin belum ditugaskan papan maupun tugas apapun oleh admin:
+        // Dia TETAP BISA LOGIN, namun halamannya kosong dan ada tanda baca bahwa admin belum memberi tugas.
+        const hasNoAssignedTask = !isAdmin && (assignedProjects.length === 0 || taskId === 'none');
 
         if (isAdmin && assignedProjects.length === 0) {
           assignedProjects = ['proj-1790146434093-686'];
           assignedBoardNames = ['Creative Office'];
         }
 
-        targetProj = assignedProjects[0] || (managed && (managed.assignedProjectId || managed.assignedWorkspace)) || 'proj-1790146434093-686';
-        targetWs = (managed && managed.assignedWorkspace) || targetProj;
+        targetProj = assignedProjects[0] || (managed && (managed.assignedProjectId || managed.assignedWorkspace)) || (isAdmin ? 'proj-1790146434093-686' : 'empty');
+        targetWs = (managed && managed.assignedWorkspace) || targetProj || (isAdmin ? 'creativoffice-4093' : 'empty');
 
         // Standardisasi slug workspace dan project ID
         if (targetProj === 'proj-1790146434093-686' || targetProj.toLowerCase().includes('creativ')) {

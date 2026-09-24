@@ -371,7 +371,10 @@
             title: jobdesk,
             email: email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@sampulkreativ.id`,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-            workspace_access: ['ruangkreasi', 'panen-kunci'],
+            assignedTaskId: 'none',
+            assignedTaskTitle: 'Belum Diberi Tugas (Menunggu Admin)',
+            assignedProjects: [],
+            workspace_access: [],
             bound_device_id: apiService.getDeviceId(),
             bound_device_name: apiService.getDeviceName(),
             qr_data: qrCode

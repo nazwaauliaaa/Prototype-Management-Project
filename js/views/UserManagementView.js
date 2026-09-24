@@ -667,10 +667,17 @@ export class UserManagementView extends BaseView {
                   </span>
                 ` : ''}
               </div>
-              <div class="text-[11.5px] text-purple-200/90 font-medium flex items-center gap-1.5 truncate" title="${u.assignedTaskTitle || 'Akses Seluruh Tugas Papan'}">
-                <span class="material-symbols-outlined text-[14px] text-amber-400 shrink-0">task_alt</span>
-                <span class="truncate">${u.assignedTaskTitle || (hasTask ? 'Tugas Tertaut' : 'Seluruh Papan (Semua Tugas)')}</span>
-              </div>
+              ${(u.assignedTaskId === 'none' || (!u.assignedTaskId && !u.assignedTaskTitle)) ? `
+                <div class="text-[11.5px] text-amber-300 font-semibold flex items-center gap-1.5 truncate" title="Belum Diberi Tugas oleh Admin">
+                  <span class="material-symbols-outlined text-[14px] text-amber-400 shrink-0">hourglass_empty</span>
+                  <span class="truncate">Belum Diberi Tugas</span>
+                </div>
+              ` : `
+                <div class="text-[11.5px] text-purple-200/90 font-medium flex items-center gap-1.5 truncate" title="${u.assignedTaskTitle || 'Akses Seluruh Tugas Papan'}">
+                  <span class="material-symbols-outlined text-[14px] text-emerald-400 shrink-0">task_alt</span>
+                  <span class="truncate">${u.assignedTaskTitle || (hasTask ? 'Tugas Tertaut' : 'Seluruh Papan (Semua Tugas)')}</span>
+                </div>
+              `}
             </div>
           ` : `
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-400/30">
@@ -1096,6 +1103,7 @@ export class UserManagementView extends BaseView {
 
         const boardCountLabel = boardIds.length > 1 ? `${boardIds.length} Papan Terpilih` : 'Papan Ini';
         let optionsHtml = `
+          <option value="none">⏳ Belum Diberi Tugas (Menunggu Penugasan Admin)</option>
           <option value="all">⭐ Seluruh Papan (Semua Tugas di ${boardCountLabel})</option>
         `;
 
@@ -1402,10 +1410,12 @@ export class UserManagementView extends BaseView {
         const assignedBoardName = assignedBoardNames.join(', ');
 
         const taskSelect = this.element.querySelector('#select-new-task');
-        let assignedTaskId = taskSelect ? taskSelect.value : 'all';
+        let assignedTaskId = taskSelect ? taskSelect.value : 'none';
         let assignedTaskTitle = '';
 
-        if (assignedTaskId === 'create_new') {
+        if (assignedTaskId === 'none') {
+          assignedTaskTitle = 'Belum Diberi Tugas (Menunggu Admin)';
+        } else if (assignedTaskId === 'create_new') {
           const customTaskTitle = (this.element.querySelector('#input-new-custom-task')?.value || '').trim();
           if (customTaskTitle && this.taskService) {
             const initials = fullName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM';
@@ -1533,10 +1543,12 @@ export class UserManagementView extends BaseView {
         const assignedBoardName = assignedBoardNames.join(', ');
 
         const taskSelect = this.element.querySelector('#select-edit-task');
-        let assignedTaskId = taskSelect ? taskSelect.value : 'all';
+        let assignedTaskId = taskSelect ? taskSelect.value : 'none';
         let assignedTaskTitle = '';
 
-        if (assignedTaskId === 'create_new') {
+        if (assignedTaskId === 'none') {
+          assignedTaskTitle = 'Belum Diberi Tugas (Menunggu Admin)';
+        } else if (assignedTaskId === 'create_new') {
           const customTaskTitle = (this.element.querySelector('#input-edit-custom-task')?.value || '').trim();
           if (customTaskTitle && this.taskService) {
             const initials = fullName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TM';
