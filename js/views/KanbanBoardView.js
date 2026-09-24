@@ -1849,6 +1849,16 @@ export class KanbanBoardView extends BaseView {
           <div class="flex items-center gap-1.5 shrink-0">
             ${!perms.isUser ? `
             <button
+              id="btn-header-add-task"
+              class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[11.5px] sm:text-[12px] font-bold shadow-md shadow-purple-900/40 transition-all active:scale-95 cursor-pointer border border-purple-400/40 shrink-0"
+              title="Tambah Kartu Tugas Baru"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span class="hidden sm:inline">Tambah Kartu</span>
+            </button>
+
+            <button
               id="btn-kanban-change-bg"
               class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] sm:text-[12px] font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs border border-white/15 shrink-0"
               title="Ubah Latar Papan (Pilihan Warna Elegan)"
@@ -1904,64 +1914,79 @@ export class KanbanBoardView extends BaseView {
             </span>
           </div>
 
-          ${(perms.isUser && !isUserNoTasks && this.getUserAllowedBoards().length > 1) ? `
-          <!-- User Multi-Board Switcher Button in Kanban Sub-bar -->
-          <div class="relative flex items-center shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
+            ${perms.canAddCard ? `
             <button
-              id="btn-kanban-user-board-switcher"
-              class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-purple-600/35 hover:bg-purple-600/50 text-white font-semibold text-[11.5px] sm:text-[12px] border border-purple-400/40 backdrop-blur-md shadow-sm transition-all active:scale-95 cursor-pointer group shrink-0"
-              title="Ganti ke papan proyek lain yang ditugaskan kepada Anda"
+              id="btn-kanban-new-task"
+              class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-600 text-white font-bold text-[11.5px] sm:text-[12px] shadow-lg shadow-purple-950/50 border border-purple-400/40 backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Tambah tugas / kartu baru ke papan Kanban"
               type="button"
             >
-              <span class="material-symbols-outlined text-[15px] sm:text-[16px] text-purple-300 group-hover:rotate-180 transition-transform duration-300">sync_alt</span>
-              <span class="hidden sm:inline">Pindah Kanban</span>
-              <span class="sm:hidden">Papan</span>
-              <span class="px-1.5 py-0.2 rounded-md text-[9.5px] sm:text-[10px] font-mono font-bold bg-purple-400/25 text-purple-200 border border-purple-400/30">${this.getUserAllowedBoards().length} Papan</span>
-              <span class="material-symbols-outlined text-[15px] text-purple-300">expand_more</span>
+              <span class="material-symbols-outlined text-[17px]">add_circle</span>
+              <span class="hidden sm:inline">Tambah Kartu Baru</span>
+              <span class="sm:hidden">Tambah</span>
             </button>
+            ` : ''}
 
-            <!-- Kanban User Board Switcher Popover -->
-            <div
-              id="popup-kanban-user-boards"
-              class="hidden absolute right-0 top-full mt-2 w-72 bg-[#0b061a]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/90 border border-white/20 p-2.5 z-50 flex flex-col gap-1 text-white animate-in fade-in zoom-in-95 duration-150"
-              style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.3) 0%, transparent 60%);"
-            >
-              <div class="px-2.5 py-1.5 border-b border-white/10 flex items-center justify-between mb-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-[15px] text-purple-400">tune</span>
-                  <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-white/70">Papan Anda (${this.getUserAllowedBoards().length})</span>
+            ${(perms.isUser && !isUserNoTasks && this.getUserAllowedBoards().length > 1) ? `
+            <!-- User Multi-Board Switcher Button in Kanban Sub-bar -->
+            <div class="relative flex items-center shrink-0">
+              <button
+                id="btn-kanban-user-board-switcher"
+                class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-purple-600/35 hover:bg-purple-600/50 text-white font-semibold text-[11.5px] sm:text-[12px] border border-purple-400/40 backdrop-blur-md shadow-sm transition-all active:scale-95 cursor-pointer group shrink-0"
+                title="Ganti ke papan proyek lain yang ditugaskan kepada Anda"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-[15px] sm:text-[16px] text-purple-300 group-hover:rotate-180 transition-transform duration-300">sync_alt</span>
+                <span class="hidden sm:inline">Pindah Kanban</span>
+                <span class="sm:hidden">Papan</span>
+                <span class="px-1.5 py-0.2 rounded-md text-[9.5px] sm:text-[10px] font-mono font-bold bg-purple-400/25 text-purple-200 border border-purple-400/30">${this.getUserAllowedBoards().length} Papan</span>
+                <span class="material-symbols-outlined text-[15px] text-purple-300">expand_more</span>
+              </button>
+
+              <!-- Kanban User Board Switcher Popover -->
+              <div
+                id="popup-kanban-user-boards"
+                class="hidden absolute right-0 top-full mt-2 w-72 bg-[#0b061a]/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-purple-950/90 border border-white/20 p-2.5 z-50 flex flex-col gap-1 text-white animate-in fade-in zoom-in-95 duration-150"
+                style="background-color: #0b061a; background-image: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(139, 92, 246, 0.3) 0%, transparent 60%);"
+              >
+                <div class="px-2.5 py-1.5 border-b border-white/10 flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[15px] text-purple-400">tune</span>
+                    <span class="text-[10.5px] font-mono font-bold tracking-wider uppercase text-white/70">Papan Anda (${this.getUserAllowedBoards().length})</span>
+                  </div>
+                  <span class="text-[10px] text-purple-300 font-semibold">Beralih Akses</span>
                 </div>
-                <span class="text-[10px] text-purple-300 font-semibold">Beralih Akses</span>
-              </div>
-              <div class="flex flex-col gap-1 max-h-56 overflow-y-auto pr-0.5">
-                ${this.getUserAllowedBoards().map(board => {
-                  const isCurrent = (board.id === this.projectId || board.workspace === this.currentWorkspace || (this.projectId && board.id.toLowerCase().replace(/[-_\s]/g, '') === this.projectId.toLowerCase().replace(/[-_\s]/g, '')));
-                  return `
-                    <button
-                      type="button"
-                      class="btn-kanban-switch-user-board w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${isCurrent ? 'bg-purple-600/35 border border-purple-400/50 text-white shadow-xs' : 'hover:bg-white/10 text-white/80 hover:text-white border border-transparent'}"
-                      data-board-id="${board.id}"
-                      data-board-workspace="${board.workspace}"
-                    >
-                      <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-[13px] shrink-0">${board.icon || '📋'}</span>
-                        <div class="flex flex-col min-w-0">
-                          <span class="text-[12px] font-bold truncate leading-tight">${board.name}</span>
-                          <span class="text-[10px] text-white/50 truncate leading-tight mt-0.5">${board.category || 'Papan Kanban'}</span>
+                <div class="flex flex-col gap-1 max-h-56 overflow-y-auto pr-0.5">
+                  ${this.getUserAllowedBoards().map(board => {
+                    const isCurrent = (board.id === this.projectId || board.workspace === this.currentWorkspace || (this.projectId && board.id.toLowerCase().replace(/[-_\s]/g, '') === this.projectId.toLowerCase().replace(/[-_\s]/g, '')));
+                    return `
+                      <button
+                        type="button"
+                        class="btn-kanban-switch-user-board w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${isCurrent ? 'bg-purple-600/35 border border-purple-400/50 text-white shadow-xs' : 'hover:bg-white/10 text-white/80 hover:text-white border border-transparent'}"
+                        data-board-id="${board.id}"
+                        data-board-workspace="${board.workspace}"
+                      >
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-[13px] shrink-0">${board.icon || '📋'}</span>
+                          <div class="flex flex-col min-w-0">
+                            <span class="text-[12px] font-bold truncate leading-tight">${board.name}</span>
+                            <span class="text-[10px] text-white/50 truncate leading-tight mt-0.5">${board.category || 'Papan Kanban'}</span>
+                          </div>
                         </div>
-                      </div>
-                      ${isCurrent ? `
-                        <span class="material-symbols-outlined text-purple-400 text-[18px] shrink-0">check_circle</span>
-                      ` : `
-                        <span class="material-symbols-outlined text-white/30 text-[16px] shrink-0">arrow_forward</span>
-                      `}
-                    </button>
-                  `;
-                }).join('')}
+                        ${isCurrent ? `
+                          <span class="material-symbols-outlined text-purple-400 text-[18px] shrink-0">check_circle</span>
+                        ` : `
+                          <span class="material-symbols-outlined text-white/30 text-[16px] shrink-0">arrow_forward</span>
+                        `}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
               </div>
             </div>
+            ` : ''}
           </div>
-          ` : ''}
         </div>
 
         <!-- Main Body: Split View with Left Inbox Drawer + Board Columns -->
@@ -2299,6 +2324,19 @@ export class KanbanBoardView extends BaseView {
                       </div>
 
                       <div class="flex items-center gap-1 shrink-0 ml-2">
+                        <!-- Add Task directly to this column -->
+                        ${perms.canAddCard ? `
+                        <button
+                          class="btn-column-add-task w-6 h-6 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-all cursor-pointer"
+                          data-column-id="${col.id}"
+                          title="Tambah kartu baru ke daftar ${col.title}"
+                          type="button"
+                          aria-label="Tambah tugas ke ${col.title}"
+                        >
+                          <span class="material-symbols-outlined text-[16px]">add</span>
+                        </button>
+                        ` : ''}
+
                         <!-- List Actions ··· Button -->
                         ${perms.canListActions ? `
                         <button
@@ -2583,11 +2621,11 @@ export class KanbanBoardView extends BaseView {
                     <!-- Quick Add Card Button in Column -->
                     ${perms.canAddCard ? `
                     <button
-                      class="btn-quick-add-col shrink-0 mt-auto pt-2 pb-1.5 px-2 rounded-xl text-[12px] font-semibold text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-transparent hover:border-white/10"
+                      class="btn-quick-add-col shrink-0 mt-auto pt-2 pb-1.5 px-3 rounded-xl text-[12px] font-semibold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-dashed border-white/20 hover:border-purple-400/50 shadow-xs"
                       data-column-id="${col.id}"
                       type="button"
                     >
-                      <span class="material-symbols-outlined text-[16px]">add</span>
+                      <span class="material-symbols-outlined text-[16px] text-purple-300">add</span>
                       <span>Tambah kartu</span>
                     </button>
                     ` : ''}
@@ -4685,6 +4723,37 @@ export class KanbanBoardView extends BaseView {
     }
 
 
+
+    // Global Add Task / Card buttons for Admin / PM
+    const globalAddTaskBtns = this.element.querySelectorAll('#btn-kanban-new-task, #btn-header-add-task');
+    globalAddTaskBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.modalManager) {
+          this.modalManager.open('new-task', {
+            workspace: this.currentWorkspace,
+            projectId: this.projectId,
+            status: 'backlog'
+          });
+        }
+      });
+    });
+
+    // Column Header Add Card buttons
+    const colAddBtns = this.element.querySelectorAll('.btn-column-add-task');
+    colAddBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colId = btn.getAttribute('data-column-id') || 'backlog';
+        if (this.modalManager) {
+          this.modalManager.open('new-task', {
+            workspace: this.currentWorkspace,
+            projectId: this.projectId,
+            status: colId
+          });
+        }
+      });
+    });
 
     // 3. Quick Add Card in Column
     const quickAddBtns = this.element.querySelectorAll('.btn-quick-add-col');

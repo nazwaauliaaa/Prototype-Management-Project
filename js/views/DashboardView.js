@@ -443,7 +443,10 @@ export class DashboardView extends BaseView {
                 }
 
                 const boardTasks = this.taskService ? this.taskService.getTasksForBoard(project) : [];
-                const taskCount = this.taskService && boardTasks.length > 0 ? boardTasks.length : (project.tasksCount?.total ?? 0);
+                const taskCount = this.taskService ? boardTasks.length : (project.tasksCount?.total ?? 0);
+                if (project && project.tasksCount) {
+                  project.tasksCount.total = taskCount;
+                }
 
                 return `
                   <div 
