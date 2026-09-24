@@ -1548,6 +1548,19 @@ export class UserManagementView extends BaseView {
 
         if (assignedTaskId === 'none') {
           assignedTaskTitle = 'Belum Diberi Tugas (Menunggu Admin)';
+          // Lepaskan PIC dari tugas yang sebelumnya ditautkan ke pengguna ini
+          if (this.taskService && typeof this.taskService.getTasks === 'function') {
+            const allTasks = this.taskService.getTasks();
+            const uName = fullName.toLowerCase().trim();
+            allTasks.forEach(t => {
+              const picName = String(t.pic?.name || t.pic || '').toLowerCase().trim();
+              if (uName && (picName === uName || picName.includes(uName))) {
+                this.taskService.updateTask(t.id, {
+                  pic: null
+                });
+              }
+            });
+          }
         } else if (assignedTaskId === 'create_new') {
           const customTaskTitle = (this.element.querySelector('#input-edit-custom-task')?.value || '').trim();
           if (customTaskTitle && this.taskService) {
@@ -1667,7 +1680,8 @@ export class UserManagementView extends BaseView {
         const defaultBoardId = defaultBoard?.id || 'panen-kunci';
         const targetProj = user.assignedProjectId || (user.assignedProjects && user.assignedProjects[0]) || defaultBoardId;
         const targetWs = user.assignedWorkspace || (defaultBoard?.workspace || targetProj);
-        const targetTask = user.assignedTaskId;
+        const targetTask = user.assignedTaskId || 'none';
+        const targetTaskTitle = user.assignedTaskTitle || (targetTask === 'none' ? 'Belum Diberi Tugas (Menunggu Admin)' : '');
 
         if (confirm(`Masuk langsung sebagai ${user.fullName} (${user.username}) ke Papan Kanban "${user.assignedBoardName || targetProj}"?`)) {
           const userAvatar = this.authService ? this.authService.resolveUserAvatar(user) : (user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.fullName || user.username)}`);
@@ -1690,7 +1704,7 @@ export class UserManagementView extends BaseView {
             assignedProjects: targetProjects,
             workspaceAccess: targetProjects,
             assignedTaskId: targetTask,
-            assignedTaskTitle: user.assignedTaskTitle || ''
+            assignedTaskTitle: targetTaskTitle
           };
 
           if (this.authService && typeof this.authService.loginAsUser === 'function') {

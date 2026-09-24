@@ -1286,21 +1286,26 @@ export class AuthView extends BaseView {
 
         // =========================================================================
         // DETEKSI TUGASAN DARI ADMIN (TASK PIC MATCHING)
-        // Jika Admin telah mendelegasikan tugas ke pengguna ini (t.pic.name cocok),
-        // otomatis masukkan papan proyek dari tugas tersebut ke assignedProjects!
+        // HANYA jika admin belum secara eksplisit menyetel 'none' atau tanpa tugas!
         // =========================================================================
-        const assignedTasks = findTasksAssignedToUser(userObj || managed, codeStr);
-        if (assignedTasks.length > 0) {
-          assignedTasks.forEach(t => {
-            const proj = t.projectId || t.workspace || t.board;
-            if (proj && !assignedProjects.includes(proj)) {
-              assignedProjects.push(proj);
+        const isExplicitNone = taskId === 'none' || (managed && managed.assignedTaskId === 'none');
+        if (!isExplicitNone) {
+          const assignedTasks = findTasksAssignedToUser(userObj || managed, codeStr);
+          if (assignedTasks.length > 0) {
+            assignedTasks.forEach(t => {
+              const proj = t.projectId || t.workspace || t.board;
+              if (proj && !assignedProjects.includes(proj)) {
+                assignedProjects.push(proj);
+              }
+            });
+            if (!taskId) {
+              taskId = assignedTasks[0].id;
+              taskTitle = assignedTasks[0].title;
             }
-          });
-          if (!taskId || taskId === 'all') {
-            taskId = assignedTasks[0].id;
-            taskTitle = assignedTasks[0].title;
           }
+        } else {
+          taskId = 'none';
+          taskTitle = 'Belum Diberi Tugas (Menunggu Admin)';
         }
 
         // Peta standardisasi nama seluruh papan proyek
@@ -1513,8 +1518,8 @@ export class AuthView extends BaseView {
             jobdesk: finalJob,
             assignedProjectId: targetProj,
             assignedWorkspace: targetWs,
-            assignedTaskId: taskId && taskId !== 'all' ? taskId : null,
-            assignedTaskTitle: taskTitle || null,
+            assignedTaskId: taskId || 'none',
+            assignedTaskTitle: taskTitle || (taskId === 'none' ? 'Belum Diberi Tugas (Menunggu Admin)' : null),
             workspaceAccess: assignedProjects.length > 0 ? assignedProjects : ((managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj]),
             assignedProjects: assignedProjects,
             assignedBoardNames: assignedBoardNames,
@@ -1819,8 +1824,8 @@ export class AuthView extends BaseView {
             jobdesk: finalJob,
             assignedProjectId: targetProj,
             assignedWorkspace: targetWs,
-            assignedTaskId: taskId && taskId !== 'all' ? taskId : null,
-            assignedTaskTitle: taskTitle || null,
+            assignedTaskId: taskId || 'none',
+            assignedTaskTitle: taskTitle || (taskId === 'none' ? 'Belum Diberi Tugas (Menunggu Admin)' : null),
             workspaceAccess: assignedProjects.length > 0 ? assignedProjects : ((managed && (managed.workspaceAccess || managed.assignedProjects)) || [targetWs, targetProj]),
             assignedProjects: assignedProjects,
             assignedBoardNames: assignedBoardNames,
@@ -1893,10 +1898,8 @@ export class AuthView extends BaseView {
           userInstance.assignedProjectId = fallbackProj;
           userInstance.assignedWorkspace = fallbackWs;
           userInstance.workspaceAccess = [fallbackWs, fallbackProj];
-          if (fbTaskId && fbTaskId !== 'all') {
-            userInstance.assignedTaskId = fbTaskId;
-            userInstance.assignedTaskTitle = fbTaskTitle;
-          }
+          userInstance.assignedTaskId = fbTaskId || 'none';
+          userInstance.assignedTaskTitle = fbTaskTitle || (fbTaskId === 'none' ? 'Belum Diberi Tugas (Menunggu Admin)' : null);
           if (fallbackManaged && fallbackManaged.role) {
             userInstance.role = fallbackManaged.role === 'admin' ? 'admin' : 'user';
           }
@@ -1972,10 +1975,8 @@ export class AuthView extends BaseView {
             userInstance.assignedProjects = assignedProjects;
             userInstance.assignedBoardNames = assignedBoardNames;
             userInstance.assignedBoardName = assignedBoardNames[0] || (managed && managed.assignedBoardName) || null;
-            if (taskId && taskId !== 'all') {
-              userInstance.assignedTaskId = taskId;
-              userInstance.assignedTaskTitle = taskTitle;
-            }
+            userInstance.assignedTaskId = taskId || 'none';
+            userInstance.assignedTaskTitle = taskTitle || (taskId === 'none' ? 'Belum Diberi Tugas (Menunggu Admin)' : null);
             if (managed && managed.role) {
               userInstance.role = managed.role === 'admin' ? 'admin' : 'user';
             }

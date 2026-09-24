@@ -491,7 +491,7 @@
     "workspace": "aikreativ-9019",
     "projectId": "proj-1790146459019-450",
     "board": "studio-ai",
-    "status": "in-progress",
+    "status": "done",
     "priority": "High",
     "pic": {
       "name": "Ahmadi Jaka Abdul Manaf",
@@ -512,7 +512,7 @@
     ],
     "location": "",
     "resolution": "",
-    "updatedAt": 1790147877830
+    "updatedAt": 1790216285869
   },
   {
     "id": "task-ai-06",

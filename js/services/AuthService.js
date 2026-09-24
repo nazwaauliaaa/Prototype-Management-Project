@@ -508,10 +508,10 @@ export class AuthService {
     if (user.assignedWorkspace && !this.currentUser.assignedWorkspace) {
       this.currentUser.assignedWorkspace = user.assignedWorkspace;
     }
-    if (user.assignedTaskId && !this.currentUser.assignedTaskId) {
+    if (user.assignedTaskId !== undefined) {
       this.currentUser.assignedTaskId = user.assignedTaskId;
     }
-    if (user.assignedTaskTitle && !this.currentUser.assignedTaskTitle) {
+    if (user.assignedTaskTitle !== undefined) {
       this.currentUser.assignedTaskTitle = user.assignedTaskTitle;
     }
     
@@ -868,6 +868,9 @@ export class AuthService {
     if (user.assignedTaskId === 'none') {
       return false;
     }
+    if (user.assignedTaskTitle && user.assignedTaskTitle.toLowerCase().includes('belum')) {
+      return false;
+    }
 
     // 2. Periksa di data managed users dari admin
     try {
@@ -876,14 +879,14 @@ export class AuthService {
         const list = JSON.parse(rawManaged);
         if (Array.isArray(list)) {
           const uEmail = (user.email || '').toLowerCase().trim();
-          const uUsername = (user.username || '').toLowerCase().trim();
+          const uUsername = (user.username || '').replace(/^@/, '').toLowerCase().trim();
           const uName = (user.name || user.fullName || '').toLowerCase().trim();
           const uId = String(user.id || '').trim();
 
           const found = list.find(m => {
             if (!m) return false;
             const mEmail = (m.email || '').toLowerCase().trim();
-            const mUsername = (m.username || '').toLowerCase().trim();
+            const mUsername = (m.username || '').replace(/^@/, '').toLowerCase().trim();
             const mName = (m.name || m.fullName || '').toLowerCase().trim();
             const mId = String(m.id || '').trim();
             return (uEmail && mEmail === uEmail) ||
@@ -894,39 +897,19 @@ export class AuthService {
 
           if (found) {
             if (found.assignedTaskId === 'none') return false;
+            if (found.assignedTaskTitle && found.assignedTaskTitle.toLowerCase().includes('belum')) return false;
+            if (found.assignedTaskId === 'all') return true;
             if (found.assignedTaskId && found.assignedTaskId !== 'none') return true;
-            if (found.assignedTaskTitle && !found.assignedTaskTitle.toLowerCase().includes('belum')) return true;
-            if (Array.isArray(found.assignedProjects) && found.assignedProjects.length > 0) return true;
+            if (!found.assignedTaskId) return false;
           }
         }
       }
     } catch (e) {}
 
     // 3. Periksa session object
+    if (user.assignedTaskId === 'none') return false;
+    if (user.assignedTaskId === 'all') return true;
     if (user.assignedTaskId && user.assignedTaskId !== 'none') return true;
-    if (user.assignedTaskTitle && !user.assignedTaskTitle.toLowerCase().includes('belum')) return true;
-    if (Array.isArray(user.assignedProjects) && user.assignedProjects.length > 0) return true;
-    if (Array.isArray(user.workspaceAccess) && user.workspaceAccess.length > 0) return true;
-
-    // 4. Periksa apakah ada task yang PIC-nya user
-    try {
-      const uName = (user.name || user.fullName || '').toLowerCase().trim();
-      const uUsername = (user.username || '').replace(/^@/, '').toLowerCase().trim();
-      const rawTasks = localStorage.getItem('creative_office_tasks');
-      if (rawTasks) {
-        const tasks = JSON.parse(rawTasks);
-        if (Array.isArray(tasks)) {
-          const hasTask = tasks.some(t => {
-            if (!t) return false;
-            const picName = String(t.pic?.name || t.pic || '').toLowerCase().trim();
-            if (!picName) return false;
-            return (uName && (picName === uName || picName.includes(uName))) ||
-                   (uUsername && (picName.includes(uUsername) || uUsername.includes(picName)));
-          });
-          if (hasTask) return true;
-        }
-      }
-    } catch (e) {}
 
     return false;
   }
@@ -1152,6 +1135,45 @@ export class AuthService {
   }
 
   getCurrentUser() {
+    if (this.currentUser && (this.currentUser.role === 'user' || this.currentUser.role === 'student' || this.currentUser.role === 'employee')) {
+      try {
+        const rawManaged = localStorage.getItem('creative_office_managed_users');
+        if (rawManaged) {
+          const list = JSON.parse(rawManaged);
+          if (Array.isArray(list)) {
+            const uEmail = (this.currentUser.email || '').toLowerCase().trim();
+            const uUsername = (this.currentUser.username || '').replace(/^@/, '').toLowerCase().trim();
+            const uName = (this.currentUser.name || this.currentUser.fullName || '').toLowerCase().trim();
+            const uId = String(this.currentUser.id || '').trim();
+
+            const found = list.find(m => {
+              if (!m) return false;
+              const mEmail = (m.email || '').toLowerCase().trim();
+              const mUsername = (m.username || '').replace(/^@/, '').toLowerCase().trim();
+              const mName = (m.name || m.fullName || '').toLowerCase().trim();
+              const mId = String(m.id || '').trim();
+              return (uEmail && mEmail === uEmail) ||
+                     (uUsername && mUsername === uUsername) ||
+                     (uId && mId === uId) ||
+                     (uName && mName === uName);
+            });
+
+            if (found) {
+              if (found.assignedTaskId !== undefined) {
+                this.currentUser.assignedTaskId = found.assignedTaskId;
+              }
+              if (found.assignedTaskTitle !== undefined) {
+                this.currentUser.assignedTaskTitle = found.assignedTaskTitle;
+              }
+              if (Array.isArray(found.assignedProjects) && found.assignedProjects.length > 0) {
+                this.currentUser.assignedProjects = found.assignedProjects;
+                this.currentUser.workspaceAccess = found.assignedProjects;
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
     return this.currentUser;
   }
 

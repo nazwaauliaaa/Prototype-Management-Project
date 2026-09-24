@@ -1070,34 +1070,51 @@ export class KanbanBoardView extends BaseView {
     const user = this.getCurrentUser();
     if (!user) return true;
 
-    // 1. Jika admin secara eksplisit menyetel belum ada tugas
+    // 1. Cek langsung assignedTaskId di objek user
     if (user.assignedTaskId === 'none') {
       return true;
     }
-
-    // 2. Jika papan yang diizinkan kosong
-    const allowedBoards = this.getUserAllowedBoards();
-    if (allowedBoards.length === 0) {
+    if (user.assignedTaskTitle && user.assignedTaskTitle.toLowerCase().includes('belum')) {
       return true;
     }
+
+    // 2. Cek di data managed users dari admin
+    try {
+      const rawManaged = localStorage.getItem('creative_office_managed_users');
+      if (rawManaged) {
+        const list = JSON.parse(rawManaged);
+        if (Array.isArray(list)) {
+          const uEmail = (user.email || '').toLowerCase().trim();
+          const uUsername = (user.username || '').replace(/^@/, '').toLowerCase().trim();
+          const uName = (user.name || user.fullName || '').toLowerCase().trim();
+          const uId = String(user.id || '').trim();
+
+          const found = list.find(m => {
+            if (!m) return false;
+            const mEmail = (m.email || '').toLowerCase().trim();
+            const mUsername = (m.username || '').replace(/^@/, '').toLowerCase().trim();
+            const mName = (m.name || m.fullName || '').toLowerCase().trim();
+            const mId = String(m.id || '').trim();
+            return (uEmail && mEmail === uEmail) ||
+                   (uUsername && mUsername === uUsername) ||
+                   (uId && mId === uId) ||
+                   (uName && mName === uName);
+          });
+
+          if (found) {
+            if (found.assignedTaskId === 'none') return true;
+            if (found.assignedTaskTitle && found.assignedTaskTitle.toLowerCase().includes('belum')) return true;
+            if (found.assignedTaskId === 'all') return false;
+            if (found.assignedTaskId && found.assignedTaskId !== 'none') return false;
+            if (!found.assignedTaskId) return true;
+          }
+        }
+      }
+    } catch (e) {}
 
     // 3. Gunakan method hasAssignedTasks dari AuthService jika tersedia
     if (this.authService && typeof this.authService.hasAssignedTasks === 'function') {
       return !this.authService.hasAssignedTasks(user);
-    }
-
-    // 4. Periksa apakah ada tugas untuk user di TaskService
-    if (this.taskService) {
-      const allTasks = this.taskService.getTasks();
-      const uName = (user.name || '').toLowerCase().trim();
-      const uEmail = (user.email || '').toLowerCase().trim();
-      const hasTask = allTasks.some(t => {
-        const picName = (t.pic?.name || t.pic || '').toLowerCase().trim();
-        const picEmail = (t.pic?.email || '').toLowerCase().trim();
-        return (uName && (picName === uName || picName.includes(uName))) ||
-               (uEmail && picEmail === uEmail);
-      });
-      if (hasTask) return false;
     }
 
     if (user.assignedTaskId === 'all') {
@@ -1482,9 +1499,8 @@ export class KanbanBoardView extends BaseView {
     // Jika user memiliki tugas spesifik yang di-assign oleh admin, batasi kartu sesuai tugas tersebut
     if (perms.isUser && !isUserNoTasks) {
       const u = this.getCurrentUser();
-      const uName = (u?.name || '').toLowerCase().trim();
       if (u?.assignedTaskId && u.assignedTaskId !== 'all' && u.assignedTaskId !== 'none') {
-        allTasks = allTasks.filter(t => t.id === u.assignedTaskId || (uName && t.pic?.name && t.pic.name.toLowerCase().includes(uName)));
+        allTasks = allTasks.filter(t => t.id === u.assignedTaskId);
       }
     }
 
@@ -1861,6 +1877,7 @@ export class KanbanBoardView extends BaseView {
               <span>Segarkan</span>
             </button>
 
+            ${!isUserNoTasks ? `
             <button
               id="btn-board-avatar"
               class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11px] font-semibold backdrop-blur-md transition-all cursor-pointer shadow-xs border border-white/10 shrink-0"
@@ -1870,6 +1887,7 @@ export class KanbanBoardView extends BaseView {
               <span class="material-symbols-outlined text-[16px]">group</span>
               <span>${boardMembers.length} Anggota</span>
             </button>
+            ` : ''}
             `}
           </div>
 
@@ -1886,7 +1904,7 @@ export class KanbanBoardView extends BaseView {
             </span>
           </div>
 
-          ${(perms.isUser && this.getUserAllowedBoards().length >= 1) ? `
+          ${(perms.isUser && !isUserNoTasks && this.getUserAllowedBoards().length > 1) ? `
           <!-- User Multi-Board Switcher Button in Kanban Sub-bar -->
           <div class="relative flex items-center shrink-0">
             <button
